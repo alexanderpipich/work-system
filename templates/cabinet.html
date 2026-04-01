@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Личный кабинет</title>
+    <style>
+        body { font-family: Arial, sans-serif; background:#f5f5f5; padding:30px; }
+        .wrap { max-width:900px; margin:0 auto; background:#fff; padding:24px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
+        .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+        .menu { margin:20px 0; padding:12px; background:#f0f0f0; border-radius:10px; }
+        form { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+        input, button { padding:10px; }
+        table { width:100%; border-collapse:collapse; margin-top:20px; }
+        th, td { border:1px solid #ddd; padding:10px; text-align:left; }
+        th { background:#f7f7f7; }
+        .total { margin-top:20px; font-size:18px; font-weight:bold; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="top">
+            <div>
+                <h2>Личный кабинет</h2>
+                <div><strong>Сотрудник:</strong> {{ user.employee_name }}</div>
+                <div><strong>Телефон:</strong> {{ user.phone }}</div>
+            </div>
+            <div>
+                <a href="/login">Выйти</a>
+            </div>
+        </div>
+
+        <div class="menu">
+            <strong>Меню:</strong> Мои часы
+        </div>
+
+        <h3>Отработанные часы</h3>
+
+        <form method="get" action="/cabinet">
+            <input type="hidden" name="phone" value="{{ user.phone }}">
+            <div>
+                <label>С:</label><br>
+                <input type="date" name="date_from" value="{{ date_from }}">
+            </div>
+            <div>
+                <label>По:</label><br>
+                <input type="date" name="date_to" value="{{ date_to }}">
+            </div>
+            <div style="align-self:end;">
+                <button type="submit">Показать</button>
+            </div>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Отработанные часы</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in shifts %}
+                <tr>
+                    <td>{{ item.shift_date.strftime("%d.%m.%Y") }}</td>
+                    <td>{{ item.hours }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="total">
+            Итого часов за период: {{ total_hours }}
+        </div>
+    </div>
+</body>
+</html>

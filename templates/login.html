@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход</title>
+    <style>
+        body { font-family: Arial, sans-serif; background:#f5f5f5; padding:40px; }
+        .box { max-width:400px; margin:0 auto; background:#fff; padding:24px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
+        input, button { width:100%; padding:12px; margin-top:10px; box-sizing:border-box; }
+        button { cursor:pointer; }
+        .error { color:#b00020; margin-top:12px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Вход в личный кабинет</h2>
+        <form method="post" action="/login">
+            <input type="text" name="phone" placeholder="Телефон" required>
+            <input type="password" name="password" placeholder="Пароль" required>
+            <button type="submit">Войти</button>
+        </form>
+
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+    </div>
+</body>
+</html>

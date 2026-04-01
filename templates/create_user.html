@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Создание пользователя</title>
+    <style>
+        body { font-family: Arial, sans-serif; background:#f5f5f5; padding:40px; }
+        .box { max-width:500px; margin:0 auto; background:#fff; padding:24px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
+        input, button { width:100%; padding:12px; margin-top:10px; box-sizing:border-box; }
+        .msg { color:green; margin-top:12px; }
+        .err { color:#b00020; margin-top:12px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Создание пользователя</h2>
+        <form method="post" action="/admin/create-user">
+            <input type="text" name="phone" placeholder="Телефон для входа" required>
+            <input type="text" name="employee_name" placeholder="ФИО сотрудника как в Excel" required>
+            <input type="password" name="password" placeholder="Пароль" required>
+
+            <label style="display:block; margin-top:12px;">
+                <input type="checkbox" name="is_admin" value="true" style="width:auto;">
+                Администратор
+            </label>
+
+            <button type="submit">Создать пользователя</button>
+        </form>
+
+        {% if message %}
+            <div class="msg">{{ message }}</div>
+        {% endif %}
+
+        {% if error %}
+            <div class="err">{{ error }}</div>
+        {% endif %}
+    </div>
+</body>
+</html>
