@@ -1,23 +1,25 @@
-from datetime import datetime
+import os
+from datetime import datetime, date
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import pandas as pd
 from sqlalchemy import create_engine, Column, Integer, String, Float, Date, Boolean, UniqueConstraint
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
 
-# ВПИШИ СВОЙ ПАРОЛЬ ОТ POSTGRESQL
-import os
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:123456@localhost:5432/work_db")
+# Локально будет использовать localhost-строку, на Render — переменную окружения DATABASE_URL
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg2://postgres:123456@localhost:5432/work_db"
+)
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
-# ВАЖНО:
-# bcrypt у тебя уже конфликтовал с passlib,
-# поэтому используем более стабильную схему для текущего проекта
+# bcrypt уже конфликтовал, поэтому используем стабильный вариант
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 templates = Jinja2Templates(directory="templates")
@@ -237,12 +239,22 @@ def create_user_submit(
         session.close()
 
 
+@app.get("/debug/shifts-count")
+def shifts_count():
+    session = SessionLocal()
+    try:
+        count = session.query(Shift).count()
+        return {"count": count}
+    finally:
+        session.close()
+
+
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
     try:
         df = pd.read_excel(file.file, header=1)
 
-        # Берем только нужные столбцы:
+        # Нужные столбцы:
         # A -> 0
         # G -> 6
         # M -> 12
@@ -250,11 +262,23 @@ async def upload(file: UploadFile = File(...)):
         df = df.iloc[:, [0, 6, 12, 25]]
         df.columns = ["store", "date", "employee", "hours"]
 
+        # Убираем строки без нужных значений
         df = df.dropna(subset=["store", "date", "employee", "hours"])
 
-        # дата в исходном файле может быть как датой, так и строкой
+        # Чистим строки
+        df["store"] = df["store"].astype(str).str.strip()
+        df["employee"] = df["employee"].astype(str).str.strip()
+
+        # Преобразуем дату
         df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
         df = df.dropna(subset=["date"])
+
+        # Часы в число
+        df["hours"] = pd.to_numeric(df["hours"], errors="coerce")
+        df = df.dropna(subset=["hours"])
+
+        # Убираем дубли внутри самого файла
+        df = df.drop_duplicates(subset=["store", "date", "employee"], keep="last")
 
         session = SessionLocal()
         added = 0
@@ -262,12 +286,12 @@ async def upload(file: UploadFile = File(...)):
 
         try:
             for _, row in df.iterrows():
-                store = str(row["store"]).strip()
-                employee = str(row["employee"]).strip()
+                store = row["store"]
+                employee = row["employee"]
                 shift_date = row["date"].date()
                 hours = float(row["hours"])
 
-                exists = session.query(Shift).filter_by(
+                exists = session.query(Shift.id).filter_by(
                     store=store,
                     shift_date=shift_date,
                     employee=employee
@@ -284,19 +308,19 @@ async def upload(file: UploadFile = File(...)):
                     hours=hours
                 )
                 session.add(item)
-                added += 1
 
-            session.commit()
-
-        except Exception:
-            session.rollback()
-            raise
+                try:
+                    session.commit()
+                    added += 1
+                except IntegrityError:
+                    session.rollback()
+                    skipped += 1
 
         finally:
             session.close()
 
         return {
-            "rows_in_file": len(df),
+            "rows_after_cleaning": len(df),
             "added_to_db": added,
             "skipped_duplicates": skipped
         }
