@@ -66,27 +66,16 @@ def root():
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "login.html",
-        {"error": None}
-    )
+    return templates.TemplateResponse(request, "login.html", {"error": None})
 
 
 @app.post("/login", response_class=HTMLResponse)
-def login_submit(
-    request: Request,
-    phone: str = Form(...),
-    password: str = Form(...)
-):
+def login_submit(request: Request, phone: str = Form(...), password: str = Form(...)):
     session = SessionLocal()
     try:
-        phone_clean = phone.strip()
-        password_clean = password.strip()
+        user = session.query(User).filter(User.phone == phone.strip()).first()
 
-        user = session.query(User).filter(User.phone == phone_clean).first()
-
-        if not user or not verify_password(password_clean, user.password_hash):
+        if not user or not verify_password(password, user.password_hash):
             return templates.TemplateResponse(
                 request,
                 "login.html",
@@ -100,46 +89,23 @@ def login_submit(
 
 
 @app.get("/cabinet", response_class=HTMLResponse)
-def cabinet(
-    request: Request,
-    phone: str,
-    date_from: str = "",
-    date_to: str = ""
-):
+def cabinet(request: Request, phone: str, date_from: str = "", date_to: str = ""):
     session = SessionLocal()
     try:
-        phone_clean = phone.strip()
-        user = session.query(User).filter(User.phone == phone_clean).first()
+        user = session.query(User).filter(User.phone == phone.strip()).first()
 
         if not user:
-            return RedirectResponse(url="/login", status_code=302)
+            return RedirectResponse(url="/login")
 
         query = session.query(Shift).filter(Shift.employee == user.employee_name)
 
-        try:
-            if date_from:
-                parsed_date_from = datetime.strptime(date_from, "%Y-%m-%d").date()
-                query = query.filter(Shift.shift_date >= parsed_date_from)
+        if date_from:
+            query = query.filter(Shift.shift_date >= datetime.strptime(date_from, "%Y-%m-%d").date())
+        if date_to:
+            query = query.filter(Shift.shift_date <= datetime.strptime(date_to, "%Y-%m-%d").date())
 
-            if date_to:
-                parsed_date_to = datetime.strptime(date_to, "%Y-%m-%d").date()
-                query = query.filter(Shift.shift_date <= parsed_date_to)
-        except ValueError:
-            return templates.TemplateResponse(
-                request,
-                "cabinet.html",
-                {
-                    "user": user,
-                    "shifts": [],
-                    "total_hours": 0,
-                    "date_from": date_from,
-                    "date_to": date_to,
-                    "error": "Некорректный формат даты"
-                }
-            )
-
-        shifts = query.order_by(Shift.shift_date.asc()).all()
-        total_hours = sum(item.hours for item in shifts)
+        shifts = query.order_by(Shift.shift_date).all()
+        total = sum(s.hours for s in shifts)
 
         return templates.TemplateResponse(
             request,
@@ -147,24 +113,18 @@ def cabinet(
             {
                 "user": user,
                 "shifts": shifts,
-                "total_hours": total_hours,
+                "total_hours": total,
                 "date_from": date_from,
-                "date_to": date_to,
-                "error": None
+                "date_to": date_to
             }
         )
-
     finally:
         session.close()
 
 
 @app.get("/admin/create-user", response_class=HTMLResponse)
 def create_user_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "create_user.html",
-        {"message": None, "error": None}
-    )
+    return templates.TemplateResponse(request, "create_user.html", {"message": None, "error": None})
 
 
 @app.post("/admin/create-user", response_class=HTMLResponse)
@@ -172,50 +132,23 @@ def create_user_submit(
     request: Request,
     phone: str = Form(...),
     password: str = Form(...),
-    employee_name: str = Form(...),
-    is_admin: str = Form(default="")
+    employee_name: str = Form(...)
 ):
     session = SessionLocal()
     try:
-        phone_clean = phone.strip()
-        password_clean = password.strip()
-        employee_name_clean = employee_name.strip()
-
-        if not phone_clean:
+        if session.query(User).filter(User.phone == phone).first():
             return templates.TemplateResponse(
                 request,
                 "create_user.html",
-                {"message": None, "error": "Телефон не может быть пустым"}
-            )
-
-        if not password_clean:
-            return templates.TemplateResponse(
-                request,
-                "create_user.html",
-                {"message": None, "error": "Пароль не может быть пустым"}
-            )
-
-        if not employee_name_clean:
-            return templates.TemplateResponse(
-                request,
-                "create_user.html",
-                {"message": None, "error": "ФИО не может быть пустым"}
-            )
-
-        existing = session.query(User).filter(User.phone == phone_clean).first()
-        if existing:
-            return templates.TemplateResponse(
-                request,
-                "create_user.html",
-                {"message": None, "error": "Пользователь с таким телефоном уже существует"}
+                {"error": "Пользователь уже существует", "message": None}
             )
 
         user = User(
-            phone=phone_clean,
-            password_hash=get_password_hash(password_clean),
-            employee_name=employee_name_clean,
-            is_admin=(is_admin == "true" or is_admin == "on")
+            phone=phone.strip(),
+            password_hash=get_password_hash(password),
+            employee_name=employee_name.strip()
         )
+
         session.add(user)
         session.commit()
 
@@ -224,31 +157,17 @@ def create_user_submit(
             "create_user.html",
             {"message": "Пользователь создан", "error": None}
         )
-
-    except Exception as e:
-        session.rollback()
-        return templates.TemplateResponse(
-            request,
-            "create_user.html",
-            {"message": None, "error": f"Ошибка создания пользователя: {str(e)}"}
-        )
-
     finally:
         session.close()
 
 
+# 🔥 ИМПОРТ ПОЛЬЗОВАТЕЛЕЙ
 @app.get("/admin/upload-users", response_class=HTMLResponse)
 def upload_users_page(request: Request):
     return templates.TemplateResponse(
         request,
         "upload_users.html",
-        {
-            "message": None,
-            "error": None,
-            "created": None,
-            "skipped": None,
-            "bad_rows": None,
-        }
+        {"message": None, "error": None, "created": None, "skipped": None, "bad_rows": None}
     )
 
 
@@ -258,51 +177,43 @@ async def upload_users_submit(request: Request, file: UploadFile = File(...)):
     try:
         df = pd.read_excel(file.file)
 
-        required_columns = ["phone", "employee_name", "password"]
-        missing = [col for col in required_columns if col not in df.columns]
+        # 🔥 ЧИСТИМ ЗАГОЛОВКИ
+        df.columns = [str(c).strip() for c in df.columns]
+
+        required = ["phone", "employee_name", "password"]
+        missing = [c for c in required if c not in df.columns]
 
         if missing:
             return templates.TemplateResponse(
                 request,
                 "upload_users.html",
-                {
-                    "message": None,
-                    "error": f"В файле нет обязательных колонок: {', '.join(missing)}",
-                    "created": None,
-                    "skipped": None,
-                    "bad_rows": None,
-                }
+                {"error": f"Нет колонок: {missing}", "message": None}
             )
-
-        df = df.dropna(subset=["phone", "employee_name", "password"])
 
         created = 0
         skipped = 0
-        bad_rows = 0
+        bad = 0
 
         for _, row in df.iterrows():
             try:
-                phone = str(row["phone"]).strip()
-                phone = phone.replace(" ", "").replace("+", "")
-
-                employee_name = str(row["employee_name"]).strip()
+                phone = str(row["phone"]).strip().replace("+", "")
+                name = str(row["employee_name"]).strip()
                 password = str(row["password"]).strip()
 
-                if not phone or not employee_name or not password:
-                    bad_rows += 1
+                if not phone or not name or not password:
+                    bad += 1
                     continue
 
-                existing = session.query(User).filter(User.phone == phone).first()
-                if existing:
+                if session.query(User).filter(User.phone == phone).first():
                     skipped += 1
                     continue
 
                 user = User(
                     phone=phone,
                     password_hash=get_password_hash(password),
-                    employee_name=employee_name,
-                    is_admin=False
+                    employee_name=name
                 )
+
                 session.add(user)
 
                 try:
@@ -311,113 +222,85 @@ async def upload_users_submit(request: Request, file: UploadFile = File(...)):
                 except IntegrityError:
                     session.rollback()
                     skipped += 1
-                except Exception:
-                    session.rollback()
-                    bad_rows += 1
 
-            except Exception:
-                bad_rows += 1
+            except:
+                bad += 1
 
         return templates.TemplateResponse(
             request,
             "upload_users.html",
             {
-                "message": "Загрузка пользователей завершена",
-                "error": None,
+                "message": "Готово",
                 "created": created,
                 "skipped": skipped,
-                "bad_rows": bad_rows,
-            }
-        )
-
-    except Exception as e:
-        return templates.TemplateResponse(
-            request,
-            "upload_users.html",
-            {
-                "message": None,
-                "error": f"Ошибка загрузки файла: {str(e)}",
-                "created": None,
-                "skipped": None,
-                "bad_rows": None,
+                "bad_rows": bad,
+                "error": None
             }
         )
 
     finally:
         session.close()
+
+
+# 🔥 ЗАГРУЗКА СМЕН (ИСПРАВЛЕННАЯ)
+@app.post("/upload")
+async def upload(file: UploadFile = File(...)):
+    df = pd.read_excel(file.file, header=1)
+
+    df = df.iloc[:, [0, 6, 12, 25]]
+    df.columns = ["store", "date", "employee", "hours"]
+
+    df = df.dropna()
+    df["store"] = df["store"].astype(str).str.strip()
+    df["employee"] = df["employee"].astype(str).str.strip()
+    df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
+    df["hours"] = pd.to_numeric(df["hours"], errors="coerce")
+
+    df = df.dropna()
+    df = df.drop_duplicates(subset=["store", "date", "employee"])
+
+    session = SessionLocal()
+    added = 0
+    skipped = 0
+
+    try:
+        for _, row in df.iterrows():
+            exists = session.query(Shift).filter_by(
+                store=row["store"],
+                shift_date=row["date"].date(),
+                employee=row["employee"]
+            ).first()
+
+            if exists:
+                skipped += 1
+                continue
+
+            item = Shift(
+                store=row["store"],
+                shift_date=row["date"].date(),
+                employee=row["employee"],
+                hours=float(row["hours"])
+            )
+
+            session.add(item)
+
+            try:
+                session.commit()
+                added += 1
+            except IntegrityError:
+                session.rollback()
+                skipped += 1
+
+    finally:
+        session.close()
+
+    return {"added": added, "skipped": skipped}
 
 
 @app.get("/debug/shifts-count")
-def shifts_count():
+def debug():
     session = SessionLocal()
     try:
-        count = session.query(Shift).count()
-        return {"count": count}
+        return {"count": session.query(Shift).count()}
     finally:
         session.close()
-
-
-@app.post("/upload")
-async def upload(file: UploadFile = File(...)):
-    try:
-        df = pd.read_excel(file.file, header=1)
-
-        df = df.iloc[:, [0, 6, 12, 25]]
-        df.columns = ["store", "date", "employee", "hours"]
-
-        df = df.dropna(subset=["store", "date", "employee", "hours"])
-        df["store"] = df["store"].astype(str).str.strip()
-        df["employee"] = df["employee"].astype(str).str.strip()
-        df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
-        df = df.dropna(subset=["date"])
-        df["hours"] = pd.to_numeric(df["hours"], errors="coerce")
-        df = df.dropna(subset=["hours"])
-        df = df.drop_duplicates(subset=["store", "date", "employee"], keep="last")
-
-        session = SessionLocal()
-        added = 0
-        skipped = 0
-
-        try:
-            for _, row in df.iterrows():
-                store = row["store"]
-                employee = row["employee"]
-                shift_date = row["date"].date()
-                hours = float(row["hours"])
-
-                exists = session.query(Shift.id).filter_by(
-                    store=store,
-                    shift_date=shift_date,
-                    employee=employee
-                ).first()
-
-                if exists:
-                    skipped += 1
-                    continue
-
-                item = Shift(
-                    store=store,
-                    shift_date=shift_date,
-                    employee=employee,
-                    hours=hours
-                )
-                session.add(item)
-
-                try:
-                    session.commit()
-                    added += 1
-                except IntegrityError:
-                    session.rollback()
-                    skipped += 1
-
-        finally:
-            session.close()
-
-        return {
-            "rows_after_cleaning": len(df),
-            "added_to_db": added,
-            "skipped_duplicates": skipped
-        }
-
-    except Exception as e:
-        return {"error": str(e)}
