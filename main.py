@@ -51,8 +51,20 @@ class User(Base):
 Base.metadata.create_all(bind=engine)
 
 
-def normalize_phone(phone: str) -> str:
-    return str(phone).strip().replace(" ", "").replace("+", "")
+def normalize_phone(phone) -> str:
+    if phone is None:
+        return ""
+
+    if isinstance(phone, float):
+        if phone.is_integer():
+            phone = int(phone)
+
+    phone_str = str(phone).strip().replace(" ", "").replace("+", "")
+
+    if phone_str.endswith(".0"):
+        phone_str = phone_str[:-2]
+
+    return phone_str
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -307,6 +319,26 @@ def admin_users(request: Request):
             "admin_users.html",
             {"users": users}
         )
+    finally:
+        session.close()
+
+
+@app.get("/admin/fix-phones")
+def fix_phones():
+    session = SessionLocal()
+    try:
+        users = session.query(User).all()
+        fixed = 0
+
+        for user in users:
+            new_phone = normalize_phone(user.phone)
+            if user.phone != new_phone:
+                user.phone = new_phone
+                fixed += 1
+
+        session.commit()
+        return {"fixed": fixed}
+
     finally:
         session.close()
 
