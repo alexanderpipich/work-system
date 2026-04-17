@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, date
+from datetime import datetime
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -9,7 +9,6 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
 
-# Локально будет использовать localhost-строку, на Render — переменную окружения DATABASE_URL
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql+psycopg2://postgres:123456@localhost:5432/work_db"
@@ -19,7 +18,6 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
-# bcrypt уже конфликтовал, поэтому используем стабильный вариант
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 templates = Jinja2Templates(directory="templates")
@@ -239,6 +237,116 @@ def create_user_submit(
         session.close()
 
 
+@app.get("/admin/upload-users", response_class=HTMLResponse)
+def upload_users_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "upload_users.html",
+        {
+            "message": None,
+            "error": None,
+            "created": None,
+            "skipped": None,
+            "bad_rows": None,
+        }
+    )
+
+
+@app.post("/admin/upload-users", response_class=HTMLResponse)
+async def upload_users_submit(request: Request, file: UploadFile = File(...)):
+    session = SessionLocal()
+    try:
+        df = pd.read_excel(file.file)
+
+        required_columns = ["phone", "employee_name", "password"]
+        missing = [col for col in required_columns if col not in df.columns]
+
+        if missing:
+            return templates.TemplateResponse(
+                request,
+                "upload_users.html",
+                {
+                    "message": None,
+                    "error": f"В файле нет обязательных колонок: {', '.join(missing)}",
+                    "created": None,
+                    "skipped": None,
+                    "bad_rows": None,
+                }
+            )
+
+        df = df.dropna(subset=["phone", "employee_name", "password"])
+
+        created = 0
+        skipped = 0
+        bad_rows = 0
+
+        for _, row in df.iterrows():
+            try:
+                phone = str(row["phone"]).strip()
+                phone = phone.replace(" ", "").replace("+", "")
+
+                employee_name = str(row["employee_name"]).strip()
+                password = str(row["password"]).strip()
+
+                if not phone or not employee_name or not password:
+                    bad_rows += 1
+                    continue
+
+                existing = session.query(User).filter(User.phone == phone).first()
+                if existing:
+                    skipped += 1
+                    continue
+
+                user = User(
+                    phone=phone,
+                    password_hash=get_password_hash(password),
+                    employee_name=employee_name,
+                    is_admin=False
+                )
+                session.add(user)
+
+                try:
+                    session.commit()
+                    created += 1
+                except IntegrityError:
+                    session.rollback()
+                    skipped += 1
+                except Exception:
+                    session.rollback()
+                    bad_rows += 1
+
+            except Exception:
+                bad_rows += 1
+
+        return templates.TemplateResponse(
+            request,
+            "upload_users.html",
+            {
+                "message": "Загрузка пользователей завершена",
+                "error": None,
+                "created": created,
+                "skipped": skipped,
+                "bad_rows": bad_rows,
+            }
+        )
+
+    except Exception as e:
+        return templates.TemplateResponse(
+            request,
+            "upload_users.html",
+            {
+                "message": None,
+                "error": f"Ошибка загрузки файла: {str(e)}",
+                "created": None,
+                "skipped": None,
+                "bad_rows": None,
+            }
+        )
+
+    finally:
+        session.close()
+
+
 @app.get("/debug/shifts-count")
 def shifts_count():
     session = SessionLocal()
@@ -254,30 +362,16 @@ async def upload(file: UploadFile = File(...)):
     try:
         df = pd.read_excel(file.file, header=1)
 
-        # Нужные столбцы:
-        # A -> 0
-        # G -> 6
-        # M -> 12
-        # Z -> 25
         df = df.iloc[:, [0, 6, 12, 25]]
         df.columns = ["store", "date", "employee", "hours"]
 
-        # Убираем строки без нужных значений
         df = df.dropna(subset=["store", "date", "employee", "hours"])
-
-        # Чистим строки
         df["store"] = df["store"].astype(str).str.strip()
         df["employee"] = df["employee"].astype(str).str.strip()
-
-        # Преобразуем дату
         df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
         df = df.dropna(subset=["date"])
-
-        # Часы в число
         df["hours"] = pd.to_numeric(df["hours"], errors="coerce")
         df = df.dropna(subset=["hours"])
-
-        # Убираем дубли внутри самого файла
         df = df.drop_duplicates(subset=["store", "date", "employee"], keep="last")
 
         session = SessionLocal()
