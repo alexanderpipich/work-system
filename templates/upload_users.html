@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Загрузка пользователей</title>
+    <style>
+        body { font-family: Arial, sans-serif; background:#f5f5f5; padding:40px; }
+        .box { max-width:700px; margin:0 auto; background:#fff; padding:24px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
+        input, button { padding:12px; margin-top:10px; box-sizing:border-box; }
+        button { cursor:pointer; }
+        .msg { color:green; margin-top:12px; }
+        .err { color:#b00020; margin-top:12px; }
+        .stats { margin-top:20px; padding:12px; background:#f7f7f7; border-radius:10px; }
+        a { text-decoration:none; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Импорт пользователей</h2>
+
+        <p>
+            Формат Excel:
+            <strong>phone</strong>,
+            <strong>employee_name</strong>,
+            <strong>password</strong>
+        </p>
+
+        <form method="post" action="/admin/upload-users" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".xlsx,.xls" required>
+            <br>
+            <button type="submit">Загрузить пользователей</button>
+        </form>
+
+        <p style="margin-top:20px;">
+            <a href="/admin/create-user">Создать одного пользователя вручную</a>
+        </p>
+
+        {% if message %}
+            <div class="msg">{{ message }}</div>
+        {% endif %}
+
+        {% if error %}
+            <div class="err">{{ error }}</div>
+        {% endif %}
+
+        {% if created is not none %}
+        <div class="stats">
+            <div><strong>Создано:</strong> {{ created }}</div>
+            <div><strong>Пропущено:</strong> {{ skipped }}</div>
+            <div><strong>Некорректных строк:</strong> {{ bad_rows }}</div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
