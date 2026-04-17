@@ -51,12 +51,16 @@ class User(Base):
 Base.metadata.create_all(bind=engine)
 
 
+def normalize_phone(phone: str) -> str:
+    return str(phone).strip().replace(" ", "").replace("+", "")
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password.strip(), hashed_password)
+    return pwd_context.verify(str(plain_password).strip(), hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password.strip())
+    return pwd_context.hash(str(password).strip())
 
 
 @app.get("/")
@@ -66,16 +70,23 @@ def root():
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
-    return templates.TemplateResponse(request, "login.html", {"error": None})
+    return templates.TemplateResponse(
+        request,
+        "login.html",
+        {"error": None}
+    )
 
 
 @app.post("/login", response_class=HTMLResponse)
 def login_submit(request: Request, phone: str = Form(...), password: str = Form(...)):
     session = SessionLocal()
     try:
-        user = session.query(User).filter(User.phone == phone.strip()).first()
+        phone_clean = normalize_phone(phone)
+        password_clean = str(password).strip()
 
-        if not user or not verify_password(password, user.password_hash):
+        user = session.query(User).filter(User.phone == phone_clean).first()
+
+        if not user or not verify_password(password_clean, user.password_hash):
             return templates.TemplateResponse(
                 request,
                 "login.html",
@@ -92,17 +103,36 @@ def login_submit(request: Request, phone: str = Form(...), password: str = Form(
 def cabinet(request: Request, phone: str, date_from: str = "", date_to: str = ""):
     session = SessionLocal()
     try:
-        user = session.query(User).filter(User.phone == phone.strip()).first()
+        phone_clean = normalize_phone(phone)
+        user = session.query(User).filter(User.phone == phone_clean).first()
 
         if not user:
-            return RedirectResponse(url="/login")
+            return RedirectResponse(url="/login", status_code=302)
 
         query = session.query(Shift).filter(Shift.employee == user.employee_name)
 
-        if date_from:
-            query = query.filter(Shift.shift_date >= datetime.strptime(date_from, "%Y-%m-%d").date())
-        if date_to:
-            query = query.filter(Shift.shift_date <= datetime.strptime(date_to, "%Y-%m-%d").date())
+        try:
+            if date_from:
+                query = query.filter(
+                    Shift.shift_date >= datetime.strptime(date_from, "%Y-%m-%d").date()
+                )
+            if date_to:
+                query = query.filter(
+                    Shift.shift_date <= datetime.strptime(date_to, "%Y-%m-%d").date()
+                )
+        except ValueError:
+            return templates.TemplateResponse(
+                request,
+                "cabinet.html",
+                {
+                    "user": user,
+                    "shifts": [],
+                    "total_hours": 0,
+                    "date_from": date_from,
+                    "date_to": date_to,
+                    "error": "Некорректный формат даты"
+                }
+            )
 
         shifts = query.order_by(Shift.shift_date).all()
         total = sum(s.hours for s in shifts)
@@ -115,7 +145,8 @@ def cabinet(request: Request, phone: str, date_from: str = "", date_to: str = ""
                 "shifts": shifts,
                 "total_hours": total,
                 "date_from": date_from,
-                "date_to": date_to
+                "date_to": date_to,
+                "error": None
             }
         )
     finally:
@@ -124,7 +155,11 @@ def cabinet(request: Request, phone: str, date_from: str = "", date_to: str = ""
 
 @app.get("/admin/create-user", response_class=HTMLResponse)
 def create_user_page(request: Request):
-    return templates.TemplateResponse(request, "create_user.html", {"message": None, "error": None})
+    return templates.TemplateResponse(
+        request,
+        "create_user.html",
+        {"message": None, "error": None}
+    )
 
 
 @app.post("/admin/create-user", response_class=HTMLResponse)
@@ -136,7 +171,11 @@ def create_user_submit(
 ):
     session = SessionLocal()
     try:
-        if session.query(User).filter(User.phone == phone).first():
+        phone_clean = normalize_phone(phone)
+        password_clean = str(password).strip()
+        employee_name_clean = str(employee_name).strip()
+
+        if session.query(User).filter(User.phone == phone_clean).first():
             return templates.TemplateResponse(
                 request,
                 "create_user.html",
@@ -144,9 +183,9 @@ def create_user_submit(
             )
 
         user = User(
-            phone=phone.strip(),
-            password_hash=get_password_hash(password),
-            employee_name=employee_name.strip()
+            phone=phone_clean,
+            password_hash=get_password_hash(password_clean),
+            employee_name=employee_name_clean
         )
 
         session.add(user)
@@ -161,7 +200,6 @@ def create_user_submit(
         session.close()
 
 
-# 🔥 ИМПОРТ ПОЛЬЗОВАТЕЛЕЙ
 @app.get("/admin/upload-users", response_class=HTMLResponse)
 def upload_users_page(request: Request):
     return templates.TemplateResponse(
@@ -176,8 +214,6 @@ async def upload_users_submit(request: Request, file: UploadFile = File(...)):
     session = SessionLocal()
     try:
         df = pd.read_excel(file.file)
-
-        # 🔥 ЧИСТИМ ЗАГОЛОВКИ
         df.columns = [str(c).strip() for c in df.columns]
 
         required = ["phone", "employee_name", "password"]
@@ -187,7 +223,13 @@ async def upload_users_submit(request: Request, file: UploadFile = File(...)):
             return templates.TemplateResponse(
                 request,
                 "upload_users.html",
-                {"error": f"Нет колонок: {missing}", "message": None}
+                {
+                    "error": f"В файле нет обязательных колонок: {', '.join(missing)}",
+                    "message": None,
+                    "created": None,
+                    "skipped": None,
+                    "bad_rows": None
+                }
             )
 
         created = 0
@@ -196,9 +238,21 @@ async def upload_users_submit(request: Request, file: UploadFile = File(...)):
 
         for _, row in df.iterrows():
             try:
-                phone = str(row["phone"]).strip().replace("+", "")
-                name = str(row["employee_name"]).strip()
-                password = str(row["password"]).strip()
+                phone_raw = row["phone"]
+                name_raw = row["employee_name"]
+                password_raw = row["password"]
+
+                if pd.isna(phone_raw) or pd.isna(name_raw) or pd.isna(password_raw):
+                    bad += 1
+                    continue
+
+                phone = normalize_phone(phone_raw)
+                name = str(name_raw).strip()
+
+                if isinstance(password_raw, float) and password_raw.is_integer():
+                    password = str(int(password_raw))
+                else:
+                    password = str(password_raw).strip()
 
                 if not phone or not name or not password:
                     bad += 1
@@ -223,7 +277,8 @@ async def upload_users_submit(request: Request, file: UploadFile = File(...)):
                     session.rollback()
                     skipped += 1
 
-            except:
+            except Exception:
+                session.rollback()
                 bad += 1
 
         return templates.TemplateResponse(
@@ -242,7 +297,20 @@ async def upload_users_submit(request: Request, file: UploadFile = File(...)):
         session.close()
 
 
-# 🔥 ЗАГРУЗКА СМЕН (ИСПРАВЛЕННАЯ)
+@app.get("/admin/users", response_class=HTMLResponse)
+def admin_users(request: Request):
+    session = SessionLocal()
+    try:
+        users = session.query(User).order_by(User.employee_name.asc()).all()
+        return templates.TemplateResponse(
+            request,
+            "admin_users.html",
+            {"users": users}
+        )
+    finally:
+        session.close()
+
+
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
     df = pd.read_excel(file.file, header=1)

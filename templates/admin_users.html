@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Пользователи</title>
+    <style>
+        body { font-family: Arial, sans-serif; background:#f5f5f5; padding:40px; }
+        .box { max-width:1000px; margin:0 auto; background:#fff; padding:24px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
+        table { width:100%; border-collapse:collapse; margin-top:20px; }
+        th, td { border:1px solid #ddd; padding:10px; text-align:left; }
+        th { background:#f7f7f7; }
+        a { text-decoration:none; margin-right:16px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Список пользователей</h2>
+
+        <p>
+            <a href="/admin/create-user">Создать пользователя вручную</a>
+            <a href="/admin/upload-users">Импорт пользователей</a>
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Телефон</th>
+                    <th>ФИО</th>
+                    <th>Админ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.phone }}</td>
+                    <td>{{ user.employee_name }}</td>
+                    <td>{{ "Да" if user.is_admin else "Нет" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
