@@ -317,8 +317,101 @@ def admin_users(request: Request):
         return templates.TemplateResponse(
             request,
             "admin_users.html",
-            {"users": users}
+            {
+                "users": users,
+                "message": None,
+                "error": None
+            }
         )
+    finally:
+        session.close()
+
+
+@app.post("/admin/delete-user", response_class=HTMLResponse)
+def delete_user(request: Request, user_id: int = Form(...)):
+    session = SessionLocal()
+    try:
+        user = session.query(User).filter(User.id == user_id).first()
+
+        if not user:
+            users = session.query(User).order_by(User.employee_name.asc()).all()
+            return templates.TemplateResponse(
+                request,
+                "admin_users.html",
+                {
+                    "users": users,
+                    "message": None,
+                    "error": "Пользователь не найден"
+                }
+            )
+
+        session.delete(user)
+        session.commit()
+
+        users = session.query(User).order_by(User.employee_name.asc()).all()
+        return templates.TemplateResponse(
+            request,
+            "admin_users.html",
+            {
+                "users": users,
+                "message": "Пользователь удалён",
+                "error": None
+            }
+        )
+
+    finally:
+        session.close()
+
+
+@app.post("/admin/change-password", response_class=HTMLResponse)
+def change_password(
+    request: Request,
+    user_id: int = Form(...),
+    new_password: str = Form(...)
+):
+    session = SessionLocal()
+    try:
+        user = session.query(User).filter(User.id == user_id).first()
+
+        if not user:
+            users = session.query(User).order_by(User.employee_name.asc()).all()
+            return templates.TemplateResponse(
+                request,
+                "admin_users.html",
+                {
+                    "users": users,
+                    "message": None,
+                    "error": "Пользователь не найден"
+                }
+            )
+
+        new_password_clean = str(new_password).strip()
+        if not new_password_clean:
+            users = session.query(User).order_by(User.employee_name.asc()).all()
+            return templates.TemplateResponse(
+                request,
+                "admin_users.html",
+                {
+                    "users": users,
+                    "message": None,
+                    "error": "Новый пароль не может быть пустым"
+                }
+            )
+
+        user.password_hash = get_password_hash(new_password_clean)
+        session.commit()
+
+        users = session.query(User).order_by(User.employee_name.asc()).all()
+        return templates.TemplateResponse(
+            request,
+            "admin_users.html",
+            {
+                "users": users,
+                "message": "Пароль изменён",
+                "error": None
+            }
+        )
+
     finally:
         session.close()
 
@@ -338,7 +431,6 @@ def fix_phones():
             if old_phone == new_phone:
                 continue
 
-            # если уже есть другой пользователь с таким телефоном — пропускаем
             existing = session.query(User).filter(User.phone == new_phone).first()
             if existing and existing.id != user.id:
                 skipped += 1

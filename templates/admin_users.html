@@ -2,24 +2,97 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Пользователи</title>
+    <title>Список пользователей</title>
     <style>
-        body { font-family: Arial, sans-serif; background:#f5f5f5; padding:40px; }
-        .box { max-width:1000px; margin:0 auto; background:#fff; padding:24px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
-        table { width:100%; border-collapse:collapse; margin-top:20px; }
-        th, td { border:1px solid #ddd; padding:10px; text-align:left; }
-        th { background:#f7f7f7; }
-        a { text-decoration:none; margin-right:16px; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 40px;
+        }
+        .box {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .top-links {
+            margin-bottom: 20px;
+        }
+        .top-links a {
+            margin-right: 16px;
+            text-decoration: none;
+        }
+        .msg {
+            color: green;
+            margin-bottom: 16px;
+        }
+        .err {
+            color: #b00020;
+            margin-bottom: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background: #f7f7f7;
+        }
+        form {
+            margin: 0;
+        }
+        .inline-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        input[type="password"] {
+            padding: 6px;
+            width: 140px;
+        }
+        button {
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+        .danger {
+            background: #b00020;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        .normal {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+        }
     </style>
 </head>
 <body>
     <div class="box">
         <h2>Список пользователей</h2>
 
-        <p>
+        <div class="top-links">
             <a href="/admin/create-user">Создать пользователя вручную</a>
             <a href="/admin/upload-users">Импорт пользователей</a>
-        </p>
+        </div>
+
+        {% if message %}
+            <div class="msg">{{ message }}</div>
+        {% endif %}
+
+        {% if error %}
+            <div class="err">{{ error }}</div>
+        {% endif %}
 
         <table>
             <thead>
@@ -28,6 +101,8 @@
                     <th>Телефон</th>
                     <th>ФИО</th>
                     <th>Админ</th>
+                    <th>Сменить пароль</th>
+                    <th>Удалить</th>
                 </tr>
             </thead>
             <tbody>
@@ -37,6 +112,19 @@
                     <td>{{ user.phone }}</td>
                     <td>{{ user.employee_name }}</td>
                     <td>{{ "Да" if user.is_admin else "Нет" }}</td>
+                    <td>
+                        <form method="post" action="/admin/change-password" class="inline-form">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <input type="password" name="new_password" placeholder="Новый пароль" required>
+                            <button type="submit" class="normal">Сменить</button>
+                        </form>
+                    </td>
+                    <td>
+                        <form method="post" action="/admin/delete-user" onsubmit="return confirm('Удалить пользователя?');">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <button type="submit" class="danger">Удалить</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
