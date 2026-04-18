@@ -329,15 +329,30 @@ def fix_phones():
     try:
         users = session.query(User).all()
         fixed = 0
+        skipped = 0
 
         for user in users:
+            old_phone = user.phone
             new_phone = normalize_phone(user.phone)
-            if user.phone != new_phone:
-                user.phone = new_phone
-                fixed += 1
+
+            if old_phone == new_phone:
+                continue
+
+            # если уже есть другой пользователь с таким телефоном — пропускаем
+            existing = session.query(User).filter(User.phone == new_phone).first()
+            if existing and existing.id != user.id:
+                skipped += 1
+                continue
+
+            user.phone = new_phone
+            fixed += 1
 
         session.commit()
-        return {"fixed": fixed}
+        return {"fixed": fixed, "skipped": skipped}
+
+    except Exception as e:
+        session.rollback()
+        return {"error": str(e)}
 
     finally:
         session.close()
