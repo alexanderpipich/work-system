@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 import pandas as pd
 from sqlalchemy import create_engine, Column, Integer, String, Float, Date, Boolean, UniqueConstraint
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -14,6 +15,8 @@ DATABASE_URL = os.getenv(
     "postgresql+psycopg2://postgres:123456@localhost:5432/work_db"
 )
 
+SECRET_KEY = os.getenv("SECRET_KEY", "change-this-secret-key-please")
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
@@ -22,6 +25,7 @@ pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 templates = Jinja2Templates(directory="templates")
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
 
 class Shift(Base):
@@ -55,9 +59,8 @@ def normalize_phone(phone) -> str:
     if phone is None:
         return ""
 
-    if isinstance(phone, float):
-        if phone.is_integer():
-            phone = int(phone)
+    if isinstance(phone, float) and phone.is_integer():
+        phone = int(phone)
 
     phone_str = str(phone).strip().replace(" ", "").replace("+", "")
 
@@ -73,6 +76,27 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(str(password).strip())
+
+
+def get_current_user(request: Request, session):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return None
+    return session.query(User).filter(User.id == user_id).first()
+
+
+def require_login(request: Request, session):
+    user = get_current_user(request, session)
+    if not user:
+        return None
+    return user
+
+
+def require_admin(request: Request, session):
+    user = get_current_user(request, session)
+    if not user or not user.is_admin:
+        return None
+    return user
 
 
 @app.get("/")
@@ -105,19 +129,28 @@ def login_submit(request: Request, phone: str = Form(...), password: str = Form(
                 {"error": "Неверный телефон или пароль"}
             )
 
-        return RedirectResponse(url=f"/cabinet?phone={user.phone}", status_code=302)
+        request.session["user_id"] = user.id
+
+        if user.is_admin:
+            return RedirectResponse(url="/admin/users", status_code=302)
+
+        return RedirectResponse(url="/cabinet", status_code=302)
 
     finally:
         session.close()
 
 
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=302)
+
+
 @app.get("/cabinet", response_class=HTMLResponse)
-def cabinet(request: Request, phone: str, date_from: str = "", date_to: str = ""):
+def cabinet(request: Request, date_from: str = "", date_to: str = ""):
     session = SessionLocal()
     try:
-        phone_clean = normalize_phone(phone)
-        user = session.query(User).filter(User.phone == phone_clean).first()
-
+        user = require_login(request, session)
         if not user:
             return RedirectResponse(url="/login", status_code=302)
 
@@ -167,11 +200,19 @@ def cabinet(request: Request, phone: str, date_from: str = "", date_to: str = ""
 
 @app.get("/admin/create-user", response_class=HTMLResponse)
 def create_user_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "create_user.html",
-        {"message": None, "error": None}
-    )
+    session = SessionLocal()
+    try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
+        return templates.TemplateResponse(
+            request,
+            "create_user.html",
+            {"message": None, "error": None}
+        )
+    finally:
+        session.close()
 
 
 @app.post("/admin/create-user", response_class=HTMLResponse)
@@ -179,10 +220,15 @@ def create_user_submit(
     request: Request,
     phone: str = Form(...),
     password: str = Form(...),
-    employee_name: str = Form(...)
+    employee_name: str = Form(...),
+    is_admin: str = Form(default="")
 ):
     session = SessionLocal()
     try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
         phone_clean = normalize_phone(phone)
         password_clean = str(password).strip()
         employee_name_clean = str(employee_name).strip()
@@ -197,7 +243,8 @@ def create_user_submit(
         user = User(
             phone=phone_clean,
             password_hash=get_password_hash(password_clean),
-            employee_name=employee_name_clean
+            employee_name=employee_name_clean,
+            is_admin=(is_admin == "true" or is_admin == "on")
         )
 
         session.add(user)
@@ -214,17 +261,29 @@ def create_user_submit(
 
 @app.get("/admin/upload-users", response_class=HTMLResponse)
 def upload_users_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "upload_users.html",
-        {"message": None, "error": None, "created": None, "skipped": None, "bad_rows": None}
-    )
+    session = SessionLocal()
+    try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
+        return templates.TemplateResponse(
+            request,
+            "upload_users.html",
+            {"message": None, "error": None, "created": None, "skipped": None, "bad_rows": None}
+        )
+    finally:
+        session.close()
 
 
 @app.post("/admin/upload-users", response_class=HTMLResponse)
 async def upload_users_submit(request: Request, file: UploadFile = File(...)):
     session = SessionLocal()
     try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
         df = pd.read_excel(file.file)
         df.columns = [str(c).strip() for c in df.columns]
 
@@ -313,6 +372,10 @@ async def upload_users_submit(request: Request, file: UploadFile = File(...)):
 def admin_users(request: Request):
     session = SessionLocal()
     try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
         users = session.query(User).order_by(User.employee_name.asc()).all()
         return templates.TemplateResponse(
             request,
@@ -331,6 +394,10 @@ def admin_users(request: Request):
 def delete_user(request: Request, user_id: int = Form(...)):
     session = SessionLocal()
     try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
         user = session.query(User).filter(User.id == user_id).first()
 
         if not user:
@@ -371,6 +438,10 @@ def change_password(
 ):
     session = SessionLocal()
     try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
         user = session.query(User).filter(User.id == user_id).first()
 
         if not user:
@@ -417,9 +488,13 @@ def change_password(
 
 
 @app.get("/admin/fix-phones")
-def fix_phones():
+def fix_phones(request: Request):
     session = SessionLocal()
     try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
         users = session.query(User).all()
         fixed = 0
         skipped = 0
@@ -452,62 +527,113 @@ def fix_phones():
 
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
-    df = pd.read_excel(file.file, header=1)
+    def get_previous_month(today_date):
+        if today_date.month == 1:
+            return 12, today_date.year - 1
+        return today_date.month - 1, today_date.year
 
-    df = df.iloc[:, [0, 6, 12, 25]]
-    df.columns = ["store", "date", "employee", "hours"]
+    def is_editable_month(shift_date, today_date):
+        if shift_date.year == today_date.year and shift_date.month == today_date.month:
+            return True
 
-    df = df.dropna()
-    df["store"] = df["store"].astype(str).str.strip()
-    df["employee"] = df["employee"].astype(str).str.strip()
-    df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
-    df["hours"] = pd.to_numeric(df["hours"], errors="coerce")
+        prev_month, prev_year = get_previous_month(today_date)
+        if shift_date.year == prev_year and shift_date.month == prev_month and today_date.day <= 7:
+            return True
 
-    df = df.dropna()
-    df = df.drop_duplicates(subset=["store", "date", "employee"])
-
-    session = SessionLocal()
-    added = 0
-    skipped = 0
+        return False
 
     try:
-        for _, row in df.iterrows():
-            exists = session.query(Shift).filter_by(
-                store=row["store"],
-                shift_date=row["date"].date(),
-                employee=row["employee"]
-            ).first()
+        df = pd.read_excel(file.file, header=1)
 
-            if exists:
-                skipped += 1
-                continue
+        df = df.iloc[:, [0, 6, 12, 25]]
+        df.columns = ["store", "date", "employee", "hours"]
 
-            item = Shift(
-                store=row["store"],
-                shift_date=row["date"].date(),
-                employee=row["employee"],
-                hours=float(row["hours"])
-            )
+        df = df.dropna()
+        df["store"] = df["store"].astype(str).str.strip()
+        df["employee"] = df["employee"].astype(str).str.strip()
+        df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
+        df["hours"] = pd.to_numeric(df["hours"], errors="coerce")
 
-            session.add(item)
+        df = df.dropna()
+        df = df.drop_duplicates(subset=["store", "date", "employee"], keep="last")
 
-            try:
-                session.commit()
-                added += 1
-            except IntegrityError:
-                session.rollback()
-                skipped += 1
+        session = SessionLocal()
 
-    finally:
-        session.close()
+        added = 0
+        updated = 0
+        skipped_duplicates = 0
+        skipped_locked_months = 0
 
-    return {"added": added, "skipped": skipped}
+        today_date = datetime.today().date()
+
+        try:
+            for _, row in df.iterrows():
+                store = row["store"]
+                employee = row["employee"]
+                shift_date = row["date"].date()
+                hours = float(row["hours"])
+
+                if not is_editable_month(shift_date, today_date):
+                    skipped_locked_months += 1
+                    continue
+
+                existing = session.query(Shift).filter_by(
+                    store=store,
+                    shift_date=shift_date,
+                    employee=employee
+                ).first()
+
+                if existing:
+                    if float(existing.hours) != hours:
+                        existing.hours = hours
+                        try:
+                            session.commit()
+                            updated += 1
+                        except Exception:
+                            session.rollback()
+                            skipped_duplicates += 1
+                    else:
+                        skipped_duplicates += 1
+                    continue
+
+                item = Shift(
+                    store=store,
+                    shift_date=shift_date,
+                    employee=employee,
+                    hours=hours
+                )
+
+                session.add(item)
+
+                try:
+                    session.commit()
+                    added += 1
+                except IntegrityError:
+                    session.rollback()
+                    skipped_duplicates += 1
+
+        finally:
+            session.close()
+
+        return {
+            "added": added,
+            "updated": updated,
+            "skipped_duplicates": skipped_duplicates,
+            "skipped_locked_months": skipped_locked_months
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.get("/debug/shifts-count")
-def debug():
+def debug(request: Request):
     session = SessionLocal()
     try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
         return {"count": session.query(Shift).count()}
     finally:
         session.close()
