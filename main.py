@@ -635,5 +635,25 @@ def debug(request: Request):
             return RedirectResponse(url="/login", status_code=302)
 
         return {"count": session.query(Shift).count()}
+
+@app.get("/make-admin/{phone}")
+def make_admin(phone: str):
+    session = SessionLocal()
+    try:
+        phone_clean = normalize_phone(phone)
+        user = session.query(User).filter(User.phone == phone_clean).first()
+
+        if not user:
+            return {"error": "user not found", "phone": phone_clean}
+
+        user.is_admin = True
+        session.commit()
+
+        return {
+            "status": "ok",
+            "phone": user.phone,
+            "employee_name": user.employee_name,
+            "is_admin": user.is_admin
+        }
     finally:
         session.close()
