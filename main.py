@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -153,6 +153,18 @@ def cabinet(request: Request, date_from: str = "", date_to: str = ""):
         user = require_login(request, session)
         if not user:
             return RedirectResponse(url="/login", status_code=302)
+
+        today = datetime.today().date()
+
+        # Если даты не заданы вручную, показываем последнюю завершенную неделю:
+        # с понедельника по воскресенье прошлой недели
+        if not date_from and not date_to:
+            current_week_monday = today - timedelta(days=today.weekday())
+            default_date_to = current_week_monday - timedelta(days=1)   # прошлое воскресенье
+            default_date_from = default_date_to - timedelta(days=6)      # прошлый понедельник
+
+            date_from = default_date_from.strftime("%Y-%m-%d")
+            date_to = default_date_to.strftime("%Y-%m-%d")
 
         query = session.query(Shift).filter(Shift.employee == user.employee_name)
 
@@ -523,6 +535,7 @@ def fix_phones(request: Request):
 
     finally:
         session.close()
+
 
 
 @app.post("/upload")
