@@ -2,133 +2,384 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Список пользователей</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пользователи</title>
     <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+            --error-bg: #fff1ed;
+            --error-text: #b42318;
+            --success-bg: #eefbf3;
+            --success-text: #067647;
+            --danger: #b42318;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            padding: 40px;
+            background:
+                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
+                var(--bg);
+            color: var(--text);
+            padding: 28px 18px 36px;
         }
-        .box {
-            max-width: 1200px;
+
+        .page {
+            max-width: 1280px;
             margin: 0 auto;
-            background: #fff;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         }
-        .top-links {
+
+        .topbar {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
             margin-bottom: 20px;
         }
-        .top-links a {
-            margin-right: 16px;
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .brand a {
+            display: inline-flex;
+            border-radius: 16px;
+            transition: transform .15s ease;
+        }
+
+        .brand a:hover {
+            transform: translateY(-1px) scale(1.01);
+        }
+
+        .brand img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            border-radius: 16px;
+            background: #fff;
+            flex-shrink: 0;
+        }
+
+        .brand-title {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.1;
+            color: var(--brand-blue);
+            font-weight: 700;
+        }
+
+        .brand-subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .logout {
             text-decoration: none;
+            color: var(--brand-blue);
+            font-weight: 700;
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #fff;
+            transition: background .2s ease, border-color .2s ease, transform .12s ease;
+            white-space: nowrap;
         }
+
+        .logout:hover {
+            background: #f9fafb;
+            border-color: rgba(11, 20, 117, 0.24);
+            transform: translateY(-1px);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 22px 20px;
+            margin-bottom: 20px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--brand-blue);
+            font-weight: 700;
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #fff;
+            transition: background .2s ease, border-color .2s ease, transform .12s ease;
+        }
+
+        .nav-links a:hover {
+            background: #f9fafb;
+            border-color: rgba(11, 20, 117, 0.24);
+            transform: translateY(-1px);
+        }
+
         .msg {
-            color: green;
-            margin-bottom: 16px;
+            margin-top: 14px;
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid rgba(6, 118, 71, 0.14);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
         }
+
         .err {
-            color: #b00020;
-            margin-bottom: 16px;
+            margin-top: 14px;
+            background: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid rgba(180, 35, 24, 0.14);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
         }
+
+        .table-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .table-title {
+            margin: 0;
+            color: var(--brand-blue);
+            font-size: 22px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 14px;
+            min-width: 980px;
+            background: #fff;
         }
+
         th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
+            padding: 14px 16px;
             text-align: left;
-            vertical-align: top;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            vertical-align: middle;
         }
+
         th {
-            background: #f7f7f7;
+            background: #fafbfc;
+            color: var(--brand-blue);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
         }
-        form {
-            margin: 0;
+
+        tbody tr {
+            transition: background .15s ease;
         }
+
+        tbody tr:hover {
+            background: rgba(11, 20, 117, 0.025);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .pill-admin {
+            background: rgba(11, 20, 117, 0.10);
+            color: var(--brand-blue);
+        }
+
+        .pill-user {
+            background: rgba(245, 138, 101, 0.14);
+            color: #8f3e20;
+        }
+
         .inline-form {
             display: flex;
             gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
-        input[type="password"] {
-            padding: 6px;
-            width: 140px;
+
+        .inline-form input[type="password"] {
+            height: 40px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0 12px;
+            min-width: 160px;
+            outline: none;
         }
-        button {
-            padding: 6px 10px;
-            cursor: pointer;
+
+        .inline-form input[type="password"]:focus {
+            border-color: rgba(11, 20, 117, 0.35);
+            box-shadow: 0 0 0 4px rgba(11, 20, 117, 0.08);
         }
-        .danger {
-            background: #b00020;
-            color: white;
+
+        .btn {
+            height: 40px;
             border: none;
-            border-radius: 4px;
+            border-radius: 12px;
+            padding: 0 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .08s ease, opacity .2s ease, box-shadow .2s ease;
         }
-        .normal {
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background: #fff;
+
+        .btn:hover {
+            opacity: 0.97;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--brand-blue), #18239a);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(11, 20, 117, 0.16);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #c23327, #9f1f16);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(180, 35, 24, 0.16);
+        }
+
+        @media (max-width: 720px) {
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .brand-title {
+                font-size: 24px;
+            }
+
+            .logout {
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>Список пользователей</h2>
+    <div class="page">
+        <div class="topbar">
+            <div class="brand">
+                <a href="/admin/users">
+                    <img src="/static/logo-alex.jpg" alt="Логотип">
+                </a>
+                <div>
+                    <h1 class="brand-title">Кабинет администратора</h1>
+                    <p class="brand-subtitle">Управление пользователями системы</p>
+                </div>
+            </div>
 
-        <div class="top-links">
-            <a href="/admin/create-user">Создать пользователя вручную</a>
-            <a href="/admin/upload-users">Импорт пользователей</a>
+            <a href="/logout" class="logout">Выйти</a>
         </div>
 
-        {% if message %}
-            <div class="msg">{{ message }}</div>
-        {% endif %}
+        <div class="card">
+            <div class="nav-links">
+                <a href="/admin/create-user">Создать пользователя</a>
+                <a href="/admin/upload-users">Импорт пользователей</a>
+                <a href="/admin/fix-phones">Исправить телефоны</a>
+            </div>
 
-        {% if error %}
-            <div class="err">{{ error }}</div>
-        {% endif %}
+            {% if message %}
+                <div class="msg">{{ message }}</div>
+            {% endif %}
 
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Телефон</th>
-                    <th>ФИО</th>
-                    <th>Админ</th>
-                    <th>Сменить пароль</th>
-                    <th>Удалить</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in users %}
-                <tr>
-                    <td>{{ user.id }}</td>
-                    <td>{{ user.phone }}</td>
-                    <td>{{ user.employee_name }}</td>
-                    <td>{{ "Да" if user.is_admin else "Нет" }}</td>
-                    <td>
-                        <form method="post" action="/admin/change-password" class="inline-form">
-                            <input type="hidden" name="user_id" value="{{ user.id }}">
-                            <input type="password" name="new_password" placeholder="Новый пароль" required>
-                            <button type="submit" class="normal">Сменить</button>
-                        </form>
-                    </td>
-                    <td>
-                        <form method="post" action="/admin/delete-user" onsubmit="return confirm('Удалить пользователя?');">
-                            <input type="hidden" name="user_id" value="{{ user.id }}">
-                            <button type="submit" class="danger">Удалить</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            {% if error %}
+                <div class="err">{{ error }}</div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="table-title-row">
+                <h2 class="table-title">Список пользователей</h2>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Телефон</th>
+                            <th>ФИО</th>
+                            <th>Роль</th>
+                            <th>Сменить пароль</th>
+                            <th>Удалить</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.phone }}</td>
+                            <td>{{ user.employee_name }}</td>
+                            <td>
+                                {% if user.is_admin %}
+                                    <span class="pill pill-admin">Администратор</span>
+                                {% else %}
+                                    <span class="pill pill-user">Сотрудник</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="post" action="/admin/change-password" class="inline-form">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <input type="password" name="new_password" placeholder="Новый пароль" required>
+                                    <button type="submit" class="btn btn-primary">Сменить</button>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="post" action="/admin/delete-user" onsubmit="return confirm('Удалить пользователя?');">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <button type="submit" class="btn btn-danger">Удалить</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </body>
 </html>

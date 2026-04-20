@@ -2,38 +2,220 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Создание пользователя</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать пользователя</title>
     <style>
-        body { font-family: Arial, sans-serif; background:#f5f5f5; padding:40px; }
-        .box { max-width:500px; margin:0 auto; background:#fff; padding:24px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
-        input, button { width:100%; padding:12px; margin-top:10px; box-sizing:border-box; }
-        .msg { color:green; margin-top:12px; }
-        .err { color:#b00020; margin-top:12px; }
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+            --error-bg: #fff1ed;
+            --error-text: #b42318;
+            --success-bg: #eefbf3;
+            --success-text: #067647;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
+                var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .wrap {
+            width: 100%;
+            max-width: 560px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 30px 26px 24px;
+        }
+
+        .logo {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+
+        .logo img {
+            width: 92px;
+            height: 92px;
+            object-fit: contain;
+        }
+
+        h1 {
+            margin: 0;
+            text-align: center;
+            color: var(--brand-blue);
+            font-size: 30px;
+        }
+
+        .subtitle {
+            margin: 10px 0 24px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .links a {
+            text-decoration: none;
+            color: var(--brand-blue);
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            background: #fff;
+        }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--brand-blue);
+            margin-bottom: 8px;
+        }
+
+        .field input[type="text"],
+        .field input[type="password"] {
+            width: 100%;
+            height: 50px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 0 14px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .field input:focus {
+            border-color: rgba(11, 20, 117, 0.35);
+            box-shadow: 0 0 0 4px rgba(11, 20, 117, 0.08);
+        }
+
+        .checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            color: var(--brand-blue);
+            font-weight: 700;
+        }
+
+        .checkbox input {
+            width: 18px;
+            height: 18px;
+        }
+
+        .btn {
+            width: 100%;
+            height: 52px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--brand-blue), #18239a);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 22px rgba(11, 20, 117, 0.18);
+        }
+
+        .msg {
+            margin-bottom: 16px;
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid rgba(6, 118, 71, 0.14);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+
+        .err {
+            margin-bottom: 16px;
+            background: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid rgba(180, 35, 24, 0.14);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>Создание пользователя</h2>
-        <form method="post" action="/admin/create-user">
-            <input type="text" name="phone" placeholder="Телефон для входа" required>
-            <input type="text" name="employee_name" placeholder="ФИО сотрудника как в Excel" required>
-            <input type="password" name="password" placeholder="Пароль" required>
+    <div class="wrap">
+        <div class="card">
+            <div class="logo">
+                <img src="/static/logo-alex.jpg" alt="Логотип">
+            </div>
 
-            <label style="display:block; margin-top:12px;">
-                <input type="checkbox" name="is_admin" value="true" style="width:auto;">
-                Администратор
-            </label>
+            <h1>Новый пользователь</h1>
+            <p class="subtitle">Создание сотрудника или администратора</p>
 
-            <button type="submit">Создать пользователя</button>
-        </form>
+            <div class="links">
+                <a href="/admin/users">К списку пользователей</a>
+                <a href="/admin/upload-users">Импорт</a>
+            </div>
 
-        {% if message %}
-            <div class="msg">{{ message }}</div>
-        {% endif %}
+            {% if message %}
+                <div class="msg">{{ message }}</div>
+            {% endif %}
 
-        {% if error %}
-            <div class="err">{{ error }}</div>
-        {% endif %}
+            {% if error %}
+                <div class="err">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" action="/admin/create-user">
+                <div class="field">
+                    <label for="phone">Телефон</label>
+                    <input id="phone" type="text" name="phone" placeholder="Введите телефон" required>
+                </div>
+
+                <div class="field">
+                    <label for="employee_name">ФИО</label>
+                    <input id="employee_name" type="text" name="employee_name" placeholder="Введите ФИО" required>
+                </div>
+
+                <div class="field">
+                    <label for="password">Пароль</label>
+                    <input id="password" type="password" name="password" placeholder="Введите пароль" required>
+                </div>
+
+                <label class="checkbox">
+                    <input type="checkbox" name="is_admin">
+                    Администратор
+                </label>
+
+                <button type="submit" class="btn">Создать пользователя</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>
