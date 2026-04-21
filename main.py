@@ -64,6 +64,19 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
 
 
+class Rate(Base):
+    __tablename__ = "rates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    service = Column(String, nullable=False)
+    format = Column(String, nullable=False)
+    store = Column(String, nullable=True)
+    employee_name = Column(String, nullable=True)
+    hourly_rate = Column(Float, nullable=False)
+    active_from = Column(Date, nullable=True)
+    active_to = Column(Date, nullable=True)
+    comment = Column(String, nullable=True)
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -683,6 +696,113 @@ async def upload(file: UploadFile = File(...)):
     except Exception as e:
         return {"error": str(e)}
 
+
+@app.get("/admin/rates", response_class=HTMLResponse)
+def admin_rates(request: Request):
+    session = SessionLocal()
+    try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
+        rates = session.query(Rate).order_by(Rate.service.asc(), Rate.format.asc(), Rate.store.asc().nullsfirst()).all()
+
+        return templates.TemplateResponse(
+            request,
+            "rates.html",
+            {
+                "rates": rates,
+                "message": None,
+                "error": None
+            }
+        )
+    finally:
+        session.close()
+
+
+@app.post("/admin/rates", response_class=HTMLResponse)
+def create_rate(
+    request: Request,
+    service: str = Form(...),
+    format: str = Form(...),
+    store: str = Form(default=""),
+    employee_name: str = Form(default=""),
+    hourly_rate: float = Form(...),
+    active_from: str = Form(default=""),
+    active_to: str = Form(default=""),
+    comment: str = Form(default="")
+):
+    session = SessionLocal()
+    try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
+        service_clean = normalize_text(service)
+        format_clean = normalize_format(format)
+        store_clean = normalize_text(store) or None
+        employee_name_clean = normalize_text(employee_name) or None
+        comment_clean = normalize_text(comment) or None
+
+        active_from_date = None
+        active_to_date = None
+
+        try:
+            if active_from:
+                active_from_date = datetime.strptime(active_from, "%Y-%m-%d").date()
+            if active_to:
+                active_to_date = datetime.strptime(active_to, "%Y-%m-%d").date()
+        except ValueError:
+            rates = session.query(Rate).order_by(Rate.service.asc(), Rate.format.asc(), Rate.store.asc().nullsfirst()).all()
+            return templates.TemplateResponse(
+                request,
+                "rates.html",
+                {
+                    "rates": rates,
+                    "message": None,
+                    "error": "Некорректный формат даты"
+                }
+            )
+
+        if hourly_rate <= 0:
+            rates = session.query(Rate).order_by(Rate.service.asc(), Rate.format.asc(), Rate.store.asc().nullsfirst()).all()
+            return templates.TemplateResponse(
+                request,
+                "rates.html",
+                {
+                    "rates": rates,
+                    "message": None,
+                    "error": "ЧТС должна быть больше нуля"
+                }
+            )
+
+        rate = Rate(
+            service=service_clean,
+            format=format_clean,
+            store=store_clean,
+            employee_name=employee_name_clean,
+            hourly_rate=hourly_rate,
+            active_from=active_from_date,
+            active_to=active_to_date,
+            comment=comment_clean
+        )
+
+        session.add(rate)
+        session.commit()
+
+        rates = session.query(Rate).order_by(Rate.service.asc(), Rate.format.asc(), Rate.store.asc().nullsfirst()).all()
+        return templates.TemplateResponse(
+            request,
+            "rates.html",
+            {
+                "rates": rates,
+                "message": "Ставка добавлена",
+                "error": None
+            }
+        )
+
+    finally:
+        session.close()
 
 @app.get("/debug/shifts-count")
 def debug(request: Request):

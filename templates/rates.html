@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ЧТС</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+            --error-bg: #fff1ed;
+            --error-text: #b42318;
+            --success-bg: #eefbf3;
+            --success-text: #067647;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
+                var(--bg);
+            color: var(--text);
+            padding: 28px 18px 36px;
+        }
+
+        .page {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .topbar,
+        .card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        .brand-title {
+            margin: 0;
+            color: var(--brand-blue);
+            font-size: 28px;
+        }
+
+        .brand-subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .logout, .back-link {
+            text-decoration: none;
+            color: var(--brand-blue);
+            font-weight: 700;
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--brand-blue);
+            margin-bottom: 8px;
+        }
+
+        .field input {
+            width: 100%;
+            height: 46px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0 12px;
+            font-size: 14px;
+        }
+
+        .field input:focus {
+            outline: none;
+            border-color: rgba(11, 20, 117, 0.35);
+            box-shadow: 0 0 0 4px rgba(11, 20, 117, 0.08);
+        }
+
+        .full-row {
+            grid-column: 1 / -1;
+        }
+
+        .btn {
+            margin-top: 16px;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--brand-blue), #18239a);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0 18px;
+        }
+
+        .msg {
+            margin-top: 14px;
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid rgba(6, 118, 71, 0.14);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+
+        .err {
+            margin-top: 14px;
+            background: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid rgba(180, 35, 24, 0.14);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 980px;
+            background: #fff;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #fafbfc;
+            color: var(--brand-blue);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 980px) {
+            .form-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 700px) {
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="topbar">
+            <div class="brand">
+                <img src="/static/logo-alex.jpg" alt="Логотип">
+                <div>
+                    <h1 class="brand-title">ЧТС</h1>
+                    <p class="brand-subtitle">Часовые тарифные ставки</p>
+                </div>
+            </div>
+
+            <a href="/admin" class="back-link">Назад в админку</a>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top:0; color: var(--brand-blue);">Добавить ставку</h2>
+
+            <form method="post" action="/admin/rates">
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Услуга</label>
+                        <input type="text" name="service" required>
+                    </div>
+
+                    <div class="field">
+                        <label>Формат</label>
+                        <input type="text" name="format" placeholder="ГМ / СМ" required>
+                    </div>
+
+                    <div class="field">
+                        <label>ЧТС (руб/час)</label>
+                        <input type="number" step="0.01" name="hourly_rate" required>
+                    </div>
+
+                    <div class="field">
+                        <label>Магазин (необязательно)</label>
+                        <input type="text" name="store">
+                    </div>
+
+                    <div class="field">
+                        <label>Сотрудник (необязательно)</label>
+                        <input type="text" name="employee_name">
+                    </div>
+
+                    <div class="field">
+                        <label>Комментарий</label>
+                        <input type="text" name="comment">
+                    </div>
+
+                    <div class="field">
+                        <label>Действует с</label>
+                        <input type="date" name="active_from">
+                    </div>
+
+                    <div class="field">
+                        <label>Действует по</label>
+                        <input type="date" name="active_to">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">Сохранить ставку</button>
+            </form>
+
+            {% if message %}
+                <div class="msg">{{ message }}</div>
+            {% endif %}
+
+            {% if error %}
+                <div class="err">{{ error }}</div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top:0; color: var(--brand-blue);">Список ставок</h2>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Услуга</th>
+                            <th>Формат</th>
+                            <th>Магазин</th>
+                            <th>Сотрудник</th>
+                            <th>ЧТС</th>
+                            <th>С</th>
+                            <th>По</th>
+                            <th>Комментарий</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rate in rates %}
+                        <tr>
+                            <td>{{ rate.id }}</td>
+                            <td>{{ rate.service }}</td>
+                            <td>{{ rate.format }}</td>
+                            <td>{{ rate.store or "—" }}</td>
+                            <td>{{ rate.employee_name or "—" }}</td>
+                            <td>{{ rate.hourly_rate }}</td>
+                            <td>{{ rate.active_from.strftime("%d.%m.%Y") if rate.active_from else "—" }}</td>
+                            <td>{{ rate.active_to.strftime("%d.%m.%Y") if rate.active_to else "—" }}</td>
+                            <td>{{ rate.comment or "—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
