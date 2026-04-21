@@ -712,22 +712,3 @@ def admin_dashboard(request: Request):
     finally:
         session.close()
 
-@app.get("/admin/reset-shifts")
-def reset_shifts(request: Request):
-    session = SessionLocal()
-    try:
-        admin = require_admin(request, session)
-        if not admin:
-            return RedirectResponse(url="/login", status_code=302)
-
-        session.execute(text("DROP TABLE IF EXISTS shifts"))
-        session.commit()
-
-        Shift.__table__.create(bind=engine)
-
-        return {"status": "ok", "message": "shifts recreated"}
-    except Exception as e:
-        session.rollback()
-        return {"error": str(e)}
-    finally:
-        session.close()        
