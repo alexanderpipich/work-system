@@ -1,9 +1,9 @@
 import os
 from datetime import datetime, timedelta
 from fastapi import FastAPI, UploadFile, File, Form, Request
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import pandas as pd
 from sqlalchemy import create_engine, Column, Integer, String, Float, Date, Boolean, UniqueConstraint
@@ -35,12 +35,21 @@ class Shift(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     store = Column(String, nullable=False)
+    format = Column(String, nullable=False)
     shift_date = Column(Date, nullable=False)
+    service = Column(String, nullable=False)
     employee = Column(String, nullable=False)
     hours = Column(Float, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint("store", "shift_date", "employee", name="uq_shift_row"),
+        UniqueConstraint(
+            "store",
+            "format",
+            "shift_date",
+            "service",
+            "employee",
+            name="uq_shift_row",
+        ),
     )
 
 
@@ -70,6 +79,29 @@ def normalize_phone(phone) -> str:
         phone_str = phone_str[:-2]
 
     return phone_str
+
+
+def normalize_format(value) -> str:
+    if value is None:
+        return ""
+
+    text = str(value).strip().upper()
+
+    # Нормализация под ключевые форматы
+    replacements = {
+        "ГМ ": "ГМ",
+        " СМ": "СМ",
+        "СМ ": "СМ",
+        " ГМ": "ГМ",
+    }
+    text = replacements.get(text, text)
+    return text
+
+
+def normalize_text(value) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -134,7 +166,7 @@ def login_submit(request: Request, phone: str = Form(...), password: str = Form(
         request.session["user_id"] = user.id
 
         if user.is_admin:
-            return RedirectResponse(url="/admin/users", status_code=302)
+            return RedirectResponse(url="/admin", status_code=302)
 
         return RedirectResponse(url="/cabinet", status_code=302)
 
@@ -158,12 +190,10 @@ def cabinet(request: Request, date_from: str = "", date_to: str = ""):
 
         today = datetime.today().date()
 
-        # Если даты не заданы вручную, показываем последнюю завершенную неделю:
-        # с понедельника по воскресенье прошлой недели
         if not date_from and not date_to:
             current_week_monday = today - timedelta(days=today.weekday())
-            default_date_to = current_week_monday - timedelta(days=1)   # прошлое воскресенье
-            default_date_from = default_date_to - timedelta(days=6)      # прошлый понедельник
+            default_date_to = current_week_monday - timedelta(days=1)
+            default_date_from = default_date_to - timedelta(days=6)
 
             date_from = default_date_from.strftime("%Y-%m-%d")
             date_to = default_date_to.strftime("%Y-%m-%d")
@@ -332,7 +362,7 @@ async def upload_users_submit(request: Request, file: UploadFile = File(...)):
                     continue
 
                 phone = normalize_phone(phone_raw)
-                name = str(name_raw).strip()
+                name = normalize_text(name_raw)
 
                 if isinstance(password_raw, float) and password_raw.is_integer():
                     password = str(int(password_raw))
@@ -539,7 +569,6 @@ def fix_phones(request: Request):
         session.close()
 
 
-
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
     def get_previous_month(today_date):
@@ -560,17 +589,24 @@ async def upload(file: UploadFile = File(...)):
     try:
         df = pd.read_excel(file.file, header=1)
 
-        df = df.iloc[:, [0, 6, 12, 25]]
-        df.columns = ["store", "date", "employee", "hours"]
+        # A=0 store, C=2 format, G=6 date, L=11 service, M=12 employee, Z=25 hours
+        df = df.iloc[:, [0, 2, 6, 11, 12, 25]]
+        df.columns = ["store", "format", "date", "service", "employee", "hours"]
 
-        df = df.dropna()
-        df["store"] = df["store"].astype(str).str.strip()
-        df["employee"] = df["employee"].astype(str).str.strip()
+        df = df.dropna(subset=["store", "format", "date", "service", "employee", "hours"])
+
+        df["store"] = df["store"].apply(normalize_text)
+        df["format"] = df["format"].apply(normalize_format)
+        df["service"] = df["service"].apply(normalize_text)
+        df["employee"] = df["employee"].apply(normalize_text)
         df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
         df["hours"] = pd.to_numeric(df["hours"], errors="coerce")
 
-        df = df.dropna()
-        df = df.drop_duplicates(subset=["store", "date", "employee"], keep="last")
+        df = df.dropna(subset=["date", "hours"])
+        df = df.drop_duplicates(
+            subset=["store", "format", "date", "service", "employee"],
+            keep="last"
+        )
 
         session = SessionLocal()
 
@@ -584,8 +620,10 @@ async def upload(file: UploadFile = File(...)):
         try:
             for _, row in df.iterrows():
                 store = row["store"]
-                employee = row["employee"]
+                format_value = row["format"]
                 shift_date = row["date"].date()
+                service = row["service"]
+                employee = row["employee"]
                 hours = float(row["hours"])
 
                 if not is_editable_month(shift_date, today_date):
@@ -594,7 +632,9 @@ async def upload(file: UploadFile = File(...)):
 
                 existing = session.query(Shift).filter_by(
                     store=store,
+                    format=format_value,
                     shift_date=shift_date,
+                    service=service,
                     employee=employee
                 ).first()
 
@@ -613,7 +653,9 @@ async def upload(file: UploadFile = File(...)):
 
                 item = Shift(
                     store=store,
+                    format=format_value,
                     shift_date=shift_date,
+                    service=service,
                     employee=employee,
                     hours=hours
                 )
@@ -650,5 +692,21 @@ def debug(request: Request):
             return RedirectResponse(url="/login", status_code=302)
 
         return {"count": session.query(Shift).count()}
+    finally:
+        session.close()
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_dashboard(request: Request):
+    session = SessionLocal()
+    try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
+        return templates.TemplateResponse(
+            request,
+            "admin_dashboard.html",
+            {"admin": admin}
+        )
     finally:
         session.close()

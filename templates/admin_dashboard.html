@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
+                var(--bg);
+            color: var(--text);
+            padding: 28px 18px 36px;
+        }
+
+        .page {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .topbar {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .brand img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            border-radius: 16px;
+            background: #fff;
+            flex-shrink: 0;
+        }
+
+        .brand-title {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.1;
+            color: var(--brand-blue);
+            font-weight: 700;
+        }
+
+        .brand-subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .logout {
+            text-decoration: none;
+            color: var(--brand-blue);
+            font-weight: 700;
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #fff;
+            transition: background .2s ease, border-color .2s ease, transform .12s ease;
+            white-space: nowrap;
+        }
+
+        .logout:hover {
+            background: #f9fafb;
+            border-color: rgba(11, 20, 117, 0.24);
+            transform: translateY(-1px);
+        }
+
+        .hero {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 24px 22px;
+            margin-bottom: 20px;
+        }
+
+        .hero h2 {
+            margin: 0 0 8px;
+            color: var(--brand-blue);
+            font-size: 26px;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+            max-width: 860px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 22px 20px;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid transparent;
+            transition: transform .14s ease, box-shadow .2s ease, border-color .2s ease;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(11, 20, 117, 0.08);
+            box-shadow: 0 18px 45px rgba(11, 20, 117, 0.11);
+        }
+
+        .card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            background: rgba(11, 20, 117, 0.08);
+            color: var(--brand-blue);
+        }
+
+        .icon.peach {
+            background: rgba(245, 138, 101, 0.14);
+            color: #8f3e20;
+        }
+
+        .tag {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--brand-blue);
+            background: rgba(11, 20, 117, 0.08);
+            padding: 8px 10px;
+            border-radius: 999px;
+        }
+
+        .title {
+            margin: 0 0 8px;
+            font-size: 22px;
+            color: var(--brand-blue);
+        }
+
+        .desc {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .soon {
+            margin-top: 18px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #8f3e20;
+        }
+
+        @media (max-width: 980px) {
+            .grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 720px) {
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .logout {
+                text-align: center;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .brand-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="topbar">
+            <div class="brand">
+                <img src="/static/logo-alex.jpg" alt="Логотип">
+                <div>
+                    <h1 class="brand-title">Админ-панель</h1>
+                    <p class="brand-subtitle">Добро пожаловать, {{ admin.employee_name }}</p>
+                </div>
+            </div>
+
+            <a href="/logout" class="logout">Выйти</a>
+        </div>
+
+        <div class="hero">
+            <h2>Управление системой</h2>
+            <p>
+                Здесь собраны основные разделы администратора. На этом этапе уже готовы пользователи,
+                импорт пользователей и загрузка смен. Следующими шагами будут ЧТС, выплатный табель и БП.
+            </p>
+        </div>
+
+        <div class="grid">
+            <a href="/admin/users" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon">👥</div>
+                        <div class="tag">Готово</div>
+                    </div>
+                    <h3 class="title">Пользователи</h3>
+                    <p class="desc">
+                        Просмотр списка пользователей, смена паролей, удаление сотрудников и контроль ролей.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/admin/upload-users" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon">⬆</div>
+                        <div class="tag">Готово</div>
+                    </div>
+                    <h3 class="title">Импорт пользователей</h3>
+                    <p class="desc">
+                        Массовая загрузка сотрудников из Excel с телефонами, ФИО и паролями.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/docs" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon">📄</div>
+                        <div class="tag">Готово</div>
+                    </div>
+                    <h3 class="title">Загрузка смен</h3>
+                    <p class="desc">
+                        Загрузка Excel со сменами. Сейчас уже учитываются магазин, формат, услуга, сотрудник и часы.
+                    </p>
+                </div>
+            </a>
+
+            <a href="#" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon peach">₽</div>
+                        <div class="tag">Следующий шаг</div>
+                    </div>
+                    <h3 class="title">ЧТС</h3>
+                    <p class="desc">
+                        Базовая сетка ставок по услугам, форматам, магазинам и индивидуальным сотрудникам.
+                    </p>
+                </div>
+                <div class="soon">Скоро реализуем</div>
+            </a>
+
+            <a href="#" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon peach">🧾</div>
+                        <div class="tag">Планируется</div>
+                    </div>
+                    <h3 class="title">Выплатный табель</h3>
+                    <p class="desc">
+                        Расчёт недельных выплат по сменам и ЧТС с возможностью подтягивать реквизиты из Google Sheets.
+                    </p>
+                </div>
+                <div class="soon">Скоро реализуем</div>
+            </a>
+
+            <a href="#" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon peach">📦</div>
+                        <div class="tag">Планируется</div>
+                    </div>
+                    <h3 class="title">БП</h3>
+                    <p class="desc">
+                        Распределение сотрудников по магазинам, контроль активности и подготовка данных для рассылок.
+                    </p>
+                </div>
+                <div class="soon">Скоро реализуем</div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
