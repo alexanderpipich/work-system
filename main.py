@@ -146,6 +146,43 @@ def require_admin(request: Request, session):
         return None
     return user
 
+def get_rate_for_shift(session, shift):
+    candidates = session.query(Rate).filter(
+        Rate.service == shift.service,
+        Rate.format == shift.format
+    ).all()
+
+    # Фильтрация по датам действия
+    valid_candidates = []
+    for rate in candidates:
+        if rate.active_from and shift.shift_date < rate.active_from:
+            continue
+        if rate.active_to and shift.shift_date > rate.active_to:
+            continue
+        valid_candidates.append(rate)
+
+    # Приоритет:
+    # 1. employee + store
+    for rate in valid_candidates:
+        if rate.employee_name == shift.employee and rate.store == shift.store:
+            return rate
+
+    # 2. employee only
+    for rate in valid_candidates:
+        if rate.employee_name == shift.employee and not rate.store:
+            return rate
+
+    # 3. store only
+    for rate in valid_candidates:
+        if rate.store == shift.store and not rate.employee_name:
+            return rate
+
+    # 4. base rate
+    for rate in valid_candidates:
+        if not rate.store and not rate.employee_name:
+            return rate
+
+    return None
 
 @app.get("/")
 def root():
@@ -798,6 +835,113 @@ def create_rate(
                 "rates": rates,
                 "message": "Ставка добавлена",
                 "error": None
+            }
+        )
+
+    finally:
+        session.close()
+
+@app.get("/admin/payroll", response_class=HTMLResponse)
+def admin_payroll(
+    request: Request,
+    date_from: str = "",
+    date_to: str = "",
+    employee_name: str = ""
+):
+    session = SessionLocal()
+    try:
+        admin = require_admin(request, session)
+        if not admin:
+            return RedirectResponse(url="/login", status_code=302)
+
+        today = datetime.today().date()
+
+        # По умолчанию — последняя завершенная неделя
+        if not date_from and not date_to:
+            current_week_monday = today - timedelta(days=today.weekday())
+            default_date_to = current_week_monday - timedelta(days=1)
+            default_date_from = default_date_to - timedelta(days=6)
+
+            date_from = default_date_from.strftime("%Y-%m-%d")
+            date_to = default_date_to.strftime("%Y-%m-%d")
+
+        shifts_query = session.query(Shift)
+
+        try:
+            if date_from:
+                shifts_query = shifts_query.filter(
+                    Shift.shift_date >= datetime.strptime(date_from, "%Y-%m-%d").date()
+                )
+            if date_to:
+                shifts_query = shifts_query.filter(
+                    Shift.shift_date <= datetime.strptime(date_to, "%Y-%m-%d").date()
+                )
+        except ValueError:
+            return templates.TemplateResponse(
+                request,
+                "payroll.html",
+                {
+                    "rows": [],
+                    "date_from": date_from,
+                    "date_to": date_to,
+                    "employee_name": employee_name,
+                    "employees": [],
+                    "total_hours": 0,
+                    "total_amount": 0,
+                    "error": "Некорректный формат даты",
+                    "message": None
+                }
+            )
+
+        if employee_name.strip():
+            shifts_query = shifts_query.filter(Shift.employee == employee_name.strip())
+
+        shifts = shifts_query.order_by(Shift.employee.asc(), Shift.shift_date.asc()).all()
+
+        employees = session.query(Shift.employee).distinct().order_by(Shift.employee.asc()).all()
+        employee_list = [e[0] for e in employees]
+
+        payroll_map = {}
+
+        for shift in shifts:
+            rate = get_rate_for_shift(session, shift)
+            rate_value = rate.hourly_rate if rate else 0
+            amount = shift.hours * rate_value if rate else 0
+
+            key = shift.employee
+            if key not in payroll_map:
+                payroll_map[key] = {
+                    "employee_name": shift.employee,
+                    "hours": 0,
+                    "amount": 0,
+                    "missing_rates": 0
+                }
+
+            payroll_map[key]["hours"] += shift.hours
+            payroll_map[key]["amount"] += amount
+
+            if not rate:
+                payroll_map[key]["missing_rates"] += 1
+
+        rows = list(payroll_map.values())
+        rows.sort(key=lambda x: x["employee_name"])
+
+        total_hours = sum(row["hours"] for row in rows)
+        total_amount = sum(row["amount"] for row in rows)
+
+        return templates.TemplateResponse(
+            request,
+            "payroll.html",
+            {
+                "rows": rows,
+                "date_from": date_from,
+                "date_to": date_to,
+                "employee_name": employee_name,
+                "employees": employee_list,
+                "total_hours": total_hours,
+                "total_amount": total_amount,
+                "error": None,
+                "message": None
             }
         )
 

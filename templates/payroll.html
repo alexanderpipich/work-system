@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выплатный табель</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+            --error-bg: #fff1ed;
+            --error-text: #b42318;
+            --success-bg: #eefbf3;
+            --success-text: #067647;
+            --warn-bg: #fff7ed;
+            --warn-text: #9a3412;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
+                var(--bg);
+            color: var(--text);
+            padding: 28px 18px 36px;
+        }
+
+        .page {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .topbar,
+        .card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        .brand-title {
+            margin: 0;
+            color: var(--brand-blue);
+            font-size: 28px;
+        }
+
+        .brand-subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: var(--brand-blue);
+            font-weight: 700;
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            align-items: end;
+        }
+
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--brand-blue);
+            margin-bottom: 8px;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            height: 46px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0 12px;
+            font-size: 14px;
+        }
+
+        .field input:focus,
+        .field select:focus {
+            outline: none;
+            border-color: rgba(11, 20, 117, 0.35);
+            box-shadow: 0 0 0 4px rgba(11, 20, 117, 0.08);
+        }
+
+        .btn {
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--brand-blue), #18239a);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0 18px;
+        }
+
+        .msg {
+            margin-top: 14px;
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid rgba(6, 118, 71, 0.14);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+
+        .err {
+            margin-top: 14px;
+            background: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid rgba(180, 35, 24, 0.14);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+
+        .summary {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .summary-box {
+            background: rgba(11, 20, 117, 0.05);
+            border-radius: 16px;
+            padding: 14px 16px;
+            min-width: 220px;
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            color: var(--brand-blue);
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+            background: #fff;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #fafbfc;
+            color: var(--brand-blue);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .warn {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: var(--warn-bg);
+            color: var(--warn-text);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 900px) {
+            .form-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 700px) {
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="topbar">
+            <div class="brand">
+                <img src="/static/logo-alex.jpg" alt="Логотип">
+                <div>
+                    <h1 class="brand-title">Выплатный табель</h1>
+                    <p class="brand-subtitle">Расчёт часов и суммы по ЧТС</p>
+                </div>
+            </div>
+
+            <a href="/admin" class="back-link">Назад в админку</a>
+        </div>
+
+        <div class="card">
+            <form method="get" action="/admin/payroll">
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Дата начала</label>
+                        <input type="date" name="date_from" value="{{ date_from }}">
+                    </div>
+
+                    <div class="field">
+                        <label>Дата окончания</label>
+                        <input type="date" name="date_to" value="{{ date_to }}">
+                    </div>
+
+                    <div class="field">
+                        <label>Сотрудник</label>
+                        <select name="employee_name">
+                            <option value="">Все сотрудники</option>
+                            {% for emp in employees %}
+                                <option value="{{ emp }}" {% if employee_name == emp %}selected{% endif %}>{{ emp }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <button type="submit" class="btn">Сформировать</button>
+                    </div>
+                </div>
+            </form>
+
+            {% if message %}
+                <div class="msg">{{ message }}</div>
+            {% endif %}
+
+            {% if error %}
+                <div class="err">{{ error }}</div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="summary">
+                <div class="summary-box">
+                    <div class="summary-label">Всего часов</div>
+                    <div class="summary-value">{{ total_hours }}</div>
+                </div>
+
+                <div class="summary-box">
+                    <div class="summary-label">Всего к выплате</div>
+                    <div class="summary-value">{{ total_amount }}</div>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Сотрудник</th>
+                            <th>Часы</th>
+                            <th>Сумма</th>
+                            <th>Статус ЧТС</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr>
+                            <td>{{ row.employee_name }}</td>
+                            <td>{{ row.hours }}</td>
+                            <td>{{ row.amount }}</td>
+                            <td>
+                                {% if row.missing_rates > 0 %}
+                                    <span class="warn">Нет ставок: {{ row.missing_rates }}</span>
+                                {% else %}
+                                    ОК
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
