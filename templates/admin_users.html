@@ -92,7 +92,13 @@
             line-height: 1.4;
         }
 
-        .logout {
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar a {
             text-decoration: none;
             color: var(--brand-blue);
             font-weight: 700;
@@ -104,7 +110,7 @@
             white-space: nowrap;
         }
 
-        .logout:hover {
+        .toolbar a:hover {
             background: #f9fafb;
             border-color: rgba(11, 20, 117, 0.24);
             transform: translateY(-1px);
@@ -118,31 +124,7 @@
             margin-bottom: 20px;
         }
 
-        .nav-links {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-            transition: background .2s ease, border-color .2s ease, transform .12s ease;
-        }
-
-        .nav-links a:hover {
-            background: #f9fafb;
-            border-color: rgba(11, 20, 117, 0.24);
-            transform: translateY(-1px);
-        }
-
         .msg {
-            margin-top: 14px;
             background: var(--success-bg);
             color: var(--success-text);
             border: 1px solid rgba(6, 118, 71, 0.14);
@@ -152,7 +134,6 @@
         }
 
         .err {
-            margin-top: 14px;
             background: var(--error-bg);
             color: var(--error-text);
             border: 1px solid rgba(180, 35, 24, 0.14);
@@ -293,7 +274,11 @@
                 font-size: 24px;
             }
 
-            .logout {
+            .toolbar {
+                justify-content: stretch;
+            }
+
+            .toolbar a {
                 text-align: center;
             }
         }
@@ -303,33 +288,34 @@
     <div class="page">
         <div class="topbar">
             <div class="brand">
-                <a href="/admin/users">
+                <a href="/admin">
                     <img src="/static/logo-alex.jpg" alt="Логотип">
                 </a>
                 <div>
-                    <h1 class="brand-title">Кабинет администратора</h1>
+                    <h1 class="brand-title">Пользователи</h1>
                     <p class="brand-subtitle">Управление пользователями системы</p>
                 </div>
             </div>
 
-            <a href="/logout" class="logout">Выйти</a>
-        </div>
-
-        <div class="card">
-            <div class="nav-links">
+            <div class="toolbar">
+                <a href="/admin">Назад в админку</a>
                 <a href="/admin/create-user">Создать пользователя</a>
                 <a href="/admin/upload-users">Импорт пользователей</a>
-                <a href="/admin/fix-phones">Исправить телефоны</a>
+                <a href="/logout">Выйти</a>
             </div>
-
-            {% if message %}
-                <div class="msg">{{ message }}</div>
-            {% endif %}
-
-            {% if error %}
-                <div class="err">{{ error }}</div>
-            {% endif %}
         </div>
+
+        {% if message %}
+            <div class="card">
+                <div class="msg">{{ message }}</div>
+            </div>
+        {% endif %}
+
+        {% if error %}
+            <div class="card">
+                <div class="err">{{ error }}</div>
+            </div>
+        {% endif %}
 
         <div class="card">
             <div class="table-title-row">

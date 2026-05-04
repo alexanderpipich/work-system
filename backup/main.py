@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta
-from fastapi import FastAPI, UploadFile, File, Form, Request, Query
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -131,21 +131,6 @@ def normalize_text(value) -> str:
     if value is None:
         return ""
     return str(value).strip()
-
-
-def normalize_excel_cell(value) -> str:
-    if value is None or pd.isna(value):
-        return ""
-    if isinstance(value, float) and value.is_integer():
-        return str(int(value))
-    return str(value).strip()
-
-
-def get_row_value(row, *names) -> str:
-    for name in names:
-        if name in row.index:
-            return normalize_excel_cell(row.get(name, ""))
-    return ""
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -879,7 +864,7 @@ def admin_payroll(
     date_from: str = "",
     date_to: str = "",
     employee_name: str = "",
-    stores: list[str] = Query(default=[])
+    stores: list[str] | None = None
 ):
     session = SessionLocal()
     try:
@@ -1030,29 +1015,22 @@ def admin_dashboard(request: Request):
     finally:
         session.close()
 
-
 @app.get("/admin/requisites", response_class=HTMLResponse)
-def admin_requisites(request: Request, message: str = "", error: str = ""):
+def admin_requisites(request: Request):
     session = SessionLocal()
     try:
         admin = require_admin(request, session)
         if not admin:
-            return RedirectResponse(url="/login", status_code=302)
+            return RedirectResponse("/login", status_code=302)
 
-        requisites = session.query(Requisite).order_by(Requisite.employee_name.asc()).all()
+        requisites = session.query(Requisite).order_by(Requisite.employee_name).all()
 
-        return templates.TemplateResponse(
-            request,
-            "requisites.html",
-            {
-                "requisites": requisites,
-                "message": message or None,
-                "error": error or None,
-            }
-        )
+        return templates.TemplateResponse("requisites.html", {
+            "request": request,
+            "requisites": requisites
+        })
     finally:
         session.close()
-
 
 @app.post("/admin/requisites/add")
 def add_requisite(
@@ -1068,101 +1046,69 @@ def add_requisite(
     try:
         admin = require_admin(request, session)
         if not admin:
-            return RedirectResponse(url="/login", status_code=302)
+            return RedirectResponse("/login", status_code=302)
 
-        employee_name_clean = normalize_text(employee_name)
-        if not employee_name_clean:
-            return RedirectResponse(url="/admin/requisites?error=Не указано ФИО", status_code=302)
+        user = session.query(User).filter(User.employee_name == employee_name).first()
 
-        user = session.query(User).filter(User.employee_name == employee_name_clean).first()
-        existing = session.query(Requisite).filter(Requisite.employee_name == employee_name_clean).first()
+        req = Requisite(
+            user_id=user.id if user else None,
+            employee_name=employee_name.strip(),
+            inn=inn.strip(),
+            account_number=account_number.strip(),
+            bik=bik.strip(),
+            bank_name=bank_name.strip(),
+            citizenship=citizenship.strip()
+        )
 
-        if existing:
-            existing.user_id = user.id if user else None
-            existing.inn = normalize_text(inn)
-            existing.account_number = normalize_text(account_number)
-            existing.bik = normalize_text(bik)
-            existing.bank_name = normalize_text(bank_name)
-            existing.citizenship = normalize_text(citizenship)
-        else:
-            req = Requisite(
-                user_id=user.id if user else None,
-                employee_name=employee_name_clean,
-                inn=normalize_text(inn),
-                account_number=normalize_text(account_number),
-                bik=normalize_text(bik),
-                bank_name=normalize_text(bank_name),
-                citizenship=normalize_text(citizenship)
-            )
-            session.add(req)
-
+        session.add(req)
         session.commit()
-        return RedirectResponse(url="/admin/requisites?message=Реквизиты сохранены", status_code=302)
 
-    except Exception as e:
-        session.rollback()
-        return RedirectResponse(url=f"/admin/requisites?error={str(e)}", status_code=302)
+        return RedirectResponse("/admin/requisites", status_code=302)
+
     finally:
-        session.close()
+        session.close()        
 
 
 @app.post("/admin/requisites/upload")
 def upload_requisites(request: Request, file: UploadFile = File(...)):
     session = SessionLocal()
+
     try:
         admin = require_admin(request, session)
         if not admin:
-            return RedirectResponse(url="/login", status_code=302)
+            return RedirectResponse("/login", status_code=302)
 
         df = pd.read_excel(file.file)
-        df.columns = [str(c).strip() for c in df.columns]
 
         created = 0
-        updated = 0
-        skipped = 0
 
         for _, row in df.iterrows():
-            name = get_row_value(row, "employee_name", "ФИО", "фио", "Сотрудник", "сотрудник")
+            name = str(row.get("employee_name", "")).strip()
             if not name:
-                skipped += 1
                 continue
 
-            inn = get_row_value(row, "inn", "ИНН", "инн")
-            account_number = get_row_value(row, "account_number", "НОМЕР СЧЕТА", "Номер счета", "номер счета", "Счет", "счет")
-            bik = get_row_value(row, "bik", "БИК БАНКА", "БИК", "бик")
-            bank_name = get_row_value(row, "bank_name", "НАИМЕНОВАНИЕ БАНКА", "Банк", "банк")
-            citizenship = get_row_value(row, "citizenship", "ГРАЖДАНСТВО", "Гражданство", "гражданство")
-
             user = session.query(User).filter(User.employee_name == name).first()
-            existing = session.query(Requisite).filter(Requisite.employee_name == name).first()
 
-            if existing:
-                existing.user_id = user.id if user else None
-                existing.inn = inn
-                existing.account_number = account_number
-                existing.bik = bik
-                existing.bank_name = bank_name
-                existing.citizenship = citizenship
-                updated += 1
-            else:
-                req = Requisite(
-                    user_id=user.id if user else None,
-                    employee_name=name,
-                    inn=inn,
-                    account_number=account_number,
-                    bik=bik,
-                    bank_name=bank_name,
-                    citizenship=citizenship
-                )
-                session.add(req)
-                created += 1
+            req = Requisite(
+                user_id=user.id if user else None,
+                employee_name=name,
+                inn=str(row.get("inn", "")),
+                account_number=str(row.get("account_number", "")),
+                bik=str(row.get("bik", "")),
+                bank_name=str(row.get("bank_name", "")),
+                citizenship=str(row.get("citizenship", ""))
+            )
+
+            session.add(req)
+            created += 1
 
         session.commit()
-        message = f"Импорт завершён. Создано: {created}. Обновлено: {updated}. Пропущено: {skipped}."
-        return RedirectResponse(url=f"/admin/requisites?message={message}", status_code=302)
+
+        return {"created": created}
 
     except Exception as e:
-        session.rollback()
-        return RedirectResponse(url=f"/admin/requisites?error={str(e)}", status_code=302)
+        return {"error": str(e)}
+
     finally:
         session.close()
+

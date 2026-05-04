@@ -90,6 +90,7 @@
             padding: 10px 14px;
             border-radius: 12px;
             background: #fff;
+            white-space: nowrap;
         }
 
         .form-grid {
@@ -124,7 +125,35 @@
             box-shadow: 0 0 0 4px rgba(11, 20, 117, 0.08);
         }
 
+        .stores-box {
+            margin-top: 18px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            background: #fbfcff;
+        }
+
+        .stores-title {
+            margin: 0 0 12px;
+            color: var(--brand-blue);
+            font-size: 16px;
+        }
+
+        .stores-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px 16px;
+        }
+
+        .store-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
         .btn {
+            margin-top: 18px;
             height: 48px;
             border: none;
             border-radius: 14px;
@@ -191,7 +220,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 760px;
+            min-width: 900px;
             background: #fff;
         }
 
@@ -220,8 +249,12 @@
             font-weight: 700;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 980px) {
             .form-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .stores-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
@@ -233,6 +266,10 @@
             }
 
             .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stores-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -274,11 +311,26 @@
                             {% endfor %}
                         </select>
                     </div>
+                </div>
 
-                    <div>
-                        <button type="submit" class="btn">Сформировать</button>
+                <div class="stores-box">
+                    <h3 class="stores-title">Магазины</h3>
+                    <div class="stores-grid">
+                        {% for store in stores %}
+                        <label class="store-item">
+                            <input
+                                type="checkbox"
+                                name="stores"
+                                value="{{ store }}"
+                                {% if store in selected_stores %}checked{% endif %}
+                            >
+                            <span>{{ store }}</span>
+                        </label>
+                        {% endfor %}
                     </div>
                 </div>
+
+                <button type="submit" class="btn">Сформировать</button>
             </form>
 
             {% if message %}
@@ -308,6 +360,7 @@
                     <thead>
                         <tr>
                             <th>Сотрудник</th>
+                            <th>Магазин</th>
                             <th>Часы</th>
                             <th>Сумма</th>
                             <th>Статус ЧТС</th>
@@ -317,6 +370,7 @@
                         {% for row in rows %}
                         <tr>
                             <td>{{ row.employee_name }}</td>
+                            <td>{{ row.store }}</td>
                             <td>{{ row.hours }}</td>
                             <td>{{ row.amount }}</td>
                             <td>

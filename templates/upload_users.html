@@ -30,72 +30,82 @@
                 radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
                 var(--bg);
             color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
+            padding: 28px 18px 36px;
         }
 
-        .wrap {
-            width: 100%;
-            max-width: 680px;
+        .page {
+            max-width: 860px;
+            margin: 0 auto;
         }
 
+        .topbar,
         .card {
             background: var(--card-bg);
-            border-radius: 24px;
+            border-radius: 22px;
             box-shadow: var(--shadow);
-            padding: 30px 26px 24px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
 
-        .logo {
+        .topbar {
             display: flex;
-            justify-content: center;
-            margin-bottom: 14px;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
         }
 
-        .logo img {
-            width: 92px;
-            height: 92px;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand img {
+            width: 64px;
+            height: 64px;
             object-fit: contain;
+            border-radius: 16px;
+            background: #fff;
         }
 
-        h1 {
+        .brand-title {
             margin: 0;
-            text-align: center;
             color: var(--brand-blue);
-            font-size: 30px;
+            font-size: 28px;
         }
 
-        .subtitle {
-            margin: 10px 0 24px;
-            text-align: center;
+        .brand-subtitle {
+            margin: 6px 0 0;
             color: var(--muted);
             font-size: 14px;
             line-height: 1.5;
         }
 
-        .links {
+        .toolbar {
             display: flex;
-            justify-content: center;
             gap: 10px;
             flex-wrap: wrap;
-            margin-bottom: 20px;
         }
 
-        .links a {
+        .toolbar a {
             text-decoration: none;
             color: var(--brand-blue);
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            padding: 10px 12px;
-            border-radius: 12px;
             font-weight: 700;
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            padding: 10px 14px;
+            border-radius: 12px;
             background: #fff;
+            transition: background .2s ease, border-color .2s ease, transform .12s ease;
+            white-space: nowrap;
+        }
+
+        .toolbar a:hover {
+            background: #f9fafb;
+            border-color: rgba(11, 20, 117, 0.24);
+            transform: translateY(-1px);
         }
 
         .msg {
-            margin-bottom: 16px;
             background: var(--success-bg);
             color: var(--success-text);
             border: 1px solid rgba(6, 118, 71, 0.14);
@@ -105,7 +115,6 @@
         }
 
         .err {
-            margin-bottom: 16px;
             background: var(--error-bg);
             color: var(--error-text);
             border: 1px solid rgba(180, 35, 24, 0.14);
@@ -173,33 +182,53 @@
             font-weight: 700;
             color: var(--brand-blue);
         }
+
+        @media (max-width: 720px) {
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toolbar a {
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="wrap">
-        <div class="card">
-            <div class="logo">
+    <div class="page">
+        <div class="topbar">
+            <div class="brand">
                 <img src="/static/logo-alex.jpg" alt="Логотип">
+                <div>
+                    <h1 class="brand-title">Импорт пользователей</h1>
+                    <p class="brand-subtitle">
+                        Формат файла: phone, employee_name, password
+                    </p>
+                </div>
             </div>
 
-            <h1>Импорт пользователей</h1>
-            <p class="subtitle">
-                Формат файла: <strong>phone</strong>, <strong>employee_name</strong>, <strong>password</strong>
-            </p>
-
-            <div class="links">
-                <a href="/admin/users">К списку пользователей</a>
+            <div class="toolbar">
+                <a href="/admin">Назад в админку</a>
+                <a href="/admin/users">Пользователи</a>
                 <a href="/admin/create-user">Создать вручную</a>
+                <a href="/logout">Выйти</a>
             </div>
+        </div>
 
-            {% if message %}
+        {% if message %}
+            <div class="card">
                 <div class="msg">{{ message }}</div>
-            {% endif %}
+            </div>
+        {% endif %}
 
-            {% if error %}
+        {% if error %}
+            <div class="card">
                 <div class="err">{{ error }}</div>
-            {% endif %}
+            </div>
+        {% endif %}
 
+        <div class="card">
             <form method="post" action="/admin/upload-users" enctype="multipart/form-data">
                 <div class="upload-box">
                     <p>Загрузите Excel-файл со списком пользователей.</p>

@@ -24,3 +24,44 @@ http://127.0.0.1:8000/admin/create-user
 http://127.0.0.1:8000/admin/upload-users
 6. Выход
 http://127.0.0.1:8000/logout
+=========
+
+
+
+
+
+Зайди в psql:
+
+psql -U postgres -d work_db
+
+
+cd C:\Users\User\Desktop\work-system
+python -m uvicorn main:app --reload\
+
+
+---
+ДЕПЛОЙ
+-------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
