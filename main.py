@@ -13,6 +13,7 @@ from dependencies import RedirectException, redirect_exception_response
 from document_helpers import ensure_document_tables
 from legal_entity_helpers import ensure_legal_entities_table
 from payroll_run_helpers import ensure_payroll_run_closing_columns
+from requisite_schema import ensure_requisite_profile_columns
 from shift_schema import ensure_shift_request_type_unique_key
 from user_schema import ensure_user_profile_columns
 from routers.adjustments import router as adjustments_router
@@ -74,6 +75,7 @@ app.include_router(users_router)
 Base.metadata.create_all(bind=engine)
 ensure_shift_request_type_unique_key()
 ensure_user_profile_columns()
+ensure_requisite_profile_columns()
 ensure_document_tables()
 ensure_legal_entities_table()
 ensure_payroll_run_closing_columns()
