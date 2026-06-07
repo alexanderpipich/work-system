@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ-панель</title>
@@ -16,9 +19,7 @@
             --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -243,9 +244,8 @@
         <div class="hero">
             <h2>Управление системой</h2>
             <p>
-                Здесь собраны основные разделы администратора. На текущем этапе уже готовы пользователи,
-                импорт пользователей, загрузка смен, модуль ЧТС и первая версия выплатного табеля.
-                Следующим шагом будут развитие реквизитов, выгрузки табеля и БП.
+                Здесь собраны основные разделы администратора: пользователи, смены, ставки,
+                графики выходов, реквизиты и выплатный табель.
             </p>
         </div>
 
@@ -258,7 +258,7 @@
                     </div>
                     <h3 class="title">Пользователи</h3>
                     <p class="desc">
-                        Просмотр списка пользователей, смена паролей, удаление сотрудников и контроль ролей.
+                        Фильтры, роли, магазины бригадиров, гражданство, юрлица, пароли и удаление сотрудников.
                     </p>
                 </div>
             </a>
@@ -276,7 +276,7 @@
                 </div>
             </a>
 
-            <a href="/docs" class="card">
+            <a href="/admin/upload" class="card">
                 <div>
                     <div class="card-top">
                         <div class="icon">📄</div>
@@ -284,7 +284,7 @@
                     </div>
                     <h3 class="title">Загрузка смен</h3>
                     <p class="desc">
-                        Загрузка Excel со сменами. Уже учитываются магазин, формат, услуга, сотрудник и часы.
+                        Загрузка Excel со сменами. Учитываются магазин, город, формат, услуга, сотрудник и часы.
                     </p>
                 </div>
             </a>
@@ -293,11 +293,11 @@
                 <div>
                     <div class="card-top">
                         <div class="icon peach">₽</div>
-                        <div class="tag">Новый модуль</div>
+                        <div class="tag">Готово</div>
                     </div>
                     <h3 class="title">ЧТС</h3>
                     <p class="desc">
-                        Базовые ставки по услугам, форматам, магазинам и индивидуальным сотрудникам.
+                        Ставки по услугам, форматам, магазинам и индивидуальным сотрудникам.
                     </p>
                 </div>
             </a>
@@ -306,11 +306,141 @@
                 <div>
                     <div class="card-top">
                         <div class="icon peach">🧾</div>
-                        <div class="tag">Новый модуль</div>
+                        <div class="tag">В работе</div>
                     </div>
                     <h3 class="title">Выплатный табель</h3>
                     <p class="desc">
-                        Расчёт недельных выплат по сменам и ЧТС с пометкой сотрудников, у которых не найдены ставки.
+                        Расчёт недельных выплат по сменам и ЧТС с фильтрами по сотрудникам и магазинам.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/admin/lmk" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon peach">✚</div>
+                        <div class="tag">Новый модуль</div>
+                    </div>
+                    <h3 class="title">ЛМК</h3>
+                    <p class="desc">
+                        Удержания за личные медицинские книжки: сумма, период списания, остаток и статус.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/admin/legal-entities" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon">ЮЛ</div>
+                        <div class="tag">Справочник</div>
+                    </div>
+                    <h3 class="title">Юрлица</h3>
+                    <p class="desc">
+                        Единый список юридических лиц для сотрудников и фиксации выплатных табелей.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/admin/schedules" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon peach">📅</div>
+                        <div class="tag">Новый модуль</div>
+                    </div>
+                    <h3 class="title">Графики выходов</h3>
+                    <p class="desc">
+                        Просмотр выходов сотрудников по магазинам и периодам в формате календарной таблицы.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/admin/requisites" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon peach">🏦</div>
+                        <div class="tag">Готово</div>
+                    </div>
+                    <h3 class="title">Реквизиты</h3>
+                    <p class="desc">
+                        Банковские реквизиты сотрудников: ИНН, счёт, БИК, банк и гражданство.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/admin/adjustments" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon peach">!</div>
+                        <div class="tag">Готово</div>
+                    </div>
+                    <h3 class="title">МОНИТОРИНГ ИЗМЕНЕНИЙ</h3>
+                    <p class="desc">
+                        Контроль и подтверждение автоматических корректировок по табелям.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/admin/documents" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon peach">📎</div>
+                        <div class="tag">Новый модуль</div>
+                    </div>
+                    <h3 class="title">Документы</h3>
+                    <p class="desc">
+                        Реестр документов сотрудников: загрузка, проверка, отклонение, архив и контроль отсутствующих документов.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/admin/document-types" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon">DOC</div>
+                        <div class="tag">Справочник</div>
+                    </div>
+                    <h3 class="title">Типы документов</h3>
+                    <p class="desc">
+                        Настройка обязательных документов, подсказок, гражданства, сроков действия и образцов фото.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/admin/reports" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon">REP</div>
+                        <div class="tag">Новый модуль</div>
+                    </div>
+                    <h3 class="title">Отчеты</h3>
+                    <p class="desc">
+                        Управленческие таблицы по часам, выплатам, корректировкам, ЛМК и документам.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/admin/analytics" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon peach">AN</div>
+                        <div class="tag">Новый модуль</div>
+                    </div>
+                    <h3 class="title">Аналитика</h3>
+                    <p class="desc">
+                        KPI, предупреждения, динамика часов, выплат, документов, корректировок и ЛМК.
+                    </p>
+                </div>
+            </a>
+
+            <a href="/admin/audit-log" class="card">
+                <div>
+                    <div class="card-top">
+                        <div class="icon">LOG</div>
+                        <div class="tag">Журнал</div>
+                    </div>
+                    <h3 class="title">Audit Log</h3>
+                    <p class="desc">
+                        История действий пользователей: табели, корректировки, документы, ставки, реквизиты и справочники.
                     </p>
                 </div>
             </a>
@@ -318,28 +448,29 @@
             <a href="#" class="card">
                 <div>
                     <div class="card-top">
-                        <div class="icon peach">📦</div>
+                        <div class="icon peach">💬</div>
                         <div class="tag">Планируется</div>
                     </div>
-                    <h3 class="title">БП</h3>
+                    <h3 class="title">Сообщения</h3>
                     <p class="desc">
-                        Распределение сотрудников по магазинам, контроль активности и подготовка данных для рассылок.
+                        Будущий модуль обмена сообщениями между администрацией, бригадирами и сотрудниками.
                     </p>
                 </div>
                 <div class="soon">Скоро реализуем</div>
             </a>
 
-            <a href="/admin/requisites" class="card">
+            <a href="/admin/documents" class="card">
                 <div>
                     <div class="card-top">
-                        <div class="icon peach">🏦</div>
-                        <div class="tag">Новый модуль</div>
+                        <div class="icon peach">📎</div>
+                        <div class="tag">Планируется</div>
                     </div>
-                    <h3 class="title">Реквизиты</h3>
+                    <h3 class="title">Документы</h3>
                     <p class="desc">
-                        Банковские данные сотрудников: ИНН, счёт, БИК, банк и гражданство.
+                        Будущий модуль загрузки, хранения и просмотра документов сотрудников.
                     </p>
                 </div>
+                <div class="soon">Скоро реализуем</div>
             </a>
         </div>
     </div>

@@ -1,3 +1,10 @@
 __pycache__/
 *.pyc
 .env
+uploaded_documents/
+.pytest_cache/
+temp_*.xlsx
+*.log
+.claude/
+p-word list.xlsx
+CLAUDE.md

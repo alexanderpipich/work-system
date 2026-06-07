@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Типы документов</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 28px 18px 36px;
+        }
+        .page { max-width: 1500px; margin: 0 auto; }
+        .topbar, .card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand img { width: 64px; height: 64px; object-fit: contain; border-radius: 16px; background: #fff; }
+        h1, h2, h3 { color: var(--brand-blue); margin-top: 0; }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+        .link, .btn {
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            border: 0;
+            border-radius: 12px;
+            padding: 9px 14px;
+            color: #fff;
+            background: linear-gradient(135deg, var(--brand-blue), #18239a);
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .link.secondary { color: var(--brand-blue); background: #fff; border: 1px solid rgba(11, 20, 117, 0.14); }
+        .btn.danger { background: linear-gradient(135deg, #c23327, #9f1f16); }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        label { color: var(--muted); font-size: 13px; font-weight: 700; }
+        input, textarea, select {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 14px;
+            background: #fff;
+        }
+        textarea { min-height: 74px; resize: vertical; }
+        .checks { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+        .check { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font-weight: 700; }
+        .check input { width: auto; }
+        .message { color: #067647; font-weight: 700; }
+        .error { color: #b42318; font-weight: 700; }
+        .type-card {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            background: #fbfcff;
+            margin-bottom: 14px;
+        }
+        .type-card summary {
+            cursor: pointer;
+            list-style: none;
+        }
+        .type-card summary::-webkit-details-marker { display: none; }
+        .type-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .type-title {
+            color: var(--brand-blue);
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .readonly-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .readonly-item {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 11px 12px;
+            background: #fff;
+        }
+        .readonly-label {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .readonly-value {
+            line-height: 1.45;
+        }
+        .sample-preview {
+            display: block;
+            max-width: 360px;
+            max-height: 240px;
+            object-fit: contain;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fff;
+            margin-top: 8px;
+        }
+        .edit-form {
+            display: none;
+            border-top: 1px solid var(--border);
+            margin-top: 16px;
+            padding-top: 16px;
+        }
+        .edit-form.is-open { display: block; }
+        .meta { color: var(--muted); line-height: 1.5; font-size: 13px; }
+        .pill {
+            display: inline-block;
+            padding: 6px 9px;
+            border-radius: 999px;
+            background: #eef4ff;
+            color: var(--brand-blue);
+            font-size: 12px;
+            font-weight: 700;
+            margin: 2px;
+        }
+        .sample { margin-top: 10px; }
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+            .readonly-grid { grid-template-columns: 1fr; }
+            .topbar { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1>Типы документов</h1>
+                <div class="meta">Справочник обязательных документов, подсказок и образцов</div>
+            </div>
+        </div>
+        <div class="toolbar">
+            <a href="{{ back_url }}" class="link secondary">{{ back_label }}</a>
+        </div>
+    </div>
+
+    {% if message %}<div class="card message">{{ message }}</div>{% endif %}
+    {% if error %}<div class="card error">{{ error }}</div>{% endif %}
+
+    <section class="card">
+        <h2>Добавить тип документа</h2>
+        <form method="post" action="{{ base_path }}/add" enctype="multipart/form-data">
+            <div class="grid">
+                <div class="field"><label>Название</label><input name="name" required></div>
+                <div class="field"><label>Гражданства через запятую</label><input name="citizenship_filter" placeholder="Пусто = всем"></div>
+                <div class="field"><label>Описание</label><textarea name="description"></textarea></div>
+                <div class="field"><label>Подсказка сотруднику</label><textarea name="help_text"></textarea></div>
+                <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_label"></div>
+                <div class="field"><label>Доп. поле 2</label><input name="extra_field_2_label"></div>
+                <div class="field"><label>Образец фото</label><input type="file" name="sample_file" accept="image/*,.pdf"></div>
+            </div>
+            <div class="checks">
+                <label class="check"><input type="checkbox" name="requires_number" value="1" checked> Требуется номер</label>
+                <label class="check"><input type="checkbox" name="requires_issue_date" value="1" checked> Дата выдачи</label>
+                <label class="check"><input type="checkbox" name="requires_expiry_date" value="1" checked> Срок действия</label>
+                <label class="check"><input type="checkbox" name="allow_permanent" value="1" checked> Можно бессрочно</label>
+                <label class="check"><input type="checkbox" name="is_required" value="1" checked> Обязательный</label>
+                <label class="check"><input type="checkbox" name="is_active" value="1" checked> Активный</label>
+            </div>
+            <p><button class="btn" type="submit">Добавить</button></p>
+        </form>
+    </section>
+
+    <section class="card">
+        <h2>Список типов</h2>
+        {% for item in document_types %}
+        <details class="type-card">
+            <summary>
+                <div class="type-summary">
+                    <div>
+                        <div class="type-title">{{ item.name }}</div>
+                        <div class="meta">
+                            {{ item.description or 'Описание не заполнено' }}
+                        </div>
+                    </div>
+                    <div>
+                        <span class="pill">#{{ item.id }}</span>
+                        {% if item.is_required %}<span class="pill">Обязательный</span>{% endif %}
+                        {% if item.is_active %}<span class="pill">Активный</span>{% else %}<span class="pill">Неактивен</span>{% endif %}
+                    </div>
+                </div>
+            </summary>
+
+            <div class="readonly-grid">
+                <div class="readonly-item">
+                    <div class="readonly-label">Название</div>
+                    <div class="readonly-value">{{ item.name }}</div>
+                </div>
+                <div class="readonly-item">
+                    <div class="readonly-label">Гражданства</div>
+                    <div class="readonly-value">{{ item.citizenship_filter or 'Подходит всем' }}</div>
+                </div>
+                <div class="readonly-item">
+                    <div class="readonly-label">Описание</div>
+                    <div class="readonly-value">{{ item.description or 'Не заполнено' }}</div>
+                </div>
+                <div class="readonly-item">
+                    <div class="readonly-label">Подсказка сотруднику</div>
+                    <div class="readonly-value">{{ item.help_text or 'Не заполнено' }}</div>
+                </div>
+                <div class="readonly-item">
+                    <div class="readonly-label">Поля документа</div>
+                    <div class="readonly-value">
+                        {% if item.requires_number %}<span class="pill">Номер</span>{% endif %}
+                        {% if item.requires_issue_date %}<span class="pill">Дата выдачи</span>{% endif %}
+                        {% if item.requires_expiry_date %}<span class="pill">Срок действия</span>{% endif %}
+                        {% if item.allow_permanent %}<span class="pill">Можно бессрочно</span>{% endif %}
+                    </div>
+                </div>
+                <div class="readonly-item">
+                    <div class="readonly-label">Дополнительные поля</div>
+                    <div class="readonly-value">
+                        {{ item.extra_field_1_label or 'Доп. поле 1 не задано' }}
+                        <br>
+                        {{ item.extra_field_2_label or 'Доп. поле 2 не задано' }}
+                    </div>
+                </div>
+                <div class="readonly-item">
+                    <div class="readonly-label">Образец</div>
+                    {% if item.sample_image_path %}
+                        <img class="sample-preview" src="/documents/samples/{{ item.id }}" alt="Образец {{ item.name }}">
+                        <a class="link secondary sample" href="/documents/samples/{{ item.id }}" target="_blank">Открыть образец</a>
+                    {% else %}
+                        <div class="meta sample">Не загружен</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <button class="btn" type="button" data-edit-target="edit-type-{{ item.id }}">Изменить</button>
+                <form method="post" action="{{ base_path }}/delete">
+                    <input type="hidden" name="type_id" value="{{ item.id }}">
+                    <button class="btn danger" type="submit">Деактивировать</button>
+                </form>
+            </div>
+
+            <form id="edit-type-{{ item.id }}" class="edit-form" method="post" action="{{ base_path }}/update" enctype="multipart/form-data">
+                <input type="hidden" name="type_id" value="{{ item.id }}">
+                <div class="grid">
+                    <div class="field"><label>Название</label><input name="name" value="{{ item.name }}" required></div>
+                    <div class="field"><label>Гражданства через запятую</label><input name="citizenship_filter" value="{{ item.citizenship_filter or '' }}"></div>
+                    <div class="field"><label>Описание</label><textarea name="description">{{ item.description or '' }}</textarea></div>
+                    <div class="field"><label>Подсказка</label><textarea name="help_text">{{ item.help_text or '' }}</textarea></div>
+                    <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_label" value="{{ item.extra_field_1_label or '' }}"></div>
+                    <div class="field"><label>Доп. поле 2</label><input name="extra_field_2_label" value="{{ item.extra_field_2_label or '' }}"></div>
+                    <div class="field"><label>Новый образец</label><input type="file" name="sample_file" accept="image/*,.pdf"></div>
+                </div>
+                <div class="checks">
+                    <label class="check"><input type="checkbox" name="requires_number" value="1" {% if item.requires_number %}checked{% endif %}> Номер</label>
+                    <label class="check"><input type="checkbox" name="requires_issue_date" value="1" {% if item.requires_issue_date %}checked{% endif %}> Дата выдачи</label>
+                    <label class="check"><input type="checkbox" name="requires_expiry_date" value="1" {% if item.requires_expiry_date %}checked{% endif %}> Срок</label>
+                    <label class="check"><input type="checkbox" name="allow_permanent" value="1" {% if item.allow_permanent %}checked{% endif %}> Бессрочно</label>
+                    <label class="check"><input type="checkbox" name="is_required" value="1" {% if item.is_required %}checked{% endif %}> Обязательный</label>
+                    <label class="check"><input type="checkbox" name="is_active" value="1" {% if item.is_active %}checked{% endif %}> Активный</label>
+                </div>
+                <p><button class="btn" type="submit">Сохранить</button></p>
+            </form>
+        </details>
+        {% endfor %}
+        {% if document_types|length == 0 %}
+            <div class="meta">Типы документов пока не созданы.</div>
+        {% endif %}
+    </section>
+</div>
+<script>
+    document.querySelectorAll("[data-edit-target]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const form = document.getElementById(button.dataset.editTarget);
+            if (!form) return;
+            form.classList.toggle("is-open");
+            button.textContent = form.classList.contains("is-open") ? "Скрыть форму" : "Изменить";
+        });
+    });
+</script>
+</body>
+</html>

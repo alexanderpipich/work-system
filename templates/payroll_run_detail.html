@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+    <meta charset="UTF-8">
+    <title>Табель #{{ run.id }}</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
+                var(--bg);
+            color: var(--text);
+            padding: 28px 18px 36px;
+        }
+
+        .page {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .topbar,
+        .card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        .brand-title {
+            margin: 0;
+            color: var(--brand-blue);
+            font-size: 28px;
+        }
+
+        .brand-subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: var(--brand-blue);
+            font-weight: 700;
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #fff;
+            white-space: nowrap;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .summary-item {
+            border: 1px solid var(--border);
+            background: #fbfcff;
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            color: var(--brand-blue);
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1300px;
+            background: #fff;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            text-align: left;
+        }
+
+        th {
+            background: #fafbfc;
+            color: var(--brand-blue);
+            font-weight: 700;
+        }
+
+        .num {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 900px) {
+            .summary {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1 class="brand-title">Табель #{{ run.id }}</h1>
+                <p class="brand-subtitle">
+                    {{ run.date_from.strftime('%d.%m.%Y') }}
+                    —
+                    {{ run.date_to.strftime('%d.%m.%Y') }}
+                    · {{ run.legal_entity or 'Без юрлица' }}
+                </p>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            {% if is_economist_view %}
+                <a href="/economist/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
+                <a href="/economist/payroll/runs" class="back-link">Все фиксации</a>
+                <a href="/economist/payroll" class="back-link">Выплатный табель</a>
+                <a href="/economist" class="back-link">Кабинет экономиста</a>
+            {% else %}
+                <a href="/admin/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
+                <a href="/admin/payroll/runs" class="back-link">Все фиксации</a>
+                <a href="/admin/payroll" class="back-link">Выплатный табель</a>
+                <a href="/admin" class="back-link">Назад в админку</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="summary">
+            <div class="summary-item">
+                <div class="summary-label">Статус</div>
+                <div class="summary-value">
+                    {% if run.status == "closed" %}
+                        Закрыт
+                    {% elif run.status == "sent" %}
+                        Ушло в оплату
+                    {% else %}
+                        Зафиксирован
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if run.closed_at %}
+            <div class="summary-item">
+                <div class="summary-label">Дата закрытия</div>
+                <div class="summary-value">{{ run.closed_at.strftime('%d.%m.%Y %H:%M') }}</div>
+            </div>
+            {% endif %}
+
+            {% if run.closed_by %}
+            <div class="summary-item">
+                <div class="summary-label">Закрыл</div>
+                <div class="summary-value">{{ closed_by_name or ('ID ' ~ run.closed_by) }}</div>
+            </div>
+            {% endif %}
+
+            <div class="summary-item">
+                <div class="summary-label">Строк</div>
+                <div class="summary-value">{{ items|length }}</div>
+            </div>
+
+            <div class="summary-item">
+                <div class="summary-label">Часы</div>
+                <div class="summary-value">{{ "%.2f"|format(total_hours or 0) }}</div>
+            </div>
+
+            <div class="summary-item">
+                <div class="summary-label">Сумма</div>
+                <div class="summary-value">{{ "%.2f"|format(total_amount or 0) }} ₽</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ФИО</th>
+                        <th>Магазин</th>
+                        <th>Услуга</th>
+                        <th>Дата</th>
+                        <th class="num">Часы</th>
+                        <th class="num">ЧТС</th>
+                        <th class="num">Основная сумма</th>
+                        <th class="num">Авто</th>
+                        <th class="num">Ручные</th>
+                        <th class="num">ЛМК</th>
+                        <th class="num">Итого</th>
+                        <th>Комментарий</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.employee_name }}</td>
+                        <td>{{ item.store }}</td>
+                        <td>{{ item.service }}</td>
+                        <td>
+                            {% if item.shift_date %}
+                                {{ item.shift_date.strftime('%d.%m.%Y') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="num">{{ "%.2f"|format(item.hours or 0) }}</td>
+                        <td class="num">{{ "%.2f"|format(item.rate or 0) }}</td>
+                        <td class="num">{{ "%.2f"|format(item.amount or 0) }} ₽</td>
+                        <td class="num">{{ "%.2f"|format(item.auto_adjustments_amount or 0) }} ₽</td>
+                        <td class="num">{{ "%.2f"|format(item.manual_adjustments_amount or item.other_amount or 0) }} ₽</td>
+                        <td class="num">-{{ "%.2f"|format(item.lmk_amount or 0) }} ₽</td>
+                        <td class="num">{{ "%.2f"|format(item.total_amount or 0) }} ₽</td>
+                        <td>{{ item.comment or '' }}</td>
+                    </tr>
+                    {% endfor %}
+
+                    {% if items|length == 0 %}
+                    <tr>
+                        <td colspan="12">Строк в табеле нет</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

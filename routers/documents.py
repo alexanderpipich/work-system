@@ -1,0 +1,799 @@
+from pathlib import Path
+from urllib.parse import quote, urlencode
+
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+
+from access import get_economist_cities
+from audit_helpers import create_audit_log
+from dependencies import (
+    RedirectException,
+    current_user,
+    get_db,
+    require_admin_user,
+    require_economist_user,
+)
+from document_helpers import (
+    DocumentDateParseError,
+    INVALID_DATE_MESSAGE,
+    STATUS_LABELS,
+    active_document_types,
+    build_document_registry_rows,
+    computed_document_status,
+    document_file_exists,
+    economist_employee_names,
+    employee_names,
+    normalize_employee_folder,
+    parse_bool,
+    parse_date,
+    save_upload_file,
+)
+from models import DocumentType, EmployeeDocument, User
+from sqlalchemy.orm import Session
+from time_helpers import now_utc
+from utils import normalize_text
+
+
+router = APIRouter()
+templates = Jinja2Templates(directory="templates")
+
+
+SAFE_MEDIA_TYPES = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".pdf": "application/pdf",
+    ".heic": "application/octet-stream",
+}
+
+
+def _safe_media_type(path):
+    return SAFE_MEDIA_TYPES.get(Path(path).suffix.lower(), "application/octet-stream")
+
+
+def _content_disposition(disposition_type, filename):
+    safe_name = Path(filename or "document").name.replace('"', "")
+    return f"{disposition_type}; filename*=UTF-8''{quote(safe_name)}"
+
+
+def _redirect(base_path, **params):
+    query = {key: value for key, value in params.items() if value not in (None, "")}
+    url = base_path
+    if query:
+        url = f"{url}?{urlencode(query)}"
+    return RedirectResponse(url=url, status_code=302)
+
+
+def require_document_manager(
+    request: Request,
+    user=Depends(require_economist_user),
+):
+    if request.url.path.startswith("/admin") and not (user.is_admin or user.role == "admin"):
+        raise RedirectException("/")
+    return user
+
+
+def _document_type_base(request):
+    if request.url.path.startswith("/economist"):
+        return "/economist/document-types", "/economist", "Кабинет экономиста"
+    return "/admin/document-types", "/admin", "Назад в админку"
+
+
+def _documents_base(request):
+    if request.url.path.startswith("/economist"):
+        return "/economist/documents", "/economist", "Кабинет экономиста"
+    return "/admin/documents", "/admin", "Назад в админку"
+
+
+def _employee_scope(session, user, *, admin=False):
+    if admin or user.is_admin:
+        return None
+    return economist_employee_names(session, get_economist_cities(user))
+
+
+def _is_employee_allowed(employee_name, allowed_names):
+    if allowed_names is None:
+        return True
+    return normalize_text(employee_name) in set(allowed_names)
+
+
+def _render_document_types(request, session, user, message="", error=""):
+    base_path, back_url, back_label = _document_type_base(request)
+    document_types = session.query(DocumentType).order_by(
+        DocumentType.is_active.desc(),
+        DocumentType.name.asc(),
+    ).all()
+    return templates.TemplateResponse(
+        request,
+        "document_types.html",
+        {
+            "user": user,
+            "document_types": document_types,
+            "base_path": base_path,
+            "back_url": back_url,
+            "back_label": back_label,
+            "message": message or None,
+            "error": error or None,
+        },
+    )
+
+
+async def _save_sample_file(document_type, sample_file):
+    path, _ = await save_upload_file(
+        sample_file,
+        "document_type_samples",
+        f"type_{document_type.id}",
+    )
+    if path:
+        document_type.sample_image_path = path
+
+
+def _apply_document_type_fields(
+    document_type,
+    *,
+    name,
+    description,
+    help_text,
+    citizenship_filter,
+    requires_number,
+    requires_issue_date,
+    requires_expiry_date,
+    allow_permanent,
+    extra_field_1_label,
+    extra_field_2_label,
+    is_required,
+    is_active,
+):
+    document_type.name = normalize_text(name)
+    document_type.description = normalize_text(description) or None
+    document_type.help_text = normalize_text(help_text) or None
+    document_type.citizenship_filter = normalize_text(citizenship_filter) or None
+    document_type.requires_number = parse_bool(requires_number)
+    document_type.requires_issue_date = parse_bool(requires_issue_date)
+    document_type.requires_expiry_date = parse_bool(requires_expiry_date)
+    document_type.allow_permanent = parse_bool(allow_permanent)
+    document_type.extra_field_1_label = normalize_text(extra_field_1_label) or None
+    document_type.extra_field_2_label = normalize_text(extra_field_2_label) or None
+    document_type.is_required = parse_bool(is_required)
+    document_type.is_active = parse_bool(is_active)
+
+
+def _document_type_payload(document_type):
+    return {
+        "name": document_type.name,
+        "description": document_type.description,
+        "help_text": document_type.help_text,
+        "sample_image_path": document_type.sample_image_path,
+        "citizenship_filter": document_type.citizenship_filter,
+        "requires_number": document_type.requires_number,
+        "requires_issue_date": document_type.requires_issue_date,
+        "requires_expiry_date": document_type.requires_expiry_date,
+        "allow_permanent": document_type.allow_permanent,
+        "extra_field_1_label": document_type.extra_field_1_label,
+        "extra_field_2_label": document_type.extra_field_2_label,
+        "is_required": document_type.is_required,
+        "is_active": document_type.is_active,
+    }
+
+
+def _render_documents(
+    request,
+    session,
+    user,
+    *,
+    allowed_names=None,
+    employee_name="",
+    document_type_id=0,
+    status="pending_verification",
+    message="",
+    error="",
+):
+    base_path, back_url, back_label = _documents_base(request)
+    employees = employee_names(session) if allowed_names is None else allowed_names
+    document_type_id = int(document_type_id or 0)
+    rows = build_document_registry_rows(
+        session,
+        employees,
+        employee_name=employee_name,
+        document_type_id=document_type_id,
+        status=status,
+    )
+    document_types = session.query(DocumentType).filter(
+        DocumentType.is_active == True
+    ).order_by(DocumentType.name.asc()).all()
+    return templates.TemplateResponse(
+        request,
+        "documents.html",
+        {
+            "user": user,
+            "rows": rows,
+            "employees": employees,
+            "document_types": document_types,
+            "status_labels": STATUS_LABELS,
+            "employee_name": normalize_text(employee_name),
+            "document_type_id": document_type_id,
+            "status": status,
+            "base_path": base_path,
+            "back_url": back_url,
+            "back_label": back_label,
+            "message": message or None,
+            "error": error or None,
+        },
+    )
+
+
+async def _create_employee_document(
+    session,
+    request,
+    user,
+    *,
+    base_path,
+    allowed_names,
+    employee_name,
+    document_type_id,
+    document_number,
+    issue_date,
+    expiry_date,
+    is_permanent,
+    extra_field_1_value,
+    extra_field_2_value,
+    file,
+    comment,
+    status="pending_verification",
+):
+    employee_name_clean = normalize_text(employee_name)
+    if not _is_employee_allowed(employee_name_clean, allowed_names):
+        return _redirect(base_path, error="Нет доступа к сотруднику")
+
+    document_type = session.query(DocumentType).filter(
+        DocumentType.id == document_type_id,
+        DocumentType.is_active == True,
+    ).first()
+    if not document_type:
+        return _redirect(base_path, error="Тип документа не найден")
+
+    try:
+        parsed_issue_date = parse_date(issue_date)
+        parsed_expiry_date = None if parse_bool(is_permanent) else parse_date(expiry_date)
+    except DocumentDateParseError:
+        return _redirect(base_path, error=INVALID_DATE_MESSAGE)
+
+    user_row = session.query(User).filter(User.employee_name == employee_name_clean).first()
+    folder = f"employee_documents/{user_row.id if user_row else normalize_employee_folder(employee_name_clean)}"
+    file_path, original_filename = await save_upload_file(
+        file,
+        folder,
+        f"type_{document_type.id}",
+    )
+
+    document = EmployeeDocument(
+        user_id=user_row.id if user_row else None,
+        employee_name=employee_name_clean,
+        document_type_id=document_type.id,
+        document_number=normalize_text(document_number) or None,
+        issue_date=parsed_issue_date,
+        expiry_date=parsed_expiry_date,
+        is_permanent=parse_bool(is_permanent),
+        extra_field_1_value=normalize_text(extra_field_1_value) or None,
+        extra_field_2_value=normalize_text(extra_field_2_value) or None,
+        file_path=file_path,
+        original_filename=original_filename,
+        status=status,
+        comment=normalize_text(comment) or None,
+        uploaded_by=user.id,
+        uploaded_at=now_utc(),
+    )
+    session.add(document)
+    session.flush()
+    create_audit_log(
+        session,
+        request,
+        user,
+        "document_uploaded",
+        "employee_document",
+        document.id,
+        f"{document.employee_name} / {document_type.name}",
+        new_value={
+            "employee_name": document.employee_name,
+            "document_type_id": document.document_type_id,
+            "status": document.status,
+            "original_filename": document.original_filename,
+        },
+        comment=document.comment,
+    )
+    session.commit()
+    return _redirect(base_path, message="Документ загружен")
+
+
+def _document_allowed_for_user(session, document, user):
+    if not document:
+        return False
+    if user.is_admin:
+        return True
+    if user.role == "economist":
+        allowed = economist_employee_names(session, get_economist_cities(user))
+        return _is_employee_allowed(document.employee_name, allowed)
+    return normalize_text(document.employee_name) == normalize_text(user.employee_name)
+
+
+def _change_document_status(
+    request,
+    session,
+    user,
+    *,
+    document_id,
+    new_status,
+    status_filter,
+    employee_name,
+    comment="",
+):
+
+    base_path, _, _ = _documents_base(request)
+    document = session.query(EmployeeDocument).filter(
+        EmployeeDocument.id == document_id
+    ).first()
+    if not _document_allowed_for_user(session, document, user):
+        return _redirect(base_path, status=status_filter, employee_name=employee_name, error="Нет доступа к документу")
+
+    old_status = document.status
+    old_comment = document.comment
+    document.status = new_status
+    document.comment = normalize_text(comment) or document.comment
+    document.updated_at = now_utc()
+    if new_status == "verified":
+        document.verified_by = user.id
+        document.verified_at = now_utc()
+    action = {
+        "verified": "document_verified",
+        "rejected": "document_rejected",
+        "archived": "document_archived",
+    }.get(new_status, "document_updated")
+    create_audit_log(
+        session,
+        request,
+        user,
+        action,
+        "employee_document",
+        document.id,
+        document.employee_name,
+        old_value={"status": old_status, "comment": old_comment},
+        new_value={"status": document.status, "comment": document.comment},
+    )
+    session.commit()
+    return _redirect(base_path, status=status_filter, employee_name=employee_name, message="Статус документа обновлен")
+
+
+
+@router.get("/admin/document-types", response_class=HTMLResponse)
+def admin_document_types(
+    request: Request,
+    message: str = "",
+    error: str = "",
+    session: Session = Depends(get_db),
+    admin=Depends(require_admin_user),
+):
+    return _render_document_types(request, session, admin, message, error)
+
+
+@router.get("/economist/document-types", response_class=HTMLResponse)
+def economist_document_types(
+    request: Request,
+    message: str = "",
+    error: str = "",
+    session: Session = Depends(get_db),
+    user=Depends(require_economist_user),
+):
+    return _render_document_types(request, session, user, message, error)
+
+
+@router.post("/admin/document-types/add")
+@router.post("/economist/document-types/add")
+async def add_document_type(
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(default=""),
+    help_text: str = Form(default=""),
+    citizenship_filter: str = Form(default=""),
+    requires_number: str = Form(default=""),
+    requires_issue_date: str = Form(default=""),
+    requires_expiry_date: str = Form(default=""),
+    allow_permanent: str = Form(default=""),
+    extra_field_1_label: str = Form(default=""),
+    extra_field_2_label: str = Form(default=""),
+    is_required: str = Form(default=""),
+    is_active: str = Form(default="1"),
+    sample_file: UploadFile | None = File(default=None),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _document_type_base(request)
+    try:
+
+        if not normalize_text(name):
+            return _redirect(base_path, error="Название обязательно")
+
+        document_type = DocumentType(created_at=now_utc())
+        _apply_document_type_fields(
+            document_type,
+            name=name,
+            description=description,
+            help_text=help_text,
+            citizenship_filter=citizenship_filter,
+            requires_number=requires_number,
+            requires_issue_date=requires_issue_date,
+            requires_expiry_date=requires_expiry_date,
+            allow_permanent=allow_permanent,
+            extra_field_1_label=extra_field_1_label,
+            extra_field_2_label=extra_field_2_label,
+            is_required=is_required,
+            is_active=is_active,
+        )
+        session.add(document_type)
+        session.flush()
+        await _save_sample_file(document_type, sample_file)
+        create_audit_log(
+            session,
+            request,
+            user,
+            "document_type_created",
+            "document_type",
+            document_type.id,
+            document_type.name,
+            new_value=_document_type_payload(document_type),
+        )
+        session.commit()
+        return _redirect(base_path, message="Тип документа добавлен")
+    except Exception as exc:
+        session.rollback()
+        return _redirect(base_path, error=str(exc))
+
+
+@router.post("/admin/document-types/update")
+@router.post("/economist/document-types/update")
+async def update_document_type(
+    request: Request,
+    type_id: int = Form(...),
+    name: str = Form(...),
+    description: str = Form(default=""),
+    help_text: str = Form(default=""),
+    citizenship_filter: str = Form(default=""),
+    requires_number: str = Form(default=""),
+    requires_issue_date: str = Form(default=""),
+    requires_expiry_date: str = Form(default=""),
+    allow_permanent: str = Form(default=""),
+    extra_field_1_label: str = Form(default=""),
+    extra_field_2_label: str = Form(default=""),
+    is_required: str = Form(default=""),
+    is_active: str = Form(default=""),
+    sample_file: UploadFile | None = File(default=None),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _document_type_base(request)
+    try:
+
+        document_type = session.query(DocumentType).filter(DocumentType.id == type_id).first()
+        if not document_type:
+            return _redirect(base_path, error="Тип документа не найден")
+
+        old_value = _document_type_payload(document_type)
+        _apply_document_type_fields(
+            document_type,
+            name=name,
+            description=description,
+            help_text=help_text,
+            citizenship_filter=citizenship_filter,
+            requires_number=requires_number,
+            requires_issue_date=requires_issue_date,
+            requires_expiry_date=requires_expiry_date,
+            allow_permanent=allow_permanent,
+            extra_field_1_label=extra_field_1_label,
+            extra_field_2_label=extra_field_2_label,
+            is_required=is_required,
+            is_active=is_active,
+        )
+        document_type.updated_at = now_utc()
+        await _save_sample_file(document_type, sample_file)
+        create_audit_log(
+            session,
+            request,
+            user,
+            "document_type_updated",
+            "document_type",
+            document_type.id,
+            document_type.name,
+            old_value=old_value,
+            new_value=_document_type_payload(document_type),
+        )
+        session.commit()
+        return _redirect(base_path, message="Тип документа обновлен")
+    except Exception as exc:
+        session.rollback()
+        return _redirect(base_path, error=str(exc))
+
+
+@router.post("/admin/document-types/delete")
+@router.post("/economist/document-types/delete")
+def delete_document_type(
+    request: Request,
+    type_id: int = Form(...),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _document_type_base(request)
+
+    document_type = session.query(DocumentType).filter(DocumentType.id == type_id).first()
+    if document_type:
+        old_value = _document_type_payload(document_type)
+        document_type.is_active = False
+        document_type.updated_at = now_utc()
+        create_audit_log(
+            session,
+            request,
+            user,
+            "document_type_updated",
+            "document_type",
+            document_type.id,
+            document_type.name,
+            old_value=old_value,
+            new_value=_document_type_payload(document_type),
+            comment="deactivated",
+        )
+        session.commit()
+    return _redirect(base_path, message="Тип документа деактивирован")
+
+
+@router.get("/admin/documents", response_class=HTMLResponse)
+def admin_documents(
+    request: Request,
+    employee_name: str = "",
+    document_type_id: int = 0,
+    status: str = "pending_verification",
+    message: str = "",
+    error: str = "",
+    session: Session = Depends(get_db),
+    admin=Depends(require_admin_user),
+):
+    return _render_documents(
+        request,
+        session,
+        admin,
+        employee_name=employee_name,
+        document_type_id=document_type_id,
+        status=status,
+        message=message,
+        error=error,
+    )
+
+
+@router.get("/economist/documents", response_class=HTMLResponse)
+def economist_documents(
+    request: Request,
+    employee_name: str = "",
+    document_type_id: int = 0,
+    status: str = "pending_verification",
+    message: str = "",
+    error: str = "",
+    session: Session = Depends(get_db),
+    user=Depends(require_economist_user),
+):
+    return _render_documents(
+        request,
+        session,
+        user,
+        allowed_names=_employee_scope(session, user),
+        employee_name=employee_name,
+        document_type_id=document_type_id,
+        status=status,
+        message=message,
+        error=error,
+    )
+
+
+@router.get("/admin/documents/employee/{user_id}", response_class=HTMLResponse)
+def admin_employee_documents(
+    request: Request,
+    user_id: int,
+    session: Session = Depends(get_db),
+    admin=Depends(require_admin_user),
+):
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user:
+        return RedirectResponse(url="/admin/documents?error=Сотрудник не найден", status_code=302)
+    return _render_documents(
+        request,
+        session,
+        admin,
+        employee_name=user.employee_name,
+        status="all",
+    )
+
+
+@router.post("/admin/documents/upload")
+@router.post("/economist/documents/upload")
+async def upload_employee_document_by_manager(
+    request: Request,
+    employee_name: str = Form(...),
+    document_type_id: int = Form(...),
+    document_number: str = Form(default=""),
+    issue_date: str = Form(default=""),
+    expiry_date: str = Form(default=""),
+    is_permanent: str = Form(default=""),
+    extra_field_1_value: str = Form(default=""),
+    extra_field_2_value: str = Form(default=""),
+    comment: str = Form(default=""),
+    file: UploadFile = File(...),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _documents_base(request)
+    try:
+        allowed_names = None if request.url.path.startswith("/admin") else _employee_scope(session, user)
+        return await _create_employee_document(
+            session,
+            request,
+            user,
+            base_path=base_path,
+            allowed_names=allowed_names,
+            employee_name=employee_name,
+            document_type_id=document_type_id,
+            document_number=document_number,
+            issue_date=issue_date,
+            expiry_date=expiry_date,
+            is_permanent=is_permanent,
+            extra_field_1_value=extra_field_1_value,
+            extra_field_2_value=extra_field_2_value,
+            file=file,
+            comment=comment,
+        )
+    except Exception as exc:
+        session.rollback()
+        return _redirect(base_path, error=str(exc))
+
+
+@router.post("/cabinet/documents/upload")
+async def cabinet_upload_document(
+    request: Request,
+    document_type_id: int = Form(...),
+    file: UploadFile = File(...),
+    session: Session = Depends(get_db),
+    user=Depends(current_user),
+):
+    try:
+        return await _create_employee_document(
+            session,
+            request,
+            user,
+            base_path="/employee_docs",
+            allowed_names=[normalize_text(user.employee_name)],
+            employee_name=user.employee_name,
+            document_type_id=document_type_id,
+            document_number="",
+            issue_date="",
+            expiry_date="",
+            is_permanent="",
+            extra_field_1_value="",
+            extra_field_2_value="",
+            file=file,
+            comment="",
+            status="pending_verification",
+        )
+    except Exception as exc:
+        session.rollback()
+        return _redirect("/employee_docs", error=str(exc))
+
+
+@router.post("/admin/documents/verify")
+@router.post("/economist/documents/verify")
+def verify_document(
+    request: Request,
+    document_id: int = Form(...),
+    status: str = Form(default="pending_verification"),
+    employee_name: str = Form(default=""),
+    comment: str = Form(default=""),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    return _change_document_status(
+        request,
+        session,
+        user,
+        document_id=document_id,
+        new_status="verified",
+        status_filter=status,
+        employee_name=employee_name,
+        comment=comment,
+    )
+
+
+@router.post("/admin/documents/reject")
+@router.post("/economist/documents/reject")
+def reject_document(
+    request: Request,
+    document_id: int = Form(...),
+    status: str = Form(default="pending_verification"),
+    employee_name: str = Form(default=""),
+    comment: str = Form(default=""),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    return _change_document_status(
+        request,
+        session,
+        user,
+        document_id=document_id,
+        new_status="rejected",
+        status_filter=status,
+        employee_name=employee_name,
+        comment=comment,
+    )
+
+
+@router.post("/admin/documents/archive")
+@router.post("/economist/documents/archive")
+def archive_document(
+    request: Request,
+    document_id: int = Form(...),
+    status: str = Form(default="pending_verification"),
+    employee_name: str = Form(default=""),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    return _change_document_status(
+        request,
+        session,
+        user,
+        document_id=document_id,
+        new_status="archived",
+        status_filter=status,
+        employee_name=employee_name,
+    )
+
+
+@router.get("/documents/files/{document_id}")
+def document_file(
+    request: Request,
+    document_id: int,
+    session: Session = Depends(get_db),
+    user=Depends(current_user),
+):
+    document = session.query(EmployeeDocument).filter(EmployeeDocument.id == document_id).first()
+    if not _document_allowed_for_user(session, document, user):
+        return RedirectResponse(url="/", status_code=302)
+    if not document_file_exists(document.file_path):
+        return RedirectResponse(url="/", status_code=302)
+    return FileResponse(
+        Path(document.file_path),
+        media_type=_safe_media_type(document.file_path),
+        headers={
+            "Content-Disposition": _content_disposition(
+                "attachment",
+                document.original_filename or Path(document.file_path).name,
+            ),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.get("/documents/samples/{type_id}")
+def document_type_sample(
+    request: Request,
+    type_id: int,
+    session: Session = Depends(get_db),
+    user=Depends(current_user),
+):
+    document_type = session.query(DocumentType).filter(DocumentType.id == type_id).first()
+    if not document_type or not document_file_exists(document_type.sample_image_path):
+        return RedirectResponse(url="/", status_code=302)
+    return FileResponse(
+        Path(document_type.sample_image_path),
+        media_type=_safe_media_type(document_type.sample_image_path),
+        headers={
+            "Content-Disposition": _content_disposition(
+                "inline",
+                Path(document_type.sample_image_path).name,
+            ),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )

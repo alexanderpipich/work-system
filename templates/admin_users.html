@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Пользователи</title>
@@ -18,7 +21,6 @@
             --error-text: #b42318;
             --success-bg: #eefbf3;
             --success-text: #067647;
-            --danger: #b42318;
         }
 
         * { box-sizing: border-box; }
@@ -35,20 +37,24 @@
         }
 
         .page {
-            max-width: 1280px;
+            max-width: 1700px;
             margin: 0 auto;
         }
 
-        .topbar {
+        .topbar,
+        .card {
             background: var(--card-bg);
             border-radius: 22px;
             box-shadow: var(--shadow);
-            padding: 18px 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 16px;
-            margin-bottom: 20px;
         }
 
         .brand {
@@ -56,16 +62,6 @@
             align-items: center;
             gap: 14px;
             min-width: 0;
-        }
-
-        .brand a {
-            display: inline-flex;
-            border-radius: 16px;
-            transition: transform .15s ease;
-        }
-
-        .brand a:hover {
-            transform: translateY(-1px) scale(1.01);
         }
 
         .brand img {
@@ -106,22 +102,63 @@
             padding: 10px 14px;
             border-radius: 12px;
             background: #fff;
-            transition: background .2s ease, border-color .2s ease, transform .12s ease;
             white-space: nowrap;
         }
 
-        .toolbar a:hover {
-            background: #f9fafb;
-            border-color: rgba(11, 20, 117, 0.24);
-            transform: translateY(-1px);
+        .filters {
+            display: grid;
+            grid-template-columns: 100px 180px minmax(240px, 1fr) 180px 160px;
+            gap: 12px;
+            align-items: end;
         }
 
-        .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 22px 20px;
-            margin-bottom: 20px;
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--brand-blue);
+            margin-bottom: 8px;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            height: 42px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0 12px;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .btn {
+            height: 42px;
+            border: none;
+            border-radius: 12px;
+            padding: 0 14px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--brand-blue), #18239a);
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #c23327, #9f1f16);
+            color: #fff;
+        }
+
+        .btn-light {
+            background: #fff;
+            color: var(--brand-blue);
+            border: 1px solid rgba(11, 20, 117, 0.14);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .msg {
@@ -166,12 +203,12 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 980px;
+            min-width: 1700px;
             background: #fff;
         }
 
         th, td {
-            padding: 14px 16px;
+            padding: 12px 12px;
             text-align: left;
             border-bottom: 1px solid var(--border);
             font-size: 14px;
@@ -183,189 +220,260 @@
             color: var(--brand-blue);
             font-size: 13px;
             font-weight: 700;
-            letter-spacing: 0.02em;
-        }
-
-        tbody tr {
-            transition: background .15s ease;
         }
 
         tbody tr:hover {
             background: rgba(11, 20, 117, 0.025);
         }
 
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
         .pill {
             display: inline-block;
-            padding: 8px 12px;
+            padding: 7px 10px;
             border-radius: 999px;
             font-size: 12px;
             font-weight: 700;
         }
 
-        .pill-admin {
-            background: rgba(11, 20, 117, 0.10);
-            color: var(--brand-blue);
+        .role-admin { background: #fee4e2; color: #b42318; }
+        .role-economist { background: #f4ebff; color: #6941c6; }
+        .role-brigadier { background: #e0f2fe; color: #026aa2; }
+        .role-employee { background: #f2f4f7; color: #344054; }
+
+        .role-form {
+            display: grid;
+            grid-template-columns: 130px 150px 220px 150px 160px 100px;
+            gap: 8px;
+            align-items: center;
         }
 
-        .pill-user {
-            background: rgba(245, 138, 101, 0.14);
-            color: #8f3e20;
+        .role-form input,
+        .role-form select {
+            height: 38px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0 10px;
+            min-width: 120px;
+            background: #fff;
         }
 
-        .inline-form {
+        .password-form {
             display: flex;
             gap: 8px;
             align-items: center;
-            flex-wrap: wrap;
         }
 
-        .inline-form input[type="password"] {
-            height: 40px;
+        .password-form input {
+            height: 38px;
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0 12px;
-            min-width: 160px;
-            outline: none;
+            border-radius: 10px;
+            padding: 0 10px;
+            min-width: 150px;
+            background: #fff;
         }
 
-        .inline-form input[type="password"]:focus {
-            border-color: rgba(11, 20, 117, 0.35);
-            box-shadow: 0 0 0 4px rgba(11, 20, 117, 0.08);
+        .muted {
+            color: var(--muted);
         }
 
-        .btn {
-            height: 40px;
-            border: none;
-            border-radius: 12px;
-            padding: 0 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform .08s ease, opacity .2s ease, box-shadow .2s ease;
+        .small-note {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 6px;
+            line-height: 1.35;
         }
 
-        .btn:hover {
-            opacity: 0.97;
-            transform: translateY(-1px);
-        }
+        @media (max-width: 980px) {
+            .filters {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            color: #fff;
-            box-shadow: 0 8px 18px rgba(11, 20, 117, 0.16);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #c23327, #9f1f16);
-            color: #fff;
-            box-shadow: 0 8px 18px rgba(180, 35, 24, 0.16);
-        }
-
-        @media (max-width: 720px) {
             .topbar {
                 flex-direction: column;
                 align-items: stretch;
             }
+        }
 
-            .brand-title {
-                font-size: 24px;
-            }
-
-            .toolbar {
-                justify-content: stretch;
+        @media (max-width: 640px) {
+            .filters {
+                grid-template-columns: 1fr;
             }
 
             .toolbar a {
                 text-align: center;
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
-    <div class="page">
-        <div class="topbar">
-            <div class="brand">
-                <a href="/admin">
-                    <img src="/static/logo-alex.jpg" alt="Логотип">
-                </a>
-                <div>
-                    <h1 class="brand-title">Пользователи</h1>
-                    <p class="brand-subtitle">Управление пользователями системы</p>
-                </div>
-            </div>
-
-            <div class="toolbar">
-                <a href="/admin">Назад в админку</a>
-                <a href="/admin/create-user">Создать пользователя</a>
-                <a href="/admin/upload-users">Импорт пользователей</a>
-                <a href="/logout">Выйти</a>
+<div class="page">
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1 class="brand-title">Пользователи</h1>
+                <p class="brand-subtitle">Фильтры, роли, магазины бригадиров/экономистов, гражданство и юрлица</p>
             </div>
         </div>
 
-        {% if message %}
-            <div class="card">
-                <div class="msg">{{ message }}</div>
-            </div>
-        {% endif %}
-
-        {% if error %}
-            <div class="card">
-                <div class="err">{{ error }}</div>
-            </div>
-        {% endif %}
-
-        <div class="card">
-            <div class="table-title-row">
-                <h2 class="table-title">Список пользователей</h2>
-            </div>
-
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Телефон</th>
-                            <th>ФИО</th>
-                            <th>Роль</th>
-                            <th>Сменить пароль</th>
-                            <th>Удалить</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ user.id }}</td>
-                            <td>{{ user.phone }}</td>
-                            <td>{{ user.employee_name }}</td>
-                            <td>
-                                {% if user.is_admin %}
-                                    <span class="pill pill-admin">Администратор</span>
-                                {% else %}
-                                    <span class="pill pill-user">Сотрудник</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <form method="post" action="/admin/change-password" class="inline-form">
-                                    <input type="hidden" name="user_id" value="{{ user.id }}">
-                                    <input type="password" name="new_password" placeholder="Новый пароль" required>
-                                    <button type="submit" class="btn btn-primary">Сменить</button>
-                                </form>
-                            </td>
-                            <td>
-                                <form method="post" action="/admin/delete-user" onsubmit="return confirm('Удалить пользователя?');">
-                                    <input type="hidden" name="user_id" value="{{ user.id }}">
-                                    <button type="submit" class="btn btn-danger">Удалить</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        <div class="toolbar">
+            <a href="/admin">Назад в админку</a>
+            <a href="/admin/create-user">Создать пользователя</a>
+            <a href="/admin/upload-users">Импорт пользователей</a>
+            <a href="/logout">Выйти</a>
         </div>
     </div>
+
+    {% if message %}
+        <div class="card">
+            <div class="msg">{{ message }}</div>
+        </div>
+    {% endif %}
+
+    {% if error %}
+        <div class="card">
+            <div class="err">{{ error }}</div>
+        </div>
+    {% endif %}
+
+    <div class="card">
+        <form method="get" action="/admin/users">
+            <div class="filters">
+                <div class="field">
+                    <label>ID</label>
+                    <input type="text" name="user_id" value="{{ filters.user_id if filters else '' }}">
+                </div>
+
+                <div class="field">
+                    <label>Телефон</label>
+                    <input type="text" name="phone" value="{{ filters.phone if filters else '' }}">
+                </div>
+
+                <div class="field">
+                    <label>ФИО</label>
+                    <input type="text" name="employee_name" value="{{ filters.employee_name if filters else '' }}">
+                </div>
+
+                <div class="field">
+                    <label>Роль</label>
+                    <select name="role">
+                        <option value="">Все роли</option>
+                        <option value="employee" {% if filters and filters.role == 'employee' %}selected{% endif %}>Сотрудник</option>
+                        <option value="brigadier" {% if filters and filters.role == 'brigadier' %}selected{% endif %}>Бригадир</option>
+                        <option value="economist" {% if filters and filters.role == 'economist' %}selected{% endif %}>Экономист</option>
+                        <option value="admin" {% if filters and filters.role == 'admin' %}selected{% endif %}>Админ</option>
+                    </select>
+                </div>
+
+                <div>
+                    <button type="submit" class="btn btn-primary">Фильтр</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="table-title-row">
+            <h2 class="table-title">Список пользователей</h2>
+            <a href="/admin/users" class="btn btn-light">Сбросить фильтр</a>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Телефон</th>
+                    <th>ФИО</th>
+                    <th>Текущая роль</th>
+                    <th>Роль / магазины / гражданство / юрлицо</th>
+                    <th>Сменить пароль</th>
+                    <th>Удалить</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.phone }}</td>
+                        <td>{{ user.employee_name }}</td>
+                        <td>
+                            {% if user.role == "admin" or user.is_admin %}
+                                <span class="pill role-admin">Админ</span>
+                            {% elif user.role == "economist" %}
+                                <span class="pill role-economist">Экономист</span>
+                                {% if user.economist_stores %}
+                                    <div class="small-note">{{ user.economist_stores }}</div>
+                                {% endif %}
+                            {% elif user.role == "brigadier" %}
+                                <span class="pill role-brigadier">Бригадир</span>
+                                {% if user.brigadier_store %}
+                                    <div class="small-note">{{ user.brigadier_store }}</div>
+                                {% endif %}
+                            {% else %}
+                                <span class="pill role-employee">Сотрудник</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <form method="post" action="/admin/update-user" class="role-form">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+
+                                <select name="role">
+                                    <option value="employee" {% if user.role == "employee" and not user.is_admin %}selected{% endif %}>Сотрудник</option>
+                                    <option value="brigadier" {% if user.role == "brigadier" %}selected{% endif %}>Бригадир</option>
+                                    <option value="economist" {% if user.role == "economist" %}selected{% endif %}>Экономист</option>
+                                    <option value="admin" {% if user.role == "admin" or user.is_admin %}selected{% endif %}>Админ</option>
+                                </select>
+
+                                <input type="text" name="brigadier_store" value="{{ user.brigadier_store or '' }}" placeholder="Магазин бригадира">
+
+                                <input type="text" name="economist_stores" value="{{ user.economist_stores or '' }}" placeholder="Магазины экономиста через запятую">
+
+                                <input type="text" name="citizenship_country" value="{{ user.citizenship_country or '' }}" placeholder="Гражданство">
+
+                                <select name="legal_entity">
+                                    <option value="">Не выбрано</option>
+                                    {% set current_legal_entity = user.legal_entity or '' %}
+                                    {% set active_legal_names = legal_entities | map(attribute='name') | list %}
+                                    {% if current_legal_entity and current_legal_entity not in active_legal_names %}
+                                        <option value="{{ current_legal_entity }}" selected>{{ current_legal_entity }}</option>
+                                    {% endif %}
+                                    {% for entity in legal_entities %}
+                                        <option value="{{ entity.name }}" {% if current_legal_entity == entity.name %}selected{% endif %}>{{ entity.name }}</option>
+                                    {% endfor %}
+                                </select>
+
+                                <button type="submit" class="btn btn-primary">OK</button>
+                            </form>
+                        </td>
+
+                        <td>
+                            <form method="post" action="/admin/change-password" class="password-form">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <input type="password" name="new_password" placeholder="Новый пароль" required>
+                                <button type="submit" class="btn btn-primary">Сменить</button>
+                            </form>
+                        </td>
+
+                        <td>
+                            <form method="post" action="/admin/delete-user" onsubmit="return confirm('Удалить пользователя?');">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <button type="submit" class="btn btn-danger">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+
+                {% if users|length == 0 %}
+                    <tr>
+                        <td colspan="7" class="muted">Пользователи не найдены</td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 </body>
 </html>

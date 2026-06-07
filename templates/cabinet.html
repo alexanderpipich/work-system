@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Личный кабинет</title>
@@ -18,88 +21,120 @@
             --error-text: #b42318;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
 
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
-                var(--bg);
+            background: var(--bg);
             color: var(--text);
-            padding: 28px 18px 36px;
         }
 
         .page {
-            max-width: 1020px;
+            max-width: 1040px;
             margin: 0 auto;
+            padding: 0 18px 36px;
         }
 
         .topbar {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 18px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.96);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 10px 26px rgba(11, 20, 117, 0.08);
+        }
+
+        .topbar-inner {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 12px 18px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            gap: 16px;
-            margin-bottom: 20px;
+            justify-content: space-between;
+            gap: 14px;
         }
 
         .brand {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             min-width: 0;
         }
 
         .brand img {
-            width: 64px;
-            height: 64px;
+            width: 54px;
+            height: 54px;
             object-fit: contain;
-            border-radius: 16px;
+            border-radius: 14px;
             background: #fff;
             flex-shrink: 0;
         }
 
-        .brand-text {
-            min-width: 0;
-        }
-
         .brand-title {
             margin: 0;
-            font-size: 28px;
+            font-size: 24px;
             line-height: 1.1;
             color: var(--brand-blue);
-            font-weight: 700;
-        }
-
-        .brand-subtitle {
-            margin: 6px 0 0;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.4;
         }
 
         .logout {
             text-decoration: none;
             color: var(--brand-blue);
             font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.12);
+            border: 1px solid rgba(11, 20, 117, 0.16);
             padding: 10px 14px;
             border-radius: 12px;
             background: #fff;
-            transition: background .2s ease, border-color .2s ease;
             white-space: nowrap;
         }
 
-        .logout:hover {
-            background: #f9fafb;
-            border-color: rgba(11, 20, 117, 0.24);
+        .quicknav {
+            position: sticky;
+            top: 79px;
+            z-index: 19;
+            background: rgba(244, 245, 247, 0.96);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .quicknav-inner {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 10px 18px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .nav-btn {
+            min-height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--brand-blue);
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 8px 20px rgba(11, 20, 117, 0.06);
+        }
+
+        .nav-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            flex-shrink: 0;
+        }
+
+        .content {
+            padding-top: 20px;
         }
 
         .card {
@@ -107,88 +142,28 @@
             border-radius: 22px;
             box-shadow: var(--shadow);
             padding: 22px 20px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
+        }
+
+        .welcome-title {
+            margin: 0 0 10px;
+            color: var(--brand-blue);
+            font-size: 28px;
         }
 
         .employee-name {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--brand-blue);
-            margin: 0 0 8px;
-        }
-
-        .employee-note {
             margin: 0;
-            color: var(--muted);
-            font-size: 14px;
-        }
-
-        .filter-form {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 14px;
-            align-items: end;
-        }
-
-        .field label {
-            display: block;
-            font-size: 13px;
+            font-size: 22px;
             font-weight: 700;
-            color: var(--brand-blue);
-            margin-bottom: 8px;
-        }
-
-        .field input {
-            width: 100%;
-            height: 48px;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 0 14px;
-            font-size: 15px;
-            outline: none;
-            background: #fff;
-            transition: border-color .2s, box-shadow .2s;
-        }
-
-        .field input:focus {
-            border-color: rgba(11, 20, 117, 0.35);
-            box-shadow: 0 0 0 4px rgba(11, 20, 117, 0.08);
-        }
-
-        .btn {
-            height: 48px;
-            border: none;
-            border-radius: 14px;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            color: #fff;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 10px 22px rgba(11, 20, 117, 0.18);
-        }
-
-        .error {
-            margin-top: 12px;
-            background: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid rgba(180, 35, 24, 0.14);
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        .table-card {
-            overflow: hidden;
         }
 
         .table-title-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 16px;
-            margin-bottom: 16px;
+            gap: 14px;
             flex-wrap: wrap;
+            margin-bottom: 14px;
         }
 
         .table-title {
@@ -206,6 +181,55 @@
             font-weight: 700;
         }
 
+        .filter-form {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            align-items: end;
+            margin-bottom: 16px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--brand-blue);
+            margin-bottom: 8px;
+        }
+
+        .field input {
+            width: 100%;
+            height: 44px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0 12px;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .btn {
+            height: 44px;
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--brand-blue), #18239a);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .error {
+            margin-bottom: 14px;
+            background: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid rgba(180, 35, 24, 0.14);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
         .table-wrap {
             overflow-x: auto;
             border: 1px solid var(--border);
@@ -215,12 +239,12 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 540px;
+            min-width: 620px;
             background: #fff;
         }
 
         th, td {
-            padding: 14px 16px;
+            padding: 13px 14px;
             text-align: left;
             border-bottom: 1px solid var(--border);
             font-size: 14px;
@@ -231,103 +255,154 @@
             color: var(--brand-blue);
             font-size: 13px;
             font-weight: 700;
-            letter-spacing: 0.02em;
         }
 
-        tbody tr:hover {
-            background: rgba(11, 20, 117, 0.025);
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
+        tbody tr:last-child td { border-bottom: none; }
 
         .hours {
             font-weight: 700;
             color: var(--brand-blue);
         }
 
+        .attention-row,
+        .attention-row .hours {
+            color: var(--error-text);
+            font-weight: 700;
+        }
+
+        .warn-btn {
+            border: none;
+            background: #fff1ed;
+            color: #b42318;
+            border-radius: 999px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
         .empty {
-            padding: 18px 0 4px;
+            padding: 16px 0 2px;
             color: var(--muted);
             font-size: 14px;
         }
 
-        @media (max-width: 860px) {
+        .thin-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--brand-blue);
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .thin-link span {
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        @media (max-width: 760px) {
+            .quicknav { top: 73px; }
+
+            .quicknav-inner {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
             .filter-form {
                 grid-template-columns: 1fr;
             }
         }
 
-        @media (max-width: 700px) {
-            .topbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .brand {
-                align-items: center;
-            }
-
-            .brand-title {
-                font-size: 24px;
-            }
-
-            .logout {
-                text-align: center;
-            }
-        }
-
         @media (max-width: 520px) {
-            body {
-                padding: 16px 12px 24px;
+            .page {
+                padding: 0 12px 28px;
             }
 
-            .topbar,
-            .card {
-                border-radius: 18px;
-                padding: 18px 16px;
+            .topbar-inner {
+                padding: 10px 12px;
             }
 
             .brand img {
-                width: 54px;
-                height: 54px;
+                width: 48px;
+                height: 48px;
             }
 
-            .employee-name {
+            .brand-title {
                 font-size: 20px;
             }
 
-            .table-title {
-                font-size: 20px;
+            .logout {
+                padding: 9px 11px;
+            }
+
+            .quicknav { top: 69px; }
+
+            .quicknav-inner {
+                padding: 8px 12px;
+                gap: 8px;
+            }
+
+            .nav-btn {
+                min-height: 50px;
+                font-size: 12px;
+            }
+
+            .card {
+                border-radius: 18px;
+                padding: 18px 16px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="page">
-        <div class="topbar">
+    <header class="topbar">
+        <div class="topbar-inner">
             <div class="brand">
                 <img src="/static/logo-alex.jpg" alt="Логотип">
-                <div class="brand-text">
-                    <h1 class="brand-title">Личный кабинет</h1>
-                    <p class="brand-subtitle">
-                        Просмотр отработанных часов за выбранный период
-                    </p>
-                </div>
+                <h1 class="brand-title">Личный кабинет</h1>
             </div>
-
             <a href="/logout" class="logout">Выйти</a>
         </div>
+    </header>
 
-        <div class="card">
-            <h2 class="employee-name">{{ user.employee_name }}</h2>
-            <p class="employee-note">
-                По умолчанию отображается последняя завершённая неделя. Период можно изменить вручную.
-            </p>
+    <nav class="quicknav" aria-label="Быстрая навигация">
+        <div class="quicknav-inner">
+            <a class="nav-btn" href="/employee_docs">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v5h5"></path><path d="M9 13h6"></path><path d="M9 17h6"></path></svg>
+                Мои документы
+            </a>
+            <a class="nav-btn" href="/vacancies">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V5h6v2"></path><path d="M5 7h14v12H5z"></path><path d="M5 12h14"></path></svg>
+                Вакансии
+            </a>
+            <a class="nav-btn" href="/support">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 16 0"></path><path d="M5 13h3v5H5z"></path><path d="M16 13h3v5h-3z"></path><path d="M12 20h4"></path></svg>
+                Поддержка
+            </a>
+            <a class="nav-btn" href="#stats">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path></svg>
+                Статистика
+            </a>
         </div>
+    </nav>
 
-        <div class="card">
+    <main class="page content">
+        <section class="card">
+            <h2 class="welcome-title">Добро пожаловать!</h2>
+            <p class="employee-name">{{ user.employee_name }}</p>
+        </section>
+
+        <section id="stats" class="card">
+            <div class="table-title-row">
+                <h3 class="table-title">Отработанные часы</h3>
+                <div class="summary-pill">Итого за период: {{ total_hours }} ч</div>
+            </div>
+
             <form method="get" action="/cabinet" class="filter-form">
                 <div class="field">
                     <label for="date_from">Дата начала</label>
@@ -347,13 +422,6 @@
             {% if error %}
                 <div class="error">{{ error }}</div>
             {% endif %}
-        </div>
-
-        <div class="card table-card">
-            <div class="table-title-row">
-                <h3 class="table-title">Отработанные часы</h3>
-                <div class="summary-pill">Итого: {{ total_hours }} часов</div>
-            </div>
 
             {% if shifts %}
                 <div class="table-wrap">
@@ -362,24 +430,49 @@
                             <tr>
                                 <th>Дата</th>
                                 <th>Часы</th>
+                                <th>Услуга</th>
+                                <th>Тип заявки</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for shift in shifts %}
-                            <tr>
+                            <tr class="{% if shift.is_attention %}attention-row{% endif %}">
                                 <td>{{ shift.shift_date.strftime("%d.%m.%Y") if shift.shift_date else "" }}</td>
                                 <td class="hours">{{ shift.hours }}</td>
+                                <td>{{ shift.service }}</td>
+                                <td>
+                                    {% if shift.is_no_plan %}
+                                        <span>Смена без плана</span>
+                                        <button
+                                            type="button"
+                                            class="warn-btn"
+                                            onclick="alert('Уважаемый коллега! Просим Вас обратить внимание на данную смену. В настоящий момент данная смена не внесена в план и не попадает в оплату. Если такая смена имела место быть, просим Вас обратиться к администрации ТК, чтобы внести данную смену в план.')"
+                                        >
+                                            !
+                                        </button>
+                                    {% else %}
+                                        {{ shift.request_type or "Основные заказы" }}
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             {% else %}
-                <div class="empty">
-                    За выбранный период записи не найдены.
-                </div>
+                <div class="empty">За выбранный период записи не найдены.</div>
             {% endif %}
-        </div>
-    </div>
+        </section>
+
+        <a class="thin-link" href="/employee_docs">
+            Документы сотрудника
+            <span>
+                Проверить список и сроки действия
+                {% if documents_attention_count %}
+                    · требуется внимание: {{ documents_attention_count }}
+                {% endif %}
+            </span>
+        </a>
+    </main>
 </body>
 </html>

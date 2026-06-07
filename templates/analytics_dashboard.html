@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --ok: #15803d;
+            --warn: #b45309;
+            --bad: #b91c1c;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 24px 18px 36px;
+        }
+
+        .page {
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        .topbar,
+        .panel,
+        .chart-card,
+        .metric {
+            background: var(--card-bg);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(11, 20, 117, 0.06);
+        }
+
+        .topbar {
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand img {
+            width: 58px;
+            height: 58px;
+            object-fit: contain;
+            border-radius: 14px;
+            background: #fff;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--brand-blue);
+            font-size: 28px;
+        }
+
+        .subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            background: #fff;
+            color: var(--brand-blue);
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .filter {
+            padding: 16px;
+            margin-bottom: 18px;
+            display: flex;
+            gap: 12px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        label {
+            display: grid;
+            gap: 6px;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        input {
+            height: 42px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0 12px;
+            font: inherit;
+            color: var(--text);
+            background: #fff;
+        }
+
+        .primary {
+            background: var(--brand-blue);
+            color: #fff;
+            border-color: var(--brand-blue);
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .metric {
+            padding: 18px;
+            min-height: 126px;
+        }
+
+        .metric-label {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .metric-value {
+            font-size: 30px;
+            font-weight: 800;
+            color: var(--brand-blue);
+            word-break: break-word;
+        }
+
+        .tone-green .metric-value { color: var(--ok); }
+        .tone-warn .metric-value { color: var(--warn); }
+        .tone-bad .metric-value { color: var(--bad); }
+        .tone-muted .metric-value { color: #475569; }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .panel,
+        .chart-card {
+            padding: 18px;
+        }
+
+        h2 {
+            margin: 0 0 14px;
+            color: var(--brand-blue);
+            font-size: 20px;
+        }
+
+        .alerts {
+            display: grid;
+            gap: 10px;
+        }
+
+        .alert-row,
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .alert-row:last-child,
+        .stat-row:last-child {
+            border-bottom: 0;
+        }
+
+        .badge {
+            min-width: 42px;
+            text-align: center;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-weight: 800;
+            color: var(--brand-blue);
+            background: rgba(11, 20, 117, 0.08);
+        }
+
+        .badge.hot {
+            color: var(--bad);
+            background: rgba(185, 28, 28, 0.08);
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .chart-box {
+            position: relative;
+            height: 280px;
+        }
+
+        .fallback-list {
+            margin-top: 12px;
+            display: grid;
+            gap: 7px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .mini-card {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            background: #fbfcff;
+        }
+
+        .mini-label {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 7px;
+        }
+
+        .mini-value {
+            color: var(--brand-blue);
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            color: var(--brand-blue);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .muted { color: var(--muted); }
+        .positive { color: var(--ok); font-weight: 800; }
+        .negative { color: var(--bad); font-weight: 800; }
+
+        @media (max-width: 980px) {
+            .kpi-grid,
+            .charts,
+            .section-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 720px) {
+            body { padding: 14px 10px 28px; }
+            .topbar { align-items: stretch; flex-direction: column; }
+            .brand { align-items: flex-start; }
+            h1 { font-size: 24px; }
+            .mini-grid { grid-template-columns: 1fr; }
+            .chart-box { height: 240px; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1>{{ title }}</h1>
+                <p class="subtitle">Срез по периоду: {{ filters.date_from.strftime('%d.%m.%Y') }} - {{ filters.date_to.strftime('%d.%m.%Y') }}</p>
+            </div>
+        </div>
+        <div class="actions">
+            <a class="btn" href="{{ reports_path }}">Отчеты</a>
+            <a class="btn" href="{{ back_url }}">Назад</a>
+        </div>
+    </div>
+
+    <form class="panel filter" method="get" action="{{ base_path }}">
+        <label>
+            Дата с
+            <input type="date" name="date_from" value="{{ filters.date_from }}">
+        </label>
+        <label>
+            Дата по
+            <input type="date" name="date_to" value="{{ filters.date_to }}">
+        </label>
+        <button class="btn primary" type="submit">Обновить</button>
+    </form>
+
+    <div class="kpi-grid">
+        {% for kpi in kpis %}
+            <div class="metric tone-{{ kpi.tone }}">
+                <div class="metric-label">{{ kpi.label }}</div>
+                <div class="metric-value">{{ kpi.value }}</div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="section-grid">
+        <div class="panel">
+            <h2>Предупреждения</h2>
+            <div class="alerts">
+                {% for alert in alerts %}
+                    <div class="alert-row">
+                        <span>{{ alert.label }}</span>
+                        <span class="badge {% if alert.value %}hot{% endif %}">{{ alert.value }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Динамика</h2>
+            {% for trend in trends %}
+                <div class="stat-row">
+                    <div>
+                        <strong>{{ trend.label }}</strong>
+                        <div class="muted">Сейчас: {{ trend.current }} / раньше: {{ trend.previous }}</div>
+                    </div>
+                    {% if trend.delta is none %}
+                        <span class="badge">н/д</span>
+                    {% elif trend.delta >= 0 %}
+                        <span class="positive">+{{ trend.delta }}%</span>
+                    {% else %}
+                        <span class="negative">{{ trend.delta }}%</span>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="charts">
+        <div class="chart-card">
+            <h2>Payroll по неделям</h2>
+            <div class="chart-box"><canvas id="payrollWeeksChart"></canvas></div>
+            <div class="fallback-list" data-fallback="payroll_by_week"></div>
+        </div>
+        <div class="chart-card">
+            <h2>Часы по городам</h2>
+            <div class="chart-box"><canvas id="hoursCityChart"></canvas></div>
+            <div class="fallback-list" data-fallback="hours_by_city"></div>
+        </div>
+        <div class="chart-card">
+            <h2>Топ магазинов</h2>
+            <div class="chart-box"><canvas id="topStoresChart"></canvas></div>
+            <div class="fallback-list" data-fallback="top_stores"></div>
+        </div>
+        <div class="chart-card">
+            <h2>Топ сотрудников</h2>
+            <div class="chart-box"><canvas id="topEmployeesChart"></canvas></div>
+            <div class="fallback-list" data-fallback="top_employees"></div>
+        </div>
+        <div class="chart-card">
+            <h2>Динамика корректировок</h2>
+            <div class="chart-box"><canvas id="adjustmentsChart"></canvas></div>
+            <div class="fallback-list" data-fallback="adjustments_dynamics"></div>
+        </div>
+        <div class="chart-card">
+            <h2>Удержания ЛМК</h2>
+            <div class="chart-box"><canvas id="lmkChart"></canvas></div>
+            <div class="fallback-list" data-fallback="lmk_dynamics"></div>
+        </div>
+    </div>
+
+    <div class="section-grid">
+        <div class="panel">
+            <h2>Документы</h2>
+            <div class="mini-grid">
+                <div class="mini-card">
+                    <div class="mini-label">Полный комплект у сотрудников</div>
+                    <div class="mini-value">{{ document_analytics.complete_percent }}%</div>
+                </div>
+                <div class="mini-card">
+                    <div class="mini-label">Истекшие документы</div>
+                    <div class="mini-value">{{ document_analytics.expired_percent }}%</div>
+                </div>
+                <div class="mini-card">
+                    <div class="mini-label">Проверено документов</div>
+                    <div class="mini-value">{{ document_analytics.verified_count }}</div>
+                </div>
+                <div class="mini-card">
+                    <div class="mini-label">Активных типов</div>
+                    <div class="mini-value">{{ document_analytics.active_types }}</div>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Тип документа</th>
+                        <th>Всего</th>
+                        <th>Проверено</th>
+                        <th>Нет</th>
+                        <th>Истек</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in document_analytics.type_stats %}
+                        <tr>
+                            <td>{{ row.name }}</td>
+                            <td>{{ row.total }}</td>
+                            <td>{{ row.verified }}</td>
+                            <td>{{ row.missing }}</td>
+                            <td>{{ row.expired }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5" class="muted">Нет данных</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <h2>Payroll</h2>
+            <div class="mini-grid">
+                <div class="mini-card">
+                    <div class="mini-label">Всего выплат</div>
+                    <div class="mini-value">{{ payroll_analytics.total_amount }}</div>
+                </div>
+                <div class="mini-card">
+                    <div class="mini-label">Средняя выплата</div>
+                    <div class="mini-value">{{ payroll_analytics.avg_employee_payout }}</div>
+                </div>
+                <div class="mini-card">
+                    <div class="mini-label">Средняя ставка/час</div>
+                    <div class="mini-value">{{ payroll_analytics.avg_hourly_rate }}</div>
+                </div>
+                <div class="mini-card">
+                    <div class="mini-label">Часы в payroll</div>
+                    <div class="mini-value">{{ payroll_analytics.total_hours }}</div>
+                </div>
+            </div>
+            <h2>По юрлицам</h2>
+            {% for item in payroll_analytics.by_legal_entity %}
+                <div class="stat-row">
+                    <span>{{ item.label }}</span>
+                    <strong>{{ item.amount }}</strong>
+                </div>
+            {% else %}
+                <div class="muted">Нет данных</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="section-grid">
+        <div class="panel">
+            <h2>Изменения по городам</h2>
+            <table>
+                <thead><tr><th>Город</th><th>Сейчас</th><th>Раньше</th><th>Разница</th></tr></thead>
+                <tbody>
+                    {% for row in city_changes %}
+                        <tr>
+                            <td>{{ row.label }}</td>
+                            <td>{{ row.current }}</td>
+                            <td>{{ row.previous }}</td>
+                            <td class="{% if row.delta >= 0 %}positive{% else %}negative{% endif %}">{{ row.delta }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="muted">Нет данных</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <h2>Изменения по магазинам</h2>
+            <table>
+                <thead><tr><th>Магазин</th><th>Сейчас</th><th>Раньше</th><th>Разница</th></tr></thead>
+                <tbody>
+                    {% for row in store_changes %}
+                        <tr>
+                            <td>{{ row.label }}</td>
+                            <td>{{ row.current }}</td>
+                            <td>{{ row.previous }}</td>
+                            <td class="{% if row.delta >= 0 %}positive{% else %}negative{% endif %}">{{ row.delta }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="muted">Нет данных</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+const charts = {{ charts|tojson }};
+
+function fallbackList(key) {
+    const target = document.querySelector(`[data-fallback="${key}"]`);
+    if (!target) return;
+    const data = charts[key] || {labels: [], values: []};
+    target.innerHTML = data.labels.slice(0, 8).map((label, index) => {
+        const value = data.values[index] ?? 0;
+        return `<div>${label}: <strong>${value}</strong></div>`;
+    }).join("") || "<div>Нет данных</div>";
+}
+
+function drawChart(id, key, type, color) {
+    fallbackList(key);
+    if (!window.Chart) return;
+    const canvas = document.getElementById(id);
+    const data = charts[key] || {labels: [], values: []};
+    new Chart(canvas, {
+        type,
+        data: {
+            labels: data.labels,
+            datasets: [{
+                data: data.values,
+                label: "Значение",
+                borderColor: color,
+                backgroundColor: color + "33",
+                borderWidth: 2,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+}
+
+drawChart("payrollWeeksChart", "payroll_by_week", "line", "#0b1475");
+drawChart("hoursCityChart", "hours_by_city", "bar", "#f58a65");
+drawChart("topStoresChart", "top_stores", "bar", "#2563eb");
+drawChart("topEmployeesChart", "top_employees", "bar", "#16a34a");
+drawChart("adjustmentsChart", "adjustments_dynamics", "line", "#b45309");
+drawChart("lmkChart", "lmk_dynamics", "line", "#475569");
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отчеты</title>
+    <style>
+        :root { --brand-blue:#0b1475; --bg:#f4f5f7; --card-bg:#fff; --muted:#6b7280; --shadow:0 16px 40px rgba(11,20,117,.08); --border:#e5e7eb; }
+        * { box-sizing: border-box; }
+        body { margin:0; font-family:Arial,sans-serif; background:var(--bg); padding:28px 18px 36px; color:#1f2937; }
+        .page { max-width:1400px; margin:0 auto; }
+        .topbar,.card { background:var(--card-bg); border-radius:22px; box-shadow:var(--shadow); padding:20px; margin-bottom:20px; }
+        .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; }
+        .brand { display:flex; align-items:center; gap:14px; }
+        .brand img { width:64px; height:64px; object-fit:contain; border-radius:16px; background:#fff; }
+        h1,h2,h3 { color:var(--brand-blue); margin-top:0; }
+        .muted { color:var(--muted); line-height:1.5; }
+        .link { text-decoration:none; color:var(--brand-blue); font-weight:700; border:1px solid rgba(11,20,117,.14); padding:10px 14px; border-radius:12px; background:#fff; white-space:nowrap; }
+        .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+        .module { display:block; min-height:150px; text-decoration:none; color:inherit; border:1px solid transparent; border-radius:18px; padding:18px; background:#fbfcff; transition:.14s ease; }
+        .module:hover { transform:translateY(-2px); border-color:rgba(11,20,117,.12); }
+        .tag { display:inline-block; padding:7px 10px; border-radius:999px; background:#eef4ff; color:var(--brand-blue); font-size:12px; font-weight:700; margin-bottom:14px; }
+        @media (max-width:900px) { .grid { grid-template-columns:1fr; } .topbar { flex-direction:column; align-items:stretch; } }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1>Отчеты</h1>
+                <div class="muted">Агрегаты, таблицы и управленческий контроль</div>
+            </div>
+        </div>
+        <a href="{{ back_url }}" class="link">Назад</a>
+    </div>
+
+    <section class="card">
+        <h2>Разделы отчетности</h2>
+        <div class="grid">
+            {% for slug, title, description in cards %}
+            <a class="module" href="{{ base_path }}/{{ slug }}">
+                <span class="tag">Отчет</span>
+                <h3>{{ title }}</h3>
+                <div class="muted">{{ description }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+</body>
+</html>

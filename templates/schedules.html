@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+    <meta charset="UTF-8">
+    <title>Графики выходов</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+            --error-bg: #fff1ed;
+            --error-text: #b42318;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
+                var(--bg);
+            color: var(--text);
+            padding: 28px 18px 36px;
+        }
+
+        .page { max-width: 1600px; margin: 0 auto; }
+
+        .topbar, .card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand { display: flex; align-items: center; gap: 14px; }
+
+        .brand img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        .brand-title { margin: 0; color: var(--brand-blue); font-size: 28px; }
+        .brand-subtitle { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+
+        .back-link {
+            text-decoration: none;
+            color: var(--brand-blue);
+            font-weight: 700;
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #fff;
+            white-space: nowrap;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            align-items: end;
+        }
+
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--brand-blue);
+            margin-bottom: 8px;
+        }
+
+        .field input {
+            width: 100%;
+            height: 46px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0 12px;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .stores-box {
+            margin-top: 18px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            background: #fbfcff;
+        }
+
+        .stores-title {
+            margin: 0 0 12px;
+            color: var(--brand-blue);
+            font-size: 16px;
+        }
+
+        .stores-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .stores-header .stores-title {
+            margin: 0;
+        }
+
+        .stores-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--brand-blue);
+            font-size: 14px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .stores-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px 16px;
+        }
+
+        .store-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .btn {
+            margin-top: 18px;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--brand-blue), #18239a);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0 18px;
+        }
+
+        .hint { color: var(--muted); line-height: 1.6; margin: 0; }
+
+        .err {
+            background: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid rgba(180, 35, 24, 0.14);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1300px;
+            background: #fff;
+        }
+
+        th, td {
+            padding: 10px 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #fafbfc;
+            color: var(--brand-blue);
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .left {
+            text-align: left;
+            min-width: 220px;
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 1;
+        }
+
+        th.left { background: #fafbfc; z-index: 3; }
+        .service { min-width: 260px; }
+        .day-cell { min-width: 48px; }
+
+        .has-hours {
+            font-weight: 700;
+            color: var(--brand-blue);
+            background: rgba(11, 20, 117, 0.04);
+        }
+
+        .no-plan-hours {
+            font-weight: 700;
+            color: #b42318;
+            background: #fff1ed;
+        }
+
+        .total {
+            font-weight: 700;
+            background: rgba(245, 138, 101, 0.10);
+            color: #8f3e20;
+        }
+
+        @media (max-width: 980px) {
+            .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .stores-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 700px) {
+            .topbar { flex-direction: column; align-items: stretch; }
+            .form-grid, .stores-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1 class="brand-title">Графики выходов</h1>
+                <p class="brand-subtitle">Просмотр часов по магазинам и периодам</p>
+            </div>
+        </div>
+
+        <a href="/admin" class="back-link">Назад в админку</a>
+    </div>
+
+    {% if error %}
+        <div class="card">
+            <div class="err">{{ error }}</div>
+        </div>
+    {% endif %}
+
+    <div class="card">
+        <form method="get" action="/admin/schedules">
+            <div class="form-grid">
+                <div class="field">
+                    <label>Дата начала</label>
+                    <input type="date" name="date_from" value="{{ date_from }}">
+                </div>
+
+                <div class="field">
+                    <label>Дата окончания</label>
+                    <input type="date" name="date_to" value="{{ date_to }}">
+                </div>
+            </div>
+
+            <div class="stores-box">
+                <div class="stores-header">
+                    <h3 class="stores-title">Магазины</h3>
+                    <label class="stores-toggle">
+                        <input
+                            type="checkbox"
+                            id="select-all-stores"
+                            {% if stores|length > 0 and selected_stores|length == stores|length %}checked{% endif %}
+                        >
+                        <span>Выбрать все</span>
+                    </label>
+                </div>
+                <div class="stores-grid">
+                    {% for store in stores %}
+                    <label class="store-item">
+                        <input
+                            type="checkbox"
+                            class="store-checkbox"
+                            name="stores"
+                            value="{{ store }}"
+                            {% if store in selected_stores %}checked{% endif %}
+                        >
+                        <span>{{ store }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit" class="btn">Сформировать</button>
+        </form>
+    </div>
+
+    {% if not show_table %}
+        <div class="card">
+            <p class="hint">
+                Выберите один или несколько магазинов и нажмите «Сформировать».
+                После этого ниже появится график выходов по выбранному периоду.
+            </p>
+        </div>
+    {% endif %}
+
+    {% if show_table %}
+        <div class="card">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="left">ФИО</th>
+                            <th>Магазин</th>
+                            <th class="service">Услуга</th>
+                            {% for day in days %}
+                                <th class="day-cell">{{ day.strftime("%d.%m") }}</th>
+                            {% endfor %}
+                            <th>Итого</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr>
+                            <td class="left">{{ row.employee }}</td>
+                            <td>{{ row.store }}</td>
+                            <td class="service">{{ row.service }}</td>
+
+                            {% for day in days %}
+                                {% set value = row.days[day] %}
+                                <td class="{% if row.no_plan_days[day] %}no-plan-hours{% elif value %}has-hours{% endif %}">
+                                    {% if value %}
+                                        {{ value }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+
+                            <td class="total">{{ row.total }}</td>
+                        </tr>
+                        {% endfor %}
+
+                        {% if rows|length == 0 %}
+                        <tr>
+                            <td colspan="{{ days|length + 4 }}">Нет смен за выбранный период</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+</div>
+<script>
+    const selectAllStores = document.getElementById("select-all-stores");
+    const storeCheckboxes = Array.from(document.querySelectorAll(".store-checkbox"));
+
+    function syncSelectAllStores() {
+        if (!selectAllStores || storeCheckboxes.length === 0) {
+            return;
+        }
+
+        const checkedCount = storeCheckboxes.filter((item) => item.checked).length;
+        selectAllStores.checked = checkedCount === storeCheckboxes.length;
+        selectAllStores.indeterminate = checkedCount > 0 && checkedCount < storeCheckboxes.length;
+    }
+
+    if (selectAllStores) {
+        selectAllStores.addEventListener("change", () => {
+            storeCheckboxes.forEach((item) => {
+                item.checked = selectAllStores.checked;
+            });
+            syncSelectAllStores();
+        });
+    }
+
+    storeCheckboxes.forEach((item) => {
+        item.addEventListener("change", syncSelectAllStores);
+    });
+
+    syncSelectAllStores();
+</script>
+</body>
+</html>

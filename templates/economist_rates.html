@@ -236,13 +236,13 @@
             </div>
         </div>
 
-        <a href="/admin" class="back-link">Назад в админку</a>
+        <a href="/economist" class="back-link">Кабинет экономиста</a>
     </div>
 
     <div class="card">
         <h2>Добавить ставку</h2>
 
-        <form method="post" action="/admin/rates">
+        <form method="post" action="/economist/rates">
             <div class="form-grid">
                 <div class="field">
                     <label>Услуга</label>
@@ -332,7 +332,7 @@
                             </td>
 
                             <td>
-                                <form method="post" action="/admin/rates/update" class="inline-form">
+                                <form method="post" action="/economist/rates/update" class="inline-form">
                                     <input type="hidden" name="rate_id" value="{{ rate.id }}">
 
                                     <input type="text" name="service" value="{{ rate.service }}" placeholder="Услуга" required>
@@ -349,7 +349,7 @@
                             </td>
 
                             <td>
-                                <form method="post" action="/admin/rates/delete" onsubmit="return confirm('Удалить ставку?');">
+                                <form method="post" action="/economist/rates/delete" onsubmit="return confirm('Удалить ставку?');">
                                     <input type="hidden" name="rate_id" value="{{ rate.id }}">
                                     <button type="submit" class="btn btn-danger">Удалить</button>
                                 </form>

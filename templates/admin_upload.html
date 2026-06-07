@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+    <meta charset="UTF-8">
+    <title>Загрузка данных</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f5f7;
+            color: #1f2937;
+            padding: 28px 18px;
+        }
+
+        .page {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 22px;
+            box-shadow: 0 16px 40px rgba(11,20,117,0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        h1, h2 {
+            color: #0b1475;
+            margin: 0 0 14px;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: #0b1475;
+            font-weight: 700;
+            border: 1px solid rgba(11,20,117,0.12);
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 16px;
+            border: 1px dashed #c7c9d1;
+            border-radius: 16px;
+            background: #fbfcff;
+        }
+
+        .btn {
+            margin-top: 16px;
+            height: 46px;
+            border: none;
+            border-radius: 14px;
+            padding: 0 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #0b1475, #18239a);
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .msg {
+            background: #eefbf3;
+            color: #067647;
+            padding: 12px 14px;
+            border-radius: 14px;
+        }
+
+        .err {
+            background: #fff1ed;
+            color: #b42318;
+            padding: 12px 14px;
+            border-radius: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            color: #0b1475;
+            background: #fafbfc;
+        }
+
+        .num {
+            text-align: right;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        .hint {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <div class="card topbar">
+        <div>
+            <h1>Загрузка данных</h1>
+            <div class="hint">
+                Импорт Excel со сменами, обновление часов и создание корректировок.
+            </div>
+        </div>
+
+        <a href="/admin" class="back-link">Назад в админку</a>
+    </div>
+
+    {% if message %}
+        <div class="card"><div class="msg">{{ message }}</div></div>
+    {% endif %}
+
+    {% if error %}
+        <div class="card"><div class="err">{{ error }}</div></div>
+    {% endif %}
+
+    <div class="card">
+        <h2>Загрузить Excel</h2>
+
+        <form method="post" action="/admin/upload" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".xlsx" required>
+            <br>
+            <button type="submit" class="btn">Загрузить</button>
+        </form>
+
+        <p class="hint">
+            Ожидаемые колонки: A магазин, C формат, E город, H дата, M услуга, N ФИО, AA часы.
+        </p>
+    </div>
+
+    {% if result %}
+    <div class="card">
+        <h2>Результат загрузки</h2>
+
+        <table>
+            <tr>
+                <th>Добавлено</th>
+                <th>Обновлено</th>
+                <th>Дубликаты</th>
+                <th>Заблокировано</th>
+                <th>Корректировки</th>
+            </tr>
+            <tr>
+                <td>{{ result.added }}</td>
+                <td>{{ result.updated }}</td>
+                <td>{{ result.skipped_duplicates }}</td>
+                <td>{{ result.skipped_locked_months }}</td>
+                <td>{{ result.adjustments_created }}</td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <h2>История загрузок</h2>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Дата</th>
+                        <th>Файл</th>
+                        <th>Статус</th>
+                        <th class="num">Добавлено</th>
+                        <th class="num">Обновлено</th>
+                        <th class="num">Дубликаты</th>
+                        <th class="num">Корректировки</th>
+                        <th>Ошибка</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>#{{ log.id }}</td>
+                        <td>
+                            {% if log.created_at %}
+                                {{ log.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>{{ log.filename or '—' }}</td>
+                        <td>{{ log.status }}</td>
+                        <td class="num">{{ log.added }}</td>
+                        <td class="num">{{ log.updated }}</td>
+                        <td class="num">{{ log.skipped_duplicates }}</td>
+                        <td class="num">{{ log.adjustments_created }}</td>
+                        <td>{{ log.error or '' }}</td>
+                    </tr>
+                    {% endfor %}
+
+                    {% if logs|length == 0 %}
+                    <tr>
+                        <td colspan="9">Загрузок пока нет</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

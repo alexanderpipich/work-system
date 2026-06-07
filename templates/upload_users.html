@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Импорт пользователей</title>
@@ -203,7 +206,7 @@
                 <div>
                     <h1 class="brand-title">Импорт пользователей</h1>
                     <p class="brand-subtitle">
-                        Формат файла: phone, employee_name, password
+                        Обязательные столбцы: phone, employee_name, password, citizenship_country
                     </p>
                 </div>
             </div>
@@ -231,7 +234,7 @@
         <div class="card">
             <form method="post" action="/admin/upload-users" enctype="multipart/form-data">
                 <div class="upload-box">
-                    <p>Загрузите Excel-файл со списком пользователей.</p>
+                    <p>Загрузите Excel-файл со списком пользователей. Для гражданства также принимаются заголовки citizenship и ГРАЖДАНСТВО.</p>
                     <input type="file" name="file" accept=".xlsx,.xls" required>
                     <button type="submit" class="btn">Загрузить пользователей</button>
                 </div>

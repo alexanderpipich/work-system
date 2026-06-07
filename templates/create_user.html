@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Создать пользователя</title>
@@ -106,7 +109,8 @@
         }
 
         .field input[type="text"],
-        .field input[type="password"] {
+        .field input[type="password"],
+        .field select {
             width: 100%;
             height: 50px;
             border: 1px solid var(--border);
@@ -208,14 +212,80 @@
                     <input id="password" type="password" name="password" placeholder="Введите пароль" required>
                 </div>
 
-                <label class="checkbox">
-                    <input type="checkbox" name="is_admin">
-                    Администратор
-                </label>
+                <div class="field">
+                    <label for="citizenship_country">Гражданство</label>
+                    <input id="citizenship_country" type="text" name="citizenship_country" placeholder="Например: Россия" required>
+                </div>
+
+                       
+                <div class="field">
+                    <label>Роль</label>
+
+                    <select name="role" id="role-select">
+                        <option value="employee" selected>Сотрудник</option>
+                        <option value="brigadier">Бригадир</option>
+                        <option value="economist">Экономист</option>
+                        <option value="admin">Администратор</option>
+                    </select>
+                </div>
+
+                <div class="field" id="brigadier-store-field" style="display:none;">
+                    <label>Магазин бригадира</label>
+
+                    <input
+                        type="text"
+                        name="brigadier_store"
+                        placeholder="Например: Лента-318"
+                    >
+                </div>
+
+                <div class="field" id="economist-cities-field" style="display:none;">
+                    <label>Города экономиста</label>
+
+                    <input
+                        type="text"
+                        name="economist_stores"
+                        placeholder="Москва, Санкт-Петербург"
+                    >
+                </div>
+
+                <div class="field">
+                    <label>Юрлицо</label>
+                    <select name="legal_entity">
+                        <option value="">Не выбрано</option>
+                        {% for entity in legal_entities %}
+                            <option value="{{ entity.name }}">{{ entity.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
                 <button type="submit" class="btn">Создать пользователя</button>
             </form>
         </div>
     </div>
+<script>
+const roleSelect = document.getElementById("role-select");
+
+const brigadierField = document.getElementById("brigadier-store-field");
+const economistField = document.getElementById("economist-cities-field");
+
+function updateRoleFields() {
+
+    brigadierField.style.display = "none";
+    economistField.style.display = "none";
+
+    if (roleSelect.value === "brigadier") {
+        brigadierField.style.display = "block";
+    }
+
+    if (roleSelect.value === "economist") {
+        economistField.style.display = "block";
+    }
+}
+
+roleSelect.addEventListener("change", updateRoleFields);
+
+updateRoleFields();
+</script>
 </body>
 </html>

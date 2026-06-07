@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+    <meta charset="UTF-8">
+    <title>Зафиксированные табели</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+            --success-bg: #eefbf3;
+            --success-text: #067647;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
+                var(--bg);
+            color: var(--text);
+            padding: 28px 18px 36px;
+        }
+
+        .page {
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        .topbar,
+        .card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        .brand-title {
+            margin: 0;
+            color: var(--brand-blue);
+            font-size: 28px;
+        }
+
+        .brand-subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: var(--brand-blue);
+            font-weight: 700;
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #fff;
+            white-space: nowrap;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px;
+            background: #fff;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            text-align: left;
+        }
+
+        th {
+            background: #fafbfc;
+            color: var(--brand-blue);
+            font-weight: 700;
+        }
+
+        .num {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .pill.fixed {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .pill.sent {
+            background: #eefbf3;
+            color: #067647;
+        }
+
+        .pill.closed {
+            background: #eef4ff;
+            color: #0b1475;
+        }
+
+        .btn {
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 38px;
+            border-radius: 12px;
+            padding: 0 14px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--brand-blue), #18239a);
+            color: #fff;
+            white-space: nowrap;
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, #c23327, #9f1f16);
+            color: #fff;
+        }
+
+        .small-muted {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .empty {
+            color: var(--muted);
+            padding: 24px;
+        }
+
+        @media (max-width: 700px) {
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1 class="brand-title">Зафиксированные табели</h1>
+                <p class="brand-subtitle">Список сохранённых снимков выплатных периодов</p>
+            </div>
+        </div>
+
+
+        <div class="toolbar">
+            {% if request.url.path.startswith('/economist') %}
+                <a href="/economist/payroll" class="back-link">Выплатный табель</a>
+                <a href="/economist" class="back-link">Кабинет экономиста</a>
+            {% else %}
+                <a href="/admin/payroll" class="back-link">Выплатный табель</a>
+                <a href="/admin" class="back-link">Назад в админку</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if message %}
+    <div class="card">
+        <span class="pill sent">{{ message }}</span>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="card">
+        <span class="pill fixed">{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Период</th>
+                        <th>Юрлицо</th>
+                        <th>Статус</th>
+                        <th>Кто зафиксировал</th>
+                        <th>Дата фиксации</th>
+                        <th class="num">Строк</th>
+                        <th class="num">Часы</th>
+                        <th class="num">Сумма</th>
+                        <th>Открыть</th>
+                        <th>Экспорт</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in run_rows %}
+                    <tr>
+                        <td>#{{ row.run.id }}</td>
+                        <td>
+                            {{ row.run.date_from.strftime('%d.%m.%Y') }}
+                            —
+                            {{ row.run.date_to.strftime('%d.%m.%Y') }}
+                        </td>
+                        <td>{{ row.run.legal_entity or '—' }}</td>
+                        <td>
+                            {% if row.run.status == "closed" %}
+                                <span class="pill closed">Закрыт</span>
+                            {% elif row.run.status == "sent" %}
+                                <span class="pill sent">Ушло в оплату</span>    
+                            {% else %}
+                                <span class="pill fixed">Зафиксирован</span>    
+                            {% endif %}  
+                        </td>  
+                        <td>{{ row.creator }}</td>
+                        <td>
+                            {% if row.run.fixed_at %}
+                                {{ row.run.fixed_at.strftime('%d.%m.%Y %H:%M') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="num">{{ row.items_count }}</td>
+                        <td class="num">{{ "%.2f"|format(row.total_hours or 0) }}</td>
+                        <td class="num">{{ "%.2f"|format(row.total_amount or 0) }} ₽</td>
+                        <td>
+                            {% if request.url.path.startswith('/economist') %}
+                                <a href="/economist/payroll/runs/{{ row.run.id }}" class="btn">Открыть</a>
+                            {% else %}
+                                <a href="/admin/payroll/runs/{{ row.run.id }}" class="btn">Открыть</a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if request.url.path.startswith('/economist') %}
+                                <a href="/economist/payroll/runs/{{ row.run.id }}/export" class="btn">Экспорт Excel</a>
+                            {% else %}
+                                <a href="/admin/payroll/runs/{{ row.run.id }}/export" class="btn">Экспорт Excel</a>
+                            {% endif %}
+                        </td>
+                        <td>
+                             {% if request.url.path.startswith('/admin') and row.run.status == "fixed" %}
+                                 <form method="post" action="/admin/payroll/runs/send" style="display:inline;" onsubmit="return confirm('Передать табель в оплату? После этого удалить его будет нельзя.');">
+                                     <input type="hidden" name="run_id" value="{{ row.run.id }}">
+                                     <button type="submit" class="btn">Передано в оплату</button>
+                                 </form>
+
+                                 <form method="post" action="/admin/payroll/runs/delete" style="display:inline;" onsubmit="return confirm('Удалить зафиксированный табель?');">
+                                     <input type="hidden" name="run_id" value="{{ row.run.id }}">
+                                     <button type="submit" class="btn danger">Удалить</button>
+                                 </form>
+                             {% elif request.url.path.startswith('/admin') and row.run.status == "sent" %}
+                                 <form method="post" action="/admin/payroll/runs/close" style="display:inline;" onsubmit="return confirm('Закрыть период окончательно?');">
+                                     <input type="hidden" name="run_id" value="{{ row.run.id }}">
+                                     <button type="submit" class="btn">Закрыть период</button>
+                                 </form>
+                             {% else %}
+                                 <span class="small-muted">Заблокирован</span>
+                             {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% if run_rows|length == 0 %}
+                    <tr>
+                        <td colspan="12" class="empty">Зафиксированных табелей пока нет</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
