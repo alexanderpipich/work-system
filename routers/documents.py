@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from access import get_economist_cities
+from access import accessible_employee_names
 from audit_helpers import create_audit_log
 from dependencies import (
     RedirectException,
@@ -30,6 +30,7 @@ from document_helpers import (
     save_upload_file,
 )
 from models import DocumentType, EmployeeDocument, User
+from rbac import canonical_role, has_permission, is_superadmin
 from sqlalchemy.orm import Session
 from time_helpers import now_utc
 from utils import normalize_text
@@ -67,12 +68,15 @@ def _redirect(base_path, **params):
 
 def require_document_manager(
     request: Request,
-    user=Depends(require_economist_user),
+    user=Depends(current_user),
 ):
-    if request.url.path.startswith("/admin") and not (user.is_admin or user.role == "admin"):
+    if not has_permission(user, "documents.manage") and not has_permission(user, "documents.verify"):
+        raise RedirectException("/")
+    if request.url.path.startswith("/admin") and not is_superadmin(user):
+        raise RedirectException("/")
+    if request.url.path.startswith("/hr") and canonical_role(user) not in {"hr_lead", "hr_manager"}:
         raise RedirectException("/")
     return user
-
 
 def _document_type_base(request):
     if request.url.path.startswith("/economist"):
@@ -81,15 +85,17 @@ def _document_type_base(request):
 
 
 def _documents_base(request):
+    if request.url.path.startswith("/hr"):
+        return "/hr/documents", "/hr", "HR кабинет"
     if request.url.path.startswith("/economist"):
         return "/economist/documents", "/economist", "Кабинет экономиста"
     return "/admin/documents", "/admin", "Назад в админку"
 
 
 def _employee_scope(session, user, *, admin=False):
-    if admin or user.is_admin:
+    if admin or canonical_role(user) in {"superadmin", "hr_lead"}:
         return None
-    return economist_employee_names(session, get_economist_cities(user))
+    return accessible_employee_names(session, user)
 
 
 def _is_employee_allowed(employee_name, allowed_names):
@@ -309,10 +315,10 @@ async def _create_employee_document(
 def _document_allowed_for_user(session, document, user):
     if not document:
         return False
-    if user.is_admin:
+    if canonical_role(user) in {"superadmin", "hr_lead"}:
         return True
-    if user.role == "economist":
-        allowed = economist_employee_names(session, get_economist_cities(user))
+    if canonical_role(user) in {"economist", "hr_manager"}:
+        allowed = accessible_employee_names(session, user)
         return _is_employee_allowed(document.employee_name, allowed)
     return normalize_text(document.employee_name) == normalize_text(user.employee_name)
 
@@ -568,6 +574,7 @@ def admin_documents(
 
 
 @router.get("/economist/documents", response_class=HTMLResponse)
+@router.get("/hr/documents", response_class=HTMLResponse)
 def economist_documents(
     request: Request,
     employee_name: str = "",
@@ -576,7 +583,7 @@ def economist_documents(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_document_manager),
 ):
     return _render_documents(
         request,
@@ -612,6 +619,7 @@ def admin_employee_documents(
 
 @router.post("/admin/documents/upload")
 @router.post("/economist/documents/upload")
+@router.post("/hr/documents/upload")
 async def upload_employee_document_by_manager(
     request: Request,
     employee_name: str = Form(...),
@@ -686,6 +694,7 @@ async def cabinet_upload_document(
 
 @router.post("/admin/documents/verify")
 @router.post("/economist/documents/verify")
+@router.post("/hr/documents/verify")
 def verify_document(
     request: Request,
     document_id: int = Form(...),
@@ -709,6 +718,7 @@ def verify_document(
 
 @router.post("/admin/documents/reject")
 @router.post("/economist/documents/reject")
+@router.post("/hr/documents/reject")
 def reject_document(
     request: Request,
     document_id: int = Form(...),
@@ -732,6 +742,7 @@ def reject_document(
 
 @router.post("/admin/documents/archive")
 @router.post("/economist/documents/archive")
+@router.post("/hr/documents/archive")
 def archive_document(
     request: Request,
     document_id: int = Form(...),
@@ -797,3 +808,4 @@ def document_type_sample(
             "X-Content-Type-Options": "nosniff",
         },
     )
+

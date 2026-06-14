@@ -407,7 +407,7 @@
             </div>
         </div>
 
-        <a href="/economist" class="back-link">Кабинет экономиста</a>
+        <a href="{{ '/hr' if request.url.path.startswith('/hr') else '/economist' }}" class="back-link">{{ 'HR кабинет' if request.url.path.startswith('/hr') else 'Кабинет экономиста' }}</a>
     </div>
 
     {% if user.is_admin %}
@@ -674,3 +674,4 @@
 </div>
 </body>
 </html>
+

@@ -1,4 +1,4 @@
-import os
+﻿import os
 import unittest
 
 
@@ -34,8 +34,12 @@ class NormalizePhoneAndRoleTests(unittest.TestCase):
 
     def test_normalizes_known_roles_and_falls_back_to_employee(self):
         self.assertEqual(normalize_role(" ECONOMIST "), "economist")
+        self.assertEqual(normalize_role(" HR_LEAD "), "hr_lead")
+        self.assertEqual(normalize_role("superadmin"), "superadmin")
         self.assertEqual(normalize_role("unknown"), "employee")
 
 
 if __name__ == "__main__":
     unittest.main()
+
+

@@ -1,4 +1,4 @@
-from fastapi import Depends, Request
+﻿from fastapi import Depends, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -37,18 +37,19 @@ def current_user(request: Request, db: Session = Depends(get_db)):
 
 
 def require_admin_user(user: User = Depends(current_user)):
-    if user.is_admin or user.role == "admin":
+    if user.is_admin or user.role in {"admin", "superadmin"}:
         return user
     raise RedirectException("/")
 
 
 def require_economist_user(user: User = Depends(current_user)):
-    if user.is_admin or user.role in {"admin", "economist"}:
+    if user.is_admin or user.role in {"admin", "superadmin", "economist"}:
         return user
     raise RedirectException("/")
 
 
 def require_brigadier_user(user: User = Depends(current_user)):
-    if user.is_admin or user.role in {"admin", "brigadier"}:
+    if user.is_admin or user.role in {"admin", "superadmin", "brigadier"}:
         return user
     raise RedirectException("/")
+

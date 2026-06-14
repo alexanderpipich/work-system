@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, Form, Request
+﻿from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from dependencies import get_db
 from models import User
+from rbac import canonical_role, is_superadmin
 from utils import normalize_phone, verify_password
 
 
@@ -47,8 +48,11 @@ def login_submit(
 
     request.session["user_id"] = user.id
 
-    if user.is_admin or user.role == "admin":
+    if is_superadmin(user):
         return RedirectResponse(url="/admin", status_code=302)
+
+    if canonical_role(user) in {"hr_lead", "hr_manager"}:
+        return RedirectResponse(url="/hr", status_code=302)
 
     if user.role == "economist":
         return RedirectResponse(url="/economist", status_code=302)
@@ -63,3 +67,5 @@ def login_submit(
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/login", status_code=302)
+
+

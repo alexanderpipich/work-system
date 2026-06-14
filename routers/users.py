@@ -6,9 +6,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
-from dependencies import get_db, require_admin_user
+from access_scope_helpers import active_scope_values, sync_access_scopes
+from dependencies import get_db
+from rbac import require_permission
 from legal_entity_helpers import active_legal_entities
-from models import User
+from models import Shift, User
 from utils import (
     get_password_hash,
     normalize_phone,
@@ -19,6 +21,8 @@ from utils import (
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+require_user_management = require_permission("users.manage", audit_denied=True)
+require_user_hard_delete = require_permission("users.hard_delete", audit_denied=True)
 
 
 def _user_payload(user):
@@ -34,6 +38,13 @@ def _user_payload(user):
     }
 
 
+
+def _default_city_scope(session, role, raw_scope):
+    raw = normalize_text(raw_scope)
+    if raw or role != "economist":
+        return raw
+    cities = [row[0] for row in session.query(Shift.city).filter(Shift.city != None).distinct().order_by(Shift.city).all() if row[0]]
+    return ", ".join(cities)
 def render_users(request: Request, session, message=None, error=None, filters=None):
     users = session.query(User).order_by(User.employee_name.asc()).all()
     legal_entities = active_legal_entities(session)
@@ -45,7 +56,8 @@ def render_users(request: Request, session, message=None, error=None, filters=No
             "legal_entities": legal_entities,
             "message": message,
             "error": error,
-            "filters": filters or {}
+            "filters": filters or {},
+            "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users}
         }
     )
 
@@ -54,7 +66,7 @@ def render_users(request: Request, session, message=None, error=None, filters=No
 def create_user_page(
     request: Request,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_user_management),
 ):
     return templates.TemplateResponse(
         request,
@@ -76,15 +88,17 @@ def create_user_submit(
     role: str = Form(default="employee"),
     brigadier_store: str = Form(default=""),
     economist_stores: str = Form(default=""),
+    scope_cities: str = Form(default=""),
     citizenship_country: str = Form(...),
     legal_entity: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_user_management),
 ):
     phone_clean = normalize_phone(phone)
     password_clean = str(password).strip()
     employee_name_clean = normalize_text(employee_name)
     role_clean = normalize_role(role)
+    scope_value = _default_city_scope(session, role_clean, scope_cities or economist_stores)
     citizenship_country_clean = normalize_text(citizenship_country)
 
     if not citizenship_country_clean:
@@ -114,16 +128,17 @@ def create_user_submit(
         phone=phone_clean,
         password_hash=get_password_hash(password_clean),
         employee_name=employee_name_clean,
-        is_admin=(role_clean == "admin"),
+        is_admin=(role_clean in {"admin", "superadmin"}),
         role=role_clean,
         brigadier_store=normalize_text(brigadier_store) or None,
-        economist_stores=normalize_text(economist_stores) or None,
+        economist_stores=scope_value or None,
         citizenship_country=citizenship_country_clean,
         legal_entity=normalize_text(legal_entity) or None,
     )
 
     session.add(user)
     session.flush()
+    sync_access_scopes(session, request, admin, user, "city", scope_value)
     create_audit_log(
         session,
         request,
@@ -150,7 +165,7 @@ def create_user_submit(
 @router.get("/admin/upload-users", response_class=HTMLResponse)
 def upload_users_page(
     request: Request,
-    admin=Depends(require_admin_user),
+    admin=Depends(require_user_management),
 ):
     return templates.TemplateResponse(
         request,
@@ -170,7 +185,7 @@ async def upload_users_submit(
     request: Request,
     file: UploadFile = File(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_user_management),
 ):
     df = pd.read_excel(file.file)
     df.columns = [str(c).strip() for c in df.columns]
@@ -233,15 +248,16 @@ async def upload_users_submit(
 
             role_raw = row.get("role", "employee")
             role_clean = normalize_role(role_raw)
+            uploaded_scope = _default_city_scope(session, role_clean, row.get("economist_stores", ""))
 
             user = User(
                 phone=phone_clean,
                 password_hash=get_password_hash(password_clean),
                 employee_name=name_clean,
-                is_admin=(role_clean == "admin"),
+                is_admin=(role_clean in {"admin", "superadmin"}),
                 role=role_clean,
                 brigadier_store=normalize_text(row.get("brigadier_store", "")) or None,
-                economist_stores=normalize_text(row.get("economist_stores", "")) or None,
+                economist_stores=uploaded_scope or None,
                 citizenship_country=citizenship_clean,
                 legal_entity=normalize_text(row.get("legal_entity", "")) or None,
             )
@@ -250,6 +266,7 @@ async def upload_users_submit(
 
             try:
                 session.flush()
+                sync_access_scopes(session, request, admin, user, "city", uploaded_scope)
                 create_audit_log(
                     session,
                     request,
@@ -293,7 +310,7 @@ def admin_users(
     employee_name: str = "",
     role: str = "",
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_user_management),
 ):
     query = session.query(User)
 
@@ -322,6 +339,7 @@ def admin_users(
             "legal_entities": active_legal_entities(session),
             "message": None,
             "error": None,
+            "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users},
             "filters": {
                 "user_id": user_id,
                 "phone": phone,
@@ -339,10 +357,11 @@ def update_user(
     role: str = Form(default="employee"),
     brigadier_store: str = Form(default=""),
     economist_stores: str = Form(default=""),
+    scope_cities: str = Form(default=""),
     citizenship_country: str = Form(default=""),
     legal_entity: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_user_management),
 ):
     user = session.query(User).filter(User.id == user_id).first()
 
@@ -350,13 +369,15 @@ def update_user(
         return RedirectResponse(url="/admin/users", status_code=302)
 
     role_clean = normalize_role(role)
+    scope_value = _default_city_scope(session, role_clean, scope_cities or economist_stores)
 
     old_value = _user_payload(user)
     old_role = user.role
     user.role = role_clean
-    user.is_admin = role_clean == "admin"
+    user.is_admin = role_clean in {"admin", "superadmin"}
     user.brigadier_store = normalize_text(brigadier_store) or None
-    user.economist_stores = normalize_text(economist_stores) or None
+    city_values = sync_access_scopes(session, request, admin, user, "city", scope_value)
+    user.economist_stores = ", ".join(city_values) or None
     user.citizenship_country = normalize_text(citizenship_country) or None
     user.legal_entity = normalize_text(legal_entity) or None
 
@@ -393,7 +414,7 @@ def delete_user(
     request: Request,
     user_id: int = Form(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_user_hard_delete),
 ):
     user = session.query(User).filter(User.id == user_id).first()
 
@@ -430,7 +451,7 @@ def change_password(
     user_id: int = Form(...),
     new_password: str = Form(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_user_management),
 ):
     user = session.query(User).filter(User.id == user_id).first()
 
@@ -457,3 +478,8 @@ def change_password(
         session,
         message="Пароль изменён"
     )
+
+
+
+
+

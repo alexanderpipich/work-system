@@ -6,17 +6,19 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from access import get_economist_cities
+from access import accessible_employee_names, get_economist_cities
 from audit_helpers import create_audit_log
 from dependencies import get_db, require_admin_user, require_economist_user
 from lmk_charges import month_start
 from models import MedicalBookCharge, Shift
 from time_helpers import now_utc
+from rbac import canonical_role, require_permission
 from utils import normalize_text
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+require_lmk_view = require_permission("lmk.view", audit_denied=True)
 
 
 def _employee_names_for_cities(session, allowed_cities):
@@ -56,6 +58,7 @@ def _render_lmk_page(
     employee_names=None,
     message="",
     error="",
+    read_only=False,
 ):
     active_query = session.query(MedicalBookCharge).filter(
         MedicalBookCharge.status == "active"
@@ -87,6 +90,7 @@ def _render_lmk_page(
             "archived_charges": archived_charges,
             "message": message or None,
             "error": error or None,
+            "read_only": read_only,
         },
     )
 
@@ -325,6 +329,23 @@ def economist_lmk_page(
         error=error,
     )
 
+
+
+@router.get("/hr/lmk", response_class=HTMLResponse)
+def hr_lmk_page(
+    request: Request,
+    message: str = "",
+    error: str = "",
+    session: Session = Depends(get_db),
+    user=Depends(require_lmk_view),
+):
+    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+        return RedirectResponse("/", status_code=302)
+    employee_names = None if canonical_role(user) == "hr_lead" else accessible_employee_names(session, user)
+    return _render_lmk_page(
+        request, session, user, base_path="/hr/lmk", back_url="/hr", back_label="HR кабинет",
+        payroll_url="/hr/payroll", employee_names=employee_names, message=message, error=error, read_only=True,
+    )
 
 @router.post("/economist/lmk/add")
 def economist_add_lmk_charge(

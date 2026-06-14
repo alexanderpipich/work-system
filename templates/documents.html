@@ -85,7 +85,7 @@
             </div>
         </div>
         <div class="toolbar">
-            <a href="{{ base_path.replace('/documents', '/document-types') }}" class="link secondary">Типы документов</a>
+            {% if not request.url.path.startswith('/hr') %}<a href="{{ base_path.replace('/documents', '/document-types') }}" class="link secondary">Типы документов</a>{% endif %}
             <a href="{{ back_url }}" class="link secondary">{{ back_label }}</a>
         </div>
     </div>

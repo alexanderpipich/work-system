@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from access import get_economist_cities
+from access import apply_shift_scope, get_economist_cities, get_user_cities, get_user_stores
 from audit_helpers import create_audit_log
 from dependencies import get_db, require_admin_user, require_economist_user
 from legal_entity_helpers import active_legal_entities
@@ -20,11 +20,13 @@ from models import PayrollRun, PayrollRunItem, Requisite, Shift
 from payroll_adjustments import apply_auto_adjustments_to_rows, get_payroll_auto_adjustments
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today, now_utc
+from rbac import canonical_role, require_permission
 from utils import load_rates, normalize_text, pick_rate
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+require_payroll_view = require_permission("payroll.view", audit_denied=True)
 
 
 def payroll_redirect_url(base_path, date_from, date_to, employee_name="", stores=None, message=""):
@@ -45,6 +47,7 @@ def payroll_redirect_url(base_path, date_from, date_to, employee_name="", stores
 
 
 @router.get("/economist/payroll", response_class=HTMLResponse)
+@router.get("/hr/payroll", response_class=HTMLResponse)
 def economist_payroll(
     request: Request,
     date_from: str = "",
@@ -53,11 +56,16 @@ def economist_payroll(
     stores: list[str] | None = Query(default=None),
     message: str = "",
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_payroll_view),
 ):
-    allowed_cities = get_economist_cities(user)
+    role = canonical_role(user)
+    if request.url.path.startswith("/economist") and role not in {"economist", "superadmin"}:
+        return RedirectResponse("/", status_code=302)
+    if request.url.path.startswith("/hr") and role not in {"hr_lead", "hr_manager"}:
+        return RedirectResponse("/", status_code=302)
+    allowed_cities = get_user_cities(session, user)
 
-    if not allowed_cities and not user.is_admin:
+    if allowed_cities == []:
         return templates.TemplateResponse(
             request,
             "economist_payroll.html",
@@ -74,7 +82,7 @@ def economist_payroll(
                 "total_hours": 0,
                 "total_amount": 0,
                 "legal_entities": active_legal_entities(session),
-                "error": "Для экономиста не назначены города",
+                "error": "Для пользователя не назначены города",
                 "message": message or None
             }
         )
@@ -91,8 +99,7 @@ def economist_payroll(
 
     shifts_query = session.query(Shift)
 
-    if not user.is_admin:
-        shifts_query = shifts_query.filter(Shift.city.in_(allowed_cities))
+    shifts_query = apply_shift_scope(shifts_query, session, user, Shift)
 
     try:
         if date_from:
@@ -145,9 +152,8 @@ def economist_payroll(
 
     stores_query = session.query(Shift.store).distinct()
 
-    if not user.is_admin:
-        employees_query = employees_query.filter(Shift.city.in_(allowed_cities))
-        stores_query = stores_query.filter(Shift.city.in_(allowed_cities))
+    employees_query = apply_shift_scope(employees_query, session, user, Shift)
+    stores_query = apply_shift_scope(stores_query, session, user, Shift)
 
     employee_list = [
         e[0] for e in employees_query.order_by(Shift.employee.asc()).all()
@@ -252,7 +258,7 @@ def economist_save_manual_adjustments(
     user=Depends(require_economist_user),
 ):
     allowed_cities = get_economist_cities(user)
-    if not allowed_cities and not user.is_admin:
+    if allowed_cities == []:
         return RedirectResponse(url="/economist/payroll", status_code=302)
 
     start_date = datetime.strptime(date_from, "%Y-%m-%d").date()
@@ -306,7 +312,7 @@ def economist_fix_payroll(
 ):
     allowed_cities = get_economist_cities(user)
 
-    if not allowed_cities and not user.is_admin:
+    if allowed_cities == []:
         return RedirectResponse(url="/economist/payroll", status_code=302)
 
     start_date = datetime.strptime(date_from, "%Y-%m-%d").date()

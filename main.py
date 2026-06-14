@@ -1,4 +1,4 @@
-import os
+﻿import os
 
 from env_loader import load_project_env
 
@@ -25,6 +25,7 @@ from routers.documents import router as documents_router
 from routers.employee import router as employee_router
 from routers.employees import router as employees_router
 from routers.legal_entities import router as legal_entities_router
+from routers.hr import router as hr_router
 from routers.lmk import router as lmk_router
 from routers.maintenance import router as maintenance_router
 from routers.payroll import router as payroll_router
@@ -62,6 +63,7 @@ app.include_router(documents_router)
 app.include_router(employee_router)
 app.include_router(employees_router)
 app.include_router(legal_entities_router)
+app.include_router(hr_router)
 app.include_router(lmk_router)
 app.include_router(maintenance_router)
 app.include_router(payroll_router)
@@ -82,5 +84,6 @@ ensure_document_tables()
 ensure_legal_entities_table()
 ensure_payroll_run_closing_columns()
 ensure_audit_log_table()
+
 
 

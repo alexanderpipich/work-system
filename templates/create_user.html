@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
@@ -225,7 +225,9 @@
                         <option value="employee" selected>Сотрудник</option>
                         <option value="brigadier">Бригадир</option>
                         <option value="economist">Экономист</option>
-                        <option value="admin">Администратор</option>
+                        <option value="hr_manager">HR-менеджер региона</option>
+                        <option value="hr_lead">Руководитель HR-проекта</option>
+                        <option value="superadmin">Суперадминистратор</option>
                     </select>
                 </div>
 
@@ -240,11 +242,11 @@
                 </div>
 
                 <div class="field" id="economist-cities-field" style="display:none;">
-                    <label>Города экономиста</label>
+                    <label>Доступные города</label>
 
                     <input
                         type="text"
-                        name="economist_stores"
+                        name="scope_cities"
                         placeholder="Москва, Санкт-Петербург"
                     >
                 </div>
@@ -278,7 +280,7 @@ function updateRoleFields() {
         brigadierField.style.display = "block";
     }
 
-    if (roleSelect.value === "economist") {
+    if (["economist", "hr_manager"].includes(roleSelect.value)) {
         economistField.style.display = "block";
     }
 }
@@ -289,3 +291,4 @@ updateRoleFields();
 </script>
 </body>
 </html>
+

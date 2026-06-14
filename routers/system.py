@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Depends, Request
+﻿from fastapi import APIRouter, Depends, Request
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.responses import FileResponse
 
-from dependencies import require_admin_user
+from rbac import require_permission
 
 
 router = APIRouter()
+require_technical_access = require_permission("system.technical", audit_denied=True)
 
 
 @router.get("/docs", include_in_schema=False)
-def admin_docs(admin=Depends(require_admin_user)):
+def admin_docs(admin=Depends(require_technical_access)):
     return get_swagger_ui_html(
         openapi_url="/openapi.json",
         title="Work System API",
@@ -17,7 +18,7 @@ def admin_docs(admin=Depends(require_admin_user)):
 
 
 @router.get("/redoc", include_in_schema=False)
-def admin_redoc(admin=Depends(require_admin_user)):
+def admin_redoc(admin=Depends(require_technical_access)):
     return get_redoc_html(
         openapi_url="/openapi.json",
         title="Work System API",
@@ -27,7 +28,7 @@ def admin_redoc(admin=Depends(require_admin_user)):
 @router.get("/openapi.json", include_in_schema=False)
 def admin_openapi(
     request: Request,
-    admin=Depends(require_admin_user),
+    admin=Depends(require_technical_access),
 ):
     return request.app.openapi()
 

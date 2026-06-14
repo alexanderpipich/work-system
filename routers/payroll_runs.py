@@ -8,17 +8,22 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, Side
 from sqlalchemy.orm import Session
 
-from access import get_economist_cities
+from access import apply_shift_scope, get_economist_cities
 from audit_helpers import create_audit_log
 from dependencies import current_user, get_db, require_admin_user, require_economist_user
 from models import PayrollRun, PayrollRunItem, Requisite, Shift, User
 from payroll_closing import close_payroll_run as close_payroll_run_financials
+from rbac import canonical_role, has_permission, is_superadmin, require_permission
 from time_helpers import now_utc
 from utils import normalize_text
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+require_payroll_delete = require_permission("payroll.delete", audit_denied=True)
+require_payroll_close = require_permission("payroll.close", audit_denied=True)
+require_payroll_view = require_permission("payroll.view", audit_denied=True)
+require_payroll_export = require_permission("payroll.export", audit_denied=True)
 
 
 def _item_key(employee, store, service, shift_date):
@@ -57,6 +62,11 @@ def _filter_items_by_cities(session, items, allowed_cities):
         ) in allowed_keys
     ]
 
+
+def _all_items_accessible_to_cities(session, items, allowed_cities):
+    if not items or not allowed_cities:
+        return False
+    return len(_filter_items_by_cities(session, items, allowed_cities)) == len(items)
 
 def build_run_rows(session, allowed_cities=None):
     runs = session.query(PayrollRun).order_by(PayrollRun.id.desc()).all()
@@ -109,6 +119,33 @@ def get_run_items(session, run_id, allowed_cities=None):
 
     return run, items
 
+
+
+def _allowed_item_keys_for_user(session, user):
+    query = session.query(Shift.employee, Shift.store, Shift.service, Shift.shift_date).distinct()
+    rows = apply_shift_scope(query, session, user, Shift).all()
+    return {_item_key(row[0], row[1], row[2], row[3]) for row in rows}
+
+
+def _filter_items_for_user(session, items, user):
+    allowed_keys = _allowed_item_keys_for_user(session, user)
+    return [item for item in items if _item_key(item.employee_name, item.store, item.service, item.shift_date) in allowed_keys]
+
+
+def build_run_rows_for_user(session, user):
+    rows = []
+    for run in session.query(PayrollRun).order_by(PayrollRun.id.desc()).all():
+        items = _filter_items_for_user(session, session.query(PayrollRunItem).filter(PayrollRunItem.run_id == run.id).all(), user)
+        if not items:
+            continue
+        creator = session.query(User).filter(User.id == run.created_by).first() if run.created_by else None
+        rows.append({"run": run, "items_count": len(items), "total_hours": sum(item.hours or 0 for item in items), "total_amount": sum(item.total_amount or 0 for item in items), "creator": creator.employee_name if creator else "—"})
+    return rows
+
+
+def get_run_items_for_user(session, run_id, user):
+    run, items = get_run_items(session, run_id)
+    return run, _filter_items_for_user(session, items, user)
 
 def _number(value):
     return value or 0
@@ -348,6 +385,33 @@ def economist_payroll_run_detail(
 
 
 
+
+@router.get("/hr/payroll/runs", response_class=HTMLResponse)
+def hr_payroll_runs(request: Request, message: str = "", error: str = "", session: Session = Depends(get_db), user=Depends(require_payroll_view)):
+    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+        return RedirectResponse("/", status_code=302)
+    return templates.TemplateResponse(request, "payroll_runs.html", {"run_rows": build_run_rows_for_user(session, user), "error": error or None, "message": message or None})
+
+
+@router.get("/hr/payroll/runs/{run_id}", response_class=HTMLResponse)
+def hr_payroll_run_detail(request: Request, run_id: int, session: Session = Depends(get_db), user=Depends(require_payroll_view)):
+    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+        return RedirectResponse("/", status_code=302)
+    run, items = get_run_items_for_user(session, run_id, user)
+    if not run or not items:
+        return RedirectResponse("/hr/payroll/runs", status_code=302)
+    return templates.TemplateResponse(request, "payroll_run_detail.html", {"user": user, "is_economist_view": True, "run": run, "items": items, "total_hours": sum(item.hours or 0 for item in items), "total_amount": sum(item.total_amount or 0 for item in items), "closed_by_name": _user_name(session, run.closed_by)})
+
+
+@router.get("/hr/payroll/runs/{run_id}/export")
+def hr_export_payroll_run(request: Request, run_id: int, session: Session = Depends(get_db), user=Depends(require_payroll_export)):
+    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+        return RedirectResponse("/", status_code=302)
+    run, items = get_run_items_for_user(session, run_id, user)
+    if not run or not items:
+        return RedirectResponse("/hr/payroll/runs?error=Нет строк в доступной области", status_code=302)
+    return _export_response(session, run, items)
+
 @router.get("/admin/payroll/runs", response_class=HTMLResponse)
 def payroll_runs_page(
     request: Request,
@@ -451,7 +515,7 @@ def delete_payroll_run(
     request: Request,
     run_id: int = Form(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_payroll_delete),
 ):
     run = session.query(PayrollRun).filter(
         PayrollRun.id == run_id
@@ -497,13 +561,9 @@ def send_payroll_run(
     session: Session = Depends(get_db),
     user=Depends(current_user),
 ):
-    return_url = (
-        "/admin/payroll/runs"
-        if user.is_admin or user.role == "admin"
-        else "/economist/payroll/runs"
-    )
+    return_url = "/admin/payroll/runs" if is_superadmin(user) else "/economist/payroll/runs"
 
-    if not (user.is_admin or user.role == "economist"):
+    if not has_permission(user, "payroll.send"):
         return RedirectResponse(url="/", status_code=302)
 
     run = session.query(PayrollRun).filter(
@@ -512,6 +572,15 @@ def send_payroll_run(
 
     if not run:
         return RedirectResponse(url=return_url, status_code=302)
+
+    if not is_superadmin(user):
+        items = session.query(PayrollRunItem).filter(PayrollRunItem.run_id == run.id).all()
+        allowed_cities = get_economist_cities(user)
+        if not _all_items_accessible_to_cities(session, items, allowed_cities):
+            return RedirectResponse(
+                url="/economist/payroll/runs?error=Табель содержит строки вне доступных городов",
+                status_code=302,
+            )
 
     if run.status == "fixed":
         old_value = {"status": run.status, "sent_at": run.sent_at}
@@ -534,13 +603,12 @@ def send_payroll_run(
     return RedirectResponse(url=return_url, status_code=302)
 
 
-
 @router.post("/admin/payroll/runs/close")
 def close_payroll_run_route(
     request: Request,
     run_id: int = Form(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_payroll_close),
 ):
     run = session.query(PayrollRun).filter(
         PayrollRun.id == run_id
@@ -580,4 +648,7 @@ def close_payroll_run_route(
         )
 
     return RedirectResponse(url="/admin/payroll/runs", status_code=302)
+
+
+
 

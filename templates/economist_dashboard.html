@@ -240,24 +240,6 @@
     </div>
 
     <div class="card">
-        <h2 class="section-title">Доступные города</h2>
-
-        {% if allowed_cities %}
-            <div class="cities">
-                {% for city in allowed_cities %}
-                    <div class="city-pill">
-                        {{ city }}
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="muted">
-                Города пока не назначены
-            </div>
-        {% endif %}
-    </div>
-
-    <div class="card">
         <h2 class="section-title">Разделы</h2>
 
         <div class="modules">

@@ -204,7 +204,10 @@
 
 
         <div class="toolbar">
-            {% if request.url.path.startswith('/economist') %}
+            {% if request.url.path.startswith('/hr') %}
+                <a href="/hr/payroll" class="back-link">Выплатный табель</a>
+                <a href="/hr" class="back-link">Кабинет HR</a>
+            {% elif request.url.path.startswith('/economist') %}
                 <a href="/economist/payroll" class="back-link">Выплатный табель</a>
                 <a href="/economist" class="back-link">Кабинет экономиста</a>
             {% else %}
@@ -276,14 +279,18 @@
                         <td class="num">{{ "%.2f"|format(row.total_hours or 0) }}</td>
                         <td class="num">{{ "%.2f"|format(row.total_amount or 0) }} ₽</td>
                         <td>
-                            {% if request.url.path.startswith('/economist') %}
+                            {% if request.url.path.startswith('/hr') %}
+                                <a href="/hr/payroll/runs/{{ row.run.id }}" class="btn">Открыть</a>
+                            {% elif request.url.path.startswith('/economist') %}
                                 <a href="/economist/payroll/runs/{{ row.run.id }}" class="btn">Открыть</a>
                             {% else %}
                                 <a href="/admin/payroll/runs/{{ row.run.id }}" class="btn">Открыть</a>
                             {% endif %}
                         </td>
                         <td>
-                            {% if request.url.path.startswith('/economist') %}
+                            {% if request.url.path.startswith('/hr') %}
+                                <a href="/hr/payroll/runs/{{ row.run.id }}/export" class="btn">Экспорт Excel</a>
+                            {% elif request.url.path.startswith('/economist') %}
                                 <a href="/economist/payroll/runs/{{ row.run.id }}/export" class="btn">Экспорт Excel</a>
                             {% else %}
                                 <a href="/admin/payroll/runs/{{ row.run.id }}/export" class="btn">Экспорт Excel</a>

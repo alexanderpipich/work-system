@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+﻿from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import and_, distinct, func
 from sqlalchemy.orm import Session
 
-from access import get_economist_cities
+from access import accessible_employee_names, get_economist_cities
 from dependencies import get_db, require_admin_user, require_economist_user
 from document_helpers import (
     STATUS_LABELS,
@@ -15,6 +15,7 @@ from document_helpers import (
     economist_employee_names,
     employee_names,
 )
+from rbac import canonical_role, require_permission
 from models import (
     DocumentType,
     EmployeeDocument,
@@ -33,6 +34,8 @@ from utils import normalize_text
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+require_reports_view = require_permission("reports.view", audit_denied=True)
+HR_REPORTS = {"documents", "missing-documents", "expired-documents"}
 
 
 REPORT_CARDS = [
@@ -88,7 +91,7 @@ def _base_context(request, base_path, back_url, title, filters, **extra):
 
 
 def _scope_allowed_cities(user, economist):
-    if not economist or user.is_admin:
+    if not economist or canonical_role(user) in {"superadmin", "hr_lead"}:
         return None
     return get_economist_cities(user)
 
@@ -351,15 +354,15 @@ def _document_employee_scope(session, allowed_cities):
     return employee_names(session) if allowed_cities is None else economist_employee_names(session, allowed_cities)
 
 
-def _documents_report(session, allowed_cities):
-    employees = _document_employee_scope(session, allowed_cities)
+def _documents_report(session, allowed_cities, scoped_employees=None):
+    employees = scoped_employees if scoped_employees is not None else _document_employee_scope(session, allowed_cities)
     rows = build_document_registry_rows(session, employees, status="all")
     return rows
 
 
-def _missing_documents_report(session, allowed_cities):
+def _missing_documents_report(session, allowed_cities, scoped_employees=None):
     rows = [
-        row for row in _documents_report(session, allowed_cities)
+        row for row in _documents_report(session, allowed_cities, scoped_employees)
         if row["status"] in {"missing", "rejected", "archived"}
     ]
     grouped = {}
@@ -373,10 +376,10 @@ def _missing_documents_report(session, allowed_cities):
     return list(grouped.values())
 
 
-def _expired_documents_report(session, allowed_cities):
+def _expired_documents_report(session, allowed_cities, scoped_employees=None):
     today = _today()
     rows = []
-    for row in _documents_report(session, allowed_cities):
+    for row in _documents_report(session, allowed_cities, scoped_employees):
         document = row["document"]
         if not document or document.is_permanent or not document.expiry_date:
             continue
@@ -393,25 +396,25 @@ def _expired_documents_report(session, allowed_cities):
 
 
 def _dashboard(request, user, economist=False):
-    base_path = "/economist/reports" if economist else "/admin/reports"
-    back_url = "/economist" if economist else "/admin"
+    hr_view = request.url.path.startswith("/hr")
+    base_path = "/hr/reports" if hr_view else ("/economist/reports" if economist else "/admin/reports")
+    back_url = "/hr" if hr_view else ("/economist" if economist else "/admin")
     template = "economist_reports_dashboard.html" if economist else "reports_dashboard.html"
+    cards = [card for card in REPORT_CARDS if card[0] in HR_REPORTS] if hr_view else REPORT_CARDS
     return templates.TemplateResponse(
-        request,
-        template,
-        {
-            "user": user,
-            "cards": REPORT_CARDS,
-            "base_path": base_path,
-            "back_url": back_url,
-        },
+        request, template,
+        {"user": user, "cards": cards, "base_path": base_path, "back_url": back_url},
     )
 
 
 def _render_report(request, session, user, report, economist=False):
+    if request.url.path.startswith("/hr") and report not in HR_REPORTS:
+        return RedirectResponse(url="/hr/reports", status_code=302)
+    hr_view = request.url.path.startswith("/hr")
     filters = _filters(request)
     allowed_cities = _scope_allowed_cities(user, economist)
-    base_path = "/economist/reports" if economist else "/admin/reports"
+    scoped_employees = accessible_employee_names(session, user) if hr_view and canonical_role(user) == "hr_manager" else None
+    base_path = "/hr/reports" if hr_view else ("/economist/reports" if economist else "/admin/reports")
     back_url = base_path
     common = {
         "cities": _cities(session, allowed_cities),
@@ -449,13 +452,13 @@ def _render_report(request, session, user, report, economist=False):
         rows, totals = _lmk(session, allowed_cities)
         context = _base_context(request, base_path, back_url, "ЛМК удержания", filters, rows=rows, totals=totals, report_kind="lmk", **common)
     elif report == "documents":
-        rows = _documents_report(session, allowed_cities)
+        rows = _documents_report(session, allowed_cities, scoped_employees)
         context = _base_context(request, base_path, back_url, "Документы", filters, rows=rows, report_kind="documents", **common)
     elif report == "missing-documents":
-        rows = _missing_documents_report(session, allowed_cities)
+        rows = _missing_documents_report(session, allowed_cities, scoped_employees)
         context = _base_context(request, base_path, back_url, "Отсутствующие документы", filters, rows=rows, report_kind="missing_documents", **common)
     elif report == "expired-documents":
-        rows = _expired_documents_report(session, allowed_cities)
+        rows = _expired_documents_report(session, allowed_cities, scoped_employees)
         context = _base_context(request, base_path, back_url, "Истекающие документы", filters, rows=rows, report_kind="expired_documents", **common)
     else:
         return RedirectResponse(url=base_path, status_code=302)
@@ -497,4 +500,17 @@ def economist_report(
     session: Session = Depends(get_db),
     user=Depends(require_economist_user),
 ):
+    return _render_report(request, session, user, report, economist=True)
+
+@router.get("/hr/reports", response_class=HTMLResponse)
+def hr_reports(request: Request, user=Depends(require_reports_view)):
+    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+        return RedirectResponse(url="/", status_code=302)
+    return _dashboard(request, user, economist=True)
+
+
+@router.get("/hr/reports/{report}", response_class=HTMLResponse)
+def hr_report(request: Request, report: str, session: Session = Depends(get_db), user=Depends(require_reports_view)):
+    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+        return RedirectResponse(url="/", status_code=302)
     return _render_report(request, session, user, report, economist=True)

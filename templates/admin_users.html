@@ -234,6 +234,9 @@
             font-weight: 700;
         }
 
+        .role-superadmin { background: #fee4e2; color: #b42318; }
+        .role-hr_lead { background: #ecfdf3; color: #067647; }
+        .role-hr_manager { background: #fff6ed; color: #b54708; }
         .role-admin { background: #fee4e2; color: #b42318; }
         .role-economist { background: #f4ebff; color: #6941c6; }
         .role-brigadier { background: #e0f2fe; color: #026aa2; }
@@ -361,7 +364,9 @@
                         <option value="employee" {% if filters and filters.role == 'employee' %}selected{% endif %}>Сотрудник</option>
                         <option value="brigadier" {% if filters and filters.role == 'brigadier' %}selected{% endif %}>Бригадир</option>
                         <option value="economist" {% if filters and filters.role == 'economist' %}selected{% endif %}>Экономист</option>
-                        <option value="admin" {% if filters and filters.role == 'admin' %}selected{% endif %}>Админ</option>
+                        <option value="hr_manager" {% if filters and filters.role == 'hr_manager' %}selected{% endif %}>HR-менеджер</option>
+                        <option value="hr_lead" {% if filters and filters.role == 'hr_lead' %}selected{% endif %}>HR Lead</option>
+                        <option value="superadmin" {% if filters and filters.role == 'superadmin' %}selected{% endif %}>Superadmin</option>
                     </select>
                 </div>
 
@@ -398,8 +403,13 @@
                         <td>{{ user.phone }}</td>
                         <td>{{ user.employee_name }}</td>
                         <td>
-                            {% if user.role == "admin" or user.is_admin %}
-                                <span class="pill role-admin">Админ</span>
+                            {% if user.role == "admin" or user.role == "superadmin" or user.is_admin %}
+                                <span class="pill role-superadmin">Superadmin</span>
+                            {% elif user.role == "hr_lead" %}
+                                <span class="pill role-hr_lead">HR Lead</span>
+                            {% elif user.role == "hr_manager" %}
+                                <span class="pill role-hr_manager">HR-менеджер</span>
+                                <div class="small-note">{{ (city_scopes.get(user.id, []) or []) | join(', ') }}</div>
                             {% elif user.role == "economist" %}
                                 <span class="pill role-economist">Экономист</span>
                                 {% if user.economist_stores %}
@@ -423,12 +433,14 @@
                                     <option value="employee" {% if user.role == "employee" and not user.is_admin %}selected{% endif %}>Сотрудник</option>
                                     <option value="brigadier" {% if user.role == "brigadier" %}selected{% endif %}>Бригадир</option>
                                     <option value="economist" {% if user.role == "economist" %}selected{% endif %}>Экономист</option>
-                                    <option value="admin" {% if user.role == "admin" or user.is_admin %}selected{% endif %}>Админ</option>
+                                    <option value="hr_manager" {% if user.role == "hr_manager" %}selected{% endif %}>HR-менеджер</option>
+                                    <option value="hr_lead" {% if user.role == "hr_lead" %}selected{% endif %}>HR Lead</option>
+                                    <option value="superadmin" {% if user.role == "superadmin" or user.role == "admin" or user.is_admin %}selected{% endif %}>Superadmin</option>
                                 </select>
 
                                 <input type="text" name="brigadier_store" value="{{ user.brigadier_store or '' }}" placeholder="Магазин бригадира">
 
-                                <input type="text" name="economist_stores" value="{{ user.economist_stores or '' }}" placeholder="Магазины экономиста через запятую">
+                                <input type="text" name="scope_cities" value="{{ (city_scopes.get(user.id, []) or []) | join(', ') }}" placeholder="Доступные города через запятую">
 
                                 <input type="text" name="citizenship_country" value="{{ user.citizenship_country or '' }}" placeholder="Гражданство">
 
@@ -477,3 +489,4 @@
 </div>
 </body>
 </html>
+

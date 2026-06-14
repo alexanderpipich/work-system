@@ -12,9 +12,9 @@ from openpyxl.styles import Font
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from access import get_economist_cities
+from access import apply_shift_scope, get_user_cities, get_user_stores, scope_allows_store
 from audit_helpers import create_audit_log
-from dependencies import RedirectException, get_db, require_admin_user, require_economist_user
+from dependencies import RedirectException, current_user, get_db, require_admin_user
 from models import (
     EmployeeMonitoringRecommendation,
     EmployeeMonitoringSettings,
@@ -28,6 +28,7 @@ from models import (
     UnplannedShiftNotification,
     User,
 )
+from rbac import canonical_role, has_permission, is_superadmin
 from shift_helpers import is_no_plan_request_type
 from time_helpers import business_today, now_utc
 from utils import normalize_text
@@ -40,46 +41,43 @@ RECONCILIATION_DIR = Path("generated_files/reconciliations")
 
 
 def _is_admin(user):
-    return bool(user.is_admin or user.role == "admin")
+    return is_superadmin(user)
 
 
-def require_employee_manager(request: Request, user=Depends(require_economist_user)):
+def require_employee_manager(request: Request, user=Depends(current_user)):
+    if not has_permission(user, "employees.view"):
+        raise RedirectException("/")
     if request.url.path.startswith("/admin") and not _is_admin(user):
+        raise RedirectException("/")
+    if request.url.path.startswith("/hr") and canonical_role(user) not in {"hr_lead", "hr_manager"}:
         raise RedirectException("/")
     return user
 
 
 def _context(request, user, section="dashboard", **extra):
     economist = request.url.path.startswith("/economist")
+    hr_view = request.url.path.startswith("/hr")
     context = {
         "user": user,
         "section": section,
-        "base_path": "/economist/employees" if economist else "/admin/employees",
-        "back_url": "/economist" if economist else "/admin",
+        "base_path": "/hr/employees" if hr_view else ("/economist/employees" if economist else "/admin/employees"),
+        "back_url": "/hr" if hr_view else ("/economist" if economist else "/admin"),
         "is_admin": _is_admin(user),
     }
     context.update(extra)
     return context
 
 
-def _allowed_cities(user):
-    return None if _is_admin(user) else get_economist_cities(user)
-
-
-def _city_allowed(user, city):
-    allowed = _allowed_cities(user)
-    return allowed is None or normalize_text(city) in set(allowed)
-
-
 def _scope(query, model, user):
-    allowed = _allowed_cities(user)
-    if allowed is not None:
-        query = query.filter(model.city.in_(allowed or ["__none__"]))
-    return query
+    return apply_shift_scope(query, query.session, user, model)
+
+
+def _scope_allowed(session, user, city, store):
+    return scope_allows_store(session, user, city, store)
 
 
 def _redirect(request, suffix="", **params):
-    root = "/economist/employees" if request.url.path.startswith("/economist") else "/admin/employees"
+    root = "/hr/employees" if request.url.path.startswith("/hr") else ("/economist/employees" if request.url.path.startswith("/economist") else "/admin/employees")
     url = f"{root}{suffix}"
     clean = {key: value for key, value in params.items() if value not in (None, "")}
     return RedirectResponse(f"{url}?{urlencode(clean)}" if clean else url, status_code=302)
@@ -114,8 +112,9 @@ def _stores(session, user):
     return sorted({(row.store, row.city or "") for row in query.all()})
 
 
-def _users(session):
-    return session.query(User).order_by(User.employee_name.asc()).all()
+def _users(session, user):
+    employee_names = apply_shift_scope(session.query(Shift.employee).distinct(), session, user, Shift)
+    return session.query(User).filter(User.employee_name.in_(employee_names)).order_by(User.employee_name.asc()).all()
 
 
 def _store_city(session, store):
@@ -236,24 +235,27 @@ def _create_recommendation(session, request, user, employee, store, city, kind, 
 
 @router.get("/admin/employees", response_class=HTMLResponse)
 @router.get("/economist/employees", response_class=HTMLResponse)
+@router.get("/hr/employees", response_class=HTMLResponse)
 def employees_dashboard(request: Request, user=Depends(require_employee_manager)):
     return templates.TemplateResponse(request, "employees_dashboard.html", _context(request, user))
 
 
 @router.get("/admin/employees/planning", response_class=HTMLResponse)
 @router.get("/economist/employees/planning", response_class=HTMLResponse)
+@router.get("/hr/employees/planning", response_class=HTMLResponse)
 def planning_page(request: Request, view: str = "list", message: str = "", session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     forms = _scope(session.query(PlanningForm), PlanningForm, user).order_by(PlanningForm.id.desc()).all()
     assignments = _scope(session.query(EmployeeStoreAssignment), EmployeeStoreAssignment, user).order_by(EmployeeStoreAssignment.city, EmployeeStoreAssignment.store, EmployeeStoreAssignment.employee_name).all()
     scenarios = session.query(PlanningScenario).order_by(PlanningScenario.is_active.desc(), PlanningScenario.name).all()
-    return templates.TemplateResponse(request, "employees_planning.html", _context(request, user, "planning", forms=forms, assignments=assignments, scenarios=scenarios, users=_users(session), stores=_stores(session, user), tree=_planning_tree(forms), view=view, message=message))
+    return templates.TemplateResponse(request, "employees_planning.html", _context(request, user, "planning", forms=forms, assignments=assignments, scenarios=scenarios, users=_users(session, user), stores=_stores(session, user), tree=_planning_tree(forms), view=view, message=message))
 
 
 @router.post("/admin/employees/planning/assignments/add")
 @router.post("/economist/employees/planning/assignments/add")
+@router.post("/hr/employees/planning/assignments/add")
 def assignment_add(request: Request, employee_name: str = Form(...), store: str = Form(...), comment: str = Form(default=""), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     city = _store_city(session, store)
-    if not _city_allowed(user, city):
+    if not _scope_allowed(session, user, city, store):
         return _redirect(request, "/planning", message="Нет доступа к городу")
     existing = session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.employee_name == normalize_text(employee_name), EmployeeStoreAssignment.store == normalize_text(store)).first()
     if existing:
@@ -273,9 +275,10 @@ def assignment_add(request: Request, employee_name: str = Form(...), store: str 
 
 @router.post("/admin/employees/planning/assignments/update")
 @router.post("/economist/employees/planning/assignments/update")
+@router.post("/hr/employees/planning/assignments/update")
 def assignment_update(request: Request, assignment_id: int = Form(...), is_active: str = Form(default=""), comment: str = Form(default=""), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     row = session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.id == assignment_id).first()
-    if not row or not _city_allowed(user, row.city): return _redirect(request, "/planning", message="Назначение недоступно")
+    if not row or not _scope_allowed(session, user, row.city, row.store): return _redirect(request, "/planning", message="Назначение недоступно")
     row.is_active = is_active == "1"; row.comment = normalize_text(comment) or None
     create_audit_log(session, request, user, "planning_assignment_updated", "employee_store_assignment", row.id, f"{row.employee_name} / {row.store}")
     session.commit(); return _redirect(request, "/planning", message="Назначение обновлено")
@@ -290,9 +293,10 @@ def scenario_add(request: Request, name: str = Form(...), description: str = For
 
 @router.post("/admin/employees/planning/assignments/delete")
 @router.post("/economist/employees/planning/assignments/delete")
+@router.post("/hr/employees/planning/assignments/delete")
 def assignment_delete(request: Request, assignment_id: int = Form(...), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     row = session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.id == assignment_id).first()
-    if row and _city_allowed(user, row.city):
+    if row and _scope_allowed(session, user, row.city, row.store):
         row.is_active = False
         create_audit_log(session, request, user, "planning_assignment_updated", "employee_store_assignment", row.id, f"{row.employee_name} / {row.store}")
         session.commit()
@@ -317,9 +321,10 @@ def scenario_delete(request: Request, scenario_id: int = Form(...), session: Ses
 
 @router.post("/admin/employees/planning/forms/create")
 @router.post("/economist/employees/planning/forms/create")
+@router.post("/hr/employees/planning/forms/create")
 def planning_form_create(request: Request, scenario_id: int = Form(default=0), employee_name: str = Form(...), store: str = Form(...), date_from: str = Form(...), date_to: str = Form(...), email_to: str = Form(default=""), comment: str = Form(default=""), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     city = _store_city(session, store)
-    if not _city_allowed(user, city): return _redirect(request, "/planning", message="Нет доступа к городу")
+    if not _scope_allowed(session, user, city, store): return _redirect(request, "/planning", message="Нет доступа к городу")
     start, end = _parse_date(date_from), _parse_date(date_to)
     if start > end:
         return _redirect(request, "/planning", message="Дата начала позже даты окончания")
@@ -333,11 +338,12 @@ def planning_form_create(request: Request, scenario_id: int = Form(default=0), e
 
 def _get_planning_form(session, user, form_id):
     row = session.query(PlanningForm).filter(PlanningForm.id == form_id).first()
-    return row if row and _city_allowed(user, row.city) else None
+    return row if row and _scope_allowed(session, user, row.city, row.store) else None
 
 
 @router.get("/admin/employees/planning/forms/{form_id}/download")
 @router.get("/economist/employees/planning/forms/{form_id}/download")
+@router.get("/hr/employees/planning/forms/{form_id}/download")
 def planning_form_download(form_id: int, session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     row = _get_planning_form(session, user, form_id)
     if not row or not row.file_path or not Path(row.file_path).is_file(): return RedirectResponse("/", status_code=302)
@@ -346,6 +352,7 @@ def planning_form_download(form_id: int, session: Session = Depends(get_db), use
 
 @router.post("/admin/employees/planning/forms/{form_id}/{action}")
 @router.post("/economist/employees/planning/forms/{form_id}/{action}")
+@router.post("/hr/employees/planning/forms/{form_id}/{action}")
 def planning_form_action(request: Request, form_id: int, action: str, session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     row = _get_planning_form(session, user, form_id)
     if not row or action not in {"send", "cancel"}: return _redirect(request, "/planning")
@@ -357,6 +364,7 @@ def planning_form_action(request: Request, form_id: int, action: str, session: S
 
 @router.get("/admin/employees/monitoring", response_class=HTMLResponse)
 @router.get("/economist/employees/monitoring", response_class=HTMLResponse)
+@router.get("/hr/employees/monitoring", response_class=HTMLResponse)
 def monitoring_page(request: Request, tab: str = "new", message: str = "", session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     query = _scope(session.query(EmployeeMonitoringRecommendation), EmployeeMonitoringRecommendation, user)
     if tab == "inactive": query = query.filter(EmployeeMonitoringRecommendation.recommendation_type == "remove_from_planning")
@@ -378,6 +386,7 @@ def monitoring_settings_save(request: Request, inactive_days: int = Form(...), m
 
 @router.post("/admin/employees/monitoring/generate")
 @router.post("/economist/employees/monitoring/generate")
+@router.post("/hr/employees/monitoring/generate")
 def monitoring_generate(request: Request, session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     settings = _monitoring_settings(session); today = business_today(); created = 0
     assignments = _scope(session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.is_active == True), EmployeeStoreAssignment, user).all()
@@ -396,14 +405,16 @@ def monitoring_generate(request: Request, session: Session = Depends(get_db), us
 
 @router.post("/admin/employees/monitoring/process")
 @router.post("/economist/employees/monitoring/process")
+@router.post("/hr/employees/monitoring/process")
 def monitoring_process(request: Request, recommendation_id: int = Form(...), status: str = Form(...), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     row = session.query(EmployeeMonitoringRecommendation).filter(EmployeeMonitoringRecommendation.id == recommendation_id).first()
-    if row and _city_allowed(user, row.city) and status in {"accepted", "dismissed"}: row.status=status; row.processed_by=user.id; row.processed_at=now_utc(); session.commit()
+    if row and _scope_allowed(session, user, row.city, row.store) and status in {"accepted", "dismissed"}: row.status=status; row.processed_by=user.id; row.processed_at=now_utc(); session.commit()
     return _redirect(request, "/monitoring", message="Рекомендация обработана")
 
 
 @router.get("/admin/employees/reconciliations", response_class=HTMLResponse)
 @router.get("/economist/employees/reconciliations", response_class=HTMLResponse)
+@router.get("/hr/employees/reconciliations", response_class=HTMLResponse)
 def reconciliations_page(request: Request, message: str = "", session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     rows = _scope(session.query(StoreReconciliation), StoreReconciliation, user).order_by(StoreReconciliation.id.desc()).all()
     settings = _scope(session.query(StoreReconciliationSettings), StoreReconciliationSettings, user).order_by(StoreReconciliationSettings.store).all()
@@ -412,18 +423,20 @@ def reconciliations_page(request: Request, message: str = "", session: Session =
 
 @router.post("/admin/employees/reconciliations/settings")
 @router.post("/economist/employees/reconciliations/settings")
+@router.post("/hr/employees/reconciliations/settings")
 def reconciliation_settings(request: Request, store: str = Form(...), email: str = Form(default=""), enabled: str = Form(default=""), comment: str = Form(default=""), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     city=_store_city(session,store)
-    if not _city_allowed(user,city): return _redirect(request,"/reconciliations",message="Нет доступа к городу")
+    if not _scope_allowed(session,user,city,store): return _redirect(request,"/reconciliations",message="Нет доступа к городу")
     row=session.query(StoreReconciliationSettings).filter(StoreReconciliationSettings.store==normalize_text(store)).first() or StoreReconciliationSettings(store=normalize_text(store)); session.add(row); row.city=city; row.email=normalize_text(email) or None; row.enabled=enabled=="1"; row.comment=normalize_text(comment) or None; session.commit()
     return _redirect(request,"/reconciliations",message="Настройки сохранены")
 
 
 @router.post("/admin/employees/reconciliations/generate")
 @router.post("/economist/employees/reconciliations/generate")
+@router.post("/hr/employees/reconciliations/generate")
 def reconciliation_generate(request: Request, store: str = Form(...), date_from: str = Form(...), date_to: str = Form(...), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     city=_store_city(session,store)
-    if not _city_allowed(user,city): return _redirect(request,"/reconciliations",message="Нет доступа к городу")
+    if not _scope_allowed(session,user,city,store): return _redirect(request,"/reconciliations",message="Нет доступа к городу")
     start,end=_parse_date(date_from),_parse_date(date_to)
     if not is_fixed_reconciliation_period(start,end):return _redirect(request,"/reconciliations",message="Допустимы только периоды 01–15 или 16–конец месяца")
     if business_today() < reconciliation_ready_date(end):return _redirect(request,"/reconciliations",message=f"Сверку можно сформировать с {reconciliation_ready_date(end):%d.%m.%Y}")
@@ -435,11 +448,12 @@ def reconciliation_generate(request: Request, store: str = Form(...), date_from:
 
 
 def _reconciliation(session,user,row_id):
-    row=session.query(StoreReconciliation).filter(StoreReconciliation.id==row_id).first(); return row if row and _city_allowed(user,row.city) else None
+    row=session.query(StoreReconciliation).filter(StoreReconciliation.id==row_id).first(); return row if row and _scope_allowed(session,user,row.city,row.store) else None
 
 
 @router.get("/admin/employees/reconciliations/{row_id}/download")
 @router.get("/economist/employees/reconciliations/{row_id}/download")
+@router.get("/hr/employees/reconciliations/{row_id}/download")
 def reconciliation_download(row_id:int,session:Session=Depends(get_db),user=Depends(require_employee_manager)):
     row=_reconciliation(session,user,row_id)
     if not row or not row.file_path or not Path(row.file_path).is_file():return RedirectResponse("/",status_code=302)
@@ -448,6 +462,7 @@ def reconciliation_download(row_id:int,session:Session=Depends(get_db),user=Depe
 
 @router.post("/admin/employees/reconciliations/{row_id}/{action}")
 @router.post("/economist/employees/reconciliations/{row_id}/{action}")
+@router.post("/hr/employees/reconciliations/{row_id}/{action}")
 def reconciliation_action(request:Request,row_id:int,action:str,session:Session=Depends(get_db),user=Depends(require_employee_manager)):
     row=_reconciliation(session,user,row_id)
     if row and action in {"ready","sent"}: row.status="ready_to_send" if action=="ready" else "sent"; row.sent_at=now_utc() if action=="sent" else None; create_audit_log(session,request,user,"reconciliation_sent" if action=="sent" else "reconciliation_ready","store_reconciliation",row.id,row.store);session.commit()
@@ -456,6 +471,7 @@ def reconciliation_action(request:Request,row_id:int,action:str,session:Session=
 
 @router.get("/admin/employees/unplanned-shifts",response_class=HTMLResponse)
 @router.get("/economist/employees/unplanned-shifts",response_class=HTMLResponse)
+@router.get("/hr/employees/unplanned-shifts",response_class=HTMLResponse)
 def unplanned_page(request:Request,message:str="",session:Session=Depends(get_db),user=Depends(require_employee_manager)):
     rows=_scope(session.query(UnplannedShiftNotification),UnplannedShiftNotification,user).order_by(UnplannedShiftNotification.shift_date.desc()).all();settings=_scope(session.query(StoreNotificationSettings),StoreNotificationSettings,user).order_by(StoreNotificationSettings.store).all()
     return templates.TemplateResponse(request,"employees_unplanned.html",_context(request,user,"unplanned",rows=rows,settings=settings,stores=_stores(session,user),message=message))
@@ -463,14 +479,16 @@ def unplanned_page(request:Request,message:str="",session:Session=Depends(get_db
 
 @router.post("/admin/employees/unplanned-shifts/settings")
 @router.post("/economist/employees/unplanned-shifts/settings")
+@router.post("/hr/employees/unplanned-shifts/settings")
 def notification_settings(request:Request,store:str=Form(...),email:str=Form(default=""),enabled:str=Form(default=""),comment:str=Form(default=""),session:Session=Depends(get_db),user=Depends(require_employee_manager)):
     city=_store_city(session,store)
-    if not _city_allowed(user,city):return _redirect(request,"/unplanned-shifts",message="Нет доступа к городу")
+    if not _scope_allowed(session,user,city,store):return _redirect(request,"/unplanned-shifts",message="Нет доступа к городу")
     row=session.query(StoreNotificationSettings).filter(StoreNotificationSettings.store==normalize_text(store)).first() or StoreNotificationSettings(store=normalize_text(store));session.add(row);row.city=city;row.email=normalize_text(email) or None;row.enabled=enabled=="1";row.comment=normalize_text(comment) or None;session.commit();return _redirect(request,"/unplanned-shifts",message="Настройки сохранены")
 
 
 @router.post("/admin/employees/unplanned-shifts/generate")
 @router.post("/economist/employees/unplanned-shifts/generate")
+@router.post("/hr/employees/unplanned-shifts/generate")
 def unplanned_generate(request:Request,session:Session=Depends(get_db),user=Depends(require_employee_manager)):
     cutoff=business_today()-timedelta(days=3); query=_scope(session.query(Shift).filter(Shift.shift_date<=cutoff),Shift,user);created=0
     configured_rows=_scope(session.query(StoreNotificationSettings),StoreNotificationSettings,user).all(); enabled={row.store for row in configured_rows if row.enabled}
@@ -483,7 +501,9 @@ def unplanned_generate(request:Request,session:Session=Depends(get_db),user=Depe
 
 @router.post("/admin/employees/unplanned-shifts/{row_id}/{action}")
 @router.post("/economist/employees/unplanned-shifts/{row_id}/{action}")
+@router.post("/hr/employees/unplanned-shifts/{row_id}/{action}")
 def unplanned_action(request:Request,row_id:int,action:str,session:Session=Depends(get_db),user=Depends(require_employee_manager)):
     row=session.query(UnplannedShiftNotification).filter(UnplannedShiftNotification.id==row_id).first()
-    if row and _city_allowed(user,row.city) and action in {"ready","sent"}:row.status="ready_to_send" if action=="ready" else "sent";row.sent_at=now_utc() if action=="sent" else None;create_audit_log(session,request,user,"unplanned_shift_notification_sent" if action=="sent" else "unplanned_shift_notification_ready","unplanned_shift_notification",row.id,f"{row.employee_name} / {row.store}");session.commit()
+    if row and _scope_allowed(session,user,row.city,row.store) and action in {"ready","sent"}:row.status="ready_to_send" if action=="ready" else "sent";row.sent_at=now_utc() if action=="sent" else None;create_audit_log(session,request,user,"unplanned_shift_notification_sent" if action=="sent" else "unplanned_shift_notification_ready","unplanned_shift_notification",row.id,f"{row.employee_name} / {row.store}");session.commit()
     return _redirect(request,"/unplanned-shifts",message="Статус уведомления обновлён")
+

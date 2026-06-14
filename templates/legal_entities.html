@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
@@ -341,11 +341,13 @@
                                         <button type="submit" class="btn btn-success">Активировать</button>
                                     </form>
                                 {% endif %}
+                                {% if can_hard_delete %}
                                 <form method="post" action="{{ base_path or '/admin/legal-entities' }}/delete" onsubmit="return confirm('Удалить юрлицо окончательно?');">
                                     <input type="hidden" name="entity_id" value="{{ entity.id }}">
                                     <input type="hidden" name="hard_delete" value="1">
                                     <button type="submit" class="btn btn-danger">Удалить</button>
                                 </form>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -361,3 +363,4 @@
 </div>
 </body>
 </html>
+

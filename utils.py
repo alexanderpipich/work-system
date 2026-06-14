@@ -1,4 +1,4 @@
-import re
+﻿import re
 
 from passlib.context import CryptContext
 from models import Rate
@@ -43,7 +43,7 @@ def normalize_format(value) -> str:
 
 def normalize_role(value) -> str:
     role = normalize_text(value).lower()
-    allowed = {"admin", "employee", "brigadier", "economist"}
+    allowed = {"admin", "superadmin", "hr_lead", "hr_manager", "employee", "brigadier", "economist"}
 
     if role in allowed:
         return role
@@ -113,3 +113,4 @@ def pick_rate(rates, shift):
 
 def get_rate_for_shift(session, shift):
     return pick_rate(load_rates(session), shift)
+

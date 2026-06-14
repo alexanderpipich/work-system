@@ -3,16 +3,21 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
+from access import accessible_employee_names, apply_shift_scope
 from audit_helpers import create_audit_log
 from dependencies import get_db, require_admin_user, require_economist_user
-from models import Rate
+from models import Rate, Shift
+from rbac import canonical_role, require_permission
 from utils import normalize_format, normalize_text
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+require_rate_hard_delete = require_permission("rates.hard_delete", audit_denied=True)
+require_rate_view = require_permission("rates.view", audit_denied=True)
 
 
 def _rate_payload(rate):
@@ -38,12 +43,34 @@ def rates_query(session):
 
 
 @router.get("/economist/rates", response_class=HTMLResponse)
+@router.get("/hr/rates", response_class=HTMLResponse)
 def economist_rates(
     request: Request,
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_rate_view),
 ):
-    rates = rates_query(session).all()
+    role = canonical_role(user)
+    if request.url.path.startswith("/hr") and role not in {"hr_lead", "hr_manager"}:
+        return RedirectResponse("/", status_code=302)
+    if request.url.path.startswith("/economist") and role not in {"economist", "superadmin"}:
+        return RedirectResponse("/", status_code=302)
+    query = rates_query(session)
+    if role == "hr_manager":
+        scoped_stores = [
+            row[0]
+            for row in apply_shift_scope(session.query(Shift.store).distinct(), session, user, Shift).all()
+            if row[0]
+        ]
+        scoped_employees = accessible_employee_names(session, user)
+        query = query.filter(or_(
+            and_(Rate.store == None, Rate.employee_name == None),
+            Rate.store.in_(scoped_stores or ["__none__"]),
+            and_(
+                Rate.store == None,
+                Rate.employee_name.in_(scoped_employees or ["__none__"]),
+            ),
+        ))
+    rates = query.all()
 
     return templates.TemplateResponse(
         request,
@@ -51,7 +78,8 @@ def economist_rates(
         {
             "rates": rates,
             "message": None,
-            "error": None
+            "error": None,
+            "read_only": request.url.path.startswith("/hr")
         }
     )
 
@@ -167,7 +195,7 @@ def economist_delete_rate(
     request: Request,
     rate_id: int = Form(...),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_rate_hard_delete),
 ):
     rate = session.query(Rate).filter(Rate.id == rate_id).first()
 
@@ -345,7 +373,7 @@ def delete_rate(
     request: Request,
     rate_id: int = Form(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_rate_hard_delete),
 ):
     rate = session.query(Rate).filter(Rate.id == rate_id).first()
     if rate:
@@ -363,3 +391,4 @@ def delete_rate(
         session.commit()
 
     return RedirectResponse(url="/admin/rates", status_code=302)
+

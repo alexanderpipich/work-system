@@ -1,4 +1,4 @@
-from urllib.parse import urlencode
+﻿from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -8,12 +8,14 @@ from sqlalchemy.orm import Session
 from audit_helpers import create_audit_log
 from dependencies import get_db, require_admin_user, require_economist_user
 from models import LegalEntity
+from rbac import has_permission, record_denied_action, require_permission
 from time_helpers import now_utc
 from utils import normalize_text
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+require_legal_entity_hard_delete = require_permission("legal_entities.hard_delete", audit_denied=True)
 
 
 def _redirect(base_path="/admin/legal-entities", **params):
@@ -41,6 +43,7 @@ def _render_page(request, session, user, base_path, back_url, message="", error=
             "users_url": "/admin/users" if base_path.startswith("/admin") else None,
             "message": message or None,
             "error": error or None,
+            "can_hard_delete": has_permission(user, "legal_entities.hard_delete"),
         },
     )
 
@@ -346,7 +349,7 @@ def remove_legal_entity(
     request: Request,
     entity_id: int = Form(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_legal_entity_hard_delete),
 ):
     return _remove_entity(session, request, admin, "/admin/legal-entities", entity_id)
 
@@ -360,9 +363,14 @@ def economist_delete_legal_entity(
     user=Depends(require_economist_user),
 ):
     if hard_delete == "1":
+        if not has_permission(user, "legal_entities.hard_delete"):
+            record_denied_action(session, request, user, "legal_entities.hard_delete")
+            return _redirect(
+                "/economist/legal-entities",
+                error="Физическое удаление доступно только суперадминистратору",
+            )
         return _remove_entity(session, request, user, "/economist/legal-entities", entity_id)
     return _set_entity_active(session, request, user, "/economist/legal-entities", entity_id, False)
-
 
 @router.post("/economist/legal-entities/activate")
 def economist_activate_legal_entity(
@@ -379,6 +387,9 @@ def economist_remove_legal_entity(
     request: Request,
     entity_id: int = Form(...),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_legal_entity_hard_delete),
 ):
     return _remove_entity(session, request, user, "/economist/legal-entities", entity_id)
+
+
+

@@ -186,7 +186,12 @@
         </div>
 
         <div class="toolbar">
-            {% if is_economist_view %}
+            {% if request.url.path.startswith('/hr') %}
+                <a href="/hr/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
+                <a href="/hr/payroll/runs" class="back-link">Все фиксации</a>
+                <a href="/hr/payroll" class="back-link">Выплатный табель</a>
+                <a href="/hr" class="back-link">Кабинет HR</a>
+            {% elif is_economist_view %}
                 <a href="/economist/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
                 <a href="/economist/payroll/runs" class="back-link">Все фиксации</a>
                 <a href="/economist/payroll" class="back-link">Выплатный табель</a>

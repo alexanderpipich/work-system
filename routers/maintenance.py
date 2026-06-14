@@ -1,14 +1,17 @@
-import os
+﻿import os
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from dependencies import get_db, require_admin_user
+from audit_helpers import create_audit_log
+from dependencies import get_db
 from models import Shift, User
+from rbac import require_permission
 from utils import normalize_phone
 
 
 router = APIRouter()
+require_maintenance_access = require_permission("system.maintenance", audit_denied=True)
 
 
 def _require_maintenance_enabled():
@@ -16,10 +19,11 @@ def _require_maintenance_enabled():
         raise HTTPException(status_code=404)
 
 
-@router.get("/admin/fix-phones")
+@router.post("/admin/fix-phones")
 def fix_phones(
+    request: Request,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_maintenance_access),
 ):
     _require_maintenance_enabled()
 
@@ -43,6 +47,10 @@ def fix_phones(
             user.phone = new_phone
             fixed += 1
 
+        create_audit_log(
+            session, request, admin, "maintenance_fix_phones", "system",
+            new_value={"fixed": fixed, "skipped": skipped},
+        )
         session.commit()
         return {"fixed": fixed, "skipped": skipped}
 
@@ -54,8 +62,7 @@ def fix_phones(
 @router.get("/debug/shifts-count")
 def debug(
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_maintenance_access),
 ):
     _require_maintenance_enabled()
-
     return {"count": session.query(Shift).count()}

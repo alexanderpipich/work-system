@@ -4,16 +4,18 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from access import get_economist_cities
+from access import accessible_employee_names, get_user_cities
 from audit_helpers import create_audit_log
 from dependencies import get_db, require_admin_user, require_economist_user
 from models import Requisite, Shift, User
+from rbac import canonical_role, require_permission
 from time_helpers import now_utc
 from utils import normalize_text
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+require_requisites_view = require_permission("requisites.view", audit_denied=True)
 
 
 def _requisite_payload(req):
@@ -33,14 +35,16 @@ def _requisite_payload(req):
 
 
 @router.get("/economist/requisites", response_class=HTMLResponse)
+@router.get("/hr/requisites", response_class=HTMLResponse)
 def economist_requisites(
     request: Request,
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_requisites_view),
 ):
-    allowed_cities = get_economist_cities(user)
+    allowed_cities = get_user_cities(session, user)
+    allowed_names = None if allowed_cities is None else accessible_employee_names(session, user)
 
-    if not allowed_cities and not user.is_admin:
+    if not allowed_cities and canonical_role(user) not in {"superadmin", "hr_lead"}:
         return templates.TemplateResponse(
             request,
             "economist_requisites.html",
@@ -49,22 +53,15 @@ def economist_requisites(
                 "allowed_cities": allowed_cities,
                 "requisites": [],
                 "message": None,
-                "error": "Для экономиста не назначены города"
+                "error": "Для пользователя не назначены города"
             }
         )
 
-    employees_query = session.query(Shift.employee).distinct()
-
-    if not user.is_admin:
-        employees_query = employees_query.filter(
-            Shift.city.in_(allowed_cities)
-        )
-
-    employee_names = [
-        normalize_text(x[0])
-        for x in employees_query.all()
-        if x[0]
-    ]
+    employee_names = (
+        [normalize_text(row[0]) for row in session.query(Shift.employee).distinct().all() if row[0]]
+        if allowed_names is None
+        else allowed_names
+    )
 
     requisites = session.query(Requisite).filter(
         Requisite.employee_name.in_(employee_names)
@@ -410,4 +407,6 @@ def upload_requisites(
                 "error": "Import failed"
             }
         )
+
+
 

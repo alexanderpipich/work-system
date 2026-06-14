@@ -543,7 +543,7 @@
     <div class="card">
         <h2>Параметры расчёта</h2>
 
-        <form method="get" action="/economist/payroll">
+        <form method="get" action="{{ '/hr/payroll' if request.url.path.startswith('/hr') else '/economist/payroll' }}">
             <div class="form-grid">
                 <div class="field">
                     <label>Дата начала</label>
@@ -609,7 +609,7 @@
             и предлагать корректировки в следующий выплатный период.
         </p>
 
-        <form id="payroll-fix-form" method="post" action="/economist/payroll/fix">
+        {% if not request.url.path.startswith('/hr') %}<form id="payroll-fix-form" method="post" action="/economist/payroll/fix">
             <input type="hidden" name="date_from" value="{{ date_from }}">
             <input type="hidden" name="date_to" value="{{ date_to }}">
             <input type="hidden" name="employee_name" value="{{ employee_name }}">
@@ -646,7 +646,7 @@
                     </button>
                 </div>
             </div>
-        </form>
+        </form>{% endif %}
     </div>
 
 
@@ -743,7 +743,7 @@
                                                 </div>
                                             {% endfor %}
                                         </div>
-                                        {% if row.auto_pending_ids %}
+                                        {% if row.auto_pending_ids and not request.url.path.startswith('/hr') %}
                                             <form method="post" action="/economist/payroll/adjustments/approve">
                                                 {% for adjustment_id in row.auto_pending_ids %}
                                                     <input type="hidden" name="adjustment_ids" value="{{ adjustment_id }}">
@@ -769,7 +769,7 @@
                                                 <button type="submit" class="menu-action danger">Удалить pending</button>
                                             </form>
                                         {% endif %}
-                                        {% if row.auto_approved_ids %}
+                                        {% if row.auto_approved_ids and not request.url.path.startswith('/hr') %}
                                             <button type="button" class="menu-action" onclick="this.closest('details').removeAttribute('open')">OK</button>
                                             <form method="post" action="/economist/payroll/adjustments/delete">
                                                 {% for adjustment_id in row.auto_approved_ids %}
@@ -792,14 +792,17 @@
                             {% endif %}
                         </td>
                         <td class="num">
-                            {% if row.manual_editable %}
+                            {% if row.manual_editable and not request.url.path.startswith('/hr') %}
                             <div class="manual-stack">
                                 <input type="hidden" form="payroll-fix-form" name="manual_keys" value="{{ row.manual_key }}">
                                 <input class="money-input" form="payroll-fix-form" type="number" step="0.01" name="manual_amounts" value="{{ row.manual_adjustments or 0 }}">
                                 <input class="comment-input" form="payroll-fix-form" type="text" name="manual_comments" value="{{ row.manual_comment or '' }}" placeholder="Комментарий">
                             </div>
+                            {% elif row.manual_adjustments %}
+                                {{ "%.2f"|format(row.manual_adjustments) }} ?
+                                {% if row.manual_comment %}<div class="adjust-info-meta">{{ row.manual_comment }}</div>{% endif %}
                             {% else %}
-                                -
+                                ?
                             {% endif %}
                         </td>
                         <td class="num">

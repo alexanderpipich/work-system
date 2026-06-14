@@ -475,3 +475,17 @@ class UnplannedShiftNotification(Base):
     status = Column(String, default="generated")
     created_at = Column(DateTime, default=now_utc)
     sent_at = Column(DateTime, nullable=True)
+
+class UserAccessScope(Base):
+    __tablename__ = "user_access_scopes"
+    __table_args__ = (
+        UniqueConstraint("user_id", "scope_type", "scope_value", name="uq_user_access_scope"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    scope_type = Column(String(20), nullable=False)
+    scope_value = Column(String, nullable=False)
+    created_by = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=now_utc)
+    is_active = Column(Boolean, default=True)

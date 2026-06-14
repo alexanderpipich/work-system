@@ -236,56 +236,56 @@
             </div>
         </div>
 
-        <a href="/economist" class="back-link">Кабинет экономиста</a>
+        <a href="{{ '/hr' if read_only else '/economist' }}" class="back-link">{{ 'HR кабинет' if read_only else 'Кабинет экономиста' }}</a>
     </div>
 
-    <div class="card">
+    {% if not read_only %}<div class="card">
         <h2>Добавить ставку</h2>
 
         <form method="post" action="/economist/rates">
             <div class="form-grid">
                 <div class="field">
                     <label>Услуга</label>
-                    <input type="text" name="service" required>
+                    <input {% if read_only %}disabled{% endif %} type="text" name="service" required>
                 </div>
 
                 <div class="field">
                     <label>Формат</label>
-                    <input type="text" name="format" placeholder="ГМ / СМ / пусто = любой">
+                    <input {% if read_only %}disabled{% endif %} type="text" name="format" placeholder="ГМ / СМ / пусто = любой">
                 </div>
 
                 <div class="field">
                     <label>Магазин</label>
-                    <input type="text" name="store" placeholder="Пусто = любой">
+                    <input {% if read_only %}disabled{% endif %} type="text" name="store" placeholder="Пусто = любой">
                 </div>
 
                 <div class="field">
                     <label>Сотрудник</label>
-                    <input type="text" name="employee_name" placeholder="Пусто = общий">
+                    <input {% if read_only %}disabled{% endif %} type="text" name="employee_name" placeholder="Пусто = общий">
                 </div>
 
                 <div class="field">
                     <label>ЧТС</label>
-                    <input type="number" step="0.01" name="hourly_rate" required>
+                    <input {% if read_only %}disabled{% endif %} type="number" step="0.01" name="hourly_rate" required>
                 </div>
 
                 <div class="field">
                     <label>Действует с</label>
-                    <input type="date" name="active_from">
+                    <input {% if read_only %}disabled{% endif %} type="date" name="active_from">
                 </div>
 
                 <div class="field">
                     <label>Действует по</label>
-                    <input type="date" name="active_to">
+                    <input {% if read_only %}disabled{% endif %} type="date" name="active_to">
                 </div>
 
                 <div class="field">
                     <label>Комментарий</label>
-                    <input type="text" name="comment">
+                    <input {% if read_only %}disabled{% endif %} type="text" name="comment">
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-add">Добавить ставку</button>
+            <button {% if read_only %}disabled{% endif %} type="submit" class="btn btn-primary btn-add">Добавить ставку</button>
         </form>
 
         {% if message %}
@@ -295,7 +295,7 @@
         {% if error %}
             <div class="err">{{ error }}</div>
         {% endif %}
-    </div>
+    </div>{% endif %}
 
     <div class="card">
         <h2>Список ставок</h2>
@@ -333,27 +333,22 @@
 
                             <td>
                                 <form method="post" action="/economist/rates/update" class="inline-form">
-                                    <input type="hidden" name="rate_id" value="{{ rate.id }}">
+                                    <input {% if read_only %}disabled{% endif %} type="hidden" name="rate_id" value="{{ rate.id }}">
 
-                                    <input type="text" name="service" value="{{ rate.service }}" placeholder="Услуга" required>
-                                    <input type="text" name="format" value="{{ rate.format or '' }}" placeholder="Формат">
-                                    <input type="text" name="store" value="{{ rate.store or '' }}" placeholder="Магазин">
-                                    <input type="text" name="employee_name" value="{{ rate.employee_name or '' }}" placeholder="Сотрудник">
-                                    <input type="number" step="0.01" name="hourly_rate" value="{{ rate.hourly_rate }}" placeholder="ЧТС" required>
-                                    <input type="date" name="active_from" value="{{ rate.active_from.strftime('%Y-%m-%d') if rate.active_from else '' }}">
-                                    <input type="date" name="active_to" value="{{ rate.active_to.strftime('%Y-%m-%d') if rate.active_to else '' }}">
-                                    <input type="text" name="comment" value="{{ rate.comment or '' }}" placeholder="Комментарий">
+                                    <input {% if read_only %}disabled{% endif %} type="text" name="service" value="{{ rate.service }}" placeholder="Услуга" required>
+                                    <input {% if read_only %}disabled{% endif %} type="text" name="format" value="{{ rate.format or '' }}" placeholder="Формат">
+                                    <input {% if read_only %}disabled{% endif %} type="text" name="store" value="{{ rate.store or '' }}" placeholder="Магазин">
+                                    <input {% if read_only %}disabled{% endif %} type="text" name="employee_name" value="{{ rate.employee_name or '' }}" placeholder="Сотрудник">
+                                    <input {% if read_only %}disabled{% endif %} type="number" step="0.01" name="hourly_rate" value="{{ rate.hourly_rate }}" placeholder="ЧТС" required>
+                                    <input {% if read_only %}disabled{% endif %} type="date" name="active_from" value="{{ rate.active_from.strftime('%Y-%m-%d') if rate.active_from else '' }}">
+                                    <input {% if read_only %}disabled{% endif %} type="date" name="active_to" value="{{ rate.active_to.strftime('%Y-%m-%d') if rate.active_to else '' }}">
+                                    <input {% if read_only %}disabled{% endif %} type="text" name="comment" value="{{ rate.comment or '' }}" placeholder="Комментарий">
 
-                                    <button type="submit" class="btn btn-primary">OK</button>
+                                    <button {% if read_only %}disabled{% endif %} type="submit" class="btn btn-primary">OK</button>
                                 </form>
                             </td>
 
-                            <td>
-                                <form method="post" action="/economist/rates/delete" onsubmit="return confirm('Удалить ставку?');">
-                                    <input type="hidden" name="rate_id" value="{{ rate.id }}">
-                                    <button type="submit" class="btn btn-danger">Удалить</button>
-                                </form>
-                            </td>
+                            <td><span class="pill type-base">Удаление — superadmin</span></td>
                         </tr>
                     {% endfor %}
 
@@ -369,3 +364,4 @@
 </div>
 </body>
 </html>
+
