@@ -1,7 +1,7 @@
 import re
 
 from passlib.context import CryptContext
-from models import User, Rate
+from models import Rate
 from time_helpers import business_today, now_utc
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
@@ -58,38 +58,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(str(password).strip())
 
-
-def get_current_user(request, session):
-    user_id = request.session.get("user_id")
-    if not user_id:
-        return None
-
-    return session.query(User).filter(User.id == user_id).first()
-
-
-def require_login(request, session):
-    user = get_current_user(request, session)
-    if not user:
-        return None
-
-    return user
-
-
-def require_admin(request, session):
-    user_id = request.session.get("user_id")
-
-    if not user_id:
-        return None
-
-    user = session.query(User).filter(User.id == user_id).first()
-
-    if not user:
-        return None
-
-    if user.is_admin or user.role == "admin":
-        return user
-
-    return None
 
 
 def load_rates(session):

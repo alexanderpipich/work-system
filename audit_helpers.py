@@ -1,10 +1,14 @@
 import json
+import logging
 
 from sqlalchemy import text
 
 from database import engine
 from models import AuditLog
 from time_helpers import now_utc
+
+
+logger = logging.getLogger(__name__)
 
 
 def ensure_audit_log_table():
@@ -53,11 +57,14 @@ def create_audit_log(
     new_value=None,
     comment=None,
 ):
+    savepoint = None
     try:
         client = getattr(request, "client", None) if request else None
         headers = getattr(request, "headers", {}) if request else {}
-        session.add(
-            AuditLog(
+        connection = session.connection()
+        savepoint = connection.begin_nested()
+        connection.execute(
+            AuditLog.__table__.insert().values(
                 user_id=getattr(user, "id", None),
                 user_role=getattr(user, "role", None),
                 action=action,
@@ -72,6 +79,10 @@ def create_audit_log(
                 created_at=now_utc(),
             )
         )
+        savepoint.commit()
         return True
     except Exception:
+        if savepoint is not None and savepoint.is_active:
+            savepoint.rollback()
+        logger.exception("Audit log write failed")
         return False

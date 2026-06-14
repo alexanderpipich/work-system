@@ -14,7 +14,12 @@ class Shift(Base):
     service = Column(String, nullable=False)
     employee = Column(String, nullable=False)
     hours = Column(Float, nullable=False)
-    request_type = Column(String, nullable=True)
+    request_type = Column(
+        String,
+        nullable=False,
+        default="Основные заказы",
+        server_default="Основные заказы",
+    )
 
     __table_args__ = (
         UniqueConstraint(
@@ -341,3 +346,132 @@ class AuditLog(Base):
 
     created_at = Column(DateTime, default=now_utc)
 
+class EmployeeStoreAssignment(Base):
+    __tablename__ = "employee_store_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=True)
+    employee_name = Column(String, nullable=False)
+    store = Column(String, nullable=False)
+    city = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_by = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=now_utc)
+    comment = Column(Text, nullable=True)
+
+
+class PlanningScenario(Base):
+    __tablename__ = "planning_scenarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    template_type = Column(String, default="standard")
+    email_subject_template = Column(String, nullable=True)
+    email_body_template = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=now_utc)
+    updated_at = Column(DateTime, nullable=True)
+
+
+class PlanningForm(Base):
+    __tablename__ = "planning_forms"
+
+    id = Column(Integer, primary_key=True, index=True)
+    scenario_id = Column(Integer, nullable=True)
+    employee_name = Column(String, nullable=False)
+    user_id = Column(Integer, nullable=True)
+    store = Column(String, nullable=False)
+    city = Column(String, nullable=True)
+    date_from = Column(Date, nullable=True)
+    date_to = Column(Date, nullable=True)
+    file_path = Column(String, nullable=True)
+    file_name = Column(String, nullable=True)
+    status = Column(String, default="created")
+    created_by = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=now_utc)
+    sent_by = Column(Integer, nullable=True)
+    sent_at = Column(DateTime, nullable=True)
+    email_to = Column(String, nullable=True)
+    email_subject = Column(String, nullable=True)
+    comment = Column(Text, nullable=True)
+
+
+class EmployeeMonitoringSettings(Base):
+    __tablename__ = "employee_monitoring_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    inactive_days = Column(Integer, default=14)
+    minimum_shifts = Column(Integer, default=3)
+    analysis_days = Column(Integer, default=14)
+    updated_by = Column(Integer, nullable=True)
+    updated_at = Column(DateTime, nullable=True)
+
+
+class EmployeeMonitoringRecommendation(Base):
+    __tablename__ = "employee_monitoring_recommendations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_name = Column(String, nullable=False)
+    store = Column(String, nullable=False)
+    city = Column(String, nullable=True)
+    recommendation_type = Column(String, nullable=False)
+    remove_from_planning = Column(Boolean, default=False)
+    add_to_planning = Column(Boolean, default=False)
+    recommendation_text = Column(Text, nullable=True)
+    status = Column(String, default="new")
+    created_at = Column(DateTime, default=now_utc)
+    processed_at = Column(DateTime, nullable=True)
+    processed_by = Column(Integer, nullable=True)
+
+
+class StoreReconciliationSettings(Base):
+    __tablename__ = "store_reconciliation_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    store = Column(String, nullable=False, unique=True)
+    city = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    enabled = Column(Boolean, default=True)
+    comment = Column(Text, nullable=True)
+
+
+class StoreReconciliation(Base):
+    __tablename__ = "store_reconciliations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    store = Column(String, nullable=False)
+    city = Column(String, nullable=True)
+    period_from = Column(Date, nullable=False)
+    period_to = Column(Date, nullable=False)
+    status = Column(String, default="generated")
+    file_path = Column(String, nullable=True)
+    created_at = Column(DateTime, default=now_utc)
+    sent_at = Column(DateTime, nullable=True)
+
+
+class StoreNotificationSettings(Base):
+    __tablename__ = "store_notification_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    store = Column(String, nullable=False, unique=True)
+    city = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    enabled = Column(Boolean, default=True)
+    comment = Column(Text, nullable=True)
+
+
+class UnplannedShiftNotification(Base):
+    __tablename__ = "unplanned_shift_notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    shift_id = Column(Integer, nullable=True, unique=True)
+    store = Column(String, nullable=False)
+    city = Column(String, nullable=True)
+    shift_date = Column(Date, nullable=False)
+    employee_name = Column(String, nullable=False)
+    service = Column(String, nullable=True)
+    hours = Column(Float, default=0)
+    status = Column(String, default="generated")
+    created_at = Column(DateTime, default=now_utc)
+    sent_at = Column(DateTime, nullable=True)

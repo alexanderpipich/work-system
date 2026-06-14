@@ -23,6 +23,7 @@ from routers.auth import router as auth_router
 from routers.dashboards import router as dashboards_router
 from routers.documents import router as documents_router
 from routers.employee import router as employee_router
+from routers.employees import router as employees_router
 from routers.legal_entities import router as legal_entities_router
 from routers.lmk import router as lmk_router
 from routers.maintenance import router as maintenance_router
@@ -59,6 +60,7 @@ app.include_router(auth_router)
 app.include_router(dashboards_router)
 app.include_router(documents_router)
 app.include_router(employee_router)
+app.include_router(employees_router)
 app.include_router(legal_entities_router)
 app.include_router(lmk_router)
 app.include_router(maintenance_router)

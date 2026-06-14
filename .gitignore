@@ -8,3 +8,4 @@ temp_*.xlsx
 .claude/
 p-word list.xlsx
 CLAUDE.md
+generated_files/
