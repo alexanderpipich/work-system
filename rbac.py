@@ -25,8 +25,10 @@ ROLES = {
 PERMISSIONS = {
     ROLE_HR_LEAD: {
         "employees.view", "employees.manage", "documents.view", "documents.manage",
-        "requisites.view", "requisites.manage", "reports.view", "payroll.view", "payroll.export", "rates.view", "lmk.view", "password.reset_limited", "audit.hr_view",
-        "payroll.summary_view", "payroll.view", "payroll.export", "rates.view", "lmk.view", "password.reset_limited", "hr_team.manage",
+        "requisites.view", "requisites.manage", "reports.view",
+        "payroll.view", "payroll.export", "payroll.summary_view",
+        "rates.view", "lmk.view", "password.reset_limited",
+        "audit.hr_view", "hr_team.manage",
     },
     ROLE_HR_MANAGER: {
         "employees.view", "employees.manage", "documents.view", "documents.manage",
@@ -35,7 +37,7 @@ PERMISSIONS = {
     ROLE_ECONOMIST: {
         "employees.view", "employees.manage", "documents.view", "documents.verify",
         "schedules.view", "payroll.view", "payroll.manage", "payroll.send",
-        "adjustments.manage", "rates.manage", "lmk.manage", "reports.view",
+        "adjustments.manage", "rates.view", "rates.manage", "requisites.view", "lmk.manage", "reports.view",
         "legal_entities.manage",
     },
     ROLE_BRIGADIER: {"schedules.view"},

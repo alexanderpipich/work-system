@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import os
 from pathlib import Path
 import re
 from uuid import uuid4
@@ -11,7 +12,7 @@ from time_helpers import business_today, now_utc
 from utils import normalize_text
 
 
-DOCUMENT_UPLOAD_ROOT = Path("uploaded_documents")
+DOCUMENT_UPLOAD_ROOT = Path(os.getenv("DOCUMENT_UPLOAD_ROOT", "uploaded_documents"))
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf", ".heic"}
 INVALID_DATE_MESSAGE = "Некорректный формат даты (ожидается ГГГГ-ММ-ДД)"

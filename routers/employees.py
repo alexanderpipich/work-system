@@ -1,6 +1,7 @@
 import calendar
 from collections import defaultdict
 from datetime import date, datetime, timedelta
+import os
 from pathlib import Path
 from urllib.parse import quote, urlencode
 
@@ -36,8 +37,9 @@ from utils import normalize_text
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
-PLANNING_DIR = Path("generated_files/planning_forms")
-RECONCILIATION_DIR = Path("generated_files/reconciliations")
+GENERATED_FILES_ROOT = Path(os.getenv("GENERATED_FILES_ROOT", "generated_files"))
+PLANNING_DIR = GENERATED_FILES_ROOT / "planning_forms"
+RECONCILIATION_DIR = GENERATED_FILES_ROOT / "reconciliations"
 
 
 def _is_admin(user):

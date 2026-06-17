@@ -256,29 +256,6 @@ def admin_upload_page(
     )
 
 
-@router.post("/upload")
-async def upload(
-    request: Request,
-    file: UploadFile = File(...),
-    session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
-):
-    try:
-        df = pd.read_excel(file.file, header=1)
-        result = _process_shift_dataframe(session, df)
-        _write_upload_log(session, request, admin, file.filename, result=result)
-        return result
-    except Exception as exc:
-        session.rollback()
-        logger.exception("Upload failed")
-        _write_upload_log(
-            session,
-            request,
-            admin,
-            file.filename if file else None,
-            error=str(exc),
-        )
-        return {"error": "Upload failed"}
 
 
 @router.post("/admin/upload", response_class=HTMLResponse)
