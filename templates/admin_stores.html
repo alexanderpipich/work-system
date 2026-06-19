@@ -92,6 +92,7 @@
         .field input, .field select { width: 100%; height: 38px; border: 1px solid var(--border); border-radius: 10px; padding: 0 10px; font-size: 13px; background: #fff; }
         .section-title { font-size: 15px; font-weight: 700; color: var(--brand-blue); margin: 0 0 14px; }
         .populate-form { display: inline; }
+        .muted { color: var(--muted); }
     </style>
 </head>
 <body>
@@ -193,7 +194,7 @@
                     <td>{{ store.display_name or '—' }}</td>
                     <td>{{ store.city or '—' }}</td>
                     <td>{{ store.format or '—' }}</td>
-                    <td>{{ store.object_address or '<span style="color:var(--muted)">не указан</span>' }}</td>
+                    <td>{% if store.object_address %}{{ store.object_address }}{% else %}<span class="muted">не указан</span>{% endif %}</td>
                     <td>
                         {% if n_contacts == 0 %}
                             <span class="badge badge-warn">0</span>
