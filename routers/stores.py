@@ -10,7 +10,7 @@ from audit_helpers import create_audit_log
 from dependencies import get_db
 from models import STORE_CONTACT_ROLES, Shift, Store, StoreContact
 from rbac import require_permission
-from store_helpers import extract_tk_number, populate_stores_from_shifts
+from store_helpers import extract_tk_number, migrate_legacy_store_settings, populate_stores_from_shifts
 from time_helpers import now_utc
 
 router = APIRouter()
@@ -31,6 +31,16 @@ def _shift_tks(session: Session) -> set:
 
 
 # ── populate ─────────────────────────────────────────────────────────────────
+
+@router.post("/admin/stores/migrate-legacy")
+def admin_stores_migrate_legacy(
+    request: Request,
+    session: Session = Depends(get_db),
+    user=Depends(_manage),
+):
+    report = migrate_legacy_store_settings(session)
+    return JSONResponse(report)
+
 
 @router.post("/admin/stores/populate")
 def admin_stores_populate(
