@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ТК {{ store.tk_number }} — {{ store.display_name or 'Магазин' }}</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+            --error-bg: #fff1ed;
+            --error-text: #b42318;
+            --success-bg: #eefbf3;
+            --success-text: #067647;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
+                var(--bg);
+            color: var(--text);
+            padding: 28px 18px 36px;
+        }
+        .page { max-width: 1100px; margin: 0 auto; }
+        .topbar, .card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand img { width: 56px; height: 56px; object-fit: contain; border-radius: 14px; flex-shrink: 0; }
+        .brand-title { margin: 0; font-size: 24px; color: var(--brand-blue); font-weight: 700; }
+        .brand-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+        .toolbar a {
+            text-decoration: none; color: var(--brand-blue); font-weight: 700;
+            border: 1px solid rgba(11,20,117,.12); padding: 9px 14px;
+            border-radius: 12px; background: #fff; white-space: nowrap; font-size: 14px;
+        }
+        .section-title { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin: 0 0 16px; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .field label { display: block; font-size: 12px; font-weight: 700; color: var(--brand-blue); margin-bottom: 6px; }
+        .field input, .field select, .field textarea {
+            width: 100%; border: 1px solid var(--border); border-radius: 10px;
+            padding: 8px 10px; font-size: 13px; background: #fff; font-family: inherit;
+        }
+        .field input, .field select { height: 38px; }
+        .field textarea { resize: vertical; min-height: 60px; }
+        .btn { height: 38px; border: none; border-radius: 10px; padding: 0 16px; font-weight: 700; cursor: pointer; font-size: 14px; white-space: nowrap; }
+        .btn-primary { background: linear-gradient(135deg, var(--brand-blue), #18239a); color: #fff; }
+        .btn-danger { background: linear-gradient(135deg, #c23327, #9f1f16); color: #fff; }
+        .btn-sm { height: 32px; font-size: 12px; padding: 0 10px; }
+        .form-actions { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
+        .msg { background: var(--success-bg); color: var(--success-text); border: 1px solid rgba(6,118,71,.14); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+        .err { background: var(--error-bg); color: var(--error-text); border: 1px solid rgba(180,35,24,.14); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+        .check-row { display: flex; gap: 20px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+        .check-row label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+        .check-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
+        .contacts-table { width: 100%; border-collapse: collapse; }
+        .contacts-table th, .contacts-table td { padding: 10px 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+        .contacts-table th { background: #fafbfc; color: var(--brand-blue); font-size: 12px; font-weight: 700; }
+        .contacts-table tbody tr:last-child td { border-bottom: none; }
+        .contacts-table tbody tr:hover { background: rgba(11,20,117,.02); }
+        .flag { display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+        .flag-on { background: #ecfdf3; color: #067647; }
+        .flag-off { background: #f2f4f7; color: #aaa; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+        .badge-ok { background: #ecfdf3; color: #067647; }
+        .badge-muted { background: #f2f4f7; color: #6b7280; }
+        .add-contact-grid {
+            display: grid;
+            grid-template-columns: 2fr 140px 1fr;
+            gap: 12px;
+            align-items: end;
+        }
+        .inline-edit-form { display: contents; }
+        .inline-input { width: 100%; height: 30px; border: 1px solid var(--border); border-radius: 8px; padding: 0 8px; font-size: 12px; background: #fff; }
+        .inline-select { width: 100%; height: 30px; border: 1px solid var(--border); border-radius: 8px; padding: 0 6px; font-size: 12px; background: #fff; }
+        .td-actions { display: flex; gap: 6px; align-items: center; }
+        @media (max-width: 700px) {
+            .grid2, .grid3, .add-contact-grid { grid-template-columns: 1fr; }
+            .topbar { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1 class="brand-title">ТК {{ store.tk_number }} — {{ store.display_name or 'Магазин' }}</h1>
+                <p class="brand-subtitle">{{ store.city or '' }}{% if store.city and store.format %}, {% endif %}{{ store.format or '' }}</p>
+            </div>
+        </div>
+        <div class="toolbar">
+            <a href="/admin/stores">← Все магазины</a>
+            <a href="/admin">Админка</a>
+            <a href="/logout">Выйти</a>
+        </div>
+    </div>
+
+    {% if message %}
+    <div class="card"><div class="msg">{{ message }}</div></div>
+    {% endif %}
+    {% if error %}
+    <div class="card"><div class="err">{{ error }}</div></div>
+    {% endif %}
+
+    <!-- ── Карточка магазина ─────────────────────────────────────────────── -->
+    <div class="card">
+        <p class="section-title">Данные магазина</p>
+        <form method="post" action="/admin/stores/{{ store.id }}/update">
+            <div class="grid3">
+                <div class="field">
+                    <label>Название</label>
+                    <input type="text" name="display_name" value="{{ store.display_name or '' }}">
+                </div>
+                <div class="field">
+                    <label>Город</label>
+                    <input type="text" name="city" value="{{ store.city or '' }}">
+                </div>
+                <div class="field">
+                    <label>Формат</label>
+                    <select name="format">
+                        <option value="">—</option>
+                        <option value="ГМ" {% if store.format == 'ГМ' %}selected{% endif %}>ГМ</option>
+                        <option value="СМ" {% if store.format == 'СМ' %}selected{% endif %}>СМ</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid2" style="margin-top:12px;">
+                <div class="field">
+                    <label>Адрес объекта</label>
+                    <input type="text" name="object_address" value="{{ store.object_address or '' }}" placeholder="ул. Коллонтай д.10">
+                </div>
+                <div class="field">
+                    <label>Комментарий</label>
+                    <input type="text" name="comment" value="{{ store.comment or '' }}">
+                </div>
+            </div>
+            <div class="form-actions">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                    <input type="checkbox" name="is_active" value="1" {% if store.is_active %}checked{% endif %}>
+                    Магазин активен
+                </label>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ── Контакты ──────────────────────────────────────────────────────── -->
+    <div class="card">
+        <p class="section-title">Контакты ({{ contacts | length }})</p>
+
+        {% if contacts %}
+        <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px;margin-bottom:20px;">
+        <table class="contacts-table">
+            <thead>
+            <tr>
+                <th>Email</th>
+                <th>Роль</th>
+                <th>Имя</th>
+                <th>БП</th>
+                <th>Сверка</th>
+                <th>Без плана</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for c in contacts %}
+            <tr>
+                <form method="post" action="/admin/stores/{{ store.id }}/contacts/{{ c.id }}/update" class="inline-edit-form">
+                <td><input class="inline-input" type="email" name="email" value="{{ c.email }}" required></td>
+                <td>
+                    <select class="inline-select" name="role">
+                        {% for key, label in roles.items() %}
+                        <option value="{{ key }}" {% if c.role == key %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><input class="inline-input" type="text" name="name" value="{{ c.name or '' }}"></td>
+                <td style="text-align:center;">
+                    <input type="checkbox" name="for_planning" value="1" {% if c.for_planning %}checked{% endif %}>
+                </td>
+                <td style="text-align:center;">
+                    <input type="checkbox" name="for_reconciliation" value="1" {% if c.for_reconciliation %}checked{% endif %}>
+                </td>
+                <td style="text-align:center;">
+                    <input type="checkbox" name="for_unplanned" value="1" {% if c.for_unplanned %}checked{% endif %}>
+                </td>
+                <td>
+                    <div class="td-actions">
+                        <button type="submit" class="btn btn-primary btn-sm">OK</button>
+                </td>
+                </form>
+                        <form method="post" action="/admin/stores/{{ store.id }}/contacts/{{ c.id }}/delete"
+                              onsubmit="return confirm('Удалить контакт {{ c.email }}?');" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p style="color:var(--muted);font-size:13px;margin:0 0 20px;">Контактов нет. Добавьте ниже.</p>
+        {% endif %}
+
+        <!-- Добавить контакт -->
+        <p style="font-size:14px;font-weight:700;color:var(--brand-blue);margin:0 0 12px;">Добавить контакт</p>
+        <form method="post" action="/admin/stores/{{ store.id }}/contacts/add">
+            <div class="add-contact-grid">
+                <div class="field">
+                    <label>Email *</label>
+                    <input type="email" name="email" required placeholder="manager@lenta.ru">
+                </div>
+                <div class="field">
+                    <label>Роль</label>
+                    <select name="role">
+                        {% for key, label in roles.items() %}
+                        <option value="{{ key }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Имя (необязательно)</label>
+                    <input type="text" name="name" placeholder="Иванов И.И.">
+                </div>
+            </div>
+            <div class="check-row" style="margin-top:12px;">
+                <label><input type="checkbox" name="for_planning" value="1"> Бланки планирования</label>
+                <label><input type="checkbox" name="for_reconciliation" value="1"> Сверки</label>
+                <label><input type="checkbox" name="for_unplanned" value="1"> Уведомления «без плана»</label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Добавить контакт</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+</body>
+</html>

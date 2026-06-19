@@ -476,6 +476,43 @@ class UnplannedShiftNotification(Base):
     created_at = Column(DateTime, default=now_utc)
     sent_at = Column(DateTime, nullable=True)
 
+STORE_CONTACT_ROLES = {
+    "security": "Охрана",
+    "hr_dept": "Отдел персонала",
+    "director": "Директор",
+    "other": "Прочее",
+}
+
+
+class Store(Base):
+    __tablename__ = "stores"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tk_number = Column(Integer, unique=True, nullable=False)
+    display_name = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    format = Column(String, nullable=True)
+    object_address = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=now_utc)
+    updated_at = Column(DateTime, nullable=True)
+    comment = Column(Text, nullable=True)
+
+
+class StoreContact(Base):
+    __tablename__ = "store_contacts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    store_id = Column(Integer, ForeignKey("stores.id"), nullable=False, index=True)
+    email = Column(String, nullable=False)
+    role = Column(String, nullable=False)
+    name = Column(String, nullable=True)
+    for_planning = Column(Boolean, default=False)
+    for_reconciliation = Column(Boolean, default=False)
+    for_unplanned = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+
+
 class UserAccessScope(Base):
     __tablename__ = "user_access_scopes"
     __table_args__ = (
