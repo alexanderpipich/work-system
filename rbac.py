@@ -22,6 +22,9 @@ ROLES = {
     ROLE_EMPLOYEE,
 }
 
+# Permissions exclusive to superadmin (not listed per-role since superadmin bypasses the check):
+#   email.manage
+
 PERMISSIONS = {
     ROLE_HR_LEAD: {
         "employees.view", "employees.manage", "documents.view", "documents.manage",

@@ -526,3 +526,16 @@ class UserAccessScope(Base):
     created_by = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=now_utc)
     is_active = Column(Boolean, default=True)
+
+
+class EmailLog(Base):
+    __tablename__ = "email_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    to_addresses = Column(Text, nullable=False)
+    subject = Column(String, nullable=True)
+    status = Column(String, nullable=False)
+    error = Column(Text, nullable=True)
+    scenario = Column(String, nullable=True)
+    created_at = Column(DateTime, default=now_utc)
+    created_by = Column(Integer, nullable=True)
