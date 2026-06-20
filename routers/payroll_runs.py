@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from access import apply_shift_scope, get_economist_cities
 from audit_helpers import create_audit_log
-from dependencies import current_user, get_db, require_admin_user, require_economist_user
+from dependencies import current_user, get_db
 from models import PayrollRun, PayrollRunItem, Requisite, Shift, User
 from payroll_closing import close_payroll_run as close_payroll_run_financials
 from rbac import canonical_role, has_permission, is_superadmin, require_permission
@@ -24,6 +24,7 @@ require_payroll_delete = require_permission("payroll.delete", audit_denied=True)
 require_payroll_close = require_permission("payroll.close", audit_denied=True)
 require_payroll_view = require_permission("payroll.view", audit_denied=True)
 require_payroll_export = require_permission("payroll.export", audit_denied=True)
+_payroll_manage = require_permission("payroll.manage")
 
 
 def _item_key(employee, store, service, shift_date):
@@ -337,7 +338,7 @@ def economist_payroll_runs(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_payroll_view),
 ):
     allowed_cities = None if user.is_admin else get_economist_cities(user)
 
@@ -358,7 +359,7 @@ def economist_payroll_run_detail(
     request: Request,
     run_id: int,
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_payroll_view),
 ):
     allowed_cities = None if user.is_admin else get_economist_cities(user)
     run, items = get_run_items(session, run_id, allowed_cities)
@@ -418,7 +419,7 @@ def payroll_runs_page(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(_payroll_manage),
 ):
     return templates.TemplateResponse(
         request,
@@ -437,7 +438,7 @@ def payroll_run_detail(
     request: Request,
     run_id: int,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(_payroll_manage),
 ):
     run, items = get_run_items(session, run_id)
 
@@ -451,7 +452,7 @@ def payroll_run_detail(
         request,
         "payroll_run_detail.html",
         {
-            "user": admin,
+            "user": user,
             "is_economist_view": False,
             "run": run,
             "items": items,
@@ -468,7 +469,7 @@ def export_payroll_run(
     request: Request,
     run_id: int,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(_payroll_manage),
 ):
     run, items = get_run_items(session, run_id)
     if not run:
@@ -491,7 +492,7 @@ def economist_export_payroll_run(
     request: Request,
     run_id: int,
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_payroll_manage),
 ):
     allowed_cities = None if user.is_admin else get_economist_cities(user)
     run, items = get_run_items(session, run_id, allowed_cities)
