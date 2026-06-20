@@ -6,8 +6,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from dependencies import get_db, require_admin_user
+from dependencies import get_db
 from models import AuditLog, User
+from rbac import require_permission
 from utils import normalize_text
 
 
@@ -42,7 +43,7 @@ def admin_audit_log(
     page: int = 1,
     limit: int = 100,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(require_permission("audit.view")),
 ):
     page = max(page, 1)
     limit = min(max(limit, 20), 300)
