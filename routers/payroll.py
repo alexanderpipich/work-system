@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from access import apply_shift_scope, get_economist_cities, get_user_cities, get_user_stores
 from audit_helpers import create_audit_log
-from dependencies import get_db, require_admin_user, require_economist_user
+from dependencies import get_db
 from legal_entity_helpers import active_legal_entities
 from lmk_charges import apply_lmk_charges_to_rows, get_lmk_charge_for_employee
 from manual_adjustments import (
@@ -27,6 +27,7 @@ from utils import load_rates, normalize_text, pick_rate
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 require_payroll_view = require_permission("payroll.view", audit_denied=True)
+_payroll_manage = require_permission("payroll.manage")
 
 
 def payroll_redirect_url(base_path, date_from, date_to, employee_name="", stores=None, message=""):
@@ -255,7 +256,7 @@ def economist_save_manual_adjustments(
     manual_amounts: list[str] | None = Form(default=None),
     manual_comments: list[str] | None = Form(default=None),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_payroll_manage),
 ):
     allowed_cities = get_economist_cities(user)
     if allowed_cities == []:
@@ -308,7 +309,7 @@ def economist_fix_payroll(
     manual_amounts: list[str] | None = Form(default=None),
     manual_comments: list[str] | None = Form(default=None),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_payroll_manage),
 ):
     allowed_cities = get_economist_cities(user)
 
@@ -509,7 +510,7 @@ def admin_payroll(
     stores_submitted: str = "",
     message: str = "",
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(_payroll_manage),
 ):
     today = business_today()
 
@@ -675,21 +676,21 @@ def admin_save_manual_adjustments(
     manual_amounts: list[str] | None = Form(default=None),
     manual_comments: list[str] | None = Form(default=None),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(_payroll_manage),
 ):
     start_date = datetime.strptime(date_from, "%Y-%m-%d").date()
     end_date = datetime.strptime(date_to, "%Y-%m-%d").date()
 
     result = save_manual_adjustments(
         session,
-        user_id=admin.id,
+        user_id=user.id,
         date_from=start_date,
         date_to=end_date,
         manual_keys=manual_keys,
         manual_amounts=manual_amounts,
         manual_comments=manual_comments,
         request=request,
-        user=admin,
+        user=user,
     )
 
     message = (
@@ -723,21 +724,21 @@ def fix_payroll(
     manual_amounts: list[str] | None = Form(default=None),
     manual_comments: list[str] | None = Form(default=None),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(_payroll_manage),
 ):
     start_date = datetime.strptime(date_from, "%Y-%m-%d").date()
     end_date = datetime.strptime(date_to, "%Y-%m-%d").date()
 
     save_manual_adjustments(
         session,
-        user_id=admin.id,
+        user_id=user.id,
         date_from=start_date,
         date_to=end_date,
         manual_keys=manual_keys,
         manual_amounts=manual_amounts,
         manual_comments=manual_comments,
         request=request,
-        user=admin,
+        user=user,
     )
 
     shifts_query = session.query(Shift).filter(
@@ -829,8 +830,8 @@ def fix_payroll(
         date_to=end_date,
         legal_entity=normalize_text(legal_entity) or None,
         status="fixed",
-        created_by=admin.id,
-        fixed_by=admin.id,
+        created_by=user.id,
+        fixed_by=user.id,
         created_at=now_utc(),
         fixed_at=now_utc(),
         comment=normalize_text(comment) or None
@@ -923,7 +924,7 @@ def fix_payroll(
     create_audit_log(
         session,
         request,
-        admin,
+        user,
         "payroll_run_created",
         "payroll_run",
         run.id,
