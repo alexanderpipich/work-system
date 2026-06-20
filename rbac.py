@@ -38,7 +38,7 @@ PERMISSIONS = {
         "employees.view", "employees.manage", "documents.view", "documents.verify",
         "schedules.view", "payroll.view", "payroll.manage", "payroll.send",
         "adjustments.manage", "rates.view", "rates.manage", "requisites.view", "lmk.manage", "reports.view",
-        "legal_entities.manage",
+        "legal_entities.manage", "economist.dashboard",
     },
     ROLE_BRIGADIER: {"schedules.view"},
     ROLE_EMPLOYEE: {"profile.own", "documents.own", "schedules.own"},

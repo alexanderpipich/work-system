@@ -3,22 +3,24 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from access import get_economist_cities
-from dependencies import get_db, require_admin_user, require_economist_user
+from dependencies import get_db
 from rbac import canonical_role, get_scope_values, require_permission
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 require_hr_dashboard = require_permission("employees.view", audit_denied=True)
+_admin_dashboard = require_permission("admin.dashboard")
+_economist_dashboard = require_permission("economist.dashboard")
 
 
 @router.get("/admin", response_class=HTMLResponse)
-def admin_dashboard(request: Request, admin=Depends(require_admin_user)):
-    return templates.TemplateResponse(request, "admin_dashboard.html", {"admin": admin})
+def admin_dashboard(request: Request, user=Depends(_admin_dashboard)):
+    return templates.TemplateResponse(request, "admin_dashboard.html", {"admin": user})
 
 
 @router.get("/economist", response_class=HTMLResponse)
-def economist_dashboard(request: Request, user=Depends(require_economist_user)):
+def economist_dashboard(request: Request, user=Depends(_economist_dashboard)):
     return templates.TemplateResponse(
         request, "economist_dashboard.html",
         {"user": user, "allowed_cities": get_economist_cities(user)},
