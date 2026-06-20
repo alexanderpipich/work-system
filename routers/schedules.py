@@ -6,8 +6,9 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from access import get_economist_cities
-from dependencies import get_db, require_admin_user, require_economist_user
+from dependencies import get_db
 from models import Shift
+from rbac import require_permission
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today
 
@@ -85,7 +86,7 @@ def economist_schedules(
     date_to: str = "",
     stores: list[str] | None = Query(default=None),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_permission("schedules.view")),
 ):
     allowed_cities = get_economist_cities(user)
 
@@ -171,7 +172,7 @@ def admin_schedules(
     date_to: str = "",
     stores: list[str] | None = Query(default=None),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(require_permission("schedules.admin_view")),
 ):
     if not date_from and not date_to:
         date_from, date_to = _default_week_range()
