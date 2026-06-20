@@ -7,10 +7,13 @@ from sqlalchemy.orm import Session
 
 from access import get_economist_cities
 from audit_helpers import create_audit_log
-from dependencies import get_db, require_admin_user, require_economist_user
+from dependencies import get_db
 from models import PayrollAdjustment, Shift
+from rbac import require_permission
 from time_helpers import now_utc
 from utils import normalize_text
+
+_adjustments_manage = require_permission("adjustments.manage")
 
 
 router = APIRouter()
@@ -205,7 +208,7 @@ def admin_adjustments(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_adjustments_manage),
 ):
     query = session.query(PayrollAdjustment)
 
@@ -249,7 +252,7 @@ def approve_adjustment(
     status: str = Form(default="pending"),
     employee_name: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_adjustments_manage),
 ):
     adjustment = session.query(PayrollAdjustment).filter(
         PayrollAdjustment.id == adjustment_id
@@ -281,7 +284,7 @@ def reject_adjustment(
     status: str = Form(default="pending"),
     employee_name: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_adjustments_manage),
 ):
     adjustment = session.query(PayrollAdjustment).filter(
         PayrollAdjustment.id == adjustment_id
@@ -317,7 +320,7 @@ def delete_payroll_adjustments(
     redirect_employee_name: str = Form(default=""),
     stores: list[str] | None = Form(default=None),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_adjustments_manage),
 ):
     adjustments = _payroll_adjustments_query(
         session,
@@ -353,7 +356,7 @@ def approve_payroll_adjustments(
     redirect_employee_name: str = Form(default=""),
     stores: list[str] | None = Form(default=None),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_adjustments_manage),
 ):
     adjustments = _payroll_adjustments_query(
         session,
@@ -389,7 +392,7 @@ def economist_delete_payroll_adjustments(
     redirect_employee_name: str = Form(default=""),
     stores: list[str] | None = Form(default=None),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_adjustments_manage),
 ):
     adjustments = _payroll_adjustments_query(
         session,
@@ -426,7 +429,7 @@ def economist_approve_payroll_adjustments(
     redirect_employee_name: str = Form(default=""),
     stores: list[str] | None = Form(default=None),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_adjustments_manage),
 ):
     adjustments = _payroll_adjustments_query(
         session,
@@ -460,7 +463,7 @@ def economist_adjustments(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_adjustments_manage),
 ):
     query = session.query(PayrollAdjustment)
 
@@ -508,7 +511,7 @@ def economist_approve_adjustment(
     adjustment_id: int = Form(...),
     status: str = Form(default="pending"),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_adjustments_manage),
 ):
     adjustment = session.query(PayrollAdjustment).filter(
         PayrollAdjustment.id == adjustment_id
@@ -549,7 +552,7 @@ def economist_reject_adjustment(
     adjustment_id: int = Form(...),
     status: str = Form(default="pending"),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_adjustments_manage),
 ):
     adjustment = session.query(PayrollAdjustment).filter(
         PayrollAdjustment.id == adjustment_id
@@ -590,7 +593,7 @@ def economist_delete_adjustment(
     adjustment_id: int = Form(...),
     status: str = Form(default="pending"),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_adjustments_manage),
 ):
     adjustment = session.query(PayrollAdjustment).filter(
         PayrollAdjustment.id == adjustment_id
