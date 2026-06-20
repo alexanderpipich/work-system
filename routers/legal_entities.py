@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
-from dependencies import get_db, require_admin_user, require_economist_user
+from dependencies import get_db
 from models import LegalEntity
 from rbac import has_permission, record_denied_action, require_permission
 from time_helpers import now_utc
@@ -16,6 +16,7 @@ from utils import normalize_text
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 require_legal_entity_hard_delete = require_permission("legal_entities.hard_delete", audit_denied=True)
+_le_manage = require_permission("legal_entities.manage")
 
 
 def _redirect(base_path="/admin/legal-entities", **params):
@@ -173,7 +174,7 @@ def legal_entities_page(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_le_manage),
 ):
     return _render_page(
         request,
@@ -192,7 +193,7 @@ def economist_legal_entities_page(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_le_manage),
 ):
     return _render_page(
         request,
@@ -213,7 +214,7 @@ def add_legal_entity(
     inn: str = Form(default=""),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_le_manage),
 ):
     try:
         return _add_entity(
@@ -240,7 +241,7 @@ def economist_add_legal_entity(
     inn: str = Form(default=""),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_le_manage),
 ):
     try:
         return _add_entity(
@@ -269,7 +270,7 @@ def update_legal_entity(
     comment: str = Form(default=""),
     is_active: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_le_manage),
 ):
     try:
         return _update_entity(
@@ -300,7 +301,7 @@ def economist_update_legal_entity(
     comment: str = Form(default=""),
     is_active: str = Form(default=""),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_le_manage),
 ):
     try:
         return _update_entity(
@@ -327,7 +328,7 @@ def delete_legal_entity(
     entity_id: int = Form(...),
     hard_delete: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_le_manage),
 ):
     if hard_delete == "1":
         return _remove_entity(session, request, admin, "/admin/legal-entities", entity_id)
@@ -339,7 +340,7 @@ def activate_legal_entity(
     request: Request,
     entity_id: int = Form(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_le_manage),
 ):
     return _set_entity_active(session, request, admin, "/admin/legal-entities", entity_id, True)
 
@@ -360,7 +361,7 @@ def economist_delete_legal_entity(
     entity_id: int = Form(...),
     hard_delete: str = Form(default=""),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_le_manage),
 ):
     if hard_delete == "1":
         if not has_permission(user, "legal_entities.hard_delete"):
@@ -377,7 +378,7 @@ def economist_activate_legal_entity(
     request: Request,
     entity_id: int = Form(...),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_le_manage),
 ):
     return _set_entity_active(session, request, user, "/economist/legal-entities", entity_id, True)
 
