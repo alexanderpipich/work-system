@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from access import accessible_employee_names, get_user_cities
 from audit_helpers import create_audit_log
-from dependencies import get_db, require_admin_user, require_economist_user
+from dependencies import get_db
 from models import Requisite, Shift, User
 from rbac import canonical_role, require_permission
 from time_helpers import now_utc
@@ -16,6 +16,7 @@ from utils import normalize_text
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 require_requisites_view = require_permission("requisites.view", audit_denied=True)
+_req_manage = require_permission("requisites.manage")
 
 
 def _requisite_payload(req):
@@ -86,7 +87,7 @@ def economist_requisites(
 def admin_requisites(
     request: Request,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(_req_manage),
 ):
     requisites = session.query(Requisite).order_by(Requisite.employee_name).all()
 
@@ -116,7 +117,7 @@ def add_requisite(
     is_verified: str = Form(default=""),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    current=Depends(_req_manage),
 ):
     employee_name_clean = normalize_text(employee_name)
 
@@ -147,7 +148,7 @@ def add_requisite(
     create_audit_log(
         session,
         request,
-        admin,
+        current,
         "requisite_updated",
         "requisite",
         req.id,
@@ -158,7 +159,7 @@ def add_requisite(
         create_audit_log(
             session,
             request,
-            admin,
+            current,
             "requisite_verified",
             "requisite",
             req.id,
@@ -186,7 +187,7 @@ def update_requisite(
     is_verified: str = Form(default=""),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    current=Depends(_req_manage),
 ):
     req = session.query(Requisite).filter(Requisite.id == requisite_id).first()
 
@@ -224,7 +225,7 @@ def update_requisite(
     create_audit_log(
         session,
         request,
-        admin,
+        current,
         "requisite_updated",
         "requisite",
         req.id,
@@ -236,7 +237,7 @@ def update_requisite(
         create_audit_log(
             session,
             request,
-            admin,
+            current,
             "requisite_verified",
             "requisite",
             req.id,
@@ -254,7 +255,7 @@ def delete_requisite(
     request: Request,
     requisite_id: int = Form(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(_req_manage),
 ):
     req = session.query(Requisite).filter(Requisite.id == requisite_id).first()
 
@@ -262,7 +263,7 @@ def delete_requisite(
         create_audit_log(
             session,
             request,
-            admin,
+            user,
             "requisite_updated",
             "requisite",
             req.id,
@@ -282,7 +283,7 @@ def upload_requisites(
     request: Request,
     file: UploadFile = File(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    current=Depends(_req_manage),
 ):
     try:
         df = pd.read_excel(file.file)
@@ -357,7 +358,7 @@ def upload_requisites(
             create_audit_log(
                 session,
                 request,
-                admin,
+                current,
                 "requisite_updated",
                 "requisite",
                 req.id,
@@ -369,7 +370,7 @@ def upload_requisites(
                 create_audit_log(
                     session,
                     request,
-                    admin,
+                    current,
                     "requisite_verified",
                     "requisite",
                     req.id,
