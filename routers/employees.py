@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from access import apply_shift_scope, get_user_cities, get_user_stores, scope_allows_store
 from audit_helpers import create_audit_log
-from dependencies import RedirectException, current_user, get_db, require_admin_user
+from dependencies import RedirectException, current_user, get_db
 from models import (
     EmployeeMonitoringRecommendation,
     EmployeeMonitoringSettings,
@@ -29,7 +29,7 @@ from models import (
     UnplannedShiftNotification,
     User,
 )
-from rbac import canonical_role, has_permission, is_superadmin
+from rbac import canonical_role, has_permission, is_superadmin, require_permission
 from shift_helpers import is_no_plan_request_type
 from time_helpers import business_today, now_utc
 from utils import normalize_text
@@ -37,6 +37,7 @@ from utils import normalize_text
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+_admin_settings = require_permission("admin.settings")
 GENERATED_FILES_ROOT = Path(os.getenv("GENERATED_FILES_ROOT", "generated_files"))
 PLANNING_DIR = GENERATED_FILES_ROOT / "planning_forms"
 RECONCILIATION_DIR = GENERATED_FILES_ROOT / "reconciliations"
@@ -287,9 +288,9 @@ def assignment_update(request: Request, assignment_id: int = Form(...), is_activ
 
 
 @router.post("/admin/employees/planning/scenarios/add")
-def scenario_add(request: Request, name: str = Form(...), description: str = Form(default=""), template_type: str = Form(default="standard"), email_subject_template: str = Form(default=""), email_body_template: str = Form(default=""), session: Session = Depends(get_db), admin=Depends(require_admin_user)):
+def scenario_add(request: Request, name: str = Form(...), description: str = Form(default=""), template_type: str = Form(default="standard"), email_subject_template: str = Form(default=""), email_body_template: str = Form(default=""), session: Session = Depends(get_db), user=Depends(_admin_settings)):
     row = PlanningScenario(name=normalize_text(name), description=normalize_text(description) or None, template_type=normalize_text(template_type) or "standard", email_subject_template=normalize_text(email_subject_template) or None, email_body_template=normalize_text(email_body_template) or None, is_active=True, created_at=now_utc())
-    session.add(row); session.flush(); create_audit_log(session, request, admin, "planning_scenario_created", "planning_scenario", row.id, row.name); session.commit()
+    session.add(row); session.flush(); create_audit_log(session, request, user, "planning_scenario_created", "planning_scenario", row.id, row.name); session.commit()
     return _redirect(request, "/planning", message="Сценарий создан")
 
 
@@ -306,19 +307,19 @@ def assignment_delete(request: Request, assignment_id: int = Form(...), session:
 
 
 @router.post("/admin/employees/planning/scenarios/update")
-def scenario_update(request: Request, scenario_id: int = Form(...), name: str = Form(...), description: str = Form(default=""), template_type: str = Form(default="standard"), is_active: str = Form(default=""), session: Session = Depends(get_db), admin=Depends(require_admin_user)):
+def scenario_update(request: Request, scenario_id: int = Form(...), name: str = Form(...), description: str = Form(default=""), template_type: str = Form(default="standard"), is_active: str = Form(default=""), session: Session = Depends(get_db), user=Depends(_admin_settings)):
     row = session.query(PlanningScenario).filter(PlanningScenario.id == scenario_id).first()
     if row:
         row.name = normalize_text(name); row.description = normalize_text(description) or None; row.template_type = normalize_text(template_type) or "standard"; row.is_active = is_active == "1"; row.updated_at = now_utc()
-        create_audit_log(session, request, admin, "planning_scenario_updated", "planning_scenario", row.id, row.name); session.commit()
+        create_audit_log(session, request, user, "planning_scenario_updated", "planning_scenario", row.id, row.name); session.commit()
     return _redirect(request, "/planning", message="Сценарий обновлён")
 
 
 @router.post("/admin/employees/planning/scenarios/delete")
-def scenario_delete(request: Request, scenario_id: int = Form(...), session: Session = Depends(get_db), admin=Depends(require_admin_user)):
+def scenario_delete(request: Request, scenario_id: int = Form(...), session: Session = Depends(get_db), user=Depends(_admin_settings)):
     row = session.query(PlanningScenario).filter(PlanningScenario.id == scenario_id).first()
     if row:
-        row.is_active = False; row.updated_at = now_utc(); create_audit_log(session, request, admin, "planning_scenario_updated", "planning_scenario", row.id, row.name); session.commit()
+        row.is_active = False; row.updated_at = now_utc(); create_audit_log(session, request, user, "planning_scenario_updated", "planning_scenario", row.id, row.name); session.commit()
     return _redirect(request, "/planning", message="Сценарий деактивирован")
 
 @router.post("/admin/employees/planning/forms/create")
@@ -377,12 +378,12 @@ def monitoring_page(request: Request, tab: str = "new", message: str = "", sessi
 
 
 @router.get("/admin/employees/monitoring/settings", response_class=HTMLResponse)
-def monitoring_settings_page(request: Request, session: Session = Depends(get_db), admin=Depends(require_admin_user)):
-    return templates.TemplateResponse(request, "employees_monitoring.html", _context(request, admin, "monitoring", rows=[], tab="settings", settings=_monitoring_settings(session), message=""))
+def monitoring_settings_page(request: Request, session: Session = Depends(get_db), user=Depends(_admin_settings)):
+    return templates.TemplateResponse(request, "employees_monitoring.html", _context(request, user, "monitoring", rows=[], tab="settings", settings=_monitoring_settings(session), message=""))
 
 @router.post("/admin/employees/monitoring/settings")
-def monitoring_settings_save(request: Request, inactive_days: int = Form(...), minimum_shifts: int = Form(...), analysis_days: int = Form(...), session: Session = Depends(get_db), admin=Depends(require_admin_user)):
-    row = _monitoring_settings(session); row.inactive_days=max(inactive_days,1); row.minimum_shifts=max(minimum_shifts,1); row.analysis_days=max(analysis_days,1); row.updated_by=admin.id; row.updated_at=now_utc(); session.commit()
+def monitoring_settings_save(request: Request, inactive_days: int = Form(...), minimum_shifts: int = Form(...), analysis_days: int = Form(...), session: Session = Depends(get_db), user=Depends(_admin_settings)):
+    row = _monitoring_settings(session); row.inactive_days=max(inactive_days,1); row.minimum_shifts=max(minimum_shifts,1); row.analysis_days=max(analysis_days,1); row.updated_by=user.id; row.updated_at=now_utc(); session.commit()
     return _redirect(request, "/monitoring", message="Настройки сохранены")
 
 
