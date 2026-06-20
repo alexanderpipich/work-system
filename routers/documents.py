@@ -11,8 +11,6 @@ from dependencies import (
     RedirectException,
     current_user,
     get_db,
-    require_admin_user,
-    require_economist_user,
 )
 from document_helpers import (
     DocumentDateParseError,
@@ -377,9 +375,9 @@ def admin_document_types(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(require_document_manager),
 ):
-    return _render_document_types(request, session, admin, message, error)
+    return _render_document_types(request, session, user, message, error)
 
 
 @router.get("/economist/document-types", response_class=HTMLResponse)
@@ -388,7 +386,7 @@ def economist_document_types(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_document_manager),
 ):
     return _render_document_types(request, session, user, message, error)
 
@@ -559,12 +557,12 @@ def admin_documents(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(require_document_manager),
 ):
     return _render_documents(
         request,
         session,
-        admin,
+        user,
         employee_name=employee_name,
         document_type_id=document_type_id,
         status=status,
@@ -603,7 +601,7 @@ def admin_employee_documents(
     request: Request,
     user_id: int,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    current=Depends(require_document_manager),
 ):
     user = session.query(User).filter(User.id == user_id).first()
     if not user:
@@ -611,7 +609,7 @@ def admin_employee_documents(
     return _render_documents(
         request,
         session,
-        admin,
+        current,
         employee_name=user.employee_name,
         status="all",
     )
