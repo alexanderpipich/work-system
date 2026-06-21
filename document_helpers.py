@@ -192,11 +192,12 @@ def employee_document_status(session, user) -> list[dict]:
     def _classify(doc):
         if not doc or doc.status in {"rejected", "archived"}:
             return "missing"
-        if doc.status == "verified" and (
-            doc.is_permanent or (doc.expiry_date and doc.expiry_date >= today)
-        ):
-            return "ok"
-        return "expired"
+        valid_expiry = doc.is_permanent or not doc.expiry_date or doc.expiry_date >= today
+        if doc.status == "verified":
+            return "ok" if valid_expiry else "expired"
+        if doc.status in {"uploaded", "pending_verification"}:
+            return "pending" if valid_expiry else "expired"
+        return "missing"
 
     def _rows(doc_types):
         return [
