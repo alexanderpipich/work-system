@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from audit_helpers import ensure_audit_log_table
+from citizenship_schema import ensure_citizenship_columns
 from database import Base, engine
 from dependencies import RedirectException, redirect_exception_response
 from document_helpers import ensure_document_tables
@@ -83,6 +84,7 @@ ensure_shift_request_type_unique_key()
 ensure_user_profile_columns()
 ensure_requisite_profile_columns()
 ensure_document_tables()
+ensure_citizenship_columns()
 ensure_legal_entities_table()
 ensure_payroll_run_closing_columns()
 ensure_audit_log_table()
