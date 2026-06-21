@@ -7,7 +7,7 @@ from uuid import uuid4
 from sqlalchemy import text
 
 from database import engine
-from models import DocumentType, EmployeeDocument, Requisite, Shift, User
+from models import Country, DocumentType, EmployeeDocument, RegimeDocumentRule, Requisite, Shift, User
 from time_helpers import business_today, now_utc
 from utils import normalize_text
 
@@ -184,6 +184,74 @@ def employee_document_rows(session, user, required_only=True):
             "status_class": document_status_class(status),
         })
     return rows
+
+
+def employee_document_status(session, user) -> list[dict]:
+    today = business_today()
+
+    def _classify(doc):
+        if not doc or doc.status in {"rejected", "archived"}:
+            return "missing"
+        if doc.status == "verified" and (
+            doc.is_permanent or (doc.expiry_date and doc.expiry_date >= today)
+        ):
+            return "ok"
+        return "expired"
+
+    def _rows(doc_types):
+        return [
+            {
+                "document_type": dt,
+                "required": True,
+                "status": _classify(latest_employee_document(session, user.employee_name, dt.id)),
+            }
+            for dt in doc_types
+        ]
+
+    # Студент: первые 5 базовых типов (sort_order 1–5) + типы с is_student_doc=True
+    if getattr(user, "is_student", False):
+        base = (
+            session.query(DocumentType)
+            .filter(
+                DocumentType.is_active == True,
+                DocumentType.is_student_doc == False,
+                DocumentType.sort_order >= 1,
+                DocumentType.sort_order <= 5,
+            )
+            .order_by(DocumentType.sort_order.asc())
+            .all()
+        )
+        student_docs = (
+            session.query(DocumentType)
+            .filter(DocumentType.is_active == True, DocumentType.is_student_doc == True)
+            .order_by(DocumentType.sort_order.asc())
+            .all()
+        )
+        return _rows(base + student_docs)
+
+    # Структурированный режим через citizenship_country_id → Country → regime → правила
+    country_id = getattr(user, "citizenship_country_id", None)
+    if country_id:
+        country = session.query(Country).filter(Country.id == country_id).first()
+        if country:
+            type_ids = {
+                r.document_type_id
+                for r in session.query(RegimeDocumentRule).filter(
+                    RegimeDocumentRule.regime_id == country.regime_id,
+                    RegimeDocumentRule.is_required == True,
+                ).all()
+            }
+            doc_types = (
+                session.query(DocumentType)
+                .filter(DocumentType.id.in_(type_ids), DocumentType.is_active == True)
+                .order_by(DocumentType.sort_order.asc())
+                .all()
+            )
+            return _rows(doc_types)
+
+    # Fallback: старая логика citizenship_filter / citizenship_matches
+    citizenship = user_citizenship(session, user)
+    return _rows(active_document_types(session, citizenship, required_only=True))
 
 
 def employee_names(session):
