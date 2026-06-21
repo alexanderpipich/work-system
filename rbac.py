@@ -28,11 +28,12 @@ PERMISSIONS = {
         "requisites.view", "requisites.manage", "reports.view",
         "payroll.view", "payroll.export", "payroll.summary_view",
         "rates.view", "lmk.view", "password.reset_limited",
-        "audit.hr_view", "hr_team.manage",
+        "audit.hr_view", "hr_team.manage", "schedules.view",
     },
     ROLE_HR_MANAGER: {
         "employees.view", "employees.manage", "documents.view", "documents.manage",
-        "requisites.view", "requisites.manage", "reports.view", "payroll.view", "payroll.export", "rates.view", "lmk.view", "password.reset_limited",
+        "requisites.view", "requisites.manage", "reports.view", "payroll.view", "payroll.export",
+        "rates.view", "lmk.view", "password.reset_limited", "schedules.view",
     },
     ROLE_ECONOMIST: {
         "employees.view", "employees.manage", "documents.view", "documents.verify",

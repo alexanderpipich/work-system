@@ -39,8 +39,8 @@ ROUTE_PERMISSION_MATRIX = [
 
     # schedules
     ("schedules.view",
-        ["superadmin", "economist", "brigadier"],
-        ["hr_lead", "hr_manager", "employee"]),
+        ["superadmin", "economist", "hr_lead", "hr_manager", "brigadier"],
+        ["employee"]),
     # bypass-only: admin schedules page shows all stores unfiltered
     ("schedules.admin_view",
         ["superadmin"],
