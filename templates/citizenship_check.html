@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="icon" href="/static/favicon.ico?v=2">
+    <title>Проверка комплектности</title>
+    <style>
+        :root { --brand-blue:#0b1475; --brand-peach:#f58a65; --bg:#f4f5f7; --card-bg:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --shadow:0 16px 40px rgba(11,20,117,.08); }
+        *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:28px 18px 36px}
+        .page{max-width:900px;margin:0 auto}
+        .topbar,.card{background:var(--card-bg);border-radius:22px;box-shadow:var(--shadow);padding:20px;margin-bottom:20px}
+        .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px}
+        .brand{display:flex;align-items:center;gap:14px}
+        .brand img{width:64px;height:64px;object-fit:contain;border-radius:16px}
+        h1,h2,h3{color:var(--brand-blue);margin-top:0}
+        .toolbar{display:flex;gap:10px;flex-wrap:wrap}
+        .btn{display:inline-flex;align-items:center;height:42px;padding:0 18px;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;border:none}
+        .btn-primary{background:linear-gradient(135deg,var(--brand-blue),#18239a);color:#fff}
+        .btn-light{background:#fff;color:var(--brand-blue);border:1px solid rgba(11,20,117,.15)}
+        select{width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:14px;font-family:inherit;background:#fff}
+        label{display:block;font-size:13px;font-weight:700;color:var(--brand-blue);margin-bottom:6px}
+
+        /* Контекст */
+        .ctx-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+        .ctx-row{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-bottom:1px solid var(--border)}
+        .ctx-key{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+        .ctx-val{font-size:14px;font-weight:600;color:var(--text)}
+        .branch-pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:700}
+        .branch-regime{background:#ecfdf5;color:#065f46}
+        .branch-student{background:#eff6ff;color:#1d4ed8}
+        .branch-fallback{background:#fef9c3;color:#713f12}
+
+        /* Таблица статусов */
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:14px}
+        th{color:var(--brand-blue);font-weight:700;background:#fafbfc;font-size:13px}
+        .status-ok{font-weight:700;color:#065f46}
+        .status-pending{font-weight:700;color:#92400e}
+        .status-expired{font-weight:700;color:#991b1b}
+        .status-missing{color:var(--muted)}
+        .status-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700}
+        .badge-ok{background:#ecfdf5;color:#065f46}
+        .badge-pending{background:#fef9c3;color:#713f12}
+        .badge-expired{background:#fef2f2;color:#991b1b}
+        .badge-missing{background:#f3f4f6;color:#6b7280}
+        .sort-num{color:var(--muted);font-size:12px;margin-right:6px}
+
+        /* Summary */
+        .summary{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+        .sum-item{font-size:13px;font-weight:700}
+
+        .hint{color:var(--muted);font-size:14px;line-height:1.6;margin:0}
+    </style>
+</head>
+<body><div class="page">
+
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1>Проверка комплектности</h1>
+                <p style="margin:0;color:var(--muted);font-size:14px">Текстовая диагностика набора документов</p>
+            </div>
+        </div>
+        <div class="toolbar">
+            <a href="/admin/citizenship/regimes" class="btn btn-light">Режимы</a>
+            <a href="/admin" class="btn btn-light">Назад в админку</a>
+            <a href="/logout" class="btn btn-light">Выйти</a>
+        </div>
+    </div>
+
+    <!-- Выбор сотрудника -->
+    <div class="card">
+        <form method="get" action="/admin/citizenship/check">
+            <label>Сотрудник</label>
+            <div style="display:flex;gap:10px;align-items:center">
+                <select name="employee" style="flex:1">
+                    <option value="">— выберите сотрудника —</option>
+                    {% for name in names %}
+                    <option value="{{ name }}" {{ 'selected' if name == selected_employee }}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary" style="white-space:nowrap">Показать</button>
+            </div>
+        </form>
+    </div>
+
+    {% if selected_employee and not ctx %}
+    <div class="card">
+        <p class="hint">Сотрудник <strong>{{ selected_employee }}</strong> не найден в таблице пользователей — нет записи User.</p>
+    </div>
+    {% endif %}
+
+    {% if ctx %}
+    <!-- Контекст: по какой ветке посчитано -->
+    <div class="card">
+        <h2 style="margin-bottom:14px">Контекст расчёта</h2>
+        <div class="ctx-grid">
+            <div class="ctx-row">
+                <span class="ctx-key">Сотрудник</span>
+                <span class="ctx-val">{{ ctx.employee_name }}</span>
+            </div>
+            <div class="ctx-row">
+                <span class="ctx-key">Ветка логики</span>
+                <span class="ctx-val">
+                    {% if ctx.branch == 'student' %}
+                        <span class="branch-pill branch-student">Студент (переопределяет режим)</span>
+                    {% elif ctx.branch == 'regime' %}
+                        <span class="branch-pill branch-regime">Режим по стране</span>
+                    {% else %}
+                        <span class="branch-pill branch-fallback">Fallback (старая логика)</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="ctx-row">
+                <span class="ctx-key">Студент</span>
+                <span class="ctx-val">{{ 'Да' if ctx.is_student else 'Нет' }}</span>
+            </div>
+            <div class="ctx-row">
+                <span class="ctx-key">Гражданство (строка)</span>
+                <span class="ctx-val">{{ ctx.citizenship_string or '—' }}</span>
+            </div>
+            {% if ctx.country %}
+            <div class="ctx-row">
+                <span class="ctx-key">Страна (справочник)</span>
+                <span class="ctx-val">{{ ctx.country.name }}</span>
+            </div>
+            {% endif %}
+            {% if ctx.regime %}
+            <div class="ctx-row">
+                <span class="ctx-key">Правовой режим</span>
+                <span class="ctx-val">{{ ctx.regime.name }} <span style="font-size:12px;color:var(--muted)">({{ ctx.regime.code }})</span></span>
+            </div>
+            {% endif %}
+            {% if ctx.branch == 'fallback' and not ctx.country %}
+            <div class="ctx-row" style="grid-column:1/-1">
+                <span class="ctx-key">Причина fallback</span>
+                <span class="ctx-val" style="color:#713f12">
+                    {% if not ctx.citizenship_string %}
+                        Гражданство не указано ни в User, ни в Requisite
+                    {% else %}
+                        citizenship_country_id не заполнен — используется строковое поле
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Таблица статусов -->
+    <div class="card">
+        <h2 style="margin-bottom:14px">Набор документов ({{ rows|length }} позиций)</h2>
+
+        {% if rows %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Тип документа</th>
+                    <th>Требуется</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in rows %}
+            <tr>
+                <td style="color:var(--muted);font-size:12px">{{ row.document_type.sort_order or '—' }}</td>
+                <td>
+                    {{ row.document_type.name }}
+                    {% if row.document_type.is_student_doc %}
+                        <span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:2px 6px;border-radius:6px;margin-left:4px">студ.</span>
+                    {% endif %}
+                </td>
+                <td style="color:var(--muted)">{{ 'Да' if row.required else 'Нет' }}</td>
+                <td>
+                    <span class="status-badge badge-{{ row.status }}">
+                        {% if row.status == 'ok' %}Проверен ✓
+                        {% elif row.status == 'pending' %}Загружен, ждёт проверки
+                        {% elif row.status == 'expired' %}Просрочен / не принят
+                        {% else %}Отсутствует
+                        {% endif %}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="summary">
+            {% set ok_count = rows | selectattr('status', 'equalto', 'ok') | list | length %}
+            {% set pending_count = rows | selectattr('status', 'equalto', 'pending') | list | length %}
+            {% set expired_count = rows | selectattr('status', 'equalto', 'expired') | list | length %}
+            {% set missing_count = rows | selectattr('status', 'equalto', 'missing') | list | length %}
+            <span class="sum-item" style="color:#065f46">✓ Проверено: {{ ok_count }}</span>
+            <span class="sum-item" style="color:#713f12">⏳ Ожидает: {{ pending_count }}</span>
+            <span class="sum-item" style="color:#991b1b">✗ Просрочено: {{ expired_count }}</span>
+            <span class="sum-item" style="color:#6b7280">— Отсутствует: {{ missing_count }}</span>
+        </div>
+
+        {% else %}
+        <p class="hint">
+            {% if ctx.branch == 'fallback' and not ctx.citizenship_string %}
+                Набор документов не определён — у сотрудника не указано гражданство и не заполнен справочник страны.
+            {% elif ctx.branch == 'regime' and not ctx.regime %}
+                Страна найдена, но режим не определён или не активен.
+            {% else %}
+                Для этого режима/студента не настроены типы документов.
+            {% endif %}
+        </p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if not selected_employee %}
+    <div class="card">
+        <p class="hint">Выберите сотрудника выше чтобы увидеть его набор документов и статус комплектности.</p>
+    </div>
+    {% endif %}
+
+</div></body></html>

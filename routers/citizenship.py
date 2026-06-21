@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
 from dependencies import get_db
-from models import CitizenshipRegime, Country, DocumentType, RegimeDocumentRule
-from rbac import require_permission
+from document_helpers import employee_document_status, employee_names
+from models import CitizenshipRegime, Country, DocumentType, RegimeDocumentRule, User
+from rbac import canonical_role, require_permission
 from utils import normalize_text
 
 router = APIRouter()
@@ -294,3 +295,62 @@ def country_toggle(country_id: int, request: Request, session: Session = Depends
         create_audit_log(session, request, user, "toggle", "country", entity_id=country_id, entity_name=country.name)
         session.commit()
     return RedirectResponse("/admin/citizenship/countries", status_code=303)
+
+
+# ── Проверка комплектности ────────────────────────────────────────────────────
+
+def _resolve_check_context(session, employee):
+    """Вернуть (user_obj, context_dict) для страницы проверки."""
+    target = session.query(User).filter(User.employee_name == employee).first()
+    if not target:
+        return None, None
+
+    ctx = {
+        "employee_name": normalize_text(target.employee_name),
+        "is_student": getattr(target, "is_student", False),
+        "citizenship_string": getattr(target, "citizenship_country", None) or "",
+        "country": None,
+        "regime": None,
+        "branch": None,
+    }
+
+    if ctx["is_student"]:
+        ctx["branch"] = "student"
+    elif getattr(target, "citizenship_country_id", None):
+        country = session.query(Country).filter(Country.id == target.citizenship_country_id).first()
+        if country:
+            regime = session.query(CitizenshipRegime).filter(CitizenshipRegime.id == country.regime_id).first()
+            ctx["country"] = country
+            ctx["regime"] = regime
+            ctx["branch"] = "regime"
+        else:
+            ctx["branch"] = "fallback"
+    else:
+        ctx["branch"] = "fallback"
+
+    return target, ctx
+
+
+@router.get("/admin/citizenship/check", response_class=HTMLResponse)
+def citizenship_check(
+    request: Request,
+    session: Session = Depends(get_db),
+    user=Depends(_mgmt),
+    employee: str = "",
+):
+    names = employee_names(session)
+    rows = []
+    ctx = None
+
+    if employee:
+        target, ctx = _resolve_check_context(session, employee)
+        if target:
+            rows = employee_document_status(session, target)
+
+    return templates.TemplateResponse(request, "citizenship_check.html", {
+        "user": user,
+        "names": names,
+        "selected_employee": employee,
+        "rows": rows,
+        "ctx": ctx,
+    })
