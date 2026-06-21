@@ -29,13 +29,14 @@ class RbacScopeTests(unittest.TestCase):
         session.query.return_value.filter.return_value.all.return_value = []
         return session
 
-    def test_economist_falls_back_to_legacy_cities(self):
+    def test_economist_with_no_scope_returns_empty_set(self):
+        # No UserAccessScope rows = empty set; legacy field is not read
         user = SimpleNamespace(id=1, role="economist", is_admin=False, economist_stores="Москва, Казань")
-        self.assertEqual(get_scope_values(self._session_without_scopes(), user, "city"), {"Москва", "Казань"})
+        self.assertEqual(get_scope_values(self._session_without_scopes(), user, "city"), set())
 
-    def test_hr_manager_falls_back_to_legacy_cities(self):
+    def test_hr_manager_with_no_scope_returns_empty_set(self):
         user = SimpleNamespace(id=2, role="hr_manager", is_admin=False, economist_stores="Москва, Казань")
-        self.assertEqual(get_scope_values(self._session_without_scopes(), user, "city"), {"Москва", "Казань"})
+        self.assertEqual(get_scope_values(self._session_without_scopes(), user, "city"), set())
     def test_hr_manager_city_scope_is_enforced(self):
         session = MagicMock()
         session.query.return_value.filter.return_value.all.return_value = [("Москва",)]
@@ -47,9 +48,10 @@ class RbacScopeTests(unittest.TestCase):
         user = SimpleNamespace(id=3, role="admin", is_admin=True)
         self.assertIsNone(get_scope_values(MagicMock(), user, "city"))
 
-    def test_hr_manager_without_store_scope_gets_all_stores_in_assigned_cities(self):
-        user = SimpleNamespace(id=4, role="hr_manager", is_admin=False, economist_stores="Moscow")
-        self.assertTrue(can_access_store(self._session_without_scopes(), user, "Store-01"))
+    def test_hr_manager_without_store_scope_gets_no_access(self):
+        # After Step 5: empty scope = denied, not unrestricted
+        user = SimpleNamespace(id=4, role="hr_manager", is_admin=False)
+        self.assertFalse(can_access_store(self._session_without_scopes(), user, "Store-01"))
 
     def test_hr_manager_explicit_store_scope_is_enforced(self):
         session = MagicMock()

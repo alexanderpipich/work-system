@@ -16,8 +16,6 @@ def get_user_stores(session, user):
     values = get_scope_values(session, user, "store")
     if values is None:
         return None
-    if not values and canonical_role(user) in {"economist", "hr_manager"}:
-        return None
     return sorted(values)
 
 

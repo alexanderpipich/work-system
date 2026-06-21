@@ -88,16 +88,6 @@ def require_permission(permission: str, audit_denied: bool = False):
     return dependency
 
 
-def _legacy_scope_values(user, scope_type: str):
-    if scope_type == "city" and canonical_role(user) in {ROLE_ECONOMIST, ROLE_HR_MANAGER}:
-        raw = getattr(user, "economist_stores", "") or ""
-        return {normalize_text(value) for value in raw.split(",") if normalize_text(value)}
-    if scope_type == "store" and canonical_role(user) == ROLE_BRIGADIER:
-        value = normalize_text(getattr(user, "brigadier_store", ""))
-        return {value} if value else set()
-    return set()
-
-
 def get_scope_values(session, user, scope_type: str):
     if canonical_role(user) in {ROLE_SUPERADMIN, ROLE_HR_LEAD}:
         return None
@@ -106,8 +96,7 @@ def get_scope_values(session, user, scope_type: str):
         UserAccessScope.scope_type == scope_type,
         UserAccessScope.is_active == True,
     ).all()
-    values = {normalize_text(row[0]) for row in rows if normalize_text(row[0])}
-    return values or _legacy_scope_values(user, scope_type)
+    return {normalize_text(row[0]) for row in rows if normalize_text(row[0])}
 
 
 def can_access_city(session, user, city) -> bool:
@@ -117,7 +106,5 @@ def can_access_city(session, user, city) -> bool:
 
 def can_access_store(session, user, store) -> bool:
     allowed = get_scope_values(session, user, "store")
-    if allowed is None or (not allowed and canonical_role(user) in {ROLE_ECONOMIST, ROLE_HR_MANAGER}):
-        return True
-    return normalize_text(store) in allowed
+    return allowed is None or normalize_text(store) in allowed
 
