@@ -187,6 +187,67 @@ def country_add(
     return RedirectResponse("/admin/citizenship/countries?message=Страна+добавлена", status_code=303)
 
 
+@router.get("/admin/citizenship/countries/bulk-add", response_class=HTMLResponse)
+def country_bulk_add_form(request: Request, session: Session = Depends(get_db), user=Depends(_mgmt)):
+    regimes = session.query(CitizenshipRegime).filter(
+        CitizenshipRegime.is_active == True
+    ).order_by(CitizenshipRegime.sort_order).all()
+    return templates.TemplateResponse(request, "citizenship_country_bulk_add.html", {
+        "user": user, "regimes": regimes, "error": None, "result": None,
+    })
+
+
+@router.post("/admin/citizenship/countries/bulk-add")
+def country_bulk_add(
+    request: Request,
+    session: Session = Depends(get_db),
+    user=Depends(_mgmt),
+    names_text: str = Form(""),
+    regime_id: int = Form(0),
+):
+    regimes = session.query(CitizenshipRegime).filter(
+        CitizenshipRegime.is_active == True
+    ).order_by(CitizenshipRegime.sort_order).all()
+
+    if not regime_id:
+        return templates.TemplateResponse(request, "citizenship_country_bulk_add.html", {
+            "user": user, "regimes": regimes, "error": "Выберите режим", "result": None,
+        })
+
+    names = [normalize_text(line) for line in names_text.splitlines() if normalize_text(line)]
+    if not names:
+        return templates.TemplateResponse(request, "citizenship_country_bulk_add.html", {
+            "user": user, "regimes": regimes, "error": "Список стран пуст", "result": None,
+        })
+
+    existing = {normalize_text(c.name) for c in session.query(Country).all()}
+    added, skipped = [], []
+    for name in names:
+        if normalize_text(name) in existing:
+            skipped.append(name)
+        else:
+            session.add(Country(name=name, regime_id=regime_id, is_active=True))
+            added.append(name)
+
+    if added:
+        session.flush()
+        create_audit_log(
+            session, request, user, "bulk_create", "country",
+            entity_name=f"{len(added)} стран → режим {regime_id}",
+            new_value={"added": added, "skipped": skipped},
+        )
+    session.commit()
+
+    regime_name = next((r.name for r in regimes if r.id == regime_id), str(regime_id))
+    return templates.TemplateResponse(request, "citizenship_country_bulk_add.html", {
+        "user": user, "regimes": regimes, "error": None,
+        "result": {
+            "added": added, "skipped": skipped,
+            "regime_name": regime_name,
+        },
+    })
+
+
 @router.get("/admin/citizenship/countries/{country_id}/edit", response_class=HTMLResponse)
 def country_edit_form(country_id: int, request: Request, session: Session = Depends(get_db), user=Depends(_mgmt)):
     country = session.query(Country).filter(Country.id == country_id).first()

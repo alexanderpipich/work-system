@@ -47,7 +47,10 @@
     <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
             <h2 style="margin:0">Страны ({{ countries|length }})</h2>
-            <a href="/admin/citizenship/countries/add" class="btn btn-primary">+ Добавить страну</a>
+            <div class="toolbar">
+                <a href="/admin/citizenship/countries/bulk-add" class="btn btn-light">+ Добавить списком</a>
+                <a href="/admin/citizenship/countries/add" class="btn btn-primary">+ Добавить страну</a>
+            </div>
         </div>
         <table>
             <thead><tr><th>Страна</th><th>Режим</th><th>Статус</th><th>Действия</th></tr></thead>
