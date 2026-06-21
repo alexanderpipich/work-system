@@ -196,7 +196,9 @@
                 <label class="check"><input type="checkbox" name="allow_permanent" value="1" checked> Можно бессрочно</label>
                 <label class="check"><input type="checkbox" name="is_required" value="1" checked> Обязательный</label>
                 <label class="check"><input type="checkbox" name="is_active" value="1" checked> Активный</label>
+                <label class="check"><input type="checkbox" name="is_student_doc" value="1"> Студенческий документ</label>
             </div>
+            <div class="field" style="max-width:160px;margin-top:8px"><label>Порядок сортировки</label><input type="number" name="sort_order" value="0" min="0"></div>
             <p><button class="btn" type="submit">Добавить</button></p>
         </form>
     </section>
@@ -292,7 +294,9 @@
                     <label class="check"><input type="checkbox" name="allow_permanent" value="1" {% if item.allow_permanent %}checked{% endif %}> Бессрочно</label>
                     <label class="check"><input type="checkbox" name="is_required" value="1" {% if item.is_required %}checked{% endif %}> Обязательный</label>
                     <label class="check"><input type="checkbox" name="is_active" value="1" {% if item.is_active %}checked{% endif %}> Активный</label>
+                    <label class="check"><input type="checkbox" name="is_student_doc" value="1" {% if item.is_student_doc %}checked{% endif %}> Студенческий документ</label>
                 </div>
+                <div class="field" style="max-width:160px;margin-top:8px"><label>Порядок сортировки</label><input type="number" name="sort_order" value="{{ item.sort_order or 0 }}" min="0"></div>
                 <p><button class="btn" type="submit">Сохранить</button></p>
             </form>
         </details>

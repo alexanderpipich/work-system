@@ -106,6 +106,7 @@ def _render_document_types(request, session, user, message="", error=""):
     base_path, back_url, back_label = _document_type_base(request)
     document_types = session.query(DocumentType).order_by(
         DocumentType.is_active.desc(),
+        DocumentType.sort_order.asc(),
         DocumentType.name.asc(),
     ).all()
     return templates.TemplateResponse(
@@ -148,6 +149,8 @@ def _apply_document_type_fields(
     extra_field_2_label,
     is_required,
     is_active,
+    sort_order=0,
+    is_student_doc=False,
 ):
     document_type.name = normalize_text(name)
     document_type.description = normalize_text(description) or None
@@ -161,6 +164,8 @@ def _apply_document_type_fields(
     document_type.extra_field_2_label = normalize_text(extra_field_2_label) or None
     document_type.is_required = parse_bool(is_required)
     document_type.is_active = parse_bool(is_active)
+    document_type.sort_order = int(sort_order or 0)
+    document_type.is_student_doc = parse_bool(is_student_doc)
 
 
 def _document_type_payload(document_type):
@@ -407,6 +412,8 @@ async def add_document_type(
     extra_field_2_label: str = Form(default=""),
     is_required: str = Form(default=""),
     is_active: str = Form(default="1"),
+    sort_order: int = Form(default=0),
+    is_student_doc: str = Form(default=""),
     sample_file: UploadFile | None = File(default=None),
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
@@ -432,6 +439,8 @@ async def add_document_type(
             extra_field_2_label=extra_field_2_label,
             is_required=is_required,
             is_active=is_active,
+            sort_order=sort_order,
+            is_student_doc=is_student_doc,
         )
         session.add(document_type)
         session.flush()
@@ -470,6 +479,8 @@ async def update_document_type(
     extra_field_2_label: str = Form(default=""),
     is_required: str = Form(default=""),
     is_active: str = Form(default=""),
+    sort_order: int = Form(default=0),
+    is_student_doc: str = Form(default=""),
     sample_file: UploadFile | None = File(default=None),
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
@@ -496,6 +507,8 @@ async def update_document_type(
             extra_field_2_label=extra_field_2_label,
             is_required=is_required,
             is_active=is_active,
+            sort_order=sort_order,
+            is_student_doc=is_student_doc,
         )
         document_type.updated_at = now_utc()
         await _save_sample_file(document_type, sample_file)
