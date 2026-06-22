@@ -286,6 +286,13 @@
                     <input type="hidden" name="type_id" value="{{ item.id }}">
                     <button class="btn danger" type="submit">Деактивировать</button>
                 </form>
+                {% if user.role == 'superadmin' %}
+                <form method="post" action="{{ base_path }}/hard-delete"
+                      onsubmit="return confirm('Удалить тип «{{ item.name }}» навсегда? Это действие необратимо.')">
+                    <input type="hidden" name="type_id" value="{{ item.id }}">
+                    <button class="btn danger" type="submit" style="background:linear-gradient(135deg,#7f1d1d,#450a0a)">Удалить</button>
+                </form>
+                {% endif %}
             </div>
 
             <form id="edit-type-{{ item.id }}" class="edit-form" method="post" action="{{ base_path }}/update" enctype="multipart/form-data">

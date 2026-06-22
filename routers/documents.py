@@ -577,6 +577,35 @@ def delete_document_type(
     return _redirect(base_path, message="Тип документа деактивирован")
 
 
+@router.post("/admin/document-types/hard-delete")
+def hard_delete_document_type(
+    request: Request,
+    type_id: int = Form(...),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _document_type_base(request)
+    document_type = session.query(DocumentType).filter(DocumentType.id == type_id).first()
+    if not document_type:
+        return _redirect(base_path, error="Тип документа не найден")
+
+    from models import EmployeeDocument
+    doc_count = session.query(EmployeeDocument).filter(EmployeeDocument.document_type_id == type_id).count()
+    if doc_count > 0:
+        return _redirect(base_path, error=f"Нельзя удалить: у {doc_count} документов сотрудников указан этот тип. Сначала деактивируйте.")
+
+    session.query(RegimeDocumentRule).filter(RegimeDocumentRule.document_type_id == type_id).delete()
+    name = document_type.name
+    session.delete(document_type)
+    create_audit_log(
+        session, request, user,
+        "document_type_deleted", "document_type",
+        type_id, name,
+    )
+    session.commit()
+    return _redirect(base_path, message=f"Тип документа «{name}» удалён")
+
+
 @router.get("/admin/documents", response_class=HTMLResponse)
 def admin_documents(
     request: Request,
