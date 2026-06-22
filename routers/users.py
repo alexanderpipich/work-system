@@ -345,6 +345,7 @@ def admin_users(
         {
             "users": users,
             "legal_entities": active_legal_entities(session),
+            "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
             "message": None,
             "error": None,
             "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users},

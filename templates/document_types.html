@@ -182,6 +182,14 @@
         <form method="post" action="{{ base_path }}/add" enctype="multipart/form-data">
             <div class="grid">
                 <div class="field"><label>Название</label><input name="name" required></div>
+                <div class="field">
+                    <label>Гражданства (пусто = подходит всем)</label>
+                    <select name="citizenship_filter" multiple size="4">
+                        {% for c in countries %}
+                        <option value="{{ c.name }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div class="field"><label>Описание</label><textarea name="description"></textarea></div>
                 <div class="field"><label>Подсказка сотруднику</label><textarea name="help_text"></textarea></div>
                 <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_label"></div>
@@ -226,6 +234,10 @@
                 <div class="readonly-item">
                     <div class="readonly-label">Название</div>
                     <div class="readonly-value">{{ item.name }}</div>
+                </div>
+                <div class="readonly-item">
+                    <div class="readonly-label">Гражданства</div>
+                    <div class="readonly-value">{{ item.citizenship_filter or 'Подходит всем' }}</div>
                 </div>
                 <div class="readonly-item">
                     <div class="readonly-label">Описание</div>
@@ -275,6 +287,15 @@
                 <input type="hidden" name="type_id" value="{{ item.id }}">
                 <div class="grid">
                     <div class="field"><label>Название</label><input name="name" value="{{ item.name }}" required></div>
+                    <div class="field">
+                        <label>Гражданства (пусто = подходит всем)</label>
+                        {% set filter_list = (item.citizenship_filter or '').split(',') | map('trim') | list %}
+                        <select name="citizenship_filter" multiple size="4">
+                            {% for c in countries %}
+                            <option value="{{ c.name }}" {% if c.name in filter_list %}selected{% endif %}>{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="field"><label>Описание</label><textarea name="description">{{ item.description or '' }}</textarea></div>
                     <div class="field"><label>Подсказка</label><textarea name="help_text">{{ item.help_text or '' }}</textarea></div>
                     <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_label" value="{{ item.extra_field_1_label or '' }}"></div>
