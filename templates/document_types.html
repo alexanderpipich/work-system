@@ -286,7 +286,7 @@
                     <input type="hidden" name="type_id" value="{{ item.id }}">
                     <button class="btn danger" type="submit">Деактивировать</button>
                 </form>
-                {% if user.role == 'superadmin' %}
+                {% if is_superadmin_user %}
                 <form method="post" action="{{ base_path }}/hard-delete"
                       onsubmit="return confirm('Удалить тип «{{ item.name }}» навсегда? Это действие необратимо.')">
                     <input type="hidden" name="type_id" value="{{ item.id }}">

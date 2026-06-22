@@ -119,6 +119,7 @@ def _render_document_types(request, session, user, message="", error=""):
         "document_types.html",
         {
             "user": user,
+            "is_superadmin_user": is_superadmin(user),
             "document_types": document_types,
             "regimes": regimes,
             "doc_regime_map": doc_regime_map,
