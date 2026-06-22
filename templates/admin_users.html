@@ -442,7 +442,21 @@
 
                                 <input type="text" name="scope_cities" value="{{ (city_scopes.get(user.id, []) or []) | join(', ') }}" placeholder="Доступные города через запятую">
 
-                                <input type="text" name="citizenship_country" value="{{ user.citizenship_country or '' }}" placeholder="Гражданство">
+                                {% set ns = namespace(sel=user.citizenship_country_id or 0) %}
+                                {% if not ns.sel and user.citizenship_country %}
+                                    {% for c in countries %}
+                                        {% if c.name == user.citizenship_country %}{% set ns.sel = c.id %}{% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                                <select name="citizenship_country_id">
+                                    <option value="0">— не выбрано —</option>
+                                    {% for c in countries %}
+                                    <option value="{{ c.id }}" {% if c.id == ns.sel %}selected{% endif %}>{{ c.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label class="check" style="margin-top:6px;display:flex;align-items:center;gap:6px;font-size:13px">
+                                    <input type="checkbox" name="is_student" value="1" {% if user.is_student %}checked{% endif %}> Студент
+                                </label>
 
                                 <select name="legal_entity">
                                     <option value="">Не выбрано</option>

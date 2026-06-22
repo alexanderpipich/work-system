@@ -140,7 +140,6 @@ def _apply_document_type_fields(
     name,
     description,
     help_text,
-    citizenship_filter,
     requires_number,
     requires_issue_date,
     requires_expiry_date,
@@ -155,7 +154,6 @@ def _apply_document_type_fields(
     document_type.name = normalize_text(name)
     document_type.description = normalize_text(description) or None
     document_type.help_text = normalize_text(help_text) or None
-    document_type.citizenship_filter = normalize_text(citizenship_filter) or None
     document_type.requires_number = parse_bool(requires_number)
     document_type.requires_issue_date = parse_bool(requires_issue_date)
     document_type.requires_expiry_date = parse_bool(requires_expiry_date)
@@ -403,7 +401,6 @@ async def add_document_type(
     name: str = Form(...),
     description: str = Form(default=""),
     help_text: str = Form(default=""),
-    citizenship_filter: str = Form(default=""),
     requires_number: str = Form(default=""),
     requires_issue_date: str = Form(default=""),
     requires_expiry_date: str = Form(default=""),
@@ -430,7 +427,6 @@ async def add_document_type(
             name=name,
             description=description,
             help_text=help_text,
-            citizenship_filter=citizenship_filter,
             requires_number=requires_number,
             requires_issue_date=requires_issue_date,
             requires_expiry_date=requires_expiry_date,
@@ -470,7 +466,6 @@ async def update_document_type(
     name: str = Form(...),
     description: str = Form(default=""),
     help_text: str = Form(default=""),
-    citizenship_filter: str = Form(default=""),
     requires_number: str = Form(default=""),
     requires_issue_date: str = Form(default=""),
     requires_expiry_date: str = Form(default=""),
@@ -498,7 +493,6 @@ async def update_document_type(
             name=name,
             description=description,
             help_text=help_text,
-            citizenship_filter=citizenship_filter,
             requires_number=requires_number,
             requires_issue_date=requires_issue_date,
             requires_expiry_date=requires_expiry_date,

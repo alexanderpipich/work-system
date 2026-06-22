@@ -213,8 +213,16 @@
                 </div>
 
                 <div class="field">
-                    <label for="citizenship_country">Гражданство</label>
-                    <input id="citizenship_country" type="text" name="citizenship_country" placeholder="Например: Россия" required>
+                    <label for="citizenship_country_id">Гражданство *</label>
+                    <select id="citizenship_country_id" name="citizenship_country_id" required>
+                        <option value="0">— выберите страну —</option>
+                        {% for c in countries %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label class="check"><input type="checkbox" name="is_student" value="1"> Студент</label>
                 </div>
 
                        

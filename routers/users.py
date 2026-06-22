@@ -10,7 +10,7 @@ from access_scope_helpers import active_scope_values, sync_access_scopes
 from dependencies import get_db
 from rbac import require_permission
 from legal_entity_helpers import active_legal_entities
-from models import Shift, User
+from models import Country, Shift, User
 from utils import (
     get_password_hash,
     normalize_phone,
@@ -33,7 +33,8 @@ def _user_payload(user):
         "role": user.role,
         "brigadier_store": user.brigadier_store,
         "economist_stores": user.economist_stores,
-        "citizenship_country": user.citizenship_country,
+        "citizenship_country_id": getattr(user, "citizenship_country_id", None),
+        "is_student": getattr(user, "is_student", False),
         "legal_entity": user.legal_entity,
     }
 
@@ -48,12 +49,14 @@ def _default_city_scope(session, role, raw_scope):
 def render_users(request: Request, session, message=None, error=None, filters=None):
     users = session.query(User).order_by(User.employee_name.asc()).all()
     legal_entities = active_legal_entities(session)
+    countries = session.query(Country).filter(Country.is_active == True).order_by(Country.name).all()
     return templates.TemplateResponse(
         request,
         "admin_users.html",
         {
             "users": users,
             "legal_entities": legal_entities,
+            "countries": countries,
             "message": message,
             "error": error,
             "filters": filters or {},
@@ -75,6 +78,7 @@ def create_user_page(
             "message": None,
             "error": None,
             "legal_entities": active_legal_entities(session),
+            "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
         }
     )
 
@@ -89,7 +93,8 @@ def create_user_submit(
     brigadier_store: str = Form(default=""),
     economist_stores: str = Form(default=""),
     scope_cities: str = Form(default=""),
-    citizenship_country: str = Form(...),
+    citizenship_country_id: int = Form(0),
+    is_student: str = Form(""),
     legal_entity: str = Form(default=""),
     session: Session = Depends(get_db),
     admin=Depends(require_user_management),
@@ -99,16 +104,16 @@ def create_user_submit(
     employee_name_clean = normalize_text(employee_name)
     role_clean = normalize_role(role)
     scope_value = _default_city_scope(session, role_clean, scope_cities or economist_stores)
-    citizenship_country_clean = normalize_text(citizenship_country)
 
-    if not citizenship_country_clean:
+    if not citizenship_country_id:
         return templates.TemplateResponse(
             request,
             "create_user.html",
             {
-                "error": "Гражданство обязательно",
+                "error": "Выберите страну гражданства",
                 "message": None,
                 "legal_entities": active_legal_entities(session),
+                "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
             },
             status_code=400,
         )
@@ -121,6 +126,7 @@ def create_user_submit(
                 "error": "Пользователь уже существует",
                 "message": None,
                 "legal_entities": active_legal_entities(session),
+                "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
             }
         )
 
@@ -132,7 +138,8 @@ def create_user_submit(
         role=role_clean,
         brigadier_store=normalize_text(brigadier_store) or None,
         economist_stores=scope_value or None,
-        citizenship_country=citizenship_country_clean,
+        citizenship_country_id=citizenship_country_id,
+        is_student=bool(is_student),
         legal_entity=normalize_text(legal_entity) or None,
     )
 
@@ -158,6 +165,7 @@ def create_user_submit(
             "message": "Пользователь создан",
             "error": None,
             "legal_entities": active_legal_entities(session),
+            "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
         }
     )
 
@@ -358,7 +366,8 @@ def update_user(
     brigadier_store: str = Form(default=""),
     economist_stores: str = Form(default=""),
     scope_cities: str = Form(default=""),
-    citizenship_country: str = Form(default=""),
+    citizenship_country_id: int = Form(0),
+    is_student: str = Form(""),
     legal_entity: str = Form(default=""),
     session: Session = Depends(get_db),
     admin=Depends(require_user_management),
@@ -378,7 +387,8 @@ def update_user(
     user.brigadier_store = normalize_text(brigadier_store) or None
     city_values = sync_access_scopes(session, request, admin, user, "city", scope_value)
     user.economist_stores = ", ".join(city_values) or None
-    user.citizenship_country = normalize_text(citizenship_country) or None
+    user.citizenship_country_id = citizenship_country_id or None
+    user.is_student = bool(is_student)
     user.legal_entity = normalize_text(legal_entity) or None
 
     create_audit_log(
