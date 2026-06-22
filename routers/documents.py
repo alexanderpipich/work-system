@@ -27,7 +27,7 @@ from document_helpers import (
     parse_date,
     save_upload_file,
 )
-from models import Country, DocumentType, EmployeeDocument, User
+from models import CitizenshipRegime, Country, DocumentType, EmployeeDocument, RegimeDocumentRule, User
 from rbac import canonical_role, has_permission, is_superadmin
 from sqlalchemy.orm import Session
 from time_helpers import now_utc
@@ -109,14 +109,19 @@ def _render_document_types(request, session, user, message="", error=""):
         DocumentType.sort_order.asc(),
         DocumentType.name.asc(),
     ).all()
-    countries = session.query(Country).filter(Country.is_active == True).order_by(Country.name).all()
+    regimes = session.query(CitizenshipRegime).filter(CitizenshipRegime.is_active == True).order_by(CitizenshipRegime.sort_order, CitizenshipRegime.name).all()
+    all_rules = session.query(RegimeDocumentRule).filter(RegimeDocumentRule.is_required == True).all()
+    doc_regime_map = {}
+    for rule in all_rules:
+        doc_regime_map.setdefault(rule.document_type_id, set()).add(rule.regime_id)
     return templates.TemplateResponse(
         request,
         "document_types.html",
         {
             "user": user,
             "document_types": document_types,
-            "countries": countries,
+            "regimes": regimes,
+            "doc_regime_map": doc_regime_map,
             "base_path": base_path,
             "back_url": back_url,
             "back_label": back_label,
@@ -142,7 +147,6 @@ def _apply_document_type_fields(
     name,
     description,
     help_text,
-    citizenship_filter="",
     requires_number,
     requires_issue_date,
     requires_expiry_date,
@@ -157,7 +161,6 @@ def _apply_document_type_fields(
     document_type.name = normalize_text(name)
     document_type.description = normalize_text(description) or None
     document_type.help_text = normalize_text(help_text) or None
-    document_type.citizenship_filter = normalize_text(citizenship_filter) or None
     document_type.requires_number = parse_bool(requires_number)
     document_type.requires_issue_date = parse_bool(requires_issue_date)
     document_type.requires_expiry_date = parse_bool(requires_expiry_date)
@@ -405,7 +408,7 @@ async def add_document_type(
     name: str = Form(...),
     description: str = Form(default=""),
     help_text: str = Form(default=""),
-    citizenship_filter: list[str] = Form(default=[]),
+    regime_ids: list[int] = Form(default=[]),
     requires_number: str = Form(default=""),
     requires_issue_date: str = Form(default=""),
     requires_expiry_date: str = Form(default=""),
@@ -432,7 +435,6 @@ async def add_document_type(
             name=name,
             description=description,
             help_text=help_text,
-            citizenship_filter=", ".join(citizenship_filter),
             requires_number=requires_number,
             requires_issue_date=requires_issue_date,
             requires_expiry_date=requires_expiry_date,
@@ -446,6 +448,8 @@ async def add_document_type(
         )
         session.add(document_type)
         session.flush()
+        for rid in regime_ids:
+            session.add(RegimeDocumentRule(regime_id=rid, document_type_id=document_type.id, is_required=True))
         await _save_sample_file(document_type, sample_file)
         create_audit_log(
             session,
@@ -472,7 +476,7 @@ async def update_document_type(
     name: str = Form(...),
     description: str = Form(default=""),
     help_text: str = Form(default=""),
-    citizenship_filter: list[str] = Form(default=[]),
+    regime_ids: list[int] = Form(default=[]),
     requires_number: str = Form(default=""),
     requires_issue_date: str = Form(default=""),
     requires_expiry_date: str = Form(default=""),
@@ -500,7 +504,6 @@ async def update_document_type(
             name=name,
             description=description,
             help_text=help_text,
-            citizenship_filter=", ".join(citizenship_filter),
             requires_number=requires_number,
             requires_issue_date=requires_issue_date,
             requires_expiry_date=requires_expiry_date,
@@ -512,6 +515,17 @@ async def update_document_type(
             sort_order=sort_order,
             is_student_doc=is_student_doc,
         )
+        selected_regime_ids = set(regime_ids)
+        existing_rules = {r.regime_id: r for r in session.query(RegimeDocumentRule).filter(
+            RegimeDocumentRule.document_type_id == type_id
+        ).all()}
+        all_regime_ids = {r.id for r in session.query(CitizenshipRegime).all()}
+        for rid in all_regime_ids:
+            is_req = rid in selected_regime_ids
+            if rid in existing_rules:
+                existing_rules[rid].is_required = is_req
+            elif is_req:
+                session.add(RegimeDocumentRule(regime_id=rid, document_type_id=type_id, is_required=True))
         document_type.updated_at = now_utc()
         await _save_sample_file(document_type, sample_file)
         create_audit_log(

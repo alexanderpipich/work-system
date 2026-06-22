@@ -183,10 +183,10 @@
             <div class="grid">
                 <div class="field"><label>Название</label><input name="name" required></div>
                 <div class="field">
-                    <label>Гражданства (пусто = подходит всем)</label>
-                    <select name="citizenship_filter" multiple size="4">
-                        {% for c in countries %}
-                        <option value="{{ c.name }}">{{ c.name }}</option>
+                    <label>Режимы (пусто = подходит всем)</label>
+                    <select name="regime_ids" multiple size="4">
+                        {% for r in regimes %}
+                        <option value="{{ r.id }}">{{ r.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -236,8 +236,13 @@
                     <div class="readonly-value">{{ item.name }}</div>
                 </div>
                 <div class="readonly-item">
-                    <div class="readonly-label">Гражданства</div>
-                    <div class="readonly-value">{{ item.citizenship_filter or 'Подходит всем' }}</div>
+                    <div class="readonly-label">Режимы</div>
+                    <div class="readonly-value">
+                        {% set item_regime_ids = doc_regime_map.get(item.id, set()) %}
+                        {% set matched = [] %}
+                        {% for r in regimes %}{% if r.id in item_regime_ids %}{% if matched.append(r.name) %}{% endif %}{% endif %}{% endfor %}
+                        {{ matched | join(', ') or 'Подходит всем' }}
+                    </div>
                 </div>
                 <div class="readonly-item">
                     <div class="readonly-label">Описание</div>
@@ -288,11 +293,11 @@
                 <div class="grid">
                     <div class="field"><label>Название</label><input name="name" value="{{ item.name }}" required></div>
                     <div class="field">
-                        <label>Гражданства (пусто = подходит всем)</label>
-                        {% set filter_list = (item.citizenship_filter or '').split(',') | map('trim') | list %}
-                        <select name="citizenship_filter" multiple size="4">
-                            {% for c in countries %}
-                            <option value="{{ c.name }}" {% if c.name in filter_list %}selected{% endif %}>{{ c.name }}</option>
+                        <label>Режимы (пусто = подходит всем)</label>
+                        {% set item_regime_ids = doc_regime_map.get(item.id, set()) %}
+                        <select name="regime_ids" multiple size="4">
+                            {% for r in regimes %}
+                            <option value="{{ r.id }}" {% if r.id in item_regime_ids %}selected{% endif %}>{{ r.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
