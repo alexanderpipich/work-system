@@ -238,7 +238,7 @@
                 <div class="readonly-item">
                     <div class="readonly-label">Режимы</div>
                     <div class="readonly-value">
-                        {% set item_regime_ids = doc_regime_map.get(item.id, set()) %}
+                        {% set item_regime_ids = doc_regime_map.get(item.id, []) %}
                         {% set matched = [] %}
                         {% for r in regimes %}{% if r.id in item_regime_ids %}{% if matched.append(r.name) %}{% endif %}{% endif %}{% endfor %}
                         {{ matched | join(', ') or 'Подходит всем' }}
@@ -294,7 +294,7 @@
                     <div class="field"><label>Название</label><input name="name" value="{{ item.name }}" required></div>
                     <div class="field">
                         <label>Режимы (пусто = подходит всем)</label>
-                        {% set item_regime_ids = doc_regime_map.get(item.id, set()) %}
+                        {% set item_regime_ids = doc_regime_map.get(item.id, []) %}
                         <select name="regime_ids" multiple size="4">
                             {% for r in regimes %}
                             <option value="{{ r.id }}" {% if r.id in item_regime_ids %}selected{% endif %}>{{ r.name }}</option>
