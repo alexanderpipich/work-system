@@ -578,6 +578,31 @@ def delete_document_type(
     return _redirect(base_path, message="Тип документа деактивирован")
 
 
+@router.post("/admin/document-types/delete-sample")
+def delete_document_type_sample(
+    request: Request,
+    type_id: int = Form(...),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _document_type_base(request)
+    document_type = session.query(DocumentType).filter(DocumentType.id == type_id).first()
+    if not document_type:
+        return _redirect(base_path, error="Тип документа не найден")
+    if document_type.sample_image_path:
+        Path(document_type.sample_image_path).unlink(missing_ok=True)
+        document_type.sample_image_path = None
+        document_type.updated_at = now_utc()
+        create_audit_log(
+            session, request, user,
+            "document_type_updated", "document_type",
+            document_type.id, document_type.name,
+            comment="sample_deleted",
+        )
+        session.commit()
+    return _redirect(base_path, message="Образец удалён")
+
+
 @router.post("/admin/document-types/hard-delete")
 def hard_delete_document_type(
     request: Request,
