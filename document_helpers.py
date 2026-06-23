@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 from uuid import uuid4
 
-from sqlalchemy import text
+from sqlalchemy import or_, text
 
 from database import engine
 from models import Country, DocumentType, EmployeeDocument, RegimeDocumentRule, Requisite, Shift, User
@@ -258,6 +258,88 @@ def employee_document_status(session, user) -> list[dict]:
     # Fallback: старая логика citizenship_filter / citizenship_matches
     citizenship = user_citizenship(session, user)
     return _rows(active_document_types(session, citizenship, required_only=True))
+
+
+SORT_ORDER_TO_ICON_KEY = {
+    2: "lmk",
+    3: "passport",
+    4: "inn",
+    5: "snils",
+    6: "registration",
+    7: "patent",
+    8: "fingerprints",
+    9: "passport_translation",
+    10: "dms",
+    11: "migration_card",
+    12: "patent_receipts",
+}
+
+ICON_KEY_TITLES = {
+    "requisites": "Реквизиты",
+    "lmk": "ЛМК",
+    "passport": "Паспорт",
+    "inn": "ИНН",
+    "snils": "СНИЛС",
+    "registration": "Регистрация",
+    "patent": "Патент",
+    "fingerprints": "Дактилоскопия",
+    "passport_translation": "Перевод паспорта",
+    "dms": "ДМС",
+    "migration_card": "Миграционная карта",
+    "patent_receipts": "Чеки по патенту",
+}
+
+
+def employee_completeness(session, user) -> list[dict]:
+    """
+    Returns ≤12 completeness items for a user:
+      [0]    requisites  (from Requisite table)
+      [1..N] documents   (from employee_document_status, regime-filtered)
+    Each item: {position, title, icon_key, status, document_type, source}
+    """
+    name_clean = normalize_text(user.employee_name)
+    req = (
+        session.query(Requisite)
+        .filter(
+            Requisite.is_active == True,
+            or_(
+                Requisite.user_id == user.id,
+                Requisite.employee_name == name_clean,
+            ),
+        )
+        .first()
+    )
+    if req is None:
+        req_status = "missing"
+    elif req.is_verified:
+        req_status = "ok"
+    else:
+        req_status = "pending"
+
+    rows = [
+        {
+            "position": 0,
+            "title": ICON_KEY_TITLES["requisites"],
+            "icon_key": "requisites",
+            "status": req_status,
+            "document_type": None,
+            "source": "requisite",
+        }
+    ]
+
+    for i, row in enumerate(employee_document_status(session, user), start=1):
+        dt = row["document_type"]
+        icon_key = SORT_ORDER_TO_ICON_KEY.get(dt.sort_order, f"doc_{dt.id}")
+        rows.append({
+            "position": i,
+            "title": ICON_KEY_TITLES.get(icon_key, dt.name),
+            "icon_key": icon_key,
+            "status": row["status"],
+            "document_type": dt,
+            "source": "document",
+        })
+
+    return rows
 
 
 def employee_names(session):
