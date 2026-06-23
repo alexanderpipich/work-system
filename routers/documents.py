@@ -958,6 +958,35 @@ def document_file(
     )
 
 
+@router.get("/documents/preview/{document_id}")
+def document_preview(
+    request: Request,
+    document_id: int,
+    session: Session = Depends(get_db),
+    user=Depends(current_user),
+):
+    """Inline preview for modal — same access rules as /documents/files/{id} but Content-Disposition: inline."""
+    document = session.query(EmployeeDocument).filter(EmployeeDocument.id == document_id).first()
+    if not _document_allowed_for_user(session, document, user):
+        return RedirectResponse(url="/", status_code=302)
+    if not document_file_exists(document.file_path):
+        return RedirectResponse(url="/", status_code=302)
+    ext = Path(document.file_path).suffix.lower()
+    if ext not in SAFE_MEDIA_TYPES or ext == ".heic":
+        return RedirectResponse(url="/", status_code=302)
+    return FileResponse(
+        Path(document.file_path),
+        media_type=_safe_media_type(document.file_path),
+        headers={
+            "Content-Disposition": _content_disposition(
+                "inline",
+                document.original_filename or Path(document.file_path).name,
+            ),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 @router.get("/documents/samples/file/{sample_id}")
 def document_sample_file(
     sample_id: int,
