@@ -275,6 +275,17 @@ class DocumentType(Base):
     updated_at = Column(DateTime, nullable=True)
 
 
+class DocumentTypeSample(Base):
+    __tablename__ = "document_type_samples"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_type_id = Column(Integer, nullable=False, index=True)
+    file_path = Column(String, nullable=False)
+    original_filename = Column(String, nullable=True)
+    sort_order = Column(Integer, default=0)
+    uploaded_at = Column(DateTime, default=now_utc)
+
+
 class EmployeeDocument(Base):
     __tablename__ = "employee_documents"
 

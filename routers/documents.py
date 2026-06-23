@@ -27,7 +27,7 @@ from document_helpers import (
     parse_date,
     save_upload_file,
 )
-from models import CitizenshipRegime, Country, DocumentType, EmployeeDocument, RegimeDocumentRule, User
+from models import CitizenshipRegime, Country, DocumentType, DocumentTypeSample, EmployeeDocument, RegimeDocumentRule, User
 from rbac import canonical_role, has_permission, is_superadmin
 from sqlalchemy.orm import Session
 from time_helpers import now_utc
@@ -114,6 +114,14 @@ def _render_document_types(request, session, user, message="", error=""):
     doc_regime_map = {}
     for rule in all_rules:
         doc_regime_map.setdefault(rule.document_type_id, set()).add(rule.regime_id)
+    all_samples = session.query(DocumentTypeSample).order_by(
+        DocumentTypeSample.document_type_id,
+        DocumentTypeSample.sort_order,
+        DocumentTypeSample.uploaded_at,
+    ).all()
+    doc_samples_map = {}
+    for s in all_samples:
+        doc_samples_map.setdefault(s.document_type_id, []).append(s)
     return templates.TemplateResponse(
         request,
         "document_types.html",
@@ -123,6 +131,7 @@ def _render_document_types(request, session, user, message="", error=""):
             "document_types": document_types,
             "regimes": regimes,
             "doc_regime_map": doc_regime_map,
+            "doc_samples_map": doc_samples_map,
             "base_path": base_path,
             "back_url": back_url,
             "back_label": back_label,
@@ -132,14 +141,21 @@ def _render_document_types(request, session, user, message="", error=""):
     )
 
 
-async def _save_sample_file(document_type, sample_file):
-    path, _ = await save_upload_file(
-        sample_file,
-        "document_type_samples",
-        f"type_{document_type.id}",
-    )
-    if path:
-        document_type.sample_image_path = path
+async def _save_sample_files(session, document_type, sample_files):
+    for sample_file in sample_files:
+        if not sample_file or not sample_file.filename:
+            continue
+        path, original_filename = await save_upload_file(
+            sample_file,
+            "document_type_samples",
+            f"type_{document_type.id}",
+        )
+        if path:
+            session.add(DocumentTypeSample(
+                document_type_id=document_type.id,
+                file_path=path,
+                original_filename=original_filename,
+            ))
 
 
 def _apply_document_type_fields(
@@ -420,7 +436,7 @@ async def add_document_type(
     is_active: str = Form(default="1"),
     sort_order: int = Form(default=0),
     is_student_doc: str = Form(default=""),
-    sample_file: UploadFile | None = File(default=None),
+    sample_files: list[UploadFile] = File(default=[]),
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
 ):
@@ -451,7 +467,7 @@ async def add_document_type(
         session.flush()
         for rid in regime_ids:
             session.add(RegimeDocumentRule(regime_id=rid, document_type_id=document_type.id, is_required=True))
-        await _save_sample_file(document_type, sample_file)
+        await _save_sample_files(session, document_type, sample_files)
         create_audit_log(
             session,
             request,
@@ -488,7 +504,7 @@ async def update_document_type(
     is_active: str = Form(default=""),
     sort_order: int = Form(default=0),
     is_student_doc: str = Form(default=""),
-    sample_file: UploadFile | None = File(default=None),
+    sample_files: list[UploadFile] = File(default=[]),
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
 ):
@@ -528,7 +544,7 @@ async def update_document_type(
             elif is_req:
                 session.add(RegimeDocumentRule(regime_id=rid, document_type_id=type_id, is_required=True))
         document_type.updated_at = now_utc()
-        await _save_sample_file(document_type, sample_file)
+        await _save_sample_files(session, document_type, sample_files)
         create_audit_log(
             session,
             request,
@@ -869,6 +885,49 @@ def document_file(
     )
 
 
+@router.get("/documents/samples/file/{sample_id}")
+def document_sample_file(
+    sample_id: int,
+    session: Session = Depends(get_db),
+    user=Depends(current_user),
+):
+    sample = session.query(DocumentTypeSample).filter(DocumentTypeSample.id == sample_id).first()
+    if not sample or not document_file_exists(sample.file_path):
+        return RedirectResponse(url="/", status_code=302)
+    return FileResponse(
+        Path(sample.file_path),
+        media_type=_safe_media_type(sample.file_path),
+        headers={
+            "Content-Disposition": _content_disposition("inline", sample.original_filename or Path(sample.file_path).name),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.post("/admin/document-types/delete-sample-file")
+def delete_document_type_sample_file(
+    request: Request,
+    sample_id: int = Form(...),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _document_type_base(request)
+    sample = session.query(DocumentTypeSample).filter(DocumentTypeSample.id == sample_id).first()
+    if not sample:
+        return _redirect(base_path, error="Образец не найден")
+    Path(sample.file_path).unlink(missing_ok=True)
+    type_name = session.query(DocumentType.name).filter(DocumentType.id == sample.document_type_id).scalar() or ""
+    session.delete(sample)
+    create_audit_log(
+        session, request, user,
+        "document_type_updated", "document_type",
+        sample.document_type_id, type_name,
+        comment="sample_file_deleted",
+    )
+    session.commit()
+    return _redirect(base_path, message="Образец удалён")
+
+
 @router.get("/documents/samples/{type_id}")
 def document_type_sample(
     request: Request,
@@ -876,6 +935,18 @@ def document_type_sample(
     session: Session = Depends(get_db),
     user=Depends(current_user),
 ):
+    first_new = session.query(DocumentTypeSample).filter(
+        DocumentTypeSample.document_type_id == type_id
+    ).order_by(DocumentTypeSample.sort_order, DocumentTypeSample.uploaded_at).first()
+    if first_new and document_file_exists(first_new.file_path):
+        return FileResponse(
+            Path(first_new.file_path),
+            media_type=_safe_media_type(first_new.file_path),
+            headers={
+                "Content-Disposition": _content_disposition("inline", first_new.original_filename or Path(first_new.file_path).name),
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
     document_type = session.query(DocumentType).filter(DocumentType.id == type_id).first()
     if not document_type or not document_file_exists(document_type.sample_image_path):
         return RedirectResponse(url="/", status_code=302)
@@ -883,10 +954,7 @@ def document_type_sample(
         Path(document_type.sample_image_path),
         media_type=_safe_media_type(document_type.sample_image_path),
         headers={
-            "Content-Disposition": _content_disposition(
-                "inline",
-                Path(document_type.sample_image_path).name,
-            ),
+            "Content-Disposition": _content_disposition("inline", Path(document_type.sample_image_path).name),
             "X-Content-Type-Options": "nosniff",
         },
     )

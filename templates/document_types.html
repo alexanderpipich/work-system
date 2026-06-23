@@ -194,7 +194,7 @@
                 <div class="field"><label>Подсказка сотруднику</label><textarea name="help_text"></textarea></div>
                 <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_label"></div>
                 <div class="field"><label>Доп. поле 2</label><input name="extra_field_2_label"></div>
-                <div class="field"><label>Образец фото</label><input type="file" name="sample_file" accept="image/*,.pdf"></div>
+                <div class="field"><label>Образцы (можно несколько)</label><input type="file" name="sample_files" accept="image/*,.pdf" multiple></div>
             </div>
             <div class="checks">
                 <label class="check"><input type="checkbox" name="requires_number" value="1" checked> Требуется номер</label>
@@ -270,9 +270,27 @@
                     </div>
                 </div>
                 <div class="readonly-item">
-                    <div class="readonly-label">Образец</div>
-                    {% if item.sample_image_path %}
-                        <img class="sample-preview" src="/documents/samples/{{ item.id }}" alt="Образец {{ item.name }}">
+                    <div class="readonly-label">Образцы</div>
+                    {% set item_samples = doc_samples_map.get(item.id, []) %}
+                    {% if item_samples %}
+                        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px">
+                        {% for s in item_samples %}
+                            <div style="position:relative;display:inline-block">
+                                <a href="/documents/samples/file/{{ s.id }}" target="_blank">
+                                    <img src="/documents/samples/file/{{ s.id }}"
+                                         style="height:72px;border-radius:8px;border:1px solid var(--border);display:block"
+                                         alt="{{ s.original_filename or 'образец' }}">
+                                </a>
+                                <form method="post" action="{{ base_path }}/delete-sample-file" style="margin:0"
+                                      onsubmit="return confirm('Удалить этот образец?')">
+                                    <input type="hidden" name="sample_id" value="{{ s.id }}">
+                                    <button type="submit"
+                                            style="position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:none;background:#dc2626;color:#fff;font-size:13px;cursor:pointer;line-height:1;padding:0;font-weight:700">×</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% elif item.sample_image_path %}
                         <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">
                             <a class="link secondary sample" href="/documents/samples/{{ item.id }}" target="_blank">Открыть образец</a>
                             <form method="post" action="{{ base_path }}/delete-sample" style="margin:0"
@@ -282,7 +300,7 @@
                             </form>
                         </div>
                     {% else %}
-                        <div class="meta sample">Не загружен</div>
+                        <div class="meta sample">Не загружены</div>
                     {% endif %}
                 </div>
             </div>
@@ -320,11 +338,8 @@
                     <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_label" value="{{ item.extra_field_1_label or '' }}"></div>
                     <div class="field"><label>Доп. поле 2</label><input name="extra_field_2_label" value="{{ item.extra_field_2_label or '' }}"></div>
                     <div class="field">
-                        <label>{{ 'Заменить образец' if item.sample_image_path else 'Образец фото' }}</label>
-                        {% if item.sample_image_path %}
-                        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Текущий образец загружен. Выберите файл, чтобы заменить.</div>
-                        {% endif %}
-                        <input type="file" name="sample_file" accept="image/*,.pdf">
+                        <label>Добавить образцы</label>
+                        <input type="file" name="sample_files" accept="image/*,.pdf" multiple>
                     </div>
                 </div>
                 <div class="checks">
