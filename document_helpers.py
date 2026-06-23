@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import os
 from pathlib import Path
 import re
@@ -14,6 +14,7 @@ from utils import normalize_text
 
 DOCUMENT_UPLOAD_ROOT = Path(os.getenv("DOCUMENT_UPLOAD_ROOT", "uploaded_documents"))
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+EXPIRY_WARNING_DAYS = 30
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf", ".heic"}
 INVALID_DATE_MESSAGE = "Некорректный формат даты (ожидается ГГГГ-ММ-ДД)"
 
@@ -29,6 +30,7 @@ STATUS_LABELS = {
     "verified": "Проверен",
     "rejected": "Отклонен",
     "expired": "Истек срок действия",
+    "expiring_soon": "Истекает в ближайшие 30 дней",
     "archived": "В архиве",
 }
 
@@ -192,11 +194,14 @@ def employee_document_status(session, user) -> list[dict]:
     def _classify(doc):
         if not doc or doc.status in {"rejected", "archived"}:
             return "missing"
-        valid_expiry = doc.is_permanent or not doc.expiry_date or doc.expiry_date >= today
+        if not doc.is_permanent and doc.expiry_date and doc.expiry_date < today:
+            return "expired"
         if doc.status == "verified":
-            return "ok" if valid_expiry else "expired"
+            if not doc.is_permanent and doc.expiry_date and doc.expiry_date <= today + timedelta(days=EXPIRY_WARNING_DAYS):
+                return "expiring_soon"
+            return "ok"
         if doc.status in {"uploaded", "pending_verification"}:
-            return "pending" if valid_expiry else "expired"
+            return "pending"
         return "missing"
 
     def _rows(doc_types):

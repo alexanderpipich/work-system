@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("SECRET_KEY", "test-secret")
 
-from document_helpers import employee_document_status
+from document_helpers import employee_document_status, EXPIRY_WARNING_DAYS
 from time_helpers import business_today
 
 
@@ -223,6 +223,44 @@ class CompletenessStatusTests(unittest.TestCase):
         past = business_today() - timedelta(days=10)
         status = self._result_for(_doc("pending_verification", expiry_date=past))
         self.assertEqual(status, "expired")
+
+
+# ── ExpiringSoonTests ─────────────────────────────────────────────────────────
+
+class ExpiringSoonTests(unittest.TestCase):
+    """expiring_soon: verified + expiry within EXPIRY_WARNING_DAYS. Boundary at exactly 30 days."""
+
+    def _result_for(self, doc):
+        doc_types = [_dt(1)]
+        session = _regime_session(doc_types)
+        with patch("document_helpers.latest_employee_document", return_value=doc):
+            result = employee_document_status(session, _user(country_id=1))
+        return result[0]["status"]
+
+    def test_verified_15_days_left_is_expiring_soon(self):
+        expiry = business_today() + timedelta(days=15)
+        self.assertEqual(self._result_for(_doc("verified", expiry_date=expiry)), "expiring_soon")
+
+    def test_verified_40_days_left_is_ok(self):
+        expiry = business_today() + timedelta(days=40)
+        self.assertEqual(self._result_for(_doc("verified", expiry_date=expiry)), "ok")
+
+    def test_verified_exactly_30_days_left_is_expiring_soon(self):
+        expiry = business_today() + timedelta(days=EXPIRY_WARNING_DAYS)
+        self.assertEqual(self._result_for(_doc("verified", expiry_date=expiry)), "expiring_soon")
+
+    def test_verified_31_days_left_is_ok(self):
+        expiry = business_today() + timedelta(days=EXPIRY_WARNING_DAYS + 1)
+        self.assertEqual(self._result_for(_doc("verified", expiry_date=expiry)), "ok")
+
+    def test_uploaded_30_days_left_is_pending_not_expiring_soon(self):
+        # expiring_soon only applies to verified documents
+        expiry = business_today() + timedelta(days=15)
+        self.assertEqual(self._result_for(_doc("uploaded", expiry_date=expiry)), "pending")
+
+    def test_verified_permanent_is_ok_not_expiring_soon(self):
+        # permanent docs are never expiring_soon
+        self.assertEqual(self._result_for(_doc("verified", is_permanent=True)), "ok")
 
 
 # ── FallbackTests ─────────────────────────────────────────────────────────────
