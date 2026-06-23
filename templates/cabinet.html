@@ -357,6 +357,232 @@
                 padding: 18px 16px;
             }
         }
+
+        /* ── Документы: плитки ── */
+        .docs-hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .docs-chip {
+            font-size: 12px;
+            font-weight: 700;
+            color: #374151;
+            background: #f1f3f7;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 5px 11px;
+        }
+
+        .docs-attn {
+            font-size: 12.5px;
+            color: #9a3412;
+            font-weight: 600;
+        }
+
+        .docs-attn b {
+            color: #c2410c;
+            font-weight: 800;
+        }
+
+        .docs-chev {
+            display: inline-flex;
+            color: #9ca3af;
+            transition: transform .15s;
+        }
+
+        .docs-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 3px;
+            overflow-x: auto;
+            padding: 16px 2px 4px;
+        }
+
+        .tile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            background: none;
+            border: none;
+            padding: 5px 0 0;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+
+        .tile:hover .frame {
+            filter: brightness(0.95);
+        }
+
+        .frame {
+            width: 48px;
+            height: 44px;
+            border: 2.5px solid;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .doc-badge {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 9px;
+            line-height: 15px;
+            text-align: center;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px #fff;
+        }
+
+        .tile-label {
+            font-size: 8.5px;
+            line-height: 1.15;
+            color: #374151;
+            text-align: center;
+            font-weight: 600;
+            min-height: 20px;
+            max-width: 50px;
+        }
+
+        /* ── Модальное окно ── */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 380px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, .3);
+        }
+
+        .m-hdr {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 18px 20px 14px;
+        }
+
+        .m-kicker {
+            font-size: 11px;
+            font-weight: 700;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .m-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--brand-blue);
+            margin-top: 3px;
+            line-height: 1.2;
+        }
+
+        .m-x {
+            background: #f1f3f7;
+            border: none;
+            border-radius: 8px;
+            width: 30px;
+            height: 30px;
+            font-size: 17px;
+            color: #6b7280;
+            cursor: pointer;
+            line-height: 1;
+            flex: 0 0 auto;
+        }
+
+        .m-prev {
+            margin: 0 20px;
+            height: 150px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background-image: repeating-linear-gradient(45deg, #eef1f4 0 8px, #f7f9fb 8px 16px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .m-prev span {
+            font-family: ui-monospace, Menlo, monospace;
+            font-size: 11px;
+            color: #94a3b8;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .m-prev img {
+            max-width: 100%;
+            max-height: 148px;
+            object-fit: contain;
+        }
+
+        .m-body {
+            padding: 16px 20px 4px;
+        }
+
+        .m-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f3f7;
+        }
+
+        .m-row:last-child {
+            border-bottom: none;
+            align-items: center;
+        }
+
+        .m-row .k { font-size: 12.5px; color: #6b7280; }
+        .m-row .v { font-size: 12.5px; font-weight: 600; color: #1f2937; text-align: right; }
+
+        .m-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 5px 11px;
+        }
+
+        .m-btn {
+            display: block;
+            margin: 6px 20px 20px;
+            width: calc(100% - 40px);
+            background: var(--brand-blue);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 13.5px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
     </style>
 </head>
 <body>
@@ -395,6 +621,90 @@
         <section class="card">
             <h2 class="welcome-title">Добро пожаловать!</h2>
             <p class="employee-name">{{ user.employee_name }}</p>
+        </section>
+
+        <section class="card" style="padding:14px 18px;">
+            <div class="docs-hdr" id="docs-hdr">
+                <span class="docs-chip">Документы сотрудника</span>
+                <div style="display:flex;align-items:center;gap:12px">
+                    {% if not all_ok and attention_count %}
+                    <span class="docs-attn">Требуется внимание: <b>{{ attention_count }}</b></span>
+                    {% endif %}
+                    <span class="docs-chev" id="docs-chev" style="transform:{% if all_ok %}rotate(0deg){% else %}rotate(90deg){% endif %}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                    </span>
+                </div>
+            </div>
+            <div class="docs-row" id="docs-row" {% if all_ok %}style="display:none"{% endif %}>
+                {% for item in completeness %}
+                {% set s = status_styles[item.status] %}
+                {% if item.source == 'document' and item.document %}
+                    {% set m_doc_id = item.document.id | string %}
+                    {% set m_file_ext = item.file_ext %}
+                    {% set m_number = item.document.document_number or '—' %}
+                    {% set m_issued = item.document.issue_date.strftime('%d.%m.%Y') if item.document.issue_date else '—' %}
+                    {% set m_expires = 'Бессрочно' if item.document.is_permanent else (item.document.expiry_date.strftime('%d.%m.%Y') if item.document.expiry_date else '—') %}
+                {% elif item.source == 'requisite' and item.requisite %}
+                    {% set m_doc_id = '' %}
+                    {% set m_file_ext = '' %}
+                    {% set m_number = item.requisite.account_number or '—' %}
+                    {% set m_issued = item.requisite.bank_name or '—' %}
+                    {% set m_expires = 'Бессрочно' %}
+                {% else %}
+                    {% set m_doc_id = '' %}
+                    {% set m_file_ext = '' %}
+                    {% set m_number = '—' %}
+                    {% set m_issued = '—' %}
+                    {% set m_expires = '—' %}
+                {% endif %}
+                <button class="tile"
+                        data-title="{{ item.title }}"
+                        data-status="{{ item.status }}"
+                        data-status-label="{{ s.label }}"
+                        data-status-color="{{ s.border }}"
+                        data-status-bg="{{ s.bg }}"
+                        data-glyph="{{ s.glyph }}"
+                        data-source="{{ item.source }}"
+                        data-doc-id="{{ m_doc_id }}"
+                        data-file-ext="{{ m_file_ext }}"
+                        data-number="{{ m_number }}"
+                        data-issued="{{ m_issued }}"
+                        data-expires="{{ m_expires }}"
+                        title="{{ item.title }}">
+                    <span class="frame" style="border-color:{{ s.border }};background:{{ s.bg }}">
+                        {% if item.icon_key == 'requisites' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="11" y="17" width="17" height="11" rx="2" fill="#fff" stroke="#3f7d4e" stroke-width="1.6"/><line x1="11" y1="21" x2="28" y2="21" stroke="#3f7d4e" stroke-width="2.4"/><line x1="14" y1="25" x2="19" y2="25" stroke="#3f7d4e" stroke-width="1.4"/><line x1="11" y1="33" x2="30" y2="33" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="38" x2="25" y2="38" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        {% elif item.icon_key == 'lmk' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="20.5" y1="16" x2="20.5" y2="27" stroke="#16a34a" stroke-width="3" stroke-linecap="round"/><line x1="15" y1="21.5" x2="26" y2="21.5" stroke="#16a34a" stroke-width="3" stroke-linecap="round"/><line x1="11" y1="33" x2="30" y2="33" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="38" x2="25" y2="38" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        {% elif item.icon_key == 'passport' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><circle cx="20.5" cy="22" r="5.5" fill="none" stroke="#3f7d4e" stroke-width="1.6"/><circle cx="20.5" cy="22" r="1.6" fill="#3f7d4e"/><line x1="11" y1="33" x2="30" y2="33" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="38" x2="28" y2="38" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        {% elif item.icon_key == 'inn' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="11" y1="17" x2="30" y2="17" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="22" x2="30" y2="22" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="27" x2="24" y2="27" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><circle cx="27" cy="38" r="4.5" fill="none" stroke="#3f7d4e" stroke-width="1.4"/><circle cx="27" cy="38" r="1.5" fill="#3f7d4e"/></svg>
+                        {% elif item.icon_key == 'snils' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="7" y="15" width="27" height="6" fill="#bfe0c6"/><circle cx="20.5" cy="33" r="7" fill="none" stroke="#9bc4a3" stroke-width="1.4"/><circle cx="20.5" cy="33" r="3.4" fill="none" stroke="#9bc4a3" stroke-width="1.2"/><circle cx="20.5" cy="33" r="1.3" fill="#9bc4a3"/></svg>
+                        {% elif item.icon_key == 'registration' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="11" y1="17" x2="30" y2="17" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="22" x2="30" y2="22" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="27" x2="30" y2="27" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="32" x2="22" y2="32" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><rect x="23" y="33" width="9" height="9" fill="none" stroke="#3f7d4e" stroke-width="1.5"/></svg>
+                        {% elif item.icon_key == 'patent' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="11" y="15" width="9" height="11" fill="#eef3ef" stroke="#27433a" stroke-width="1.4"/><line x1="22" y1="17" x2="31" y2="17" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="22" y1="21" x2="31" y2="21" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="22" y1="25" x2="29" y2="25" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="31" x2="30" y2="31" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="36" x2="25" y2="36" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        {% elif item.icon_key == 'fingerprints' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M13 31 Q20.5 17 28 31" fill="none" stroke="#3f7d4e" stroke-width="1.5"/><path d="M15 32 Q20.5 21 26 32" fill="none" stroke="#3f7d4e" stroke-width="1.5"/><path d="M17 33 Q20.5 25 24 33" fill="none" stroke="#3f7d4e" stroke-width="1.5"/><circle cx="20.5" cy="30" r="1.3" fill="#3f7d4e"/><line x1="13" y1="40" x2="28" y2="40" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        {% elif item.icon_key == 'passport_translation' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="11" y1="16" x2="30" y2="16" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="20" x2="22" y2="20" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><text x="11" y="33" font-size="8" fill="#3f7d4e" font-family="sans-serif">A</text><path d="M19 30 H25 M23 28 L25.5 30 L23 32" fill="none" stroke="#3f7d4e" stroke-width="1.3"/><text x="27" y="33" font-size="8" fill="#3f7d4e" font-family="sans-serif">Я</text><circle cx="29" cy="41" r="3.2" fill="none" stroke="#3f7d4e" stroke-width="1.3"/></svg>
+                        {% elif item.icon_key == 'dms' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="10" y="13" width="21" height="29" fill="none" stroke="#9bc4a3" stroke-width="1.3"/><rect x="12.5" y="15.5" width="16" height="24" fill="none" stroke="#cfe3d3" stroke-width="1"/><line x1="15" y1="20" x2="26" y2="20" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="15" y1="24" x2="26" y2="24" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><circle cx="20.5" cy="34" r="4.5" fill="#efe9d8" stroke="#c9bd92" stroke-width="1.2"/></svg>
+                        {% elif item.icon_key == 'migration_card' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="10" y="16" width="21" height="17" fill="none" stroke="#27433a" stroke-width="1.4"/><line x1="20.5" y1="16" x2="20.5" y2="33" stroke="#27433a" stroke-width="1.2"/><line x1="10" y1="24.5" x2="31" y2="24.5" stroke="#27433a" stroke-width="1.2"/><line x1="11" y1="39" x2="28" y2="39" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        {% elif item.icon_key == 'patent_receipts' %}
+                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M13 13 H28 V39 L25.5 37 L23 39 L20.5 37 L18 39 L15.5 37 L13 39 Z" fill="#fff" stroke="#27433a" stroke-width="1.5" stroke-linejoin="round"/><line x1="16" y1="19" x2="25" y2="19" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="23" x2="25" y2="23" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><text x="15" y="33" font-size="8" fill="#27433a" font-family="sans-serif" font-weight="bold">₽</text></svg>
+                        {% else %}
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>
+                        {% endif %}
+                        <span class="doc-badge" style="background:{{ s.border }}">{{ s.glyph }}</span>
+                    </span>
+                    <span class="tile-label">{{ item.title }}</span>
+                </button>
+                {% endfor %}
+            </div>
         </section>
 
         <section id="stats" class="card">
@@ -464,15 +774,102 @@
             {% endif %}
         </section>
 
-        <a class="thin-link" href="/employee_docs">
-            Документы сотрудника
-            <span>
-                Проверить список и сроки действия
-                {% if documents_attention_count %}
-                    · требуется внимание: {{ documents_attention_count }}
-                {% endif %}
-            </span>
-        </a>
     </main>
+
+    <div class="overlay" id="modal">
+        <div class="modal">
+            <div class="m-hdr">
+                <div>
+                    <div class="m-kicker">Документ</div>
+                    <div class="m-title" id="m-title"></div>
+                </div>
+                <button class="m-x" id="m-close">×</button>
+            </div>
+            <div class="m-prev" id="m-prev"><span>превью документа</span></div>
+            <div class="m-body">
+                <div class="m-row"><span class="k">Тип</span><span class="v" id="m-type"></span></div>
+                <div class="m-row"><span class="k">Номер</span><span class="v" id="m-number"></span></div>
+                <div class="m-row"><span class="k">Дата выдачи</span><span class="v" id="m-issued"></span></div>
+                <div class="m-row"><span class="k">Срок действия</span><span class="v" id="m-expires"></span></div>
+                <div class="m-row"><span class="k">Статус</span><span class="m-pill" id="m-pill"></span></div>
+            </div>
+            <button class="m-btn" id="m-btn">Закрыть</button>
+        </div>
+    </div>
+
+    <script>(function(){
+        var ov = document.getElementById('modal');
+        var prevArea = document.getElementById('m-prev');
+
+        function openModal(btn) {
+            var title = btn.getAttribute('data-title');
+            var statusLabel = btn.getAttribute('data-status-label');
+            var statusColor = btn.getAttribute('data-status-color');
+            var statusBg = btn.getAttribute('data-status-bg');
+            var glyph = btn.getAttribute('data-glyph');
+            var number = btn.getAttribute('data-number');
+            var issued = btn.getAttribute('data-issued');
+            var expires = btn.getAttribute('data-expires');
+            var docId = btn.getAttribute('data-doc-id');
+            var fileExt = btn.getAttribute('data-file-ext');
+            var source = btn.getAttribute('data-source');
+
+            document.getElementById('m-title').textContent = title;
+            document.getElementById('m-type').textContent = title;
+            document.getElementById('m-number').textContent = number || '—';
+            document.getElementById('m-issued').textContent = issued || '—';
+            document.getElementById('m-expires').textContent = expires || '—';
+
+            var pill = document.getElementById('m-pill');
+            pill.textContent = glyph + '  ' + statusLabel;
+            pill.style.background = statusBg;
+            pill.style.color = statusColor;
+            pill.style.border = '1px solid ' + statusColor;
+
+            prevArea.innerHTML = '';
+            if (docId && source === 'document') {
+                var previewUrl = '/documents/preview/' + docId;
+                if (fileExt === 'pdf') {
+                    var link = document.createElement('a');
+                    link.href = previewUrl;
+                    link.target = '_blank';
+                    link.textContent = 'Открыть PDF ↗';
+                    link.style.cssText = 'color:#0b1475;font-weight:700;font-size:13px;';
+                    prevArea.appendChild(link);
+                } else {
+                    var img = document.createElement('img');
+                    img.src = previewUrl;
+                    img.onerror = function() { prevArea.innerHTML = '<span>Превью недоступно</span>'; };
+                    prevArea.appendChild(img);
+                }
+            } else if (source === 'requisite' && issued && issued !== '—') {
+                prevArea.innerHTML = '<span>' + issued + '</span>';
+            } else {
+                prevArea.innerHTML = '<span>Документ не загружен</span>';
+            }
+
+            ov.style.display = 'flex';
+        }
+
+        function closeModal() { ov.style.display = 'none'; }
+
+        document.querySelectorAll('.tile').forEach(function(b) {
+            b.addEventListener('click', function() { openModal(b); });
+        });
+        ov.addEventListener('click', function(e) { if (e.target === ov) closeModal(); });
+        document.getElementById('m-close').addEventListener('click', closeModal);
+        document.getElementById('m-btn').addEventListener('click', closeModal);
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+        var hdr = document.getElementById('docs-hdr');
+        var row = document.getElementById('docs-row');
+        var chev = document.getElementById('docs-chev');
+        var exp = row.style.display !== 'none';
+        hdr.addEventListener('click', function() {
+            exp = !exp;
+            row.style.display = exp ? 'flex' : 'none';
+            chev.style.transform = exp ? 'rotate(90deg)' : 'rotate(0deg)';
+        });
+    })();</script>
 </body>
 </html>
