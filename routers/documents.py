@@ -15,8 +15,10 @@ from dependencies import (
 from document_helpers import (
     DocumentDateParseError,
     INVALID_DATE_MESSAGE,
+    MATRIX_COLUMNS,
     STATUS_LABELS,
     active_document_types,
+    batch_employee_completeness,
     build_document_registry_rows,
     computed_document_status,
     document_file_exists,
@@ -27,7 +29,8 @@ from document_helpers import (
     parse_date,
     save_upload_file,
 )
-from models import CitizenshipRegime, Country, DocumentType, DocumentTypeSample, EmployeeDocument, RegimeDocumentRule, User
+from models import CitizenshipRegime, Country, DocumentType, DocumentTypeSample, EmployeeDocument, EmployeeStoreAssignment, RegimeDocumentRule, Store, User
+from store_helpers import extract_tk_number
 from rbac import canonical_role, has_permission, is_superadmin
 from sqlalchemy.orm import Session
 from time_helpers import now_utc
@@ -238,6 +241,7 @@ def _render_documents(
         "documents.html",
         {
             "user": user,
+            "view": "registry",
             "rows": rows,
             "employees": employees,
             "document_types": document_types,
@@ -250,6 +254,70 @@ def _render_documents(
             "back_label": back_label,
             "message": message or None,
             "error": error or None,
+        },
+    )
+
+
+def _render_matrix(request, session, user, *, tk_filter="", name_filter=""):
+    from collections import defaultdict
+    stores = session.query(Store).filter(Store.is_active == True).order_by(Store.tk_number).all()
+    store_by_tk = {s.tk_number: s for s in stores}
+
+    assignments = session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.is_active == True).all()
+    tk_groups: dict = defaultdict(list)
+    for a in assignments:
+        tk = extract_tk_number(a.store)
+        if tk:
+            tk_groups[tk].append(a)
+
+    if tk_filter:
+        try:
+            tk_int = int(tk_filter)
+            tk_groups = {tk_int: list(tk_groups.get(tk_int, []))}
+        except ValueError:
+            tk_groups = {}
+
+    all_names = {normalize_text(a.employee_name) for lst in tk_groups.values() for a in lst}
+    all_uids = {a.user_id for lst in tk_groups.values() for a in lst if a.user_id}
+
+    users_by_name = {normalize_text(u.employee_name): u for u in session.query(User).filter(User.employee_name.in_(all_names)).all()} if all_names else {}
+    users_by_id = {u.id: u for u in session.query(User).filter(User.id.in_(all_uids)).all()} if all_uids else {}
+
+    groups = []
+    for tk in sorted(tk_groups):
+        seen_ids: set = set()
+        employees = []
+        for a in tk_groups[tk]:
+            u = (users_by_id.get(a.user_id) if a.user_id else None) or users_by_name.get(normalize_text(a.employee_name))
+            if not u or u.id in seen_ids:
+                continue
+            if name_filter and name_filter.lower() not in u.employee_name.lower():
+                continue
+            seen_ids.add(u.id)
+            employees.append(u)
+        if employees:
+            groups.append({"tk_number": tk, "store": store_by_tk.get(tk), "employees": employees})
+
+    all_users = [u for g in groups for u in g["employees"]]
+    completeness_map = batch_employee_completeness(session, all_users)
+
+    return templates.TemplateResponse(
+        request,
+        "documents.html",
+        {
+            "user": user,
+            "view": "matrix",
+            "groups": groups,
+            "completeness_map": completeness_map,
+            "matrix_columns": MATRIX_COLUMNS,
+            "stores": stores,
+            "tk_filter": tk_filter,
+            "name_filter": name_filter,
+            "base_path": "/admin/documents",
+            "back_url": "/admin",
+            "back_label": "Назад в админку",
+            "message": None,
+            "error": None,
         },
     )
 
@@ -651,6 +719,9 @@ def hard_delete_document_type(
 @router.get("/admin/documents", response_class=HTMLResponse)
 def admin_documents(
     request: Request,
+    view: str = "registry",
+    tk_filter: str = "",
+    name_filter: str = "",
     employee_name: str = "",
     document_type_id: int = 0,
     status: str = "pending_verification",
@@ -659,6 +730,8 @@ def admin_documents(
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
 ):
+    if view == "matrix":
+        return _render_matrix(request, session, user, tk_filter=tk_filter, name_filter=name_filter)
     return _render_documents(
         request,
         session,
