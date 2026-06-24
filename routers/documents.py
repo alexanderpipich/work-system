@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
@@ -263,12 +264,27 @@ def _render_matrix(request, session, user, *, tk_filter="", name_filter=""):
     stores = session.query(Store).filter(Store.is_active == True).order_by(Store.tk_number).all()
     store_by_tk = {s.tk_number: s for s in stores}
 
+    # All role='employee' users — single query; used for resolving assignments and "Без ТК"
+    all_employees = (
+        session.query(User)
+        .filter(User.role == "employee")
+        .order_by(User.employee_name)
+        .all()
+    )
+    emp_by_id = {u.id: u for u in all_employees}
+    emp_by_name = {normalize_text(u.employee_name): u for u in all_employees}
+
     assignments = session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.is_active == True).all()
     tk_groups: dict = defaultdict(list)
+    assigned_user_ids: set = set()
     for a in assignments:
         tk = extract_tk_number(a.store)
-        if tk:
-            tk_groups[tk].append(a)
+        if not tk:
+            continue
+        u = (emp_by_id.get(a.user_id) if a.user_id else None) or emp_by_name.get(normalize_text(a.employee_name))
+        if u:
+            tk_groups[tk].append(u)
+            assigned_user_ids.add(u.id)
 
     if tk_filter:
         try:
@@ -277,19 +293,12 @@ def _render_matrix(request, session, user, *, tk_filter="", name_filter=""):
         except ValueError:
             tk_groups = {}
 
-    all_names = {normalize_text(a.employee_name) for lst in tk_groups.values() for a in lst}
-    all_uids = {a.user_id for lst in tk_groups.values() for a in lst if a.user_id}
-
-    users_by_name = {normalize_text(u.employee_name): u for u in session.query(User).filter(User.employee_name.in_(all_names)).all()} if all_names else {}
-    users_by_id = {u.id: u for u in session.query(User).filter(User.id.in_(all_uids)).all()} if all_uids else {}
-
     groups = []
     for tk in sorted(tk_groups):
         seen_ids: set = set()
         employees = []
-        for a in tk_groups[tk]:
-            u = (users_by_id.get(a.user_id) if a.user_id else None) or users_by_name.get(normalize_text(a.employee_name))
-            if not u or u.id in seen_ids:
+        for u in tk_groups[tk]:
+            if u.id in seen_ids:
                 continue
             if name_filter and name_filter.lower() not in u.employee_name.lower():
                 continue
@@ -297,6 +306,16 @@ def _render_matrix(request, session, user, *, tk_filter="", name_filter=""):
             employees.append(u)
         if employees:
             groups.append({"tk_number": tk, "store": store_by_tk.get(tk), "employees": employees})
+
+    # Employees with no active assignment → "Без ТК" group at the end (only when no tk_filter)
+    if not tk_filter:
+        no_tk = [
+            u for u in all_employees
+            if u.id not in assigned_user_ids
+            and (not name_filter or name_filter.lower() in u.employee_name.lower())
+        ]
+        if no_tk:
+            groups.append({"tk_number": None, "store": None, "employees": no_tk})
 
     all_users = [u for g in groups for u in g["employees"]]
     completeness_map = batch_employee_completeness(session, all_users)

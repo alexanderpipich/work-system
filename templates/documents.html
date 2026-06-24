@@ -83,7 +83,7 @@
         .matrix-table th.name-col { text-align: left; min-width: 160px; }
         .matrix-table td { padding: 6px 4px; border-bottom: 1px solid var(--border); text-align: center; vertical-align: middle; }
         .matrix-table td.name-col { text-align: left; padding-left: 10px; font-weight: 600; }
-        .matrix-table td.role-col { color: var(--muted); font-size: 12px; text-align: left; }
+
         .mcell { display: inline-block; width: 32px; height: 32px; border-radius: 6px; line-height: 32px; font-size: 10px; font-weight: 700; }
         .mcell.ok { background: #dcfce7; color: #166534; }
         .mcell.expiring_soon { background: #ffedd5; color: #9a3412; }
@@ -143,14 +143,17 @@
 
     {% for group in groups %}
     <section class="card matrix-group">
+        {% if group.tk_number %}
         <h3>ТК {{ group.tk_number }}{% if group.store and group.store.display_name %} — {{ group.store.display_name }}{% endif %}</h3>
         {% if group.store and group.store.object_address %}<div class="address">{{ group.store.object_address }}</div>{% endif %}
+        {% else %}
+        <h3>Без ТК <span style="font-size:13px;font-weight:400;color:var(--muted)">({{ group.employees|length }})</span></h3>
+        {% endif %}
         <div class="table-wrap">
         <table class="matrix-table">
             <thead>
                 <tr>
                     <th class="name-col">ФИО</th>
-                    <th class="name-col">Должность</th>
                     {% for icon_key, title in matrix_columns %}
                     <th title="{{ title }}">{{ title }}</th>
                     {% endfor %}
@@ -161,7 +164,6 @@
             {% set row = completeness_map.get(emp.id, {}) %}
             <tr>
                 <td class="name-col">{{ emp.employee_name }}</td>
-                <td class="role-col">{{ emp.role }}</td>
                 {% for icon_key, title in matrix_columns %}
                 {% set item = row.get(icon_key) %}
                 <td title="{{ title }}: {{ item.status if item else 'н/д' }}">
@@ -179,7 +181,7 @@
         </div>
     </section>
     {% else %}
-    <div class="card"><p class="muted">По выбранному фильтру нет сотрудников с назначением в магазины.</p></div>
+    <div class="card"><p class="muted">По выбранному фильтру сотрудников не найдено.</p></div>
     {% endfor %}
 
 {% else %}
