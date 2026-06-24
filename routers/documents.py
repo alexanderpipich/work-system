@@ -821,7 +821,7 @@ async def upload_employee_document_by_manager(
     extra_field_1_value: str = Form(default=""),
     extra_field_2_value: str = Form(default=""),
     comment: str = Form(default=""),
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(default=None),
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
 ):

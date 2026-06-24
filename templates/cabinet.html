@@ -639,20 +639,23 @@
                 {% for item in completeness %}
                 {% set s = status_styles[item.status] %}
                 {% if item.source == 'document' and item.document %}
-                    {% set m_doc_id = item.document.id | string %}
+                    {% set m_doc_id = item.document.id | string if item.document.file_path else '' %}
                     {% set m_file_ext = item.file_ext %}
+                    {% set m_has_manual = '1' if not item.document.file_path else '' %}
                     {% set m_number = item.document.document_number or '—' %}
                     {% set m_issued = item.document.issue_date.strftime('%d.%m.%Y') if item.document.issue_date else '—' %}
                     {% set m_expires = 'Бессрочно' if item.document.is_permanent else (item.document.expiry_date.strftime('%d.%m.%Y') if item.document.expiry_date else '—') %}
                 {% elif item.source == 'requisite' and item.requisite %}
                     {% set m_doc_id = '' %}
                     {% set m_file_ext = '' %}
+                    {% set m_has_manual = '' %}
                     {% set m_number = item.requisite.account_number or '—' %}
                     {% set m_issued = item.requisite.bank_name or '—' %}
                     {% set m_expires = 'Бессрочно' %}
                 {% else %}
                     {% set m_doc_id = '' %}
                     {% set m_file_ext = '' %}
+                    {% set m_has_manual = '' %}
                     {% set m_number = '—' %}
                     {% set m_issued = '—' %}
                     {% set m_expires = '—' %}
@@ -667,6 +670,7 @@
                         data-source="{{ item.source }}"
                         data-doc-id="{{ m_doc_id }}"
                         data-file-ext="{{ m_file_ext }}"
+                        data-has-manual="{{ m_has_manual }}"
                         data-number="{{ m_number }}"
                         data-issued="{{ m_issued }}"
                         data-expires="{{ m_expires }}"
@@ -812,6 +816,7 @@
             var expires = btn.getAttribute('data-expires');
             var docId = btn.getAttribute('data-doc-id');
             var fileExt = btn.getAttribute('data-file-ext');
+            var hasManual = btn.getAttribute('data-has-manual') === '1';
             var source = btn.getAttribute('data-source');
 
             document.getElementById('m-title').textContent = title;
@@ -842,6 +847,8 @@
                     img.onerror = function() { prevArea.innerHTML = '<span>Превью недоступно</span>'; };
                     prevArea.appendChild(img);
                 }
+            } else if (hasManual) {
+                prevArea.innerHTML = '<span>Файл не загружен, данные внесены вручную</span>';
             } else if (source === 'requisite' && issued && issued !== '—') {
                 prevArea.innerHTML = '<span>' + issued + '</span>';
             } else {
