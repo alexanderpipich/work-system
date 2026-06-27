@@ -432,7 +432,7 @@ def update_user(
         )
     session.commit()
 
-    return RedirectResponse(url="/admin/users", status_code=302)
+    return RedirectResponse(url=f"/admin/users#user-{user_id}", status_code=302)
 
 
 @router.post("/admin/delete-user", response_class=HTMLResponse)
