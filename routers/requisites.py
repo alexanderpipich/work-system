@@ -290,7 +290,13 @@ def upload_requisites(
         df.columns = [str(c).strip() for c in df.columns]
 
         created = 0
+        updated = 0
         bad = 0
+        unmatched_users = []
+        changes_report = []
+
+        truthy = ["да", "yes", "true", "1", "on"]
+        falsy = ["нет", "no", "false", "0", "off"]
 
         column_aliases = {
             "employee_name": ["employee_name", "ФИО", "фио"],
@@ -322,35 +328,132 @@ def upload_requisites(
                 continue
 
             user = session.query(User).filter(User.employee_name == name).first()
+            if not user:
+                unmatched_users.append(name)
 
-            third_party_value = get_value(row, "is_third_party").lower()
-            is_third_party = third_party_value in ["да", "yes", "true", "1", "on"]
+            inn = get_value(row, "inn")
+            account_number = get_value(row, "account_number")
+            bik = get_value(row, "bik")
+            bank_name = get_value(row, "bank_name")
+            citizenship = get_value(row, "citizenship")
+            recipient_name = get_value(row, "recipient_name")
+            comment = get_value(row, "comment")
 
-            active_value = get_value(row, "is_active").lower()
-            verified_value = get_value(row, "is_verified").lower()
+            third_party_raw = get_value(row, "is_third_party").lower()
+            active_raw = get_value(row, "is_active").lower()
+            verified_raw = get_value(row, "is_verified").lower()
 
-            is_active = True
-            if active_value in ["нет", "no", "false", "0", "off"]:
-                is_active = False
+            # Поиск существующего активного реквизита: по user_id, иначе по ФИО.
+            existing = None
+            if user:
+                existing = session.query(Requisite).filter(
+                    Requisite.user_id == user.id,
+                    Requisite.is_active == True,
+                ).first()
+            if existing is None:
+                existing = session.query(Requisite).filter(
+                    Requisite.employee_name == name,
+                    Requisite.is_active == True,
+                ).first()
 
-            is_verified = verified_value in ["да", "yes", "true", "1", "on"]
+            if existing is not None:
+                # Обновление: непустые ячейки обновляют, пустые не затирают.
+                old_value = _requisite_payload(existing)
+                was_verified = existing.is_verified
+                row_changes = []
+
+                if user and existing.user_id != user.id:
+                    existing.user_id = user.id
+                    row_changes.append("привязка к пользователю")
+
+                for field, value in (
+                    ("inn", inn),
+                    ("account_number", account_number),
+                    ("bik", bik),
+                    ("bank_name", bank_name),
+                    ("citizenship", citizenship),
+                    ("recipient_name", recipient_name or None),
+                    ("comment", comment or None),
+                ):
+                    if value and getattr(existing, field) != value:
+                        row_changes.append(field)
+                        setattr(existing, field, value)
+
+                if third_party_raw:
+                    new_tp = third_party_raw in truthy
+                    if existing.is_third_party != new_tp:
+                        existing.is_third_party = new_tp
+                        row_changes.append("3-е лицо")
+
+                if active_raw:
+                    new_active = active_raw not in falsy
+                    if existing.is_active != new_active:
+                        existing.is_active = new_active
+                        row_changes.append("активность")
+
+                if verified_raw:
+                    new_verified = verified_raw in truthy
+                    if existing.is_verified != new_verified:
+                        existing.is_verified = new_verified
+                        row_changes.append("проверено")
+
+                if existing.is_verified and not was_verified:
+                    existing.verified_at = now_utc()
+                if not existing.is_verified:
+                    existing.verified_at = None
+
+                if row_changes:
+                    existing.updated_at = now_utc()
+                    create_audit_log(
+                        session,
+                        request,
+                        current,
+                        "requisite_updated",
+                        "requisite",
+                        existing.id,
+                        existing.employee_name,
+                        old_value=old_value,
+                        new_value=_requisite_payload(existing),
+                        comment="updated from Excel",
+                    )
+                    if existing.is_verified and not was_verified:
+                        create_audit_log(
+                            session,
+                            request,
+                            current,
+                            "requisite_verified",
+                            "requisite",
+                            existing.id,
+                            existing.employee_name,
+                            old_value={"is_verified": was_verified},
+                            new_value={"is_verified": True, "verified_at": existing.verified_at},
+                            comment="updated from Excel",
+                        )
+                    updated += 1
+                    changes_report.append({"name": name, "changes": "; ".join(row_changes)})
+                continue
+
+            # Создание нового реквизита.
+            is_third_party = third_party_raw in truthy
+            is_active = active_raw not in falsy
+            is_verified = verified_raw in truthy
 
             req = Requisite(
                 user_id=user.id if user else None,
                 employee_name=name,
-                inn=get_value(row, "inn"),
-                account_number=get_value(row, "account_number"),
-                bik=get_value(row, "bik"),
-                bank_name=get_value(row, "bank_name"),
-                citizenship=get_value(row, "citizenship"),
+                inn=inn,
+                account_number=account_number,
+                bik=bik,
+                bank_name=bank_name,
+                citizenship=citizenship,
                 is_third_party=is_third_party,
-                recipient_name=get_value(row, "recipient_name") or None,
+                recipient_name=recipient_name or None,
                 is_active=is_active,
                 is_verified=is_verified,
                 created_at=now_utc(),
                 updated_at=now_utc(),
                 verified_at=now_utc() if is_verified else None,
-                comment=get_value(row, "comment") or None
+                comment=comment or None
             )
 
             session.add(req)
@@ -389,7 +492,9 @@ def upload_requisites(
             "requisites.html",
             {
                 "requisites": requisites,
-                "message": f"Импорт завершён. Создано: {created}. Некорректных строк: {bad}.",
+                "message": f"Импорт завершён. Создано: {created}, обновлено: {updated}. Некорректных строк: {bad}.",
+                "changes_report": changes_report,
+                "unmatched_users": unmatched_users,
                 "error": None
             }
         )
