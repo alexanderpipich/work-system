@@ -217,66 +217,149 @@ async def upload_users_submit(
                 "error": f"В файле нет обязательных колонок: {', '.join(missing)}",
                 "message": None,
                 "created": None,
+                "updated": None,
                 "skipped": None,
                 "bad_rows": None,
                 "linked": None,
                 "unmatched": None,
+                "changes_report": None,
             }
         )
 
     countries = session.query(Country).filter(Country.is_active == True).all()
     country_by_name = {normalize_text(c.name).casefold(): c.id for c in countries}
 
+    def cell_text(value):
+        if value is None or pd.isna(value):
+            return ""
+        return normalize_text(value)
+
+    def cell_password(value):
+        if value is None or pd.isna(value):
+            return ""
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+        return str(value).strip()
+
+    def cell_role(value):
+        text = cell_text(value)
+        return normalize_role(text) if text else None
+
     created = 0
+    updated = 0
     skipped = 0
     bad = 0
     linked = 0
     unmatched = []
+    changes_report = []
 
     for _, row in df.iterrows():
         try:
-            phone_raw = row["phone"]
-            name_raw = row["employee_name"]
-            password_raw = row["password"]
-            citizenship_raw = row["citizenship_country"]
-
-            if pd.isna(phone_raw) or pd.isna(name_raw) or pd.isna(password_raw) or pd.isna(citizenship_raw):
+            phone_raw = row.get("phone")
+            phone_clean = "" if (phone_raw is None or pd.isna(phone_raw)) else normalize_phone(phone_raw)
+            if not phone_clean:
                 bad += 1
                 continue
 
-            phone_clean = normalize_phone(phone_raw)
-            name_clean = normalize_text(name_raw)
-            citizenship_clean = normalize_text(citizenship_raw)
-            matched_country_id = country_by_name.get(citizenship_clean.casefold())
+            name_clean = cell_text(row.get("employee_name"))
+            citizenship_clean = cell_text(row.get("citizenship_country"))
+            matched_country_id = (
+                country_by_name.get(citizenship_clean.casefold()) if citizenship_clean else None
+            )
+            password_clean = cell_password(row.get("password"))
+            role_clean = cell_role(row.get("role"))
+            brigadier_clean = cell_text(row.get("brigadier_store"))
+            economist_clean = cell_text(row.get("economist_stores"))
+            legal_clean = cell_text(row.get("legal_entity"))
 
-            if isinstance(password_raw, float) and password_raw.is_integer():
-                password_clean = str(int(password_raw))
-            else:
-                password_clean = str(password_raw).strip()
+            existing = session.query(User).filter(User.phone == phone_clean).first()
 
-            if not phone_clean or not name_clean or not password_clean or not citizenship_clean:
+            if existing:
+                # Обновление существующего: непустые ячейки обновляют, пустые не затирают.
+                old_value = _user_payload(existing)
+                row_changes = []
+
+                if name_clean and name_clean != existing.employee_name:
+                    row_changes.append(f"ФИО {existing.employee_name}→{name_clean}")
+                    existing.employee_name = name_clean
+
+                if role_clean and role_clean != existing.role:
+                    row_changes.append(f"роль {existing.role}→{role_clean}")
+                    existing.role = role_clean
+                    existing.is_admin = role_clean in {"admin", "superadmin"}
+
+                if brigadier_clean and brigadier_clean != (existing.brigadier_store or ""):
+                    row_changes.append(f"магазин бригадира →{brigadier_clean}")
+                    existing.brigadier_store = brigadier_clean
+
+                if economist_clean:
+                    scope_value = _default_city_scope(session, existing.role, economist_clean)
+                    city_values = sync_access_scopes(session, request, admin, existing, "city", scope_value)
+                    new_scope = ", ".join(city_values) or None
+                    if new_scope != existing.economist_stores:
+                        row_changes.append("доступ к городам обновлён")
+                        existing.economist_stores = new_scope
+
+                if citizenship_clean and citizenship_clean != (existing.citizenship_country or ""):
+                    row_changes.append(f"гражданство {existing.citizenship_country or '—'}→{citizenship_clean}")
+                    existing.citizenship_country = citizenship_clean
+
+                # До-привязка к справочнику даже если строка уже была.
+                if matched_country_id and existing.citizenship_country_id != matched_country_id:
+                    row_changes.append("привязано к справочнику гражданств")
+                    existing.citizenship_country_id = matched_country_id
+
+                if legal_clean and legal_clean != (existing.legal_entity or ""):
+                    row_changes.append(f"юрлицо →{legal_clean}")
+                    existing.legal_entity = legal_clean
+
+                # Пароль — только если в таблице явно указан непустой.
+                if password_clean:
+                    existing.password_hash = get_password_hash(password_clean)
+                    row_changes.append("пароль обновлён")
+
+                if row_changes:
+                    create_audit_log(
+                        session,
+                        request,
+                        admin,
+                        "user_updated",
+                        "user",
+                        existing.id,
+                        existing.employee_name,
+                        old_value=old_value,
+                        new_value=_user_payload(existing),
+                        comment="updated from Excel",
+                    )
+                    session.commit()
+                    updated += 1
+                    changes_report.append(
+                        {"name": existing.employee_name, "changes": "; ".join(row_changes)}
+                    )
+                else:
+                    session.rollback()
+                    skipped += 1
+                continue
+
+            # Создание нового — нужны ФИО, пароль и гражданство.
+            if not name_clean or not password_clean or not citizenship_clean:
                 bad += 1
                 continue
 
-            if session.query(User).filter(User.phone == phone_clean).first():
-                skipped += 1
-                continue
-
-            role_raw = row.get("role", "employee")
-            role_clean = normalize_role(role_raw)
-            uploaded_scope = _default_city_scope(session, role_clean, row.get("economist_stores", ""))
+            create_role = role_clean or "employee"
+            uploaded_scope = _default_city_scope(session, create_role, economist_clean)
 
             user = User(
                 phone=phone_clean,
                 password_hash=get_password_hash(password_clean),
                 employee_name=name_clean,
-                is_admin=(role_clean in {"admin", "superadmin"}),
-                role=role_clean,
-                brigadier_store=normalize_text(row.get("brigadier_store", "")) or None,
+                is_admin=(create_role in {"admin", "superadmin"}),
+                role=create_role,
+                brigadier_store=brigadier_clean or None,
                 economist_stores=uploaded_scope or None,
                 citizenship_country=citizenship_clean,
                 citizenship_country_id=matched_country_id,
-                legal_entity=normalize_text(row.get("legal_entity", "")) or None,
+                legal_entity=legal_clean or None,
             )
 
             session.add(user)
@@ -315,10 +398,12 @@ async def upload_users_submit(
         {
             "message": "Готово",
             "created": created,
+            "updated": updated,
             "skipped": skipped,
             "bad_rows": bad,
             "linked": linked,
             "unmatched": unmatched,
+            "changes_report": changes_report,
             "error": None,
         }
     )
