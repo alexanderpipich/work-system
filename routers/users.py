@@ -10,7 +10,7 @@ from access_scope_helpers import active_scope_values, sync_access_scopes
 from dependencies import get_db
 from rbac import require_permission
 from legal_entity_helpers import active_legal_entities
-from models import Shift, User
+from models import Country, Shift, User
 from utils import (
     get_password_hash,
     normalize_phone,
@@ -33,7 +33,8 @@ def _user_payload(user):
         "role": user.role,
         "brigadier_store": user.brigadier_store,
         "economist_stores": user.economist_stores,
-        "citizenship_country": user.citizenship_country,
+        "citizenship_country_id": getattr(user, "citizenship_country_id", None),
+        "is_student": getattr(user, "is_student", False),
         "legal_entity": user.legal_entity,
     }
 
@@ -48,12 +49,14 @@ def _default_city_scope(session, role, raw_scope):
 def render_users(request: Request, session, message=None, error=None, filters=None):
     users = session.query(User).order_by(User.employee_name.asc()).all()
     legal_entities = active_legal_entities(session)
+    countries = session.query(Country).filter(Country.is_active == True).order_by(Country.name).all()
     return templates.TemplateResponse(
         request,
         "admin_users.html",
         {
             "users": users,
             "legal_entities": legal_entities,
+            "countries": countries,
             "message": message,
             "error": error,
             "filters": filters or {},
@@ -75,6 +78,7 @@ def create_user_page(
             "message": None,
             "error": None,
             "legal_entities": active_legal_entities(session),
+            "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
         }
     )
 
@@ -89,7 +93,8 @@ def create_user_submit(
     brigadier_store: str = Form(default=""),
     economist_stores: str = Form(default=""),
     scope_cities: str = Form(default=""),
-    citizenship_country: str = Form(...),
+    citizenship_country_id: int = Form(0),
+    is_student: str = Form(""),
     legal_entity: str = Form(default=""),
     session: Session = Depends(get_db),
     admin=Depends(require_user_management),
@@ -99,16 +104,16 @@ def create_user_submit(
     employee_name_clean = normalize_text(employee_name)
     role_clean = normalize_role(role)
     scope_value = _default_city_scope(session, role_clean, scope_cities or economist_stores)
-    citizenship_country_clean = normalize_text(citizenship_country)
 
-    if not citizenship_country_clean:
+    if not citizenship_country_id:
         return templates.TemplateResponse(
             request,
             "create_user.html",
             {
-                "error": "Гражданство обязательно",
+                "error": "Выберите страну гражданства",
                 "message": None,
                 "legal_entities": active_legal_entities(session),
+                "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
             },
             status_code=400,
         )
@@ -121,6 +126,7 @@ def create_user_submit(
                 "error": "Пользователь уже существует",
                 "message": None,
                 "legal_entities": active_legal_entities(session),
+                "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
             }
         )
 
@@ -132,7 +138,8 @@ def create_user_submit(
         role=role_clean,
         brigadier_store=normalize_text(brigadier_store) or None,
         economist_stores=scope_value or None,
-        citizenship_country=citizenship_country_clean,
+        citizenship_country_id=citizenship_country_id,
+        is_student=bool(is_student),
         legal_entity=normalize_text(legal_entity) or None,
     )
 
@@ -158,6 +165,7 @@ def create_user_submit(
             "message": "Пользователь создан",
             "error": None,
             "legal_entities": active_legal_entities(session),
+            "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
         }
     )
 
@@ -209,57 +217,149 @@ async def upload_users_submit(
                 "error": f"В файле нет обязательных колонок: {', '.join(missing)}",
                 "message": None,
                 "created": None,
+                "updated": None,
                 "skipped": None,
-                "bad_rows": None
+                "bad_rows": None,
+                "linked": None,
+                "unmatched": None,
+                "changes_report": None,
             }
         )
 
+    countries = session.query(Country).filter(Country.is_active == True).all()
+    country_by_name = {normalize_text(c.name).casefold(): c.id for c in countries}
+
+    def cell_text(value):
+        if value is None or pd.isna(value):
+            return ""
+        return normalize_text(value)
+
+    def cell_password(value):
+        if value is None or pd.isna(value):
+            return ""
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+        return str(value).strip()
+
+    def cell_role(value):
+        text = cell_text(value)
+        return normalize_role(text) if text else None
+
     created = 0
+    updated = 0
     skipped = 0
     bad = 0
+    linked = 0
+    unmatched = []
+    changes_report = []
 
     for _, row in df.iterrows():
         try:
-            phone_raw = row["phone"]
-            name_raw = row["employee_name"]
-            password_raw = row["password"]
-            citizenship_raw = row["citizenship_country"]
-
-            if pd.isna(phone_raw) or pd.isna(name_raw) or pd.isna(password_raw) or pd.isna(citizenship_raw):
+            phone_raw = row.get("phone")
+            phone_clean = "" if (phone_raw is None or pd.isna(phone_raw)) else normalize_phone(phone_raw)
+            if not phone_clean:
                 bad += 1
                 continue
 
-            phone_clean = normalize_phone(phone_raw)
-            name_clean = normalize_text(name_raw)
-            citizenship_clean = normalize_text(citizenship_raw)
+            name_clean = cell_text(row.get("employee_name"))
+            citizenship_clean = cell_text(row.get("citizenship_country"))
+            matched_country_id = (
+                country_by_name.get(citizenship_clean.casefold()) if citizenship_clean else None
+            )
+            password_clean = cell_password(row.get("password"))
+            role_clean = cell_role(row.get("role"))
+            brigadier_clean = cell_text(row.get("brigadier_store"))
+            economist_clean = cell_text(row.get("economist_stores"))
+            legal_clean = cell_text(row.get("legal_entity"))
 
-            if isinstance(password_raw, float) and password_raw.is_integer():
-                password_clean = str(int(password_raw))
-            else:
-                password_clean = str(password_raw).strip()
+            existing = session.query(User).filter(User.phone == phone_clean).first()
 
-            if not phone_clean or not name_clean or not password_clean or not citizenship_clean:
+            if existing:
+                # Обновление существующего: непустые ячейки обновляют, пустые не затирают.
+                old_value = _user_payload(existing)
+                row_changes = []
+
+                if name_clean and name_clean != existing.employee_name:
+                    row_changes.append(f"ФИО {existing.employee_name}→{name_clean}")
+                    existing.employee_name = name_clean
+
+                if role_clean and role_clean != existing.role:
+                    row_changes.append(f"роль {existing.role}→{role_clean}")
+                    existing.role = role_clean
+                    existing.is_admin = role_clean in {"admin", "superadmin"}
+
+                if brigadier_clean and brigadier_clean != (existing.brigadier_store or ""):
+                    row_changes.append(f"магазин бригадира →{brigadier_clean}")
+                    existing.brigadier_store = brigadier_clean
+
+                if economist_clean:
+                    scope_value = _default_city_scope(session, existing.role, economist_clean)
+                    city_values = sync_access_scopes(session, request, admin, existing, "city", scope_value)
+                    new_scope = ", ".join(city_values) or None
+                    if new_scope != existing.economist_stores:
+                        row_changes.append("доступ к городам обновлён")
+                        existing.economist_stores = new_scope
+
+                if citizenship_clean and citizenship_clean != (existing.citizenship_country or ""):
+                    row_changes.append(f"гражданство {existing.citizenship_country or '—'}→{citizenship_clean}")
+                    existing.citizenship_country = citizenship_clean
+
+                # До-привязка к справочнику даже если строка уже была.
+                if matched_country_id and existing.citizenship_country_id != matched_country_id:
+                    row_changes.append("привязано к справочнику гражданств")
+                    existing.citizenship_country_id = matched_country_id
+
+                if legal_clean and legal_clean != (existing.legal_entity or ""):
+                    row_changes.append(f"юрлицо →{legal_clean}")
+                    existing.legal_entity = legal_clean
+
+                # Пароль — только если в таблице явно указан непустой.
+                if password_clean:
+                    existing.password_hash = get_password_hash(password_clean)
+                    row_changes.append("пароль обновлён")
+
+                if row_changes:
+                    create_audit_log(
+                        session,
+                        request,
+                        admin,
+                        "user_updated",
+                        "user",
+                        existing.id,
+                        existing.employee_name,
+                        old_value=old_value,
+                        new_value=_user_payload(existing),
+                        comment="updated from Excel",
+                    )
+                    session.commit()
+                    updated += 1
+                    changes_report.append(
+                        {"name": existing.employee_name, "changes": "; ".join(row_changes)}
+                    )
+                else:
+                    session.rollback()
+                    skipped += 1
+                continue
+
+            # Создание нового — нужны ФИО, пароль и гражданство.
+            if not name_clean or not password_clean or not citizenship_clean:
                 bad += 1
                 continue
 
-            if session.query(User).filter(User.phone == phone_clean).first():
-                skipped += 1
-                continue
-
-            role_raw = row.get("role", "employee")
-            role_clean = normalize_role(role_raw)
-            uploaded_scope = _default_city_scope(session, role_clean, row.get("economist_stores", ""))
+            create_role = role_clean or "employee"
+            uploaded_scope = _default_city_scope(session, create_role, economist_clean)
 
             user = User(
                 phone=phone_clean,
                 password_hash=get_password_hash(password_clean),
                 employee_name=name_clean,
-                is_admin=(role_clean in {"admin", "superadmin"}),
-                role=role_clean,
-                brigadier_store=normalize_text(row.get("brigadier_store", "")) or None,
+                is_admin=(create_role in {"admin", "superadmin"}),
+                role=create_role,
+                brigadier_store=brigadier_clean or None,
                 economist_stores=uploaded_scope or None,
                 citizenship_country=citizenship_clean,
-                legal_entity=normalize_text(row.get("legal_entity", "")) or None,
+                citizenship_country_id=matched_country_id,
+                legal_entity=legal_clean or None,
             )
 
             session.add(user)
@@ -280,6 +380,10 @@ async def upload_users_submit(
                 )
                 session.commit()
                 created += 1
+                if matched_country_id:
+                    linked += 1
+                else:
+                    unmatched.append({"name": name_clean, "citizenship": citizenship_clean})
             except IntegrityError:
                 session.rollback()
                 skipped += 1
@@ -294,9 +398,13 @@ async def upload_users_submit(
         {
             "message": "Готово",
             "created": created,
+            "updated": updated,
             "skipped": skipped,
             "bad_rows": bad,
-            "error": None
+            "linked": linked,
+            "unmatched": unmatched,
+            "changes_report": changes_report,
+            "error": None,
         }
     )
 
@@ -337,6 +445,7 @@ def admin_users(
         {
             "users": users,
             "legal_entities": active_legal_entities(session),
+            "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
             "message": None,
             "error": None,
             "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users},
@@ -358,7 +467,8 @@ def update_user(
     brigadier_store: str = Form(default=""),
     economist_stores: str = Form(default=""),
     scope_cities: str = Form(default=""),
-    citizenship_country: str = Form(default=""),
+    citizenship_country_id: int = Form(0),
+    is_student: str = Form(""),
     legal_entity: str = Form(default=""),
     session: Session = Depends(get_db),
     admin=Depends(require_user_management),
@@ -378,7 +488,8 @@ def update_user(
     user.brigadier_store = normalize_text(brigadier_store) or None
     city_values = sync_access_scopes(session, request, admin, user, "city", scope_value)
     user.economist_stores = ", ".join(city_values) or None
-    user.citizenship_country = normalize_text(citizenship_country) or None
+    user.citizenship_country_id = citizenship_country_id or None
+    user.is_student = bool(is_student)
     user.legal_entity = normalize_text(legal_entity) or None
 
     create_audit_log(
@@ -406,7 +517,7 @@ def update_user(
         )
     session.commit()
 
-    return RedirectResponse(url="/admin/users", status_code=302)
+    return RedirectResponse(url=f"/admin/users#user-{user_id}", status_code=302)
 
 
 @router.post("/admin/delete-user", response_class=HTMLResponse)

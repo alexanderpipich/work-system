@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="icon" href="/static/favicon.ico?v=2">
+    <title>{{ 'Редактировать страну' if country else 'Добавить страну' }}</title>
+    <style>
+        :root { --brand-blue:#0b1475; --brand-peach:#f58a65; --bg:#f4f5f7; --card-bg:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --shadow:0 16px 40px rgba(11,20,117,.08); }
+        *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:28px 18px 36px}
+        .page{max-width:600px;margin:0 auto}
+        .topbar,.card{background:var(--card-bg);border-radius:22px;box-shadow:var(--shadow);padding:20px;margin-bottom:20px}
+        .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px}
+        .brand{display:flex;align-items:center;gap:14px}
+        .brand img{width:64px;height:64px;object-fit:contain;border-radius:16px}
+        h1,h2{color:var(--brand-blue);margin-top:0}
+        .toolbar{display:flex;gap:10px}
+        .btn{display:inline-flex;align-items:center;height:42px;padding:0 18px;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;border:none}
+        .btn-primary{background:linear-gradient(135deg,var(--brand-blue),#18239a);color:#fff}
+        .btn-light{background:#fff;color:var(--brand-blue);border:1px solid rgba(11,20,117,.15)}
+        .field{margin-bottom:16px}
+        .field label{display:block;font-size:13px;font-weight:700;color:var(--brand-blue);margin-bottom:6px}
+        .field input[type=text],.field select{width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:14px;font-family:inherit;background:#fff}
+        .error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:14px}
+        .toggle-row{display:flex;align-items:center;gap:10px}
+        .toggle-row label{font-weight:700;color:var(--brand-blue);font-size:13px}
+        .hint{font-size:12px;color:var(--muted);margin-top:4px}
+    </style>
+</head>
+<body><div class="page">
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div><h1>{{ 'Редактировать страну' if country else 'Добавить страну' }}</h1></div>
+        </div>
+        <div class="toolbar">
+            <a href="/admin/citizenship/countries" class="btn btn-light">← Назад</a>
+        </div>
+    </div>
+
+    <div class="card">
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+        <form method="post" action="{{ '/admin/citizenship/countries/' + country.id|string + '/edit' if country else '/admin/citizenship/countries/add' }}">
+
+            <div class="field">
+                <label>Название страны *</label>
+                <input type="text" name="name" value="{{ country.name if country else '' }}" placeholder="Таджикистан">
+                <div class="hint">Используйте привычное написание — оно будет отображаться в карточке сотрудника</div>
+            </div>
+
+            <div class="field">
+                <label>Правовой режим *</label>
+                <select name="regime_id">
+                    <option value="0">— выберите режим —</option>
+                    {% for r in regimes %}
+                    <option value="{{ r.id }}" {{ 'selected' if country and country.regime_id == r.id }}>{{ r.name }}</option>
+                    {% endfor %}
+                </select>
+                {% if not regimes %}
+                <div class="hint" style="color:#991b1b">Нет активных режимов — сначала создайте режим в <a href="/admin/citizenship/regimes">Правовых режимах</a></div>
+                {% endif %}
+            </div>
+
+            <div class="field">
+                <div class="toggle-row">
+                    <input type="checkbox" name="is_active" value="1" id="is_active" {{ 'checked' if (not country or country.is_active) }}>
+                    <label for="is_active">Страна активна</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">{{ 'Сохранить' if country else 'Добавить страну' }}</button>
+        </form>
+    </div>
+</div></body></html>

@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from audit_helpers import ensure_audit_log_table
+from citizenship_schema import ensure_citizenship_columns
 from database import Base, engine
 from dependencies import RedirectException, redirect_exception_response
 from document_helpers import ensure_document_tables
@@ -16,6 +17,7 @@ from payroll_run_helpers import ensure_payroll_run_closing_columns
 from requisite_schema import ensure_requisite_profile_columns
 from shift_schema import ensure_shift_request_type_unique_key
 from user_schema import ensure_user_profile_columns
+from routers.citizenship import router as citizenship_router
 from routers.adjustments import router as adjustments_router
 from routers.analytics import router as analytics_router
 from routers.audit_logs import router as audit_logs_router
@@ -56,6 +58,7 @@ async def redirect_exception_handler(request: Request, exc: RedirectException):
     return redirect_exception_response(exc)
 
 
+app.include_router(citizenship_router)
 app.include_router(adjustments_router)
 app.include_router(analytics_router)
 app.include_router(audit_logs_router)
@@ -85,6 +88,7 @@ ensure_shift_request_type_unique_key()
 ensure_user_profile_columns()
 ensure_requisite_profile_columns()
 ensure_document_tables()
+ensure_citizenship_columns()
 ensure_legal_entities_table()
 ensure_payroll_run_closing_columns()
 ensure_audit_log_table()

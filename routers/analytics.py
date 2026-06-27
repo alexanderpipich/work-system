@@ -7,8 +7,9 @@ from sqlalchemy import and_, distinct, func
 from sqlalchemy.orm import Session
 
 from access import get_economist_cities
-from dependencies import get_db, require_admin_user, require_economist_user
+from dependencies import get_db
 from document_helpers import build_document_registry_rows, economist_employee_names, employee_names
+from rbac import require_permission
 from models import (
     DocumentType,
     MedicalBookCharge,
@@ -511,15 +512,15 @@ def _analytics_page(request, session, user, economist=False):
 def admin_analytics(
     request: Request,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(require_permission("reports.view")),
 ):
-    return _analytics_page(request, session, admin, economist=False)
+    return _analytics_page(request, session, user, economist=False)
 
 
 @router.get("/economist/analytics", response_class=HTMLResponse)
 def economist_analytics(
     request: Request,
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_permission("reports.view")),
 ):
     return _analytics_page(request, session, user, economist=True)

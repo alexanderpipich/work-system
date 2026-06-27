@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from access import accessible_employee_names, apply_shift_scope
 from audit_helpers import create_audit_log
-from dependencies import get_db, require_admin_user, require_economist_user
+from dependencies import get_db
 from models import Rate, Shift
 from rbac import canonical_role, require_permission
 from utils import normalize_format, normalize_text
@@ -18,6 +18,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 require_rate_hard_delete = require_permission("rates.hard_delete", audit_denied=True)
 require_rate_view = require_permission("rates.view", audit_denied=True)
+_rates_manage = require_permission("rates.manage")
 
 
 def _rate_payload(rate):
@@ -96,7 +97,7 @@ def economist_create_rate(
     active_to: str = Form(default=""),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_rates_manage),
 ):
     active_from_date = None
     active_to_date = None
@@ -148,7 +149,7 @@ def economist_update_rate(
     active_to: str = Form(default=""),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_rates_manage),
 ):
     rate = session.query(Rate).filter(Rate.id == rate_id).first()
 
@@ -220,7 +221,7 @@ def economist_delete_rate(
 def admin_rates(
     request: Request,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(_rates_manage),
 ):
     rates = rates_query(session).all()
 
@@ -247,7 +248,7 @@ def create_rate(
     active_to: str = Form(default=""),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(_rates_manage),
 ):
     service_clean = normalize_text(service)
     format_clean = normalize_format(format) or None
@@ -303,7 +304,7 @@ def create_rate(
     create_audit_log(
         session,
         request,
-        admin,
+        user,
         "rate_created",
         "rate",
         rate.id,
@@ -328,7 +329,7 @@ def update_rate(
     active_to: str = Form(default=""),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(_rates_manage),
 ):
     rate = session.query(Rate).filter(Rate.id == rate_id).first()
     if not rate:
@@ -355,7 +356,7 @@ def update_rate(
     create_audit_log(
         session,
         request,
-        admin,
+        user,
         "rate_updated",
         "rate",
         rate.id,

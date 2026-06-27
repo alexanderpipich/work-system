@@ -5,9 +5,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from access import get_economist_cities
-from dependencies import get_db, require_admin_user, require_economist_user
+from access import get_economist_cities, get_user_cities
+from dependencies import get_db
 from models import Shift
+from rbac import canonical_role, require_permission
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today
 
@@ -85,7 +86,7 @@ def economist_schedules(
     date_to: str = "",
     stores: list[str] | None = Query(default=None),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_permission("schedules.view")),
 ):
     allowed_cities = get_economist_cities(user)
 
@@ -164,6 +165,87 @@ def economist_schedules(
     )
 
 
+@router.get("/hr/schedules", response_class=HTMLResponse)
+def hr_schedules(
+    request: Request,
+    date_from: str = "",
+    date_to: str = "",
+    stores: list[str] | None = Query(default=None),
+    session: Session = Depends(get_db),
+    user=Depends(require_permission("schedules.view")),
+):
+    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse("/", status_code=302)
+
+    allowed_cities = get_user_cities(session, user)  # None = hr_lead (unrestricted), list = hr_manager
+
+    if allowed_cities is not None and not allowed_cities:
+        return templates.TemplateResponse(
+            request,
+            "economist_schedules.html",
+            {
+                "user": user,
+                "allowed_cities": [],
+                "rows": [], "days": [],
+                "date_from": date_from, "date_to": date_to,
+                "stores": [], "selected_stores": stores or [],
+                "show_table": False,
+                "form_action": "/hr/schedules",
+                "back_url": "/hr", "back_label": "HR кабинет",
+                "error": "Для пользователя не назначены города",
+            },
+        )
+
+    if not date_from and not date_to:
+        date_from, date_to = _default_week_range()
+
+    store_query = session.query(Shift.store).distinct()
+    if allowed_cities is not None:
+        store_query = store_query.filter(Shift.city.in_(allowed_cities))
+    store_list = [s[0] for s in store_query.order_by(Shift.store.asc()).all()]
+
+    rows = []
+    days = []
+    show_table = bool(stores)
+
+    if show_table:
+        start_date = datetime.strptime(date_from, "%Y-%m-%d").date()
+        end_date = datetime.strptime(date_to, "%Y-%m-%d").date()
+        days = _days_between(start_date, end_date)
+
+        shifts_query = session.query(Shift).filter(
+            Shift.shift_date >= start_date,
+            Shift.shift_date <= end_date,
+            Shift.store.in_(stores),
+        )
+        if allowed_cities is not None:
+            shifts_query = shifts_query.filter(Shift.city.in_(allowed_cities))
+
+        shifts = shifts_query.order_by(
+            Shift.city.asc(), Shift.store.asc(),
+            Shift.employee.asc(), Shift.service.asc(),
+            Shift.shift_date.asc(),
+        ).all()
+        rows = _build_schedule_rows(shifts, days, include_city=True)
+
+    return templates.TemplateResponse(
+        request,
+        "economist_schedules.html",
+        {
+            "user": user,
+            "allowed_cities": allowed_cities if allowed_cities is not None else [],
+            "rows": rows, "days": days,
+            "date_from": date_from, "date_to": date_to,
+            "stores": store_list, "selected_stores": stores or [],
+            "show_table": show_table,
+            "form_action": "/hr/schedules",
+            "back_url": "/hr", "back_label": "HR кабинет",
+            "error": None,
+        },
+    )
+
+
 @router.get("/admin/schedules", response_class=HTMLResponse)
 def admin_schedules(
     request: Request,
@@ -171,7 +253,7 @@ def admin_schedules(
     date_to: str = "",
     stores: list[str] | None = Query(default=None),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(require_permission("schedules.admin_view")),
 ):
     if not date_from and not date_to:
         date_from, date_to = _default_week_range()

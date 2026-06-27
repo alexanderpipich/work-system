@@ -50,6 +50,8 @@ class User(Base):
     economist_stores = Column(Text, nullable=True)
 
     citizenship_country = Column(String, nullable=True)
+    citizenship_country_id = Column(Integer, ForeignKey("countries.id"), nullable=True)
+    is_student = Column(Boolean, default=False)
     legal_entity = Column(String, nullable=True)
 
 
@@ -266,9 +268,22 @@ class DocumentType(Base):
 
     is_required = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)
+    sort_order = Column(Integer, default=0)
+    is_student_doc = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=now_utc)
     updated_at = Column(DateTime, nullable=True)
+
+
+class DocumentTypeSample(Base):
+    __tablename__ = "document_type_samples"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_type_id = Column(Integer, nullable=False, index=True)
+    file_path = Column(String, nullable=False)
+    original_filename = Column(String, nullable=True)
+    sort_order = Column(Integer, default=0)
+    uploaded_at = Column(DateTime, default=now_utc)
 
 
 class EmployeeDocument(Base):
@@ -511,6 +526,39 @@ class StoreContact(Base):
     for_reconciliation = Column(Boolean, default=False)
     for_unplanned = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+
+
+class CitizenshipRegime(Base):
+    __tablename__ = "citizenship_regimes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(50), unique=True, nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    sort_order = Column(Integer, default=0)
+
+
+class Country(Base):
+    __tablename__ = "countries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    regime_id = Column(Integer, ForeignKey("citizenship_regimes.id"), nullable=False)
+    is_active = Column(Boolean, default=True)
+
+
+class RegimeDocumentRule(Base):
+    __tablename__ = "regime_document_rules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    regime_id = Column(Integer, ForeignKey("citizenship_regimes.id"), nullable=False)
+    document_type_id = Column(Integer, ForeignKey("document_types.id"), nullable=False)
+    is_required = Column(Boolean, default=True)
+
+    __table_args__ = (
+        UniqueConstraint("regime_id", "document_type_id", name="uq_regime_doc_rule"),
+    )
 
 
 class UserAccessScope(Base):

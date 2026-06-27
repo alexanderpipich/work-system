@@ -7,11 +7,14 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
-from dependencies import get_db, require_admin_user
+from dependencies import get_db
 from models import Shift, UploadLog
 from payroll_adjustments import reconcile_sent_payroll_runs
+from rbac import require_permission
 from time_helpers import business_today
 from utils import normalize_format, normalize_text
+
+_require_upload = require_permission("shifts.upload")
 
 
 router = APIRouter()
@@ -242,7 +245,7 @@ def _write_upload_log(session, request, admin, filename, result=None, error=None
 def admin_upload_page(
     request: Request,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_require_upload),
 ):
     return templates.TemplateResponse(
         request,
@@ -263,7 +266,7 @@ async def admin_upload_submit(
     request: Request,
     file: UploadFile = File(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_require_upload),
 ):
     if not (file.filename or "").lower().endswith(".xlsx"):
         return templates.TemplateResponse(

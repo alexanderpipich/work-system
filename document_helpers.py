@@ -1,19 +1,20 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import os
 from pathlib import Path
 import re
 from uuid import uuid4
 
-from sqlalchemy import text
+from sqlalchemy import or_, text
 
 from database import engine
-from models import DocumentType, EmployeeDocument, Requisite, Shift, User
+from models import Country, DocumentType, EmployeeDocument, RegimeDocumentRule, Requisite, Shift, User
 from time_helpers import business_today, now_utc
 from utils import normalize_text
 
 
 DOCUMENT_UPLOAD_ROOT = Path(os.getenv("DOCUMENT_UPLOAD_ROOT", "uploaded_documents"))
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+EXPIRY_WARNING_DAYS = 30
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf", ".heic"}
 INVALID_DATE_MESSAGE = "Некорректный формат даты (ожидается ГГГГ-ММ-ДД)"
 
@@ -29,6 +30,7 @@ STATUS_LABELS = {
     "verified": "Проверен",
     "rejected": "Отклонен",
     "expired": "Истек срок действия",
+    "expiring_soon": "Истекает в ближайшие 30 дней",
     "archived": "В архиве",
 }
 
@@ -184,6 +186,279 @@ def employee_document_rows(session, user, required_only=True):
             "status_class": document_status_class(status),
         })
     return rows
+
+
+def employee_document_status(session, user) -> list[dict]:
+    today = business_today()
+
+    def _classify(doc):
+        if not doc or doc.status in {"rejected", "archived"}:
+            return "missing"
+        if not doc.is_permanent and doc.expiry_date and doc.expiry_date < today:
+            return "expired"
+        if doc.status == "verified":
+            if not doc.is_permanent and doc.expiry_date and doc.expiry_date <= today + timedelta(days=EXPIRY_WARNING_DAYS):
+                return "expiring_soon"
+            return "ok"
+        if doc.status in {"uploaded", "pending_verification"}:
+            return "pending"
+        return "missing"
+
+    def _rows(doc_types):
+        return [
+            {
+                "document_type": dt,
+                "required": True,
+                "status": _classify(latest_employee_document(session, user.employee_name, dt.id)),
+            }
+            for dt in doc_types
+        ]
+
+    # Студент: первые 5 базовых типов (sort_order 1–5) + типы с is_student_doc=True
+    if getattr(user, "is_student", False):
+        base = (
+            session.query(DocumentType)
+            .filter(
+                DocumentType.is_active == True,
+                DocumentType.is_student_doc == False,
+                DocumentType.sort_order >= 1,
+                DocumentType.sort_order <= 5,
+            )
+            .order_by(DocumentType.sort_order.asc())
+            .all()
+        )
+        student_docs = (
+            session.query(DocumentType)
+            .filter(DocumentType.is_active == True, DocumentType.is_student_doc == True)
+            .order_by(DocumentType.sort_order.asc())
+            .all()
+        )
+        return _rows(base + student_docs)
+
+    # Структурированный режим через citizenship_country_id → Country → regime → правила
+    country_id = getattr(user, "citizenship_country_id", None)
+    if country_id:
+        country = session.query(Country).filter(Country.id == country_id).first()
+        if country:
+            type_ids = {
+                r.document_type_id
+                for r in session.query(RegimeDocumentRule).filter(
+                    RegimeDocumentRule.regime_id == country.regime_id,
+                    RegimeDocumentRule.is_required == True,
+                ).all()
+            }
+            doc_types = (
+                session.query(DocumentType)
+                .filter(DocumentType.id.in_(type_ids), DocumentType.is_active == True)
+                .order_by(DocumentType.sort_order.asc())
+                .all()
+            )
+            return _rows(doc_types)
+
+    # Fallback: старая логика citizenship_filter / citizenship_matches
+    citizenship = user_citizenship(session, user)
+    return _rows(active_document_types(session, citizenship, required_only=True))
+
+
+SORT_ORDER_TO_ICON_KEY = {
+    2: "lmk",
+    3: "passport",
+    4: "inn",
+    5: "snils",
+    6: "registration",
+    7: "patent",
+    8: "fingerprints",
+    9: "passport_translation",
+    10: "dms",
+    11: "migration_card",
+    12: "patent_receipts",
+}
+
+ICON_KEY_TITLES = {
+    "requisites": "Реквизиты",
+    "lmk": "ЛМК",
+    "passport": "Паспорт",
+    "inn": "ИНН",
+    "snils": "СНИЛС",
+    "registration": "Регистрация",
+    "patent": "Патент",
+    "fingerprints": "Дактилоскопия",
+    "passport_translation": "Перевод паспорта",
+    "dms": "ДМС",
+    "migration_card": "Миграционная карта",
+    "patent_receipts": "Чеки по патенту",
+}
+
+
+def employee_completeness(session, user) -> list[dict]:
+    """
+    Returns ≤12 completeness items for a user:
+      [0]    requisites  (from Requisite table)
+      [1..N] documents   (from employee_document_status, regime-filtered)
+    Each item: {position, title, icon_key, status, document_type, source}
+    """
+    name_clean = normalize_text(user.employee_name)
+    req = (
+        session.query(Requisite)
+        .filter(
+            Requisite.is_active == True,
+            or_(
+                Requisite.user_id == user.id,
+                Requisite.employee_name == name_clean,
+            ),
+        )
+        .first()
+    )
+    if req is None:
+        req_status = "missing"
+    elif req.is_verified:
+        req_status = "ok"
+    else:
+        req_status = "pending"
+
+    rows = [
+        {
+            "position": 0,
+            "title": ICON_KEY_TITLES["requisites"],
+            "icon_key": "requisites",
+            "status": req_status,
+            "document_type": None,
+            "source": "requisite",
+        }
+    ]
+
+    for i, row in enumerate(employee_document_status(session, user), start=1):
+        dt = row["document_type"]
+        icon_key = SORT_ORDER_TO_ICON_KEY.get(dt.sort_order, f"doc_{dt.id}")
+        rows.append({
+            "position": i,
+            "title": ICON_KEY_TITLES.get(icon_key, dt.name),
+            "icon_key": icon_key,
+            "status": row["status"],
+            "document_type": dt,
+            "source": "document",
+        })
+
+    return rows
+
+
+MATRIX_COLUMNS = [
+    ("requisites", "Реквизиты"),
+    ("lmk", "ЛМК"),
+    ("passport", "Паспорт"),
+    ("inn", "ИНН"),
+    ("snils", "СНИЛС"),
+    ("registration", "Регистрация"),
+    ("patent", "Патент"),
+    ("fingerprints", "Дактило"),
+    ("passport_translation", "Перевод"),
+    ("dms", "ДМС"),
+    ("migration_card", "Миг. карта"),
+    ("patent_receipts", "Чеки"),
+]
+
+
+def batch_employee_completeness(session, users: list) -> dict:
+    """
+    Batch version of employee_completeness for a list of users.
+    Returns {user.id: {icon_key: item_dict}} — 6 DB queries total.
+    """
+    if not users:
+        return {}
+
+    today = business_today()
+
+    all_doc_types = session.query(DocumentType).filter(
+        DocumentType.is_active == True
+    ).order_by(DocumentType.sort_order.asc()).all()
+
+    all_rules = session.query(RegimeDocumentRule).filter(
+        RegimeDocumentRule.is_required == True
+    ).all()
+    regime_to_type_ids: dict = {}
+    for rule in all_rules:
+        regime_to_type_ids.setdefault(rule.regime_id, set()).add(rule.document_type_id)
+
+    all_countries = {c.id: c for c in session.query(Country).all()}
+
+    names = {normalize_text(u.employee_name) for u in users}
+    all_docs = session.query(EmployeeDocument).filter(
+        EmployeeDocument.employee_name.in_(names)
+    ).order_by(EmployeeDocument.uploaded_at.asc(), EmployeeDocument.id.asc()).all()
+    docs_map: dict = {}
+    for doc in all_docs:
+        docs_map[(normalize_text(doc.employee_name), doc.document_type_id)] = doc
+
+    user_ids = [u.id for u in users if getattr(u, "id", None)]
+    all_reqs = session.query(Requisite).filter(
+        Requisite.is_active == True,
+        or_(Requisite.user_id.in_(user_ids), Requisite.employee_name.in_(names)),
+    ).all()
+    reqs_by_uid: dict = {}
+    reqs_by_name: dict = {}
+    for req in all_reqs:
+        if req.user_id and req.user_id not in reqs_by_uid:
+            reqs_by_uid[req.user_id] = req
+        nk = normalize_text(req.employee_name)
+        if nk not in reqs_by_name:
+            reqs_by_name[nk] = req
+
+    def _classify(doc):
+        if not doc or doc.status in {"rejected", "archived"}:
+            return "missing"
+        if not doc.is_permanent and doc.expiry_date and doc.expiry_date < today:
+            return "expired"
+        if doc.status == "verified":
+            if not doc.is_permanent and doc.expiry_date and doc.expiry_date <= today + timedelta(days=EXPIRY_WARNING_DAYS):
+                return "expiring_soon"
+            return "ok"
+        if doc.status in {"uploaded", "pending_verification"}:
+            return "pending"
+        return "missing"
+
+    def _doc_types_for(user):
+        if getattr(user, "is_student", False):
+            base = [dt for dt in all_doc_types if not dt.is_student_doc and 1 <= dt.sort_order <= 5]
+            stu = [dt for dt in all_doc_types if dt.is_student_doc]
+            return base + stu
+        cid = getattr(user, "citizenship_country_id", None)
+        if cid:
+            country = all_countries.get(cid)
+            if country and country.regime_id in regime_to_type_ids:
+                ids = regime_to_type_ids[country.regime_id]
+                return [dt for dt in all_doc_types if dt.id in ids]
+        return [dt for dt in all_doc_types if dt.is_required]
+
+    result = {}
+    for user in users:
+        name_clean = normalize_text(user.employee_name)
+        req = reqs_by_uid.get(user.id) or reqs_by_name.get(name_clean)
+        req_status = "missing" if req is None else ("ok" if req.is_verified else "pending")
+
+        items: dict = {
+            "requisites": {
+                "position": 0,
+                "title": ICON_KEY_TITLES["requisites"],
+                "icon_key": "requisites",
+                "status": req_status,
+                "document_type": None,
+                "source": "requisite",
+            }
+        }
+        for i, dt in enumerate(_doc_types_for(user), start=1):
+            ik = SORT_ORDER_TO_ICON_KEY.get(dt.sort_order, f"doc_{dt.id}")
+            doc = docs_map.get((name_clean, dt.id))
+            items[ik] = {
+                "position": i,
+                "title": ICON_KEY_TITLES.get(ik, dt.name),
+                "icon_key": ik,
+                "status": _classify(doc),
+                "document_type": dt,
+                "source": "document",
+            }
+        result[user.id] = items
+
+    return result
 
 
 def employee_names(session):

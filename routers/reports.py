@@ -7,7 +7,7 @@ from sqlalchemy import and_, distinct, func
 from sqlalchemy.orm import Session
 
 from access import accessible_employee_names, get_economist_cities
-from dependencies import get_db, require_admin_user, require_economist_user
+from dependencies import get_db
 from document_helpers import (
     STATUS_LABELS,
     build_document_registry_rows,
@@ -470,15 +470,15 @@ def _render_report(request, session, user, report, economist=False):
 @router.get("/admin/reports", response_class=HTMLResponse)
 def admin_reports(
     request: Request,
-    admin=Depends(require_admin_user),
+    user=Depends(require_reports_view),
 ):
-    return _dashboard(request, admin, economist=False)
+    return _dashboard(request, user, economist=False)
 
 
 @router.get("/economist/reports", response_class=HTMLResponse)
 def economist_reports(
     request: Request,
-    user=Depends(require_economist_user),
+    user=Depends(require_reports_view),
 ):
     return _dashboard(request, user, economist=True)
 
@@ -488,9 +488,9 @@ def admin_report(
     request: Request,
     report: str,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(require_reports_view),
 ):
-    return _render_report(request, session, admin, report, economist=False)
+    return _render_report(request, session, user, report, economist=False)
 
 
 @router.get("/economist/reports/{report}", response_class=HTMLResponse)
@@ -498,7 +498,7 @@ def economist_report(
     request: Request,
     report: str,
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_reports_view),
 ):
     return _render_report(request, session, user, report, economist=True)
 

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from access import accessible_employee_names, get_economist_cities
 from audit_helpers import create_audit_log
-from dependencies import get_db, require_admin_user, require_economist_user
+from dependencies import get_db
 from lmk_charges import month_start
 from models import MedicalBookCharge, Shift
 from time_helpers import now_utc
@@ -19,6 +19,7 @@ from utils import normalize_text
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 require_lmk_view = require_permission("lmk.view", audit_denied=True)
+_lmk_manage = require_permission("lmk.manage")
 
 
 def _employee_names_for_cities(session, allowed_cities):
@@ -293,7 +294,7 @@ def lmk_page(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_lmk_manage),
 ):
     return _render_lmk_page(
         request,
@@ -314,7 +315,7 @@ def economist_lmk_page(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_lmk_manage),
 ):
     return _render_lmk_page(
         request,
@@ -358,7 +359,7 @@ def economist_add_lmk_charge(
     start_month: str = Form(...),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_lmk_manage),
 ):
     try:
         return _add_lmk_charge(
@@ -392,7 +393,7 @@ def economist_update_lmk_charge(
     remaining_amount: str = Form(...),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_lmk_manage),
 ):
     try:
         return _update_lmk_charge(
@@ -420,7 +421,7 @@ def economist_cancel_lmk_charge(
     request: Request,
     charge_id: int = Form(...),
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(_lmk_manage),
 ):
     try:
         return _cancel_lmk_charge(
@@ -448,7 +449,7 @@ def add_lmk_charge(
     start_month: str = Form(...),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_lmk_manage),
 ):
     try:
         return _add_lmk_charge(
@@ -482,7 +483,7 @@ def update_lmk_charge(
     remaining_amount: str = Form(...),
     comment: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_lmk_manage),
 ):
     try:
         return _update_lmk_charge(
@@ -510,6 +511,6 @@ def cancel_lmk_charge(
     request: Request,
     charge_id: int = Form(...),
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    admin=Depends(_lmk_manage),
 ):
     return _cancel_lmk_charge(session, request, admin, "/admin/lmk", None, charge_id)

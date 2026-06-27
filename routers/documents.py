@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
@@ -11,14 +12,14 @@ from dependencies import (
     RedirectException,
     current_user,
     get_db,
-    require_admin_user,
-    require_economist_user,
 )
 from document_helpers import (
     DocumentDateParseError,
     INVALID_DATE_MESSAGE,
+    MATRIX_COLUMNS,
     STATUS_LABELS,
     active_document_types,
+    batch_employee_completeness,
     build_document_registry_rows,
     computed_document_status,
     document_file_exists,
@@ -29,7 +30,8 @@ from document_helpers import (
     parse_date,
     save_upload_file,
 )
-from models import DocumentType, EmployeeDocument, User
+from models import CitizenshipRegime, Country, DocumentType, DocumentTypeSample, EmployeeDocument, EmployeeStoreAssignment, RegimeDocumentRule, Store, User
+from store_helpers import extract_tk_number
 from rbac import canonical_role, has_permission, is_superadmin
 from sqlalchemy.orm import Session
 from time_helpers import now_utc
@@ -108,14 +110,32 @@ def _render_document_types(request, session, user, message="", error=""):
     base_path, back_url, back_label = _document_type_base(request)
     document_types = session.query(DocumentType).order_by(
         DocumentType.is_active.desc(),
+        DocumentType.sort_order.asc(),
         DocumentType.name.asc(),
     ).all()
+    regimes = session.query(CitizenshipRegime).filter(CitizenshipRegime.is_active == True).order_by(CitizenshipRegime.sort_order, CitizenshipRegime.name).all()
+    all_rules = session.query(RegimeDocumentRule).filter(RegimeDocumentRule.is_required == True).all()
+    doc_regime_map = {}
+    for rule in all_rules:
+        doc_regime_map.setdefault(rule.document_type_id, set()).add(rule.regime_id)
+    all_samples = session.query(DocumentTypeSample).order_by(
+        DocumentTypeSample.document_type_id,
+        DocumentTypeSample.sort_order,
+        DocumentTypeSample.uploaded_at,
+    ).all()
+    doc_samples_map = {}
+    for s in all_samples:
+        doc_samples_map.setdefault(s.document_type_id, []).append(s)
     return templates.TemplateResponse(
         request,
         "document_types.html",
         {
             "user": user,
+            "is_superadmin_user": is_superadmin(user),
             "document_types": document_types,
+            "regimes": regimes,
+            "doc_regime_map": doc_regime_map,
+            "doc_samples_map": doc_samples_map,
             "base_path": base_path,
             "back_url": back_url,
             "back_label": back_label,
@@ -125,14 +145,21 @@ def _render_document_types(request, session, user, message="", error=""):
     )
 
 
-async def _save_sample_file(document_type, sample_file):
-    path, _ = await save_upload_file(
-        sample_file,
-        "document_type_samples",
-        f"type_{document_type.id}",
-    )
-    if path:
-        document_type.sample_image_path = path
+async def _save_sample_files(session, document_type, sample_files):
+    for sample_file in sample_files:
+        if not sample_file or not sample_file.filename:
+            continue
+        path, original_filename = await save_upload_file(
+            sample_file,
+            "document_type_samples",
+            f"type_{document_type.id}",
+        )
+        if path:
+            session.add(DocumentTypeSample(
+                document_type_id=document_type.id,
+                file_path=path,
+                original_filename=original_filename,
+            ))
 
 
 def _apply_document_type_fields(
@@ -141,7 +168,6 @@ def _apply_document_type_fields(
     name,
     description,
     help_text,
-    citizenship_filter,
     requires_number,
     requires_issue_date,
     requires_expiry_date,
@@ -150,11 +176,12 @@ def _apply_document_type_fields(
     extra_field_2_label,
     is_required,
     is_active,
+    sort_order=0,
+    is_student_doc=False,
 ):
     document_type.name = normalize_text(name)
     document_type.description = normalize_text(description) or None
     document_type.help_text = normalize_text(help_text) or None
-    document_type.citizenship_filter = normalize_text(citizenship_filter) or None
     document_type.requires_number = parse_bool(requires_number)
     document_type.requires_issue_date = parse_bool(requires_issue_date)
     document_type.requires_expiry_date = parse_bool(requires_expiry_date)
@@ -163,6 +190,8 @@ def _apply_document_type_fields(
     document_type.extra_field_2_label = normalize_text(extra_field_2_label) or None
     document_type.is_required = parse_bool(is_required)
     document_type.is_active = parse_bool(is_active)
+    document_type.sort_order = int(sort_order or 0)
+    document_type.is_student_doc = parse_bool(is_student_doc)
 
 
 def _document_type_payload(document_type):
@@ -213,6 +242,7 @@ def _render_documents(
         "documents.html",
         {
             "user": user,
+            "view": "registry",
             "rows": rows,
             "employees": employees,
             "document_types": document_types,
@@ -225,6 +255,88 @@ def _render_documents(
             "back_label": back_label,
             "message": message or None,
             "error": error or None,
+        },
+    )
+
+
+def _render_matrix(request, session, user, *, tk_filter="", name_filter=""):
+    from collections import defaultdict
+    stores = session.query(Store).filter(Store.is_active == True).order_by(Store.tk_number).all()
+    store_by_tk = {s.tk_number: s for s in stores}
+
+    # All role='employee' users — single query; used for resolving assignments and "Без ТК"
+    all_employees = (
+        session.query(User)
+        .filter(User.role == "employee")
+        .order_by(User.employee_name)
+        .all()
+    )
+    emp_by_id = {u.id: u for u in all_employees}
+    emp_by_name = {normalize_text(u.employee_name): u for u in all_employees}
+
+    assignments = session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.is_active == True).all()
+    tk_groups: dict = defaultdict(list)
+    assigned_user_ids: set = set()
+    for a in assignments:
+        tk = extract_tk_number(a.store)
+        if not tk:
+            continue
+        u = (emp_by_id.get(a.user_id) if a.user_id else None) or emp_by_name.get(normalize_text(a.employee_name))
+        if u:
+            tk_groups[tk].append(u)
+            assigned_user_ids.add(u.id)
+
+    if tk_filter:
+        try:
+            tk_int = int(tk_filter)
+            tk_groups = {tk_int: list(tk_groups.get(tk_int, []))}
+        except ValueError:
+            tk_groups = {}
+
+    groups = []
+    for tk in sorted(tk_groups):
+        seen_ids: set = set()
+        employees = []
+        for u in tk_groups[tk]:
+            if u.id in seen_ids:
+                continue
+            if name_filter and name_filter.lower() not in u.employee_name.lower():
+                continue
+            seen_ids.add(u.id)
+            employees.append(u)
+        if employees:
+            groups.append({"tk_number": tk, "store": store_by_tk.get(tk), "employees": employees})
+
+    # Employees with no active assignment → "Без ТК" group at the end (only when no tk_filter)
+    if not tk_filter:
+        no_tk = [
+            u for u in all_employees
+            if u.id not in assigned_user_ids
+            and (not name_filter or name_filter.lower() in u.employee_name.lower())
+        ]
+        if no_tk:
+            groups.append({"tk_number": None, "store": None, "employees": no_tk})
+
+    all_users = [u for g in groups for u in g["employees"]]
+    completeness_map = batch_employee_completeness(session, all_users)
+
+    return templates.TemplateResponse(
+        request,
+        "documents.html",
+        {
+            "user": user,
+            "view": "matrix",
+            "groups": groups,
+            "completeness_map": completeness_map,
+            "matrix_columns": MATRIX_COLUMNS,
+            "stores": stores,
+            "tk_filter": tk_filter,
+            "name_filter": name_filter,
+            "base_path": "/admin/documents",
+            "back_url": "/admin",
+            "back_label": "Назад в админку",
+            "message": None,
+            "error": None,
         },
     )
 
@@ -377,9 +489,9 @@ def admin_document_types(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(require_document_manager),
 ):
-    return _render_document_types(request, session, admin, message, error)
+    return _render_document_types(request, session, user, message, error)
 
 
 @router.get("/economist/document-types", response_class=HTMLResponse)
@@ -388,7 +500,7 @@ def economist_document_types(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    user=Depends(require_economist_user),
+    user=Depends(require_document_manager),
 ):
     return _render_document_types(request, session, user, message, error)
 
@@ -400,7 +512,7 @@ async def add_document_type(
     name: str = Form(...),
     description: str = Form(default=""),
     help_text: str = Form(default=""),
-    citizenship_filter: str = Form(default=""),
+    regime_ids: list[int] = Form(default=[]),
     requires_number: str = Form(default=""),
     requires_issue_date: str = Form(default=""),
     requires_expiry_date: str = Form(default=""),
@@ -409,7 +521,9 @@ async def add_document_type(
     extra_field_2_label: str = Form(default=""),
     is_required: str = Form(default=""),
     is_active: str = Form(default="1"),
-    sample_file: UploadFile | None = File(default=None),
+    sort_order: int = Form(default=0),
+    is_student_doc: str = Form(default=""),
+    sample_files: list[UploadFile] = File(default=[]),
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
 ):
@@ -425,7 +539,6 @@ async def add_document_type(
             name=name,
             description=description,
             help_text=help_text,
-            citizenship_filter=citizenship_filter,
             requires_number=requires_number,
             requires_issue_date=requires_issue_date,
             requires_expiry_date=requires_expiry_date,
@@ -434,10 +547,14 @@ async def add_document_type(
             extra_field_2_label=extra_field_2_label,
             is_required=is_required,
             is_active=is_active,
+            sort_order=sort_order,
+            is_student_doc=is_student_doc,
         )
         session.add(document_type)
         session.flush()
-        await _save_sample_file(document_type, sample_file)
+        for rid in regime_ids:
+            session.add(RegimeDocumentRule(regime_id=rid, document_type_id=document_type.id, is_required=True))
+        await _save_sample_files(session, document_type, sample_files)
         create_audit_log(
             session,
             request,
@@ -463,7 +580,7 @@ async def update_document_type(
     name: str = Form(...),
     description: str = Form(default=""),
     help_text: str = Form(default=""),
-    citizenship_filter: str = Form(default=""),
+    regime_ids: list[int] = Form(default=[]),
     requires_number: str = Form(default=""),
     requires_issue_date: str = Form(default=""),
     requires_expiry_date: str = Form(default=""),
@@ -472,7 +589,9 @@ async def update_document_type(
     extra_field_2_label: str = Form(default=""),
     is_required: str = Form(default=""),
     is_active: str = Form(default=""),
-    sample_file: UploadFile | None = File(default=None),
+    sort_order: int = Form(default=0),
+    is_student_doc: str = Form(default=""),
+    sample_files: list[UploadFile] = File(default=[]),
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
 ):
@@ -489,7 +608,6 @@ async def update_document_type(
             name=name,
             description=description,
             help_text=help_text,
-            citizenship_filter=citizenship_filter,
             requires_number=requires_number,
             requires_issue_date=requires_issue_date,
             requires_expiry_date=requires_expiry_date,
@@ -498,9 +616,22 @@ async def update_document_type(
             extra_field_2_label=extra_field_2_label,
             is_required=is_required,
             is_active=is_active,
+            sort_order=sort_order,
+            is_student_doc=is_student_doc,
         )
+        selected_regime_ids = set(regime_ids)
+        existing_rules = {r.regime_id: r for r in session.query(RegimeDocumentRule).filter(
+            RegimeDocumentRule.document_type_id == type_id
+        ).all()}
+        all_regime_ids = {r.id for r in session.query(CitizenshipRegime).all()}
+        for rid in all_regime_ids:
+            is_req = rid in selected_regime_ids
+            if rid in existing_rules:
+                existing_rules[rid].is_required = is_req
+            elif is_req:
+                session.add(RegimeDocumentRule(regime_id=rid, document_type_id=type_id, is_required=True))
         document_type.updated_at = now_utc()
-        await _save_sample_file(document_type, sample_file)
+        await _save_sample_files(session, document_type, sample_files)
         create_audit_log(
             session,
             request,
@@ -550,21 +681,80 @@ def delete_document_type(
     return _redirect(base_path, message="Тип документа деактивирован")
 
 
+@router.post("/admin/document-types/delete-sample")
+def delete_document_type_sample(
+    request: Request,
+    type_id: int = Form(...),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _document_type_base(request)
+    document_type = session.query(DocumentType).filter(DocumentType.id == type_id).first()
+    if not document_type:
+        return _redirect(base_path, error="Тип документа не найден")
+    if document_type.sample_image_path:
+        Path(document_type.sample_image_path).unlink(missing_ok=True)
+        document_type.sample_image_path = None
+        document_type.updated_at = now_utc()
+        create_audit_log(
+            session, request, user,
+            "document_type_updated", "document_type",
+            document_type.id, document_type.name,
+            comment="sample_deleted",
+        )
+        session.commit()
+    return _redirect(base_path, message="Образец удалён")
+
+
+@router.post("/admin/document-types/hard-delete")
+def hard_delete_document_type(
+    request: Request,
+    type_id: int = Form(...),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _document_type_base(request)
+    document_type = session.query(DocumentType).filter(DocumentType.id == type_id).first()
+    if not document_type:
+        return _redirect(base_path, error="Тип документа не найден")
+
+    from models import EmployeeDocument
+    doc_count = session.query(EmployeeDocument).filter(EmployeeDocument.document_type_id == type_id).count()
+    if doc_count > 0:
+        return _redirect(base_path, error=f"Нельзя удалить: у {doc_count} документов сотрудников указан этот тип. Сначала деактивируйте.")
+
+    session.query(RegimeDocumentRule).filter(RegimeDocumentRule.document_type_id == type_id).delete()
+    name = document_type.name
+    session.delete(document_type)
+    create_audit_log(
+        session, request, user,
+        "document_type_deleted", "document_type",
+        type_id, name,
+    )
+    session.commit()
+    return _redirect(base_path, message=f"Тип документа «{name}» удалён")
+
+
 @router.get("/admin/documents", response_class=HTMLResponse)
 def admin_documents(
     request: Request,
+    view: str = "registry",
+    tk_filter: str = "",
+    name_filter: str = "",
     employee_name: str = "",
     document_type_id: int = 0,
     status: str = "pending_verification",
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    user=Depends(require_document_manager),
 ):
+    if view == "matrix":
+        return _render_matrix(request, session, user, tk_filter=tk_filter, name_filter=name_filter)
     return _render_documents(
         request,
         session,
-        admin,
+        user,
         employee_name=employee_name,
         document_type_id=document_type_id,
         status=status,
@@ -603,7 +793,7 @@ def admin_employee_documents(
     request: Request,
     user_id: int,
     session: Session = Depends(get_db),
-    admin=Depends(require_admin_user),
+    current=Depends(require_document_manager),
 ):
     user = session.query(User).filter(User.id == user_id).first()
     if not user:
@@ -611,7 +801,7 @@ def admin_employee_documents(
     return _render_documents(
         request,
         session,
-        admin,
+        current,
         employee_name=user.employee_name,
         status="all",
     )
@@ -631,7 +821,7 @@ async def upload_employee_document_by_manager(
     extra_field_1_value: str = Form(default=""),
     extra_field_2_value: str = Form(default=""),
     comment: str = Form(default=""),
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(default=None),
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
 ):
@@ -787,6 +977,78 @@ def document_file(
     )
 
 
+@router.get("/documents/preview/{document_id}")
+def document_preview(
+    request: Request,
+    document_id: int,
+    session: Session = Depends(get_db),
+    user=Depends(current_user),
+):
+    """Inline preview for modal — same access rules as /documents/files/{id} but Content-Disposition: inline."""
+    document = session.query(EmployeeDocument).filter(EmployeeDocument.id == document_id).first()
+    if not _document_allowed_for_user(session, document, user):
+        return RedirectResponse(url="/", status_code=302)
+    if not document_file_exists(document.file_path):
+        return RedirectResponse(url="/", status_code=302)
+    ext = Path(document.file_path).suffix.lower()
+    if ext not in SAFE_MEDIA_TYPES or ext == ".heic":
+        return RedirectResponse(url="/", status_code=302)
+    return FileResponse(
+        Path(document.file_path),
+        media_type=_safe_media_type(document.file_path),
+        headers={
+            "Content-Disposition": _content_disposition(
+                "inline",
+                document.original_filename or Path(document.file_path).name,
+            ),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.get("/documents/samples/file/{sample_id}")
+def document_sample_file(
+    sample_id: int,
+    session: Session = Depends(get_db),
+    user=Depends(current_user),
+):
+    sample = session.query(DocumentTypeSample).filter(DocumentTypeSample.id == sample_id).first()
+    if not sample or not document_file_exists(sample.file_path):
+        return RedirectResponse(url="/", status_code=302)
+    return FileResponse(
+        Path(sample.file_path),
+        media_type=_safe_media_type(sample.file_path),
+        headers={
+            "Content-Disposition": _content_disposition("inline", sample.original_filename or Path(sample.file_path).name),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.post("/admin/document-types/delete-sample-file")
+def delete_document_type_sample_file(
+    request: Request,
+    sample_id: int = Form(...),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _document_type_base(request)
+    sample = session.query(DocumentTypeSample).filter(DocumentTypeSample.id == sample_id).first()
+    if not sample:
+        return _redirect(base_path, error="Образец не найден")
+    Path(sample.file_path).unlink(missing_ok=True)
+    type_name = session.query(DocumentType.name).filter(DocumentType.id == sample.document_type_id).scalar() or ""
+    session.delete(sample)
+    create_audit_log(
+        session, request, user,
+        "document_type_updated", "document_type",
+        sample.document_type_id, type_name,
+        comment="sample_file_deleted",
+    )
+    session.commit()
+    return _redirect(base_path, message="Образец удалён")
+
+
 @router.get("/documents/samples/{type_id}")
 def document_type_sample(
     request: Request,
@@ -794,6 +1056,18 @@ def document_type_sample(
     session: Session = Depends(get_db),
     user=Depends(current_user),
 ):
+    first_new = session.query(DocumentTypeSample).filter(
+        DocumentTypeSample.document_type_id == type_id
+    ).order_by(DocumentTypeSample.sort_order, DocumentTypeSample.uploaded_at).first()
+    if first_new and document_file_exists(first_new.file_path):
+        return FileResponse(
+            Path(first_new.file_path),
+            media_type=_safe_media_type(first_new.file_path),
+            headers={
+                "Content-Disposition": _content_disposition("inline", first_new.original_filename or Path(first_new.file_path).name),
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
     document_type = session.query(DocumentType).filter(DocumentType.id == type_id).first()
     if not document_type or not document_file_exists(document_type.sample_image_path):
         return RedirectResponse(url="/", status_code=302)
@@ -801,10 +1075,7 @@ def document_type_sample(
         Path(document_type.sample_image_path),
         media_type=_safe_media_type(document_type.sample_image_path),
         headers={
-            "Content-Disposition": _content_disposition(
-                "inline",
-                Path(document_type.sample_image_path).name,
-            ),
+            "Content-Disposition": _content_disposition("inline", Path(document_type.sample_image_path).name),
             "X-Content-Type-Options": "nosniff",
         },
     )

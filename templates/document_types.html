@@ -182,12 +182,19 @@
         <form method="post" action="{{ base_path }}/add" enctype="multipart/form-data">
             <div class="grid">
                 <div class="field"><label>Название</label><input name="name" required></div>
-                <div class="field"><label>Гражданства через запятую</label><input name="citizenship_filter" placeholder="Пусто = всем"></div>
+                <div class="field">
+                    <label>Режимы (пусто = подходит всем)</label>
+                    <select name="regime_ids" multiple size="4">
+                        {% for r in regimes %}
+                        <option value="{{ r.id }}">{{ r.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div class="field"><label>Описание</label><textarea name="description"></textarea></div>
                 <div class="field"><label>Подсказка сотруднику</label><textarea name="help_text"></textarea></div>
                 <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_label"></div>
                 <div class="field"><label>Доп. поле 2</label><input name="extra_field_2_label"></div>
-                <div class="field"><label>Образец фото</label><input type="file" name="sample_file" accept="image/*,.pdf"></div>
+                <div class="field"><label>Образцы (можно несколько)</label><input type="file" name="sample_files" accept="image/*,.pdf" multiple></div>
             </div>
             <div class="checks">
                 <label class="check"><input type="checkbox" name="requires_number" value="1" checked> Требуется номер</label>
@@ -196,7 +203,9 @@
                 <label class="check"><input type="checkbox" name="allow_permanent" value="1" checked> Можно бессрочно</label>
                 <label class="check"><input type="checkbox" name="is_required" value="1" checked> Обязательный</label>
                 <label class="check"><input type="checkbox" name="is_active" value="1" checked> Активный</label>
+                <label class="check"><input type="checkbox" name="is_student_doc" value="1"> Студенческий документ</label>
             </div>
+            <div class="field" style="max-width:160px;margin-top:8px"><label>Порядок сортировки</label><input type="number" name="sort_order" value="0" min="0"></div>
             <p><button class="btn" type="submit">Добавить</button></p>
         </form>
     </section>
@@ -214,7 +223,7 @@
                         </div>
                     </div>
                     <div>
-                        <span class="pill">#{{ item.id }}</span>
+                        <span class="pill">#{{ item.sort_order }}</span>
                         {% if item.is_required %}<span class="pill">Обязательный</span>{% endif %}
                         {% if item.is_active %}<span class="pill">Активный</span>{% else %}<span class="pill">Неактивен</span>{% endif %}
                     </div>
@@ -227,8 +236,13 @@
                     <div class="readonly-value">{{ item.name }}</div>
                 </div>
                 <div class="readonly-item">
-                    <div class="readonly-label">Гражданства</div>
-                    <div class="readonly-value">{{ item.citizenship_filter or 'Подходит всем' }}</div>
+                    <div class="readonly-label">Режимы</div>
+                    <div class="readonly-value">
+                        {% set item_regime_ids = doc_regime_map.get(item.id, []) %}
+                        {% set matched = [] %}
+                        {% for r in regimes %}{% if r.id in item_regime_ids %}{% if matched.append(r.name) %}{% endif %}{% endif %}{% endfor %}
+                        {{ matched | join(', ') or 'Подходит всем' }}
+                    </div>
                 </div>
                 <div class="readonly-item">
                     <div class="readonly-label">Описание</div>
@@ -256,12 +270,37 @@
                     </div>
                 </div>
                 <div class="readonly-item">
-                    <div class="readonly-label">Образец</div>
-                    {% if item.sample_image_path %}
-                        <img class="sample-preview" src="/documents/samples/{{ item.id }}" alt="Образец {{ item.name }}">
-                        <a class="link secondary sample" href="/documents/samples/{{ item.id }}" target="_blank">Открыть образец</a>
+                    <div class="readonly-label">Образцы</div>
+                    {% set item_samples = doc_samples_map.get(item.id, []) %}
+                    {% if item_samples %}
+                        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px">
+                        {% for s in item_samples %}
+                            <div style="position:relative;display:inline-block">
+                                <a href="/documents/samples/file/{{ s.id }}" target="_blank">
+                                    <img src="/documents/samples/file/{{ s.id }}"
+                                         style="height:72px;border-radius:8px;border:1px solid var(--border);display:block"
+                                         alt="{{ s.original_filename or 'образец' }}">
+                                </a>
+                                <form method="post" action="{{ base_path }}/delete-sample-file" style="margin:0"
+                                      onsubmit="return confirm('Удалить этот образец?')">
+                                    <input type="hidden" name="sample_id" value="{{ s.id }}">
+                                    <button type="submit"
+                                            style="position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:none;background:#dc2626;color:#fff;font-size:13px;cursor:pointer;line-height:1;padding:0;font-weight:700">×</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% elif item.sample_image_path %}
+                        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">
+                            <a class="link secondary sample" href="/documents/samples/{{ item.id }}" target="_blank">Открыть образец</a>
+                            <form method="post" action="{{ base_path }}/delete-sample" style="margin:0"
+                                  onsubmit="return confirm('Удалить образец «{{ item.name }}»?')">
+                                <input type="hidden" name="type_id" value="{{ item.id }}">
+                                <button type="submit" class="btn danger" style="height:32px;padding:0 12px;font-size:13px">Удалить образец</button>
+                            </form>
+                        </div>
                     {% else %}
-                        <div class="meta sample">Не загружен</div>
+                        <div class="meta sample">Не загружены</div>
                     {% endif %}
                 </div>
             </div>
@@ -272,18 +311,36 @@
                     <input type="hidden" name="type_id" value="{{ item.id }}">
                     <button class="btn danger" type="submit">Деактивировать</button>
                 </form>
+                {% if is_superadmin_user %}
+                <form method="post" action="{{ base_path }}/hard-delete"
+                      onsubmit="return confirm('Удалить тип «{{ item.name }}» навсегда? Это действие необратимо.')">
+                    <input type="hidden" name="type_id" value="{{ item.id }}">
+                    <button class="btn danger" type="submit" style="background:linear-gradient(135deg,#7f1d1d,#450a0a)">Удалить</button>
+                </form>
+                {% endif %}
             </div>
 
             <form id="edit-type-{{ item.id }}" class="edit-form" method="post" action="{{ base_path }}/update" enctype="multipart/form-data">
                 <input type="hidden" name="type_id" value="{{ item.id }}">
                 <div class="grid">
                     <div class="field"><label>Название</label><input name="name" value="{{ item.name }}" required></div>
-                    <div class="field"><label>Гражданства через запятую</label><input name="citizenship_filter" value="{{ item.citizenship_filter or '' }}"></div>
+                    <div class="field">
+                        <label>Режимы (пусто = подходит всем)</label>
+                        {% set item_regime_ids = doc_regime_map.get(item.id, []) %}
+                        <select name="regime_ids" multiple size="4">
+                            {% for r in regimes %}
+                            <option value="{{ r.id }}" {% if r.id in item_regime_ids %}selected{% endif %}>{{ r.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="field"><label>Описание</label><textarea name="description">{{ item.description or '' }}</textarea></div>
                     <div class="field"><label>Подсказка</label><textarea name="help_text">{{ item.help_text or '' }}</textarea></div>
                     <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_label" value="{{ item.extra_field_1_label or '' }}"></div>
                     <div class="field"><label>Доп. поле 2</label><input name="extra_field_2_label" value="{{ item.extra_field_2_label or '' }}"></div>
-                    <div class="field"><label>Новый образец</label><input type="file" name="sample_file" accept="image/*,.pdf"></div>
+                    <div class="field">
+                        <label>Добавить образцы</label>
+                        <input type="file" name="sample_files" accept="image/*,.pdf" multiple>
+                    </div>
                 </div>
                 <div class="checks">
                     <label class="check"><input type="checkbox" name="requires_number" value="1" {% if item.requires_number %}checked{% endif %}> Номер</label>
@@ -292,7 +349,9 @@
                     <label class="check"><input type="checkbox" name="allow_permanent" value="1" {% if item.allow_permanent %}checked{% endif %}> Бессрочно</label>
                     <label class="check"><input type="checkbox" name="is_required" value="1" {% if item.is_required %}checked{% endif %}> Обязательный</label>
                     <label class="check"><input type="checkbox" name="is_active" value="1" {% if item.is_active %}checked{% endif %}> Активный</label>
+                    <label class="check"><input type="checkbox" name="is_student_doc" value="1" {% if item.is_student_doc %}checked{% endif %}> Студенческий документ</label>
                 </div>
+                <div class="field" style="max-width:160px;margin-top:8px"><label>Порядок сортировки</label><input type="number" name="sort_order" value="{{ item.sort_order or 0 }}" min="0"></div>
                 <p><button class="btn" type="submit">Сохранить</button></p>
             </form>
         </details>

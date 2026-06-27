@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="icon" href="/static/favicon.ico?v=2">
+    <title>{{ 'Редактировать режим' if regime else 'Добавить режим' }}</title>
+    <style>
+        :root { --brand-blue:#0b1475; --brand-peach:#f58a65; --bg:#f4f5f7; --card-bg:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --shadow:0 16px 40px rgba(11,20,117,.08); }
+        *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:28px 18px 36px}
+        .page{max-width:860px;margin:0 auto}
+        .topbar,.card{background:var(--card-bg);border-radius:22px;box-shadow:var(--shadow);padding:20px;margin-bottom:20px}
+        .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px}
+        .brand{display:flex;align-items:center;gap:14px}
+        .brand img{width:64px;height:64px;object-fit:contain;border-radius:16px}
+        h1,h2,h3{color:var(--brand-blue);margin-top:0}
+        .toolbar{display:flex;gap:10px;flex-wrap:wrap}
+        .btn{display:inline-flex;align-items:center;height:42px;padding:0 18px;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;border:none}
+        .btn-primary{background:linear-gradient(135deg,var(--brand-blue),#18239a);color:#fff}
+        .btn-light{background:#fff;color:var(--brand-blue);border:1px solid rgba(11,20,117,.15)}
+        .field{margin-bottom:16px}
+        .field label{display:block;font-size:13px;font-weight:700;color:var(--brand-blue);margin-bottom:6px}
+        .field input[type=text],.field input[type=number],.field textarea{width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:14px;font-family:inherit}
+        .field textarea{min-height:80px;resize:vertical}
+        .hint{font-size:12px;color:var(--muted);margin-top:4px}
+        .error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:14px}
+        .matrix-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}
+        .matrix-item{display:flex;align-items:center;gap:8px;font-size:14px;padding:6px 0;border-bottom:1px solid #f3f4f6}
+        .matrix-item input[type=checkbox]{width:16px;height:16px;flex-shrink:0;accent-color:var(--brand-blue)}
+        .sort-badge{font-size:11px;font-weight:700;background:#f3f4f6;color:var(--muted);padding:2px 6px;border-radius:6px;margin-left:auto}
+        .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        .toggle-row{display:flex;align-items:center;gap:10px}
+        .toggle-row label{font-weight:700;color:var(--brand-blue);font-size:13px}
+    </style>
+</head>
+<body><div class="page">
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div><h1>{{ 'Редактировать режим' if regime else 'Добавить режим' }}</h1></div>
+        </div>
+        <div class="toolbar">
+            <a href="/admin/citizenship/regimes" class="btn btn-light">← Назад к режимам</a>
+        </div>
+    </div>
+
+    <div class="card">
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+        <form method="post" action="{{ '/admin/citizenship/regimes/' + regime.id|string + '/edit' if regime else '/admin/citizenship/regimes/add' }}">
+
+            <div class="row2">
+                <div class="field">
+                    <label>Код режима *</label>
+                    <input type="text" name="code" value="{{ regime.code if regime else '' }}" placeholder="resident / union / eaeu / patent / visa">
+                    <div class="hint">Латиница, уникальный идентификатор</div>
+                </div>
+                <div class="field">
+                    <label>Порядок сортировки</label>
+                    <input type="number" name="sort_order" value="{{ regime.sort_order if regime else 0 }}" min="0">
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Название режима *</label>
+                <input type="text" name="name" value="{{ regime.name if regime else '' }}" placeholder="Резидент РФ">
+            </div>
+
+            <div class="field">
+                <label>Описание</label>
+                <textarea name="description">{{ regime.description if regime else '' }}</textarea>
+            </div>
+
+            <div class="field">
+                <div class="toggle-row">
+                    <input type="checkbox" name="is_active" value="1" id="is_active" {{ 'checked' if (not regime or regime.is_active) }}>
+                    <label for="is_active">Режим активен</label>
+                </div>
+            </div>
+
+            {% if doc_types %}
+            <div class="field">
+                <label>Требуемые документы для режима</label>
+                <div class="hint" style="margin-bottom:10px">Отметьте типы документов, обязательные для этого режима</div>
+                <div class="matrix-grid">
+                    {% for dt in doc_types %}
+                    <label class="matrix-item">
+                        <input type="checkbox" name="required_doc_ids" value="{{ dt.id }}"
+                            {{ 'checked' if dt.id in checked_ids }}>
+                        <span>{{ dt.name }}</span>
+                        {% if dt.sort_order %}<span class="sort-badge">{{ dt.sort_order }}</span>{% endif %}
+                        {% if dt.is_student_doc %}<span class="sort-badge" style="background:#fef9c3;color:#713f12">студ.</span>{% endif %}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="field" style="color:var(--muted);font-size:14px">
+                Типы документов пока не добавлены — сначала настройте их в <a href="/admin/document-types">Типах документов</a>.
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary">{{ 'Сохранить' if regime else 'Создать режим' }}</button>
+        </form>
+    </div>
+</div></body></html>

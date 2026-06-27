@@ -72,6 +72,26 @@
             .topbar { flex-direction: column; align-items: stretch; }
         }
         @media (max-width: 650px) { .grid { grid-template-columns: 1fr; } }
+        .view-toggle { display: flex; gap: 6px; }
+        .view-toggle a { text-decoration: none; padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; border: 1px solid rgba(11,20,117,0.14); color: var(--brand-blue); background: #fff; }
+        .view-toggle a.active { background: var(--brand-blue); color: #fff; border-color: var(--brand-blue); }
+        .matrix-group { margin-bottom: 20px; }
+        .matrix-group h3 { color: var(--brand-blue); margin: 0 0 10px; font-size: 15px; }
+        .matrix-group .address { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+        .matrix-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .matrix-table th { background: #fafbfc; color: var(--brand-blue); padding: 8px 6px; border-bottom: 1px solid var(--border); white-space: nowrap; text-align: center; font-size: 11px; }
+        .matrix-table th.name-col { text-align: left; min-width: 160px; }
+        .matrix-table td { padding: 6px 4px; border-bottom: 1px solid var(--border); text-align: center; vertical-align: middle; }
+        .matrix-table td.name-col { text-align: left; padding-left: 10px; font-weight: 600; }
+
+        .mcell { display: inline-block; width: 32px; height: 32px; border-radius: 6px; line-height: 32px; font-size: 10px; font-weight: 700; }
+        .mcell.ok { background: #dcfce7; color: #166534; }
+        .mcell.expiring_soon { background: #ffedd5; color: #9a3412; }
+        .mcell.pending { background: #fef9c3; color: #713f12; }
+        .mcell.expired { background: #fee2e2; color: #991b1b; }
+        .mcell.missing { background: #f1f5f9; color: #94a3b8; }
+        .mcell.na { background: #f8fafc; color: #cbd5e1; }
+        .matrix-filter { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
     </style>
 </head>
 <body>
@@ -86,6 +106,12 @@
         </div>
         <div class="toolbar">
             {% if not request.url.path.startswith('/hr') %}<a href="{{ base_path.replace('/documents', '/document-types') }}" class="link secondary">Типы документов</a>{% endif %}
+            {% if base_path == '/admin/documents' %}
+            <div class="view-toggle">
+                <a href="{{ base_path }}?view=registry" class="{{ 'active' if view == 'registry' else '' }}">Реестр</a>
+                <a href="{{ base_path }}?view=matrix" class="{{ 'active' if view == 'matrix' else '' }}">Матрица</a>
+            </div>
+            {% endif %}
             <a href="{{ back_url }}" class="link secondary">{{ back_label }}</a>
         </div>
     </div>
@@ -93,6 +119,72 @@
     {% if message %}<div class="card message">{{ message }}</div>{% endif %}
     {% if error %}<div class="card error">{{ error }}</div>{% endif %}
 
+{% if view == 'matrix' %}
+    <section class="card">
+        <h2>Фильтры матрицы</h2>
+        <form method="get" action="{{ base_path }}" class="matrix-filter">
+            <input type="hidden" name="view" value="matrix">
+            <label>ТК
+                <select name="tk_filter" style="margin-top:4px">
+                    <option value="">Все ТК</option>
+                    {% for s in stores %}
+                        <option value="{{ s.tk_number }}" {% if tk_filter == s.tk_number|string %}selected{% endif %}>
+                            ТК {{ s.tk_number }}{% if s.display_name %} — {{ s.display_name }}{% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>ФИО
+                <input type="text" name="name_filter" value="{{ name_filter }}" placeholder="Поиск по ФИО" style="margin-top:4px">
+            </label>
+            <button class="btn" type="submit">Найти</button>
+        </form>
+    </section>
+
+    {% for group in groups %}
+    <section class="card matrix-group">
+        {% if group.tk_number %}
+        <h3>ТК {{ group.tk_number }}{% if group.store and group.store.display_name %} — {{ group.store.display_name }}{% endif %}</h3>
+        {% if group.store and group.store.object_address %}<div class="address">{{ group.store.object_address }}</div>{% endif %}
+        {% else %}
+        <h3>Без ТК <span style="font-size:13px;font-weight:400;color:var(--muted)">({{ group.employees|length }})</span></h3>
+        {% endif %}
+        <div class="table-wrap">
+        <table class="matrix-table">
+            <thead>
+                <tr>
+                    <th class="name-col">ФИО</th>
+                    {% for icon_key, title in matrix_columns %}
+                    <th title="{{ title }}">{{ title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for emp in group.employees %}
+            {% set row = completeness_map.get(emp.id, {}) %}
+            <tr>
+                <td class="name-col">{{ emp.employee_name }}</td>
+                {% for icon_key, title in matrix_columns %}
+                {% set item = row.get(icon_key) %}
+                <td title="{{ title }}: {{ item.status if item else 'н/д' }}">
+                    {% if item %}
+                    <span class="mcell {{ item.status }}">●</span>
+                    {% else %}
+                    <span class="mcell na">–</span>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </section>
+    {% else %}
+    <div class="card"><p class="muted">По выбранному фильтру сотрудников не найдено.</p></div>
+    {% endfor %}
+
+{% else %}
     <section class="card">
         <h2>Фильтры</h2>
         <form method="get" action="{{ base_path }}" class="filters">
@@ -149,7 +241,7 @@
                 <div class="field"><label>Срок действия</label><input type="date" name="expiry_date"></div>
                 <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_value"></div>
                 <div class="field"><label>Доп. поле 2</label><input name="extra_field_2_value"></div>
-                <div class="field"><label>Файл</label><input type="file" name="file" accept="image/*,.pdf,.heic" required></div>
+                <div class="field"><label>Файл <span style="color:var(--muted);font-weight:400">(необязательно)</span></label><input type="file" name="file" accept="image/*,.pdf,.heic"></div>
                 <div class="field"><label>Комментарий</label><textarea name="comment"></textarea></div>
             </div>
             <p><label><input type="checkbox" name="is_permanent" value="1"> Бессрочно</label></p>
@@ -246,6 +338,7 @@
             </table>
         </div>
     </section>
+{% endif %}
 </div>
 </body>
 </html>

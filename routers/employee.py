@@ -3,17 +3,32 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from dependencies import current_user, get_db
-from document_helpers import employee_document_rows, user_citizenship
-from models import Shift
+from document_helpers import (
+    employee_completeness,
+    employee_document_rows,
+    latest_employee_document,
+    user_citizenship,
+)
+from models import Requisite, Shift
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today
+from utils import normalize_text
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+_STATUS_STYLES = {
+    "ok":            {"border": "#16a34a", "bg": "#f0fdf4", "glyph": "✓", "label": "Проверен, годен"},
+    "expiring_soon": {"border": "#f97316", "bg": "#fff7ed", "glyph": "⚠", "label": "Истекает скоро"},
+    "pending":       {"border": "#eab308", "bg": "#fefce8", "glyph": "⏳", "label": "Ждёт проверки"},
+    "expired":       {"border": "#dc2626", "bg": "#fef2f2", "glyph": "✗", "label": "Просрочен"},
+    "missing":       {"border": "#94a3b8", "bg": "#f8fafc", "glyph": "–", "label": "Не загружен"},
+}
 
 
 @router.get("/cabinet", response_class=HTMLResponse)
@@ -54,9 +69,12 @@ def cabinet(
                 "total_hours": 0,
                 "date_from": date_from,
                 "date_to": date_to,
-                "documents_attention_count": 0,
-                "error": "Некорректный формат даты"
-            }
+                "completeness": [],
+                "all_ok": True,
+                "attention_count": 0,
+                "status_styles": _STATUS_STYLES,
+                "error": "Некорректный формат даты",
+            },
         )
 
     shifts = query.order_by(Shift.shift_date).all()
@@ -65,11 +83,25 @@ def cabinet(
         shift.is_attention = shift.is_no_plan or (shift.hours or 0) == 0
 
     total = sum(s.hours for s in shifts)
-    document_rows = employee_document_rows(session, user)
-    documents_attention_count = len([
-        row for row in document_rows
-        if row["status"] in {"missing", "rejected", "expired"}
-    ])
+
+    completeness = employee_completeness(session, user)
+    name_clean = normalize_text(user.employee_name)
+    requisite = session.query(Requisite).filter(
+        Requisite.is_active == True,
+        or_(Requisite.user_id == user.id, Requisite.employee_name == name_clean),
+    ).first()
+    for item in completeness:
+        if item["source"] == "document" and item["document_type"]:
+            doc = latest_employee_document(session, user.employee_name, item["document_type"].id)
+            item["document"] = doc
+            item["file_ext"] = doc.file_path.rsplit(".", 1)[-1].lower() if doc and doc.file_path else ""
+            item["requisite"] = None
+        else:
+            item["document"] = None
+            item["file_ext"] = ""
+            item["requisite"] = requisite
+    all_ok = all(r["status"] == "ok" for r in completeness)
+    attention_count = sum(1 for r in completeness if r["status"] != "ok")
 
     return templates.TemplateResponse(
         request,
@@ -80,9 +112,12 @@ def cabinet(
             "total_hours": total,
             "date_from": date_from,
             "date_to": date_to,
-            "documents_attention_count": documents_attention_count,
-            "error": None
-        }
+            "completeness": completeness,
+            "all_ok": all_ok,
+            "attention_count": attention_count,
+            "status_styles": _STATUS_STYLES,
+            "error": None,
+        },
     )
 
 

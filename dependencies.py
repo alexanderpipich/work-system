@@ -36,20 +36,4 @@ def current_user(request: Request, db: Session = Depends(get_db)):
     return user
 
 
-def require_admin_user(user: User = Depends(current_user)):
-    if user.is_admin or user.role in {"admin", "superadmin"}:
-        return user
-    raise RedirectException("/")
-
-
-def require_economist_user(user: User = Depends(current_user)):
-    if user.is_admin or user.role in {"admin", "superadmin", "economist"}:
-        return user
-    raise RedirectException("/")
-
-
-def require_brigadier_user(user: User = Depends(current_user)):
-    if user.is_admin or user.role in {"admin", "superadmin", "brigadier"}:
-        return user
-    raise RedirectException("/")
 
