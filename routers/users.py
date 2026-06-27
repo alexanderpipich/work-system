@@ -218,13 +218,20 @@ async def upload_users_submit(
                 "message": None,
                 "created": None,
                 "skipped": None,
-                "bad_rows": None
+                "bad_rows": None,
+                "linked": None,
+                "unmatched": None,
             }
         )
+
+    countries = session.query(Country).filter(Country.is_active == True).all()
+    country_by_name = {normalize_text(c.name).casefold(): c.id for c in countries}
 
     created = 0
     skipped = 0
     bad = 0
+    linked = 0
+    unmatched = []
 
     for _, row in df.iterrows():
         try:
@@ -240,6 +247,7 @@ async def upload_users_submit(
             phone_clean = normalize_phone(phone_raw)
             name_clean = normalize_text(name_raw)
             citizenship_clean = normalize_text(citizenship_raw)
+            matched_country_id = country_by_name.get(citizenship_clean.casefold())
 
             if isinstance(password_raw, float) and password_raw.is_integer():
                 password_clean = str(int(password_raw))
@@ -267,6 +275,7 @@ async def upload_users_submit(
                 brigadier_store=normalize_text(row.get("brigadier_store", "")) or None,
                 economist_stores=uploaded_scope or None,
                 citizenship_country=citizenship_clean,
+                citizenship_country_id=matched_country_id,
                 legal_entity=normalize_text(row.get("legal_entity", "")) or None,
             )
 
@@ -288,6 +297,10 @@ async def upload_users_submit(
                 )
                 session.commit()
                 created += 1
+                if matched_country_id:
+                    linked += 1
+                else:
+                    unmatched.append({"name": name_clean, "citizenship": citizenship_clean})
             except IntegrityError:
                 session.rollback()
                 skipped += 1
@@ -304,7 +317,9 @@ async def upload_users_submit(
             "created": created,
             "skipped": skipped,
             "bad_rows": bad,
-            "error": None
+            "linked": linked,
+            "unmatched": unmatched,
+            "error": None,
         }
     )
 
