@@ -476,21 +476,6 @@ class StoreNotificationSettings(Base):
     comment = Column(Text, nullable=True)
 
 
-class UnplannedShiftNotification(Base):
-    __tablename__ = "unplanned_shift_notifications"
-
-    id = Column(Integer, primary_key=True, index=True)
-    shift_id = Column(Integer, nullable=True, unique=True)
-    store = Column(String, nullable=False)
-    city = Column(String, nullable=True)
-    shift_date = Column(Date, nullable=False)
-    employee_name = Column(String, nullable=False)
-    service = Column(String, nullable=True)
-    hours = Column(Float, default=0)
-    status = Column(String, default="generated")
-    created_at = Column(DateTime, default=now_utc)
-    sent_at = Column(DateTime, nullable=True)
-
 STORE_CONTACT_ROLES = {
     "security": "Охрана",
     "hr_dept": "Отдел персонала",

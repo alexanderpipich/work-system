@@ -23,14 +23,11 @@ from models import (
     PlanningForm,
     PlanningScenario,
     Shift,
-    StoreNotificationSettings,
     StoreReconciliation,
     StoreReconciliationSettings,
-    UnplannedShiftNotification,
     User,
 )
 from rbac import canonical_role, has_permission, is_superadmin, require_permission
-from shift_helpers import is_no_plan_request_type
 from time_helpers import business_today, now_utc
 from utils import normalize_text
 
@@ -470,43 +467,4 @@ def reconciliation_action(request:Request,row_id:int,action:str,session:Session=
     row=_reconciliation(session,user,row_id)
     if row and action in {"ready","sent"}: row.status="ready_to_send" if action=="ready" else "sent"; row.sent_at=now_utc() if action=="sent" else None; create_audit_log(session,request,user,"reconciliation_sent" if action=="sent" else "reconciliation_ready","store_reconciliation",row.id,row.store);session.commit()
     return _redirect(request,"/reconciliations",message="Статус сверки обновлён")
-
-
-@router.get("/admin/employees/unplanned-shifts",response_class=HTMLResponse)
-@router.get("/economist/employees/unplanned-shifts",response_class=HTMLResponse)
-@router.get("/hr/employees/unplanned-shifts",response_class=HTMLResponse)
-def unplanned_page(request:Request,message:str="",session:Session=Depends(get_db),user=Depends(require_employee_manager)):
-    rows=_scope(session.query(UnplannedShiftNotification),UnplannedShiftNotification,user).order_by(UnplannedShiftNotification.shift_date.desc()).all();settings=_scope(session.query(StoreNotificationSettings),StoreNotificationSettings,user).order_by(StoreNotificationSettings.store).all()
-    return templates.TemplateResponse(request,"employees_unplanned.html",_context(request,user,"unplanned",rows=rows,settings=settings,stores=_stores(session,user),message=message))
-
-
-@router.post("/admin/employees/unplanned-shifts/settings")
-@router.post("/economist/employees/unplanned-shifts/settings")
-@router.post("/hr/employees/unplanned-shifts/settings")
-def notification_settings(request:Request,store:str=Form(...),email:str=Form(default=""),enabled:str=Form(default=""),comment:str=Form(default=""),session:Session=Depends(get_db),user=Depends(require_employee_manager)):
-    city=_store_city(session,store)
-    if not _scope_allowed(session,user,city,store):return _redirect(request,"/unplanned-shifts",message="Нет доступа к городу")
-    row=session.query(StoreNotificationSettings).filter(StoreNotificationSettings.store==normalize_text(store)).first() or StoreNotificationSettings(store=normalize_text(store));session.add(row);row.city=city;row.email=normalize_text(email) or None;row.enabled=enabled=="1";row.comment=normalize_text(comment) or None;session.commit();return _redirect(request,"/unplanned-shifts",message="Настройки сохранены")
-
-
-@router.post("/admin/employees/unplanned-shifts/generate")
-@router.post("/economist/employees/unplanned-shifts/generate")
-@router.post("/hr/employees/unplanned-shifts/generate")
-def unplanned_generate(request:Request,session:Session=Depends(get_db),user=Depends(require_employee_manager)):
-    cutoff=business_today()-timedelta(days=3); query=_scope(session.query(Shift).filter(Shift.shift_date<=cutoff),Shift,user);created=0
-    configured_rows=_scope(session.query(StoreNotificationSettings),StoreNotificationSettings,user).all(); enabled={row.store for row in configured_rows if row.enabled}
-    for shift in query.all():
-        if not is_no_plan_request_type(shift.request_type) or (configured_rows and shift.store not in enabled):continue
-        if session.query(UnplannedShiftNotification).filter(UnplannedShiftNotification.shift_id==shift.id).first():continue
-        row=UnplannedShiftNotification(shift_id=shift.id,store=shift.store,city=shift.city,shift_date=shift.shift_date,employee_name=shift.employee,service=shift.service,hours=shift.hours,status="generated",created_at=now_utc());session.add(row);session.flush();create_audit_log(session,request,user,"unplanned_shift_notification_created","unplanned_shift_notification",row.id,f"{row.employee_name} / {row.store}");created+=1
-    session.commit();return _redirect(request,"/unplanned-shifts",message=f"Создано уведомлений: {created}")
-
-
-@router.post("/admin/employees/unplanned-shifts/{row_id}/{action}")
-@router.post("/economist/employees/unplanned-shifts/{row_id}/{action}")
-@router.post("/hr/employees/unplanned-shifts/{row_id}/{action}")
-def unplanned_action(request:Request,row_id:int,action:str,session:Session=Depends(get_db),user=Depends(require_employee_manager)):
-    row=session.query(UnplannedShiftNotification).filter(UnplannedShiftNotification.id==row_id).first()
-    if row and _scope_allowed(session,user,row.city,row.store) and action in {"ready","sent"}:row.status="ready_to_send" if action=="ready" else "sent";row.sent_at=now_utc() if action=="sent" else None;create_audit_log(session,request,user,"unplanned_shift_notification_sent" if action=="sent" else "unplanned_shift_notification_ready","unplanned_shift_notification",row.id,f"{row.employee_name} / {row.store}");session.commit()
-    return _redirect(request,"/unplanned-shifts",message="Статус уведомления обновлён")
 
