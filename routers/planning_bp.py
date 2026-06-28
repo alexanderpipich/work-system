@@ -8,6 +8,7 @@
 
 import calendar
 import os
+from datetime import date
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -34,10 +35,20 @@ PLANNING_DIR = GENERATED_FILES_ROOT / "planning_forms"
 
 
 def _period():
-    """Период бланка: сегодня … последний день текущего месяца."""
+    """Дефолтный период бланка: сегодня … последний день текущего месяца."""
     start = business_today()
     last_day = calendar.monthrange(start.year, start.month)[1]
     return start, start.replace(day=last_day)
+
+
+def _parse_date(value: str):
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def _employees_for_tk(session: Session, tk: int):
@@ -78,6 +89,8 @@ def _page(request, user, session, **extra):
         "user": user,
         "stores": stores,
         "period": {"date_from": start, "date_to": end},
+        # Значения полей формы (ISO для <input type=date>); по умолчанию — дефолт.
+        "form": {"date_from": start.isoformat(), "date_to": end.isoformat()},
         "history": _history(session),
         "message": "",
         "error": "",
@@ -104,12 +117,24 @@ def planning_bp_generate(
     session: Session = Depends(get_db),
     user=Depends(_mgmt),
     tk_number: int = Form(...),
+    date_from: str = Form(""),
+    date_to: str = Form(""),
 ):
     store = session.query(Store).filter(Store.tk_number == tk_number).first()
     if store is None:
         return _page(request, user, session, error=f"Магазин ТК-{tk_number:03d} не найден.")
 
-    start, end = _period()
+    # Период из формы; пустые поля → дефолт (сегодня … конец месяца).
+    default_start, default_end = _period()
+    start = _parse_date(date_from) or default_start
+    end = _parse_date(date_to) or default_end
+    if end < start:
+        return _page(
+            request, user, session,
+            error="Дата по не может быть раньше даты с.",
+            form={"date_from": start.isoformat(), "date_to": end.isoformat()},
+        )
+
     employees = _employees_for_tk(session, tk_number)
 
     row = PlanningForm(

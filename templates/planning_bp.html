@@ -111,11 +111,19 @@
                     {% endfor %}
                 </select>
             </div>
+            <div>
+                <label>Дата с</label>
+                <input type="date" name="date_from" value="{{ form.date_from }}">
+            </div>
+            <div>
+                <label>Дата по</label>
+                <input type="date" name="date_to" value="{{ form.date_to }}">
+            </div>
             <button type="submit" class="btn">Сформировать БП</button>
         </form>
         <p class="hint">
-            Период бланка: <b>{{ period.date_from.strftime('%d.%m.%Y') }} – {{ period.date_to.strftime('%d.%m.%Y') }}</b>
-            (сегодня … конец месяца). В таблицу попадают активные сотрудники, привязанные к выбранному ТК.
+            По умолчанию период — <b>сегодня … конец месяца</b> ({{ period.date_from.strftime('%d.%m.%Y') }} – {{ period.date_to.strftime('%d.%m.%Y') }});
+            при необходимости измените даты выше. В таблицу попадают активные сотрудники, привязанные к выбранному ТК.
         </p>
         {% if download_url %}
         <p style="margin-top:14px;"><a class="download-link" href="{{ download_url }}">⬇ Скачать сформированный БП</a></p>
