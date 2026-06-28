@@ -204,6 +204,14 @@
                             {{ letter.body_html | safe }}
                         </div>
                     </details>
+                    <form method="post" action="/admin/email/unplanned/send"
+                          onsubmit="return confirm('Отправить письмо по ТК {{ letter.tk }} на адреса: {{ letter.contacts | join(', ') }}?');"
+                          style="margin-top:14px;">
+                        <input type="hidden" name="date_from" value="{{ filters.date_from }}">
+                        <input type="hidden" name="date_to" value="{{ filters.date_to }}">
+                        <input type="hidden" name="tk" value="{{ letter.tk }}">
+                        <button type="submit" class="btn">Отправить этому магазину</button>
+                    </form>
                 </div>
             </div>
             {% endfor %}

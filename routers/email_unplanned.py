@@ -72,12 +72,26 @@ def unplanned_send(
     tk: str = Form(""),
 ):
     # Пересобираем актуальный набор (идемпотентно: уже отправленные исключены).
+    # tk задан -> отправка одному магазину; пуст -> отправка всех.
+    single_tk = _parse_tk(tk)
     data = collect_unplanned(
         session,
         date_from=_parse_date(date_from),
         date_to=_parse_date(date_to),
-        tk_filter=_parse_tk(tk),
+        tk_filter=single_tk,
     )
+
+    # Нечего отправлять одному магазину (всё уже отправлено ранее).
+    if single_tk is not None and not data["to_send"]:
+        return templates.TemplateResponse("admin_email_unplanned.html", {
+            "request": request,
+            "user": user,
+            "data": data,
+            "filters": {"date_from": date_from, "date_to": date_to, "tk": tk},
+            "results": None,
+            "message": f"По ТК {single_tk} нет смен к отправке (возможно, уже отправлено).",
+            "error": "",
+        })
 
     sent = 0
     failed = 0
@@ -141,19 +155,26 @@ def unplanned_send(
     session.commit()
 
     # Пересобираем после отправки — успешные смены теперь исключены.
+    # Сбрасываем tk-фильтр предпросмотра при отправке одному магазину,
+    # чтобы остальные письма снова были видны.
     fresh = collect_unplanned(
         session,
         date_from=_parse_date(date_from),
         date_to=_parse_date(date_to),
-        tk_filter=_parse_tk(tk),
+        tk_filter=None,
     )
+
+    if single_tk is not None:
+        message = f"ТК {single_tk}: отправлено {sent}, не отправлено {failed}."
+    else:
+        message = f"Готово. Отправлено: {sent}, не отправлено: {failed}."
 
     return templates.TemplateResponse("admin_email_unplanned.html", {
         "request": request,
         "user": user,
         "data": fresh,
-        "filters": {"date_from": date_from, "date_to": date_to, "tk": tk},
+        "filters": {"date_from": date_from, "date_to": date_to, "tk": ""},
         "results": {"sent": sent, "failed": failed, "errors": errors},
-        "message": f"Готово. Отправлено: {sent}, не отправлено: {failed}.",
+        "message": message,
         "error": "",
     })
