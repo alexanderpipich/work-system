@@ -130,7 +130,15 @@ def collect_unplanned(session: Session, date_from=None, date_to=None, tk_filter=
     if date_from is not None:
         query = query.filter(Shift.shift_date >= date_from)
 
-    candidates = [s for s in query.all() if is_no_plan_shift(s)]
+    # Только смены с реальными часами (hours > 0). Нулевые/None/отрицательные
+    # смены без плана — вероятный баг timebook, директору слать про них нечего.
+    # Фильтр ТОЛЬКО здесь (сбор писем), не глобально: кабинет/payroll/детекция —
+    # читают нулевые смены без плана как прежде.
+    candidates = [
+        s
+        for s in query.all()
+        if is_no_plan_shift(s) and (s.hours or 0) > 0
+    ]
 
     # Идемпотентность: исключить смены с успешно отправленным уведомлением.
     notified_ids = {
