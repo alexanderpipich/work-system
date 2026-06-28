@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бланк планирования</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --olive: #8a9a3a;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+            --error-bg: #fff1ed;
+            --error-text: #b42318;
+            --success-bg: #eefbf3;
+            --success-text: #067647;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
+                var(--bg);
+            color: var(--text);
+            padding: 28px 18px 36px;
+        }
+        .page { max-width: 980px; margin: 0 auto; }
+        .topbar, .card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 20px 24px;
+            margin-bottom: 20px;
+        }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .brand-title { margin: 0; font-size: 24px; color: var(--brand-blue); font-weight: 700; }
+        .brand-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+        .toolbar a {
+            text-decoration: none; color: var(--brand-blue);
+            border: 1.5px solid var(--brand-blue); border-radius: 10px;
+            padding: 7px 16px; font-size: 14px; font-weight: 600;
+        }
+        .toolbar a:hover { background: var(--brand-blue); color: #fff; }
+        h2 { margin: 0 0 16px; font-size: 20px; color: var(--brand-blue); }
+        .banner { padding: 12px 18px; border-radius: 12px; font-size: 14px; margin-bottom: 18px; }
+        .banner.success { background: var(--success-bg); color: var(--success-text); }
+        .banner.error { background: var(--error-bg); color: var(--error-text); }
+        .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+        label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
+        select, input {
+            border: 1.5px solid var(--border); border-radius: 10px;
+            padding: 9px 14px; font-size: 14px; outline: none; background: #fff;
+        }
+        select:focus { border-color: var(--olive); }
+        .btn {
+            background: linear-gradient(135deg, #6f7d29, var(--olive));
+            color: #fff; border: none; border-radius: 10px;
+            padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer;
+        }
+        .btn:hover { opacity: 0.92; }
+        .hint { font-size: 13px; color: var(--muted); margin-top: 12px; }
+        .download-link {
+            display: inline-block; margin-top: 4px; text-decoration: none; font-weight: 600;
+            color: var(--success-text); border: 1.5px solid var(--success-text);
+            border-radius: 10px; padding: 8px 16px; font-size: 14px;
+        }
+        .download-link:hover { background: var(--success-text); color: #fff; }
+        table.history { width: 100%; border-collapse: collapse; font-size: 14px; }
+        table.history th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1.5px solid var(--border); }
+        table.history td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+        table.history a { color: var(--brand-blue); font-weight: 600; text-decoration: none; }
+        table.history a:hover { text-decoration: underline; }
+        .empty { color: var(--muted); font-size: 14px; padding: 12px 0; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div>
+            <h1 class="brand-title">Бланк планирования</h1>
+            <p class="brand-subtitle">Формирование PDF-бланка по магазину (по образцу БП-007) и скачивание.</p>
+        </div>
+        <div class="toolbar">
+            <a href="/admin">← Назад</a>
+        </div>
+    </div>
+
+    {% if message %}<div class="banner success">{{ message }}</div>{% endif %}
+    {% if error %}<div class="banner error">{{ error }}</div>{% endif %}
+
+    <div class="card">
+        <h2>Сформировать БП</h2>
+        <form method="post" action="/admin/planning-bp/generate" class="form-row"
+              onsubmit="return confirm('Сформировать бланк планирования по выбранному магазину?');">
+            <div>
+                <label>Магазин (ТК)</label>
+                <select name="tk_number" required style="min-width:320px;">
+                    <option value="" disabled selected>— выберите магазин —</option>
+                    {% for s in stores %}
+                    <option value="{{ s.tk_number }}">
+                        ТК-{{ '%03d'|format(s.tk_number) }}{% if s.display_name %} — {{ s.display_name }}{% endif %}{% if s.city %} ({{ s.city }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn">Сформировать БП</button>
+        </form>
+        <p class="hint">
+            Период бланка: <b>{{ period.date_from.strftime('%d.%m.%Y') }} – {{ period.date_to.strftime('%d.%m.%Y') }}</b>
+            (сегодня … конец месяца). В таблицу попадают активные сотрудники, привязанные к выбранному ТК.
+        </p>
+        {% if download_url %}
+        <p style="margin-top:14px;"><a class="download-link" href="{{ download_url }}">⬇ Скачать сформированный БП</a></p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>История ({{ history|length }})</h2>
+        {% if history %}
+        <table class="history">
+            <thead>
+                <tr><th>Магазин</th><th>Город</th><th>Период</th><th>Файл</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for f in history %}
+                <tr>
+                    <td>{{ f.store }}</td>
+                    <td>{{ f.city or '—' }}</td>
+                    <td>{% if f.date_from and f.date_to %}{{ f.date_from.strftime('%d.%m.%Y') }} – {{ f.date_to.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</td>
+                    <td>{{ f.file_name }}</td>
+                    <td><a href="/admin/planning-bp/{{ f.id }}/download">Скачать</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty">Пока ни одного бланка не сформировано.</p>
+        {% endif %}
+    </div>
+</div>
+</body>
+</html>
