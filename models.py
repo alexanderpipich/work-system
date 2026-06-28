@@ -587,3 +587,13 @@ class EmailLog(Base):
     scenario = Column(String, nullable=True)
     created_at = Column(DateTime, default=now_utc)
     created_by = Column(Integer, nullable=True)
+
+
+class UnplannedNotification(Base):
+    __tablename__ = "unplanned_notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    shift_id = Column(Integer, ForeignKey("shifts.id"), nullable=False, index=True)
+    email_log_id = Column(Integer, ForeignKey("email_logs.id"), nullable=True)
+    status = Column(String, nullable=False)
+    sent_at = Column(DateTime, default=now_utc)

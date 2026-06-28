@@ -35,6 +35,7 @@ from routers.payroll_runs import router as payroll_runs_router
 from routers.rates import router as rates_router
 from routers.requisites import router as requisites_router
 from routers.email_test import router as email_test_router
+from routers.email_unplanned import router as email_unplanned_router
 from routers.stores import router as stores_router
 from routers.reports import router as reports_router
 from routers.schedules import router as schedules_router
@@ -76,6 +77,7 @@ app.include_router(payroll_runs_router)
 app.include_router(rates_router)
 app.include_router(requisites_router)
 app.include_router(email_test_router)
+app.include_router(email_unplanned_router)
 app.include_router(stores_router)
 app.include_router(reports_router)
 app.include_router(schedules_router)
