@@ -74,6 +74,7 @@ class Rate(Base):
     id = Column(Integer, primary_key=True, index=True)
     service = Column(String, nullable=False)
     format = Column(String, nullable=True)
+    city = Column(String, nullable=True, index=True)
     store = Column(String, nullable=True)
     employee_name = Column(String, nullable=True)
     hourly_rate = Column(Float, nullable=False)

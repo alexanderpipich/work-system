@@ -1,6 +1,8 @@
+import re
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Form, Request
+import pandas as pd
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import and_, or_
@@ -14,6 +16,109 @@ from rbac import canonical_role, require_permission
 from utils import normalize_format, normalize_text
 
 
+# --- Загрузка базовой тарифной сетки из Excel -------------------------------
+# Файл "ставки": колонки РЕГИОН / ТК / УСЛУГА + блок "Тариф исполнителя N уровня".
+# РЕГИОН → Rate.city (матчится со столбцом "Город" отчёта = Shift.city)
+# ТК     → Rate.format (ГМ/СМ/…; жёсткое условие при подборе)
+# УСЛУГА + уровень → Rate.service в виде "Nур_<название>"
+# Тариф исполнителя N уровня → Rate.hourly_rate
+
+TARIFF_LEVELS = [1, 2, 3, 4, 5]
+TARIFF_REGION_HDR = "РЕГИОН"
+TARIFF_TK_HDR = "ТК"
+TARIFF_SERVICE_HDR = "УСЛУГА"
+TARIFF_PERFORMER_HDR = "Тариф исполнителя {n} уровня"
+TARIFF_SHEET = "ставки"
+TARIFF_HEADER_ROW = 2  # 1-indexed строка заголовков
+
+
+def _tariff_find_col(columns, target):
+    target_norm = re.sub(r"\s+", " ", str(target)).strip().lower()
+    for col in columns:
+        if col is None:
+            continue
+        if re.sub(r"\s+", " ", str(col)).strip().lower() == target_norm:
+            return col
+    return None
+
+
+def parse_tariff_grid(file_obj, sheet=TARIFF_SHEET, header_row=TARIFF_HEADER_ROW):
+    """Развернуть тарифный Excel в плоский список строк ставок.
+
+    Возвращает (rows, conflicts), где rows — список dict с ключами
+    city/format/service/hourly_rate, а conflicts — список ключей
+    (city, format, service) с несколькими разными ставками.
+    """
+    df = pd.read_excel(file_obj, sheet_name=sheet, header=header_row - 1)
+    columns = list(df.columns)
+
+    region_c = _tariff_find_col(columns, TARIFF_REGION_HDR)
+    tk_c = _tariff_find_col(columns, TARIFF_TK_HDR)
+    service_c = _tariff_find_col(columns, TARIFF_SERVICE_HDR)
+    perf_cols = {
+        n: _tariff_find_col(columns, TARIFF_PERFORMER_HDR.format(n=n))
+        for n in TARIFF_LEVELS
+    }
+
+    missing = []
+    if region_c is None:
+        missing.append(TARIFF_REGION_HDR)
+    if tk_c is None:
+        missing.append(TARIFF_TK_HDR)
+    if service_c is None:
+        missing.append(TARIFF_SERVICE_HDR)
+    for n, col in perf_cols.items():
+        if col is None:
+            missing.append(TARIFF_PERFORMER_HDR.format(n=n))
+    if missing:
+        raise ValueError("Не найдены колонки: " + ", ".join(missing))
+
+    rows = []
+    for _, record in df.iterrows():
+        region = record[region_c]
+        tk = record[tk_c]
+        service = record[service_c]
+
+        if pd.isna(region) or pd.isna(service):
+            continue
+
+        city = normalize_text(region)
+        fmt = normalize_format(tk) if not pd.isna(tk) else ""
+        service_name = normalize_text(service)
+        if not city or not service_name:
+            continue
+
+        for n in TARIFF_LEVELS:
+            value = record[perf_cols[n]]
+            if pd.isna(value):
+                continue
+            try:
+                hourly_rate = round(float(value), 2)
+            except (TypeError, ValueError):
+                continue
+            if hourly_rate <= 0:
+                continue
+            rows.append({
+                "city": city,
+                "format": fmt or None,
+                "service": f"{n}ур_{service_name}",
+                "hourly_rate": hourly_rate,
+            })
+
+    # выявить конфликты: один ключ city+format+service → разные ставки
+    by_key = {}
+    for row in rows:
+        key = (row["city"], row["format"] or "", row["service"])
+        by_key.setdefault(key, set()).add(row["hourly_rate"])
+    conflicts = [
+        {"city": k[0], "format": k[1], "service": k[2], "rates": sorted(v)}
+        for k, v in by_key.items()
+        if len(v) > 1
+    ]
+
+    return rows, conflicts
+
+
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 require_rate_hard_delete = require_permission("rates.hard_delete", audit_denied=True)
@@ -25,6 +130,7 @@ def _rate_payload(rate):
     return {
         "service": rate.service,
         "format": rate.format,
+        "city": rate.city,
         "store": rate.store,
         "employee_name": rate.employee_name,
         "hourly_rate": rate.hourly_rate,
@@ -90,6 +196,7 @@ def economist_create_rate(
     request: Request,
     service: str = Form(...),
     format: str = Form(default=""),
+    city: str = Form(default=""),
     store: str = Form(default=""),
     employee_name: str = Form(default=""),
     hourly_rate: float = Form(...),
@@ -111,6 +218,7 @@ def economist_create_rate(
     rate = Rate(
         service=normalize_text(service),
         format=normalize_format(format) or None,
+        city=normalize_text(city) or None,
         store=normalize_text(store) or None,
         employee_name=normalize_text(employee_name) or None,
         hourly_rate=hourly_rate,
@@ -142,6 +250,7 @@ def economist_update_rate(
     rate_id: int = Form(...),
     service: str = Form(...),
     format: str = Form(default=""),
+    city: str = Form(default=""),
     store: str = Form(default=""),
     employee_name: str = Form(default=""),
     hourly_rate: float = Form(...),
@@ -168,6 +277,7 @@ def economist_update_rate(
 
     rate.service = normalize_text(service)
     rate.format = normalize_format(format) or None
+    rate.city = normalize_text(city) or None
     rate.store = normalize_text(store) or None
     rate.employee_name = normalize_text(employee_name) or None
     rate.hourly_rate = hourly_rate
@@ -241,6 +351,7 @@ def create_rate(
     request: Request,
     service: str = Form(...),
     format: str = Form(default=""),
+    city: str = Form(default=""),
     store: str = Form(default=""),
     employee_name: str = Form(default=""),
     hourly_rate: float = Form(...),
@@ -252,6 +363,7 @@ def create_rate(
 ):
     service_clean = normalize_text(service)
     format_clean = normalize_format(format) or None
+    city_clean = normalize_text(city) or None
     store_clean = normalize_text(store) or None
     employee_name_clean = normalize_text(employee_name) or None
     comment_clean = normalize_text(comment) or None
@@ -291,6 +403,7 @@ def create_rate(
     rate = Rate(
         service=service_clean,
         format=format_clean,
+        city=city_clean,
         store=store_clean,
         employee_name=employee_name_clean,
         hourly_rate=hourly_rate,
@@ -322,6 +435,7 @@ def update_rate(
     rate_id: int = Form(...),
     service: str = Form(...),
     format: str = Form(default=""),
+    city: str = Form(default=""),
     store: str = Form(default=""),
     employee_name: str = Form(default=""),
     hourly_rate: float = Form(...),
@@ -346,6 +460,7 @@ def update_rate(
 
     rate.service = normalize_text(service)
     rate.format = normalize_format(format) or None
+    rate.city = normalize_text(city) or None
     rate.store = normalize_text(store) or None
     rate.employee_name = normalize_text(employee_name) or None
     rate.hourly_rate = hourly_rate
@@ -393,3 +508,99 @@ def delete_rate(
 
     return RedirectResponse(url="/admin/rates", status_code=302)
 
+
+
+# --- Загрузка тарифной сетки: предпросмотр + применение ----------------------
+
+@router.post("/admin/rates/upload", response_class=HTMLResponse)
+async def upload_rates(
+    request: Request,
+    file: UploadFile = File(...),
+    mode: str = Form(default="preview"),  # "preview" | "append" | "replace"
+    session: Session = Depends(get_db),
+    user=Depends(_rates_manage),
+):
+    def _render(ctx):
+        rates = rates_query(session).all()
+        base = {"rates": rates, "message": None, "error": None}
+        base.update(ctx)
+        return templates.TemplateResponse(request, "rates.html", base)
+
+    try:
+        contents = await file.read()
+        import io
+        rows, conflicts = parse_tariff_grid(io.BytesIO(contents))
+    except ValueError as exc:
+        return _render({"error": f"Ошибка разбора файла: {exc}"})
+    except Exception as exc:  # noqa: BLE001
+        return _render({"error": f"Не удалось прочитать файл: {exc}"})
+
+    if not rows:
+        return _render({"error": "В файле не найдено ни одной ставки"})
+
+    # Предпросмотр: ничего не пишем, показываем сводку
+    if mode == "preview":
+        cities = sorted({r["city"] for r in rows})
+        formats = sorted({r["format"] or "—" for r in rows})
+        preview = {
+            "count": len(rows),
+            "cities": cities,
+            "formats": formats,
+            "conflicts": conflicts,
+            "sample": rows[:20],
+        }
+        return _render({"rates_preview": preview, "message": None})
+
+    # Применение: конфликты блокируют запись (детерминизм подбора)
+    if conflicts:
+        return _render({
+            "error": (
+                f"Загрузка отменена: найдено конфликтов ключа "
+                f"город+формат+услуга — {len(conflicts)}. "
+                "Устраните дубли в файле и повторите."
+            )
+        })
+
+    if mode == "replace":
+        # Удаляем только строки базовой сетки (без store и employee_name),
+        # чтобы не затронуть индивидуальные ставки по ТК/сотрудникам.
+        deleted = (
+            session.query(Rate)
+            .filter(Rate.store == None, Rate.employee_name == None)  # noqa: E711
+            .delete(synchronize_session=False)
+        )
+    else:
+        deleted = 0
+
+    created = 0
+    for row in rows:
+        rate = Rate(
+            service=row["service"],
+            format=row["format"],
+            city=row["city"],
+            store=None,
+            employee_name=None,
+            hourly_rate=row["hourly_rate"],
+        )
+        session.add(rate)
+        created += 1
+
+    session.flush()
+    create_audit_log(
+        session,
+        request,
+        user,
+        "rates_bulk_uploaded",
+        "rate",
+        None,
+        f"mode={mode}; создано={created}; удалено={deleted}",
+        new_value={"mode": mode, "created": created, "deleted": deleted},
+    )
+    session.commit()
+
+    return _render({
+        "message": (
+            f"Загрузка завершена ({mode}). Создано ставок: {created}"
+            + (f", удалено базовых: {deleted}" if mode == "replace" else "")
+        )
+    })

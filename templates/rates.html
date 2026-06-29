@@ -255,6 +255,11 @@
                 </div>
 
                 <div class="field">
+                    <label>Город</label>
+                    <input type="text" name="city" placeholder="как в отчёте, пусто = любой">
+                </div>
+
+                <div class="field">
                     <label>Магазин</label>
                     <input type="text" name="store" placeholder="Пусто = любой">
                 </div>
@@ -298,6 +303,83 @@
     </div>
 
     <div class="card">
+        <h2>Загрузка тарифной сетки из Excel</h2>
+        <p style="color:#64748b;font-size:13px;margin-top:-4px;">
+            Лист «ставки»: колонки РЕГИОН → Город, ТК → Формат, УСЛУГА + уровень → услуга вида
+            «Nур_название», блок «Тариф исполнителя N уровня» → ЧТС.
+        </p>
+
+        <form method="post" action="/admin/rates/upload" enctype="multipart/form-data">
+            <div class="form-grid">
+                <div class="field">
+                    <label>Файл .xlsx</label>
+                    <input type="file" name="file" accept=".xlsx" required>
+                </div>
+                <div class="field">
+                    <label>Режим</label>
+                    <select name="mode">
+                        <option value="preview">Предпросмотр (ничего не пишется)</option>
+                        <option value="append">Добавить к существующим</option>
+                        <option value="replace">Заменить базовую сетку</option>
+                    </select>
+                </div>
+            </div>
+            <p style="color:#64748b;font-size:12px;">
+                «Заменить базовую сетку» удаляет только общие ставки (без магазина и сотрудника).
+                Индивидуальные ставки по ТК и сотрудникам не затрагиваются.
+            </p>
+            <button type="submit" class="btn btn-primary btn-add">Загрузить</button>
+        </form>
+
+        {% if rates_preview %}
+            <div class="msg" style="margin-top:14px;">
+                Найдено ставок: <b>{{ rates_preview.count }}</b>.
+                Города: {{ rates_preview.cities | join(', ') }}.
+                Форматы: {{ rates_preview.formats | join(', ') }}.
+                {% if rates_preview.conflicts %}
+                    <br><span style="color:#b91c1c;">
+                    Конфликтов ключа город+формат+услуга: {{ rates_preview.conflicts | length }}
+                    — загрузка в режиме записи будет заблокирована.
+                    </span>
+                {% else %}
+                    <br>Конфликтов нет — можно применять.
+                {% endif %}
+            </div>
+
+            {% if rates_preview.conflicts %}
+                <div class="table-wrap" style="margin-top:10px;">
+                    <table>
+                        <thead><tr><th>Город</th><th>Формат</th><th>Услуга</th><th>Ставки</th></tr></thead>
+                        <tbody>
+                        {% for c in rates_preview.conflicts %}
+                            <tr>
+                                <td>{{ c.city }}</td><td>{{ c.format }}</td>
+                                <td>{{ c.service }}</td><td>{{ c.rates | join(', ') }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+
+            <div class="table-wrap" style="margin-top:10px;">
+                <table>
+                    <thead><tr><th>Город</th><th>Формат</th><th>Услуга</th><th>ЧТС</th></tr></thead>
+                    <tbody>
+                    {% for r in rates_preview.sample %}
+                        <tr>
+                            <td>{{ r.city }}</td><td>{{ r.format or '—' }}</td>
+                            <td>{{ r.service }}</td><td>{{ r.hourly_rate }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <p style="color:#64748b;font-size:12px;">Показаны первые {{ rates_preview.sample | length }} строк.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
         <h2>Список ставок</h2>
 
         <div class="table-wrap">
@@ -337,6 +419,7 @@
 
                                     <input type="text" name="service" value="{{ rate.service }}" placeholder="Услуга" required>
                                     <input type="text" name="format" value="{{ rate.format or '' }}" placeholder="Формат">
+                                    <input type="text" name="city" value="{{ rate.city or '' }}" placeholder="Город">
                                     <input type="text" name="store" value="{{ rate.store or '' }}" placeholder="Магазин">
                                     <input type="text" name="employee_name" value="{{ rate.employee_name or '' }}" placeholder="Сотрудник">
                                     <input type="number" step="0.01" name="hourly_rate" value="{{ rate.hourly_rate }}" placeholder="ЧТС" required>
