@@ -583,3 +583,20 @@ class UnplannedNotification(Base):
     email_log_id = Column(Integer, ForeignKey("email_logs.id"), nullable=True)
     status = Column(String, nullable=False)
     sent_at = Column(DateTime, default=now_utc)
+
+
+class BPNotification(Base):
+    __tablename__ = "bp_notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    store_tk = Column(Integer, nullable=False, index=True)
+    period_from = Column(Date, nullable=False)
+    period_to = Column(Date, nullable=False)
+    email_log_id = Column(Integer, ForeignKey("email_logs.id"), nullable=True)
+    to_addresses = Column(Text, nullable=True)
+    status = Column(String, nullable=False)
+    sent_at = Column(DateTime, default=now_utc)
+
+    __table_args__ = (
+        UniqueConstraint("store_tk", "period_from", "period_to", name="uq_bp_notification"),
+    )
