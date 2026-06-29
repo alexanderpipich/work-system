@@ -76,10 +76,18 @@ def pick_rate(rates, shift):
             continue
 
         rate_format = normalize_text(rate.format)
+        rate_city = normalize_text(rate.city)
         rate_store = normalize_text(rate.store)
         rate_employee = normalize_text(rate.employee_name)
 
+        # Формат (ГМ/СМ) — жёсткое условие на всех слоях:
+        # услуга может стоить по-разному в ГМ и СМ. Пустой формат = "любой".
         if rate_format and rate_format != normalize_text(shift.format):
+            continue
+
+        # Город берётся из столбца "Город" отчёта (Shift.city) и тарифов (Rate.city).
+        # Совпадение строки в строку; пустой город = "любой".
+        if rate_city and rate_city != normalize_text(getattr(shift, "city", None)):
             continue
 
         if rate_store and rate_store != normalize_text(shift.store):
@@ -91,23 +99,31 @@ def pick_rate(rates, shift):
         valid_candidates.append(rate)
 
     def priority(rate):
-        score = 0
-
+        # Три слоя специфичности (формат — обязательный фильтр выше, не очки):
+        #   слой 2 — индивидуальная ставка сотрудника  → максимум
+        #   слой 1 — индивидуальная ставка по ТК (store)
+        #   слой 0 — базовая сетка (город + формат + услуга)
         if normalize_text(rate.employee_name):
-            score += 100
+            return 1000
 
         if normalize_text(rate.store):
-            score += 10
+            return 100
 
-        if normalize_text(rate.format):
-            score += 1
-
-        return score
+        return 0
 
     if not valid_candidates:
         return None
 
-    valid_candidates.sort(key=priority, reverse=True)
+    def specificity(rate):
+        # Вторичный тай-брейк внутри одного слоя: более узкая ставка побеждает.
+        # Ставка с заданным городом/форматом специфичнее, чем "любой".
+        return (
+            priority(rate),
+            1 if normalize_text(rate.city) else 0,
+            1 if normalize_text(rate.format) else 0,
+        )
+
+    valid_candidates.sort(key=specificity, reverse=True)
     return valid_candidates[0]
 
 
