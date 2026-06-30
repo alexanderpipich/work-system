@@ -600,3 +600,30 @@ class BPNotification(Base):
     __table_args__ = (
         UniqueConstraint("store_tk", "period_from", "period_to", name="uq_bp_notification"),
     )
+
+
+class ReconciliationNotification(Base):
+    """Идемпотентность рассылки сверок (калька BPNotification).
+
+    Ключ включает recon_type (A/B): сверки 01-15 и 01-31 одного месяца — разные
+    отправки и не должны блокировать друг друга. Запись создаётся ТОЛЬКО при
+    успешной отправке.
+    """
+    __tablename__ = "reconciliation_notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    store_tk = Column(Integer, nullable=False, index=True)
+    period_from = Column(Date, nullable=False)
+    period_to = Column(Date, nullable=False)
+    recon_type = Column(String, nullable=False)  # "A" (01-15) | "B" (01-31)
+    email_log_id = Column(Integer, ForeignKey("email_logs.id"), nullable=True)
+    to_addresses = Column(Text, nullable=True)
+    status = Column(String, nullable=False)
+    sent_at = Column(DateTime, default=now_utc)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "store_tk", "period_from", "period_to", "recon_type",
+            name="uq_reconciliation_notification",
+        ),
+    )
