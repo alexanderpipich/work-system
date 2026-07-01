@@ -20,3 +20,6 @@ def ensure_user_profile_columns():
         connection.execute(text(
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS legal_entity VARCHAR"
         ))
+        connection.execute(text(
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS inn VARCHAR"
+        ))

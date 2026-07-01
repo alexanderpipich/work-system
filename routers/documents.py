@@ -30,6 +30,7 @@ from document_helpers import (
     parse_date,
     save_upload_file,
 )
+from inn_sync import INN_DOCUMENT_SORT_ORDER, set_employee_inn
 from models import CitizenshipRegime, Country, DocumentType, DocumentTypeSample, EmployeeDocument, EmployeeStoreAssignment, RegimeDocumentRule, Store, User
 from store_helpers import extract_tk_number
 from rbac import canonical_role, has_permission, is_superadmin
@@ -420,6 +421,10 @@ async def _create_employee_document(
         },
         comment=document.comment,
     )
+    # Синхронизация ИНН (Блок 2 нормализации): только для документа типа ИНН,
+    # только если найден User и указан номер.
+    if user_row is not None and document.document_number and document_type.sort_order == INN_DOCUMENT_SORT_ORDER:
+        set_employee_inn(session, user_row, document.document_number, source="document", actor=user, request=request)
     session.commit()
     return _redirect(base_path, message="Документ загружен")
 

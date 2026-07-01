@@ -459,6 +459,9 @@
                                     <input type="checkbox" name="is_student" value="1" {% if user.is_student %}checked{% endif %}> Студент
                                 </label>
 
+                                <input type="text" name="inn" value="{{ user.inn or '' }}" placeholder="ИНН"
+                                       title="Синхронизируется с реквизитами и документом-ИНН">
+
                                 <select name="legal_entity">
                                     <option value="">Не выбрано</option>
                                     {% set current_legal_entity = user.legal_entity or '' %}

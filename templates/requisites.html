@@ -442,7 +442,8 @@
 
                 <div class="field">
                     <label>Гражданство</label>
-                    <input type="text" name="citizenship">
+                    <input type="text" value="— указывается в профиле сотрудника —" readonly disabled
+                           title="Гражданство теперь хранится в профиле сотрудника (справочник гражданств)">
                 </div>
 
                 <div class="field">
@@ -648,7 +649,8 @@
 
                             <div class="field">
                                 <label>Гражданство</label>
-                                <input type="text" name="citizenship" value="{{ r.citizenship or '' }}">
+                                <input type="text" value="{{ r.citizenship or '— в профиле сотрудника —' }}" readonly disabled
+                                       title="Гражданство теперь хранится в профиле сотрудника (справочник гражданств)">
                             </div>
 
                             <div class="field">

@@ -263,32 +263,51 @@ class ExpiringSoonTests(unittest.TestCase):
         self.assertEqual(self._result_for(_doc("verified", is_permanent=True)), "ok")
 
 
-# ── FallbackTests ─────────────────────────────────────────────────────────────
+# ── StructuralPathTests ───────────────────────────────────────────────────────
 
-class FallbackTests(unittest.TestCase):
-    """No citizenship_country_id → old citizenship_filter logic, no crash."""
+class StructuralPathTests(unittest.TestCase):
+    """Блок 1 нормализации: гражданство ТОЛЬКО из citizenship_country_id.
+    Нет привязки к справочнику (и не студент) → пустой набор, БЕЗ legacy citizenship_filter."""
 
-    @patch("document_helpers.active_document_types", return_value=[])
-    @patch("document_helpers.user_citizenship", return_value="")
-    def test_fallback_when_no_country_id_does_not_crash(self, mock_cit, mock_types):
-        session = MagicMock()
-        user = _user(country_id=None, citizenship_country=None)
-        result = employee_document_status(session, user)
-        self.assertEqual(result, [])
-        mock_cit.assert_called_once()
-        mock_types.assert_called_once()
-
-    @patch("document_helpers.latest_employee_document", return_value=None)
-    @patch("document_helpers.active_document_types")
-    @patch("document_helpers.user_citizenship", return_value="рф")
-    def test_fallback_returns_types_from_old_logic(self, mock_cit, mock_types, _):
-        doc_types = [_dt(1), _dt(2), _dt(3)]
-        mock_types.return_value = doc_types
+    def test_no_country_id_returns_empty(self):
         session = MagicMock()
         user = _user(country_id=None, citizenship_country="РФ")
         result = employee_document_status(session, user)
-        self.assertEqual(len(result), 3)
-        self.assertTrue(all(r["status"] == "missing" for r in result))
+        self.assertEqual(result, [])
+
+    def test_no_country_id_does_not_touch_legacy_citizenship_filter(self):
+        # Даже при заполненной legacy-строке набор документов не подбирается по ней.
+        session = MagicMock()
+        user = _user(country_id=None, citizenship_country="Беларусь")
+        self.assertEqual(employee_document_status(session, user), [])
+
+
+# ── CitizenshipDisplayTests ───────────────────────────────────────────────────
+
+class CitizenshipDisplayTests(unittest.TestCase):
+    """Блок 1: citizenship_display — канон из country_id, затем legacy-строка User.
+    Requisite.citizenship НЕ читается."""
+
+    def test_display_from_country_id(self):
+        from document_helpers import citizenship_display
+        country = SimpleNamespace(id=1, name="Беларусь")
+        session = MagicMock()
+        session.query.return_value.filter.return_value.first.return_value = country
+        user = _user(country_id=1, citizenship_country="устаревшее")
+        self.assertEqual(citizenship_display(session, user), "Беларусь")
+
+    def test_display_fallback_to_legacy_string(self):
+        from document_helpers import citizenship_display
+        session = MagicMock()
+        user = _user(country_id=None, citizenship_country="РФ")
+        self.assertEqual(citizenship_display(session, user), "РФ")
+
+    def test_display_no_data_returns_empty_and_no_requisite_read(self):
+        from document_helpers import citizenship_display
+        session = MagicMock()
+        user = _user(country_id=None, citizenship_country=None)
+        self.assertEqual(citizenship_display(session, user), "")
+        session.query.assert_not_called()  # реквизит не запрашивается
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from access import apply_shift_scope, get_economist_cities
 from audit_helpers import create_audit_log
+from document_helpers import citizenship_display
 from dependencies import current_user, get_db
 from models import PayrollRun, PayrollRunItem, Requisite, Shift, User
 from payroll_closing import close_payroll_run as close_payroll_run_financials
@@ -213,12 +214,7 @@ def _build_payroll_run_workbook(session, run, items):
         sheet.cell(row_index, 5, str(requisite.account_number) if requisite and requisite.account_number else None)
         sheet.cell(row_index, 6, str(requisite.bik) if requisite and requisite.bik else None)
         sheet.cell(row_index, 7, requisite.bank_name if requisite else None)
-        sheet.cell(
-            row_index,
-            8,
-            (requisite.citizenship if requisite and requisite.citizenship else None)
-            or (user.citizenship_country if user else None),
-        )
+        sheet.cell(row_index, 8, citizenship_display(session, user) or None)
         sheet.cell(row_index, 9, requisite.recipient_name if requisite and requisite.recipient_name else None)
         sheet.cell(row_index, 10, None)
         row_index += 1
