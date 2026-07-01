@@ -105,17 +105,9 @@ def parse_date(value):
 
 
 def user_citizenship(session, user):
-    if not user:
-        return ""
-    citizenship = normalize_text(user.citizenship_country)
-    if citizenship:
-        return citizenship
-
-    requisite = session.query(Requisite).filter(
-        Requisite.employee_name == normalize_text(user.employee_name),
-        Requisite.is_active == True,
-    ).first()
-    return normalize_text(requisite.citizenship) if requisite else ""
+    """DEPRECATED: используйте `citizenship_display`. Оставлено для совместимости;
+    `Requisite.citizenship` больше НЕ читается (Блок 1 нормализации)."""
+    return citizenship_display(session, user)
 
 
 def citizenship_matches(document_type, citizenship):
@@ -139,6 +131,69 @@ def active_document_types(session, citizenship="", required_only=False):
 
     types = query.order_by(DocumentType.name.asc()).all()
     return [item for item in types if citizenship_matches(item, citizenship)]
+
+
+def required_document_types(session, user):
+    """Обязательные типы документов сотрудника — ЕДИНЫЙ СТРУКТУРНЫЙ ИСТОЧНИК.
+
+    Канон (Блок 1 нормализации): student-режим → `User.citizenship_country_id` →
+    `Country` → `regime_id` → `RegimeDocumentRule`. Гражданство берётся ТОЛЬКО из
+    привязки к справочнику. Нет привязки → пустой набор (сотрудник виден как
+    «не заведён», а не подбирается по legacy-строке citizenship_filter).
+    `Requisite.citizenship` здесь больше НЕ участвует.
+    """
+    if getattr(user, "is_student", False):
+        base = (
+            session.query(DocumentType)
+            .filter(
+                DocumentType.is_active == True,
+                DocumentType.is_student_doc == False,
+                DocumentType.sort_order >= 1,
+                DocumentType.sort_order <= 5,
+            )
+            .order_by(DocumentType.sort_order.asc())
+            .all()
+        )
+        student_docs = (
+            session.query(DocumentType)
+            .filter(DocumentType.is_active == True, DocumentType.is_student_doc == True)
+            .order_by(DocumentType.sort_order.asc())
+            .all()
+        )
+        return base + student_docs
+
+    country_id = getattr(user, "citizenship_country_id", None) if user else None
+    if country_id:
+        country = session.query(Country).filter(Country.id == country_id).first()
+        if country:
+            type_ids = {
+                r.document_type_id
+                for r in session.query(RegimeDocumentRule).filter(
+                    RegimeDocumentRule.regime_id == country.regime_id,
+                    RegimeDocumentRule.is_required == True,
+                ).all()
+            }
+            return (
+                session.query(DocumentType)
+                .filter(DocumentType.id.in_(type_ids), DocumentType.is_active == True)
+                .order_by(DocumentType.sort_order.asc())
+                .all()
+            )
+    return []
+
+
+def citizenship_display(session, user):
+    """Строка гражданства для ОТОБРАЖЕНИЯ — из канона (`citizenship_country_id` →
+    `Country.name`), затем legacy `User.citizenship_country`. `Requisite.citizenship`
+    больше НЕ источник (Блок 1 нормализации)."""
+    if not user:
+        return ""
+    country_id = getattr(user, "citizenship_country_id", None)
+    if country_id:
+        country = session.query(Country).filter(Country.id == country_id).first()
+        if country:
+            return normalize_text(country.name)
+    return normalize_text(user.citizenship_country)
 
 
 def latest_employee_document(session, employee_name, document_type_id):
@@ -173,9 +228,8 @@ def document_status_class(status):
 
 
 def employee_document_rows(session, user, required_only=True):
-    citizenship = user_citizenship(session, user)
     rows = []
-    for document_type in active_document_types(session, citizenship, required_only):
+    for document_type in required_document_types(session, user):
         document = latest_employee_document(session, user.employee_name, document_type.id)
         status = computed_document_status(document)
         rows.append({
@@ -214,50 +268,7 @@ def employee_document_status(session, user) -> list[dict]:
             for dt in doc_types
         ]
 
-    # Студент: первые 5 базовых типов (sort_order 1–5) + типы с is_student_doc=True
-    if getattr(user, "is_student", False):
-        base = (
-            session.query(DocumentType)
-            .filter(
-                DocumentType.is_active == True,
-                DocumentType.is_student_doc == False,
-                DocumentType.sort_order >= 1,
-                DocumentType.sort_order <= 5,
-            )
-            .order_by(DocumentType.sort_order.asc())
-            .all()
-        )
-        student_docs = (
-            session.query(DocumentType)
-            .filter(DocumentType.is_active == True, DocumentType.is_student_doc == True)
-            .order_by(DocumentType.sort_order.asc())
-            .all()
-        )
-        return _rows(base + student_docs)
-
-    # Структурированный режим через citizenship_country_id → Country → regime → правила
-    country_id = getattr(user, "citizenship_country_id", None)
-    if country_id:
-        country = session.query(Country).filter(Country.id == country_id).first()
-        if country:
-            type_ids = {
-                r.document_type_id
-                for r in session.query(RegimeDocumentRule).filter(
-                    RegimeDocumentRule.regime_id == country.regime_id,
-                    RegimeDocumentRule.is_required == True,
-                ).all()
-            }
-            doc_types = (
-                session.query(DocumentType)
-                .filter(DocumentType.id.in_(type_ids), DocumentType.is_active == True)
-                .order_by(DocumentType.sort_order.asc())
-                .all()
-            )
-            return _rows(doc_types)
-
-    # Fallback: старая логика citizenship_filter / citizenship_matches
-    citizenship = user_citizenship(session, user)
-    return _rows(active_document_types(session, citizenship, required_only=True))
+    return _rows(required_document_types(session, user))
 
 
 SORT_ORDER_TO_ICON_KEY = {
@@ -493,15 +504,9 @@ def user_by_employee_name(session, employee_name):
 
 
 def employee_citizenship_by_name(session, employee_name):
-    user = user_by_employee_name(session, employee_name)
-    if user:
-        return user_citizenship(session, user)
-
-    requisite = session.query(Requisite).filter(
-        Requisite.employee_name == normalize_text(employee_name),
-        Requisite.is_active == True,
-    ).first()
-    return normalize_text(requisite.citizenship) if requisite else ""
+    """Гражданство по ФИО — из канона (User). `Requisite.citizenship` больше НЕ
+    fallback (Блок 1 нормализации)."""
+    return citizenship_display(session, user_by_employee_name(session, employee_name))
 
 
 def build_document_registry_rows(
@@ -518,8 +523,9 @@ def build_document_registry_rows(
 
     rows = []
     for name in employees:
-        citizenship = employee_citizenship_by_name(session, name)
-        types = active_document_types(session, citizenship, required_only=True)
+        user = user_by_employee_name(session, name)
+        citizenship = citizenship_display(session, user)
+        types = required_document_types(session, user)
         if document_type_id:
             types = [item for item in types if item.id == document_type_id]
 

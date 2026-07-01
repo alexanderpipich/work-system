@@ -132,7 +132,8 @@ def add_requisite(
         account_number=normalize_text(account_number),
         bik=normalize_text(bik),
         bank_name=normalize_text(bank_name),
-        citizenship=normalize_text(citizenship),
+        # Гражданство больше НЕ хранится в реквизитах (Блок 1 нормализации) —
+        # источник истины: User.citizenship_country_id.
         is_third_party=(is_third_party == "on" or is_third_party == "true"),
         recipient_name=normalize_text(recipient_name) or None,
         is_active=(is_active == "on" or is_active == "true"),
@@ -206,7 +207,7 @@ def update_requisite(
     req.account_number = normalize_text(account_number)
     req.bik = normalize_text(bik)
     req.bank_name = normalize_text(bank_name)
-    req.citizenship = normalize_text(citizenship)
+    # Гражданство больше НЕ пишется в реквизиты (Блок 1 нормализации).
     req.is_third_party = (is_third_party == "on" or is_third_party == "true")
     req.recipient_name = normalize_text(recipient_name) or None
 
