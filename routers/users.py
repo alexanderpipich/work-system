@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from audit_helpers import create_audit_log
 from access_scope_helpers import active_scope_values, sync_access_scopes
 from dependencies import get_db
+from inn_sync import set_employee_inn
 from rbac import require_permission
 from legal_entity_helpers import active_legal_entities
 from models import Country, Shift, User
@@ -470,6 +471,7 @@ def update_user(
     citizenship_country_id: int = Form(0),
     is_student: str = Form(""),
     legal_entity: str = Form(default=""),
+    inn: str = Form(default=""),
     session: Session = Depends(get_db),
     admin=Depends(require_user_management),
 ):
@@ -491,6 +493,12 @@ def update_user(
     user.citizenship_country_id = citizenship_country_id or None
     user.is_student = bool(is_student)
     user.legal_entity = normalize_text(legal_entity) or None
+
+    inn_clean = normalize_text(inn)
+    if inn_clean:
+        # Пустое поле не затирает уже сохранённый ИНН (форма не всегда
+        # предзаполнена) — очистка ИНН через этот экран не предусмотрена.
+        set_employee_inn(session, user, inn_clean, source="profile", actor=admin, request=request)
 
     create_audit_log(
         session,

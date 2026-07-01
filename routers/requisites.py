@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from access import accessible_employee_names, get_user_cities
 from audit_helpers import create_audit_log
 from dependencies import get_db
+from inn_sync import set_employee_inn
 from models import Requisite, Shift, User
 from rbac import canonical_role, require_permission
 from time_helpers import now_utc
@@ -167,6 +168,8 @@ def add_requisite(
             req.employee_name,
             new_value={"is_verified": True, "verified_at": req.verified_at},
         )
+    if user is not None and req.inn:
+        set_employee_inn(session, user, req.inn, source="requisite", actor=current, request=request)
     session.commit()
 
     return RedirectResponse("/admin/requisites", status_code=302)
@@ -246,6 +249,8 @@ def update_requisite(
             old_value={"is_verified": was_verified},
             new_value={"is_verified": True, "verified_at": req.verified_at},
         )
+    if user is not None and req.inn:
+        set_employee_inn(session, user, req.inn, source="requisite", actor=current, request=request)
     session.commit()
 
     return RedirectResponse("/admin/requisites", status_code=302)
@@ -336,7 +341,8 @@ def upload_requisites(
             account_number = get_value(row, "account_number")
             bik = get_value(row, "bik")
             bank_name = get_value(row, "bank_name")
-            citizenship = get_value(row, "citizenship")
+            # Гражданство больше НЕ пишется в реквизиты (Блок 1 нормализации) —
+            # источник истины: User.citizenship_country_id.
             recipient_name = get_value(row, "recipient_name")
             comment = get_value(row, "comment")
 
@@ -372,7 +378,6 @@ def upload_requisites(
                     ("account_number", account_number),
                     ("bik", bik),
                     ("bank_name", bank_name),
-                    ("citizenship", citizenship),
                     ("recipient_name", recipient_name or None),
                     ("comment", comment or None),
                 ):
@@ -432,6 +437,8 @@ def upload_requisites(
                         )
                     updated += 1
                     changes_report.append({"name": name, "changes": "; ".join(row_changes)})
+                if user and inn:
+                    set_employee_inn(session, user, inn, source="requisite", actor=current, request=request)
                 continue
 
             # Создание нового реквизита.
@@ -446,7 +453,6 @@ def upload_requisites(
                 account_number=account_number,
                 bik=bik,
                 bank_name=bank_name,
-                citizenship=citizenship,
                 is_third_party=is_third_party,
                 recipient_name=recipient_name or None,
                 is_active=is_active,
@@ -482,6 +488,8 @@ def upload_requisites(
                     new_value={"is_verified": True, "verified_at": req.verified_at},
                     comment="uploaded from Excel",
                 )
+            if user and inn:
+                set_employee_inn(session, user, inn, source="requisite", actor=current, request=request)
             created += 1
 
         session.commit()

@@ -53,6 +53,7 @@ class User(Base):
     citizenship_country_id = Column(Integer, ForeignKey("countries.id"), nullable=True)
     is_student = Column(Boolean, default=False)
     legal_entity = Column(String, nullable=True)
+    inn = Column(String, nullable=True)  # ИНН сотрудника (Блок 2 нормализации, canonical). НЕ путать с LegalEntity.inn.
 
 
 class LegalEntity(Base):
