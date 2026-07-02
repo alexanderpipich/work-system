@@ -27,7 +27,7 @@ class BPMailingTests(unittest.TestCase):
     def setUp(self):
         self.s = _session()
         self.s.add(Store(tk_number=7, display_name="Лента-7", city="Санкт-Петербург",
-                         object_address="Дальневосточный пр-т 16", is_active=True))
+                         object_address="Дальневосточный пр-т 16", format="ГМ", is_active=True))
         self.s.add_all([
             EmployeeStoreAssignment(employee_name="Иванов И.И.", store="Лента-7", is_active=True),
             EmployeeStoreAssignment(employee_name="Петров П.П.", store="Лента-7", is_active=True),
@@ -52,6 +52,14 @@ class BPMailingTests(unittest.TestCase):
         letter = data["to_send"][0]
         self.assertEqual(letter["contacts"], ["plan@ex.com"])  # active for_planning only
         self.assertEqual(letter["employees_count"], 2)         # active assignments only
+
+    def test_non_gm_format_excluded_from_bp(self):
+        # БП формируется только для ГМ: сменив формат на СМ, ТК уходит из кандидатов.
+        self.s.query(Store).filter(Store.tk_number == 7).update({"format": "СМ"})
+        self.s.commit()
+        data = collect_planning_bp(self.s, PF, PT)
+        self.assertEqual(data["to_send"], [])
+        self.assertEqual(data["no_contacts"], [])  # не-ГМ не показывается вовсе
 
     def test_subject_format(self):
         letter = collect_planning_bp(self.s, PF, PT)["to_send"][0]

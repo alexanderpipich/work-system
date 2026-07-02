@@ -23,7 +23,7 @@ from planning_pdf import build_filename, build_planning_pdf
 from rbac import require_permission
 from store_helpers import extract_tk_number
 from time_helpers import business_today, now_utc
-from utils import normalize_text
+from utils import normalize_format, normalize_text
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -123,6 +123,13 @@ def planning_bp_generate(
     store = session.query(Store).filter(Store.tk_number == tk_number).first()
     if store is None:
         return _page(request, user, session, error=f"Магазин ТК-{tk_number:03d} не найден.")
+
+    # БП формируется только для гипермаркетов (формат ГМ).
+    if normalize_format(store.format) != "ГМ":
+        return _page(
+            request, user, session,
+            error=f"БП формируется только для формата ГМ. ТК-{tk_number:03d} — формат «{store.format or '—'}».",
+        )
 
     # Период из формы; пустые поля → дефолт (сегодня … конец месяца).
     default_start, default_end = _period()

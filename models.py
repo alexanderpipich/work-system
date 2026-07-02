@@ -96,7 +96,9 @@ class Requisite(Base):
     account_number = Column(String)
     bik = Column(String)
     bank_name = Column(String)
-    citizenship = Column(String)
+    # Гражданство развязано (нормализация атрибутов, Блок 1): источник истины —
+    # User.citizenship_country_id. Колонка requisites.citizenship удалена миграцией
+    # scripts/migrate_drop_requisite_citizenship.py.
 
     is_third_party = Column(Boolean, default=False)
     recipient_name = Column(String, nullable=True)

@@ -38,10 +38,13 @@ def main():
         country_by_name = {normalize_text(c.name).casefold(): c.id for c in countries}
 
         # Активные реквизиты по ФИО (строка гражданства как запасной источник).
+        # getattr — колонка requisites.citizenship удалена отдельной миграцией
+        # (migrate_drop_requisite_citizenship.py); скрипт остаётся устойчивым к её
+        # отсутствию, если его запустят повторно уже после дропа.
         req_citizenship = {}
         for r in session.query(Requisite).filter(Requisite.is_active == True).all():
             name = normalize_text(r.employee_name)
-            cit = normalize_text(r.citizenship)
+            cit = normalize_text(getattr(r, "citizenship", "") or "")
             if name and cit and name not in req_citizenship:
                 req_citizenship[name] = cit
 

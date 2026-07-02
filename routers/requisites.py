@@ -27,7 +27,6 @@ def _requisite_payload(req):
         "account_number": req.account_number,
         "bik": req.bik,
         "bank_name": req.bank_name,
-        "citizenship": req.citizenship,
         "is_third_party": req.is_third_party,
         "recipient_name": req.recipient_name,
         "is_active": req.is_active,
