@@ -49,6 +49,12 @@
             </div>
 
             <div class="field">
+                <label>Алиасы (сокращения)</label>
+                <input type="text" name="aliases" value="{{ country.aliases if country and country.aliases else '' }}" placeholder="РФ, Российская Федерация">
+                <div class="hint">Через запятую. Используются при загрузке таблиц, чтобы «РФ» сопоставлялось с этой страной. Название страны имеет приоритет над алиасом.</div>
+            </div>
+
+            <div class="field">
                 <label>Правовой режим *</label>
                 <select name="regime_id">
                     <option value="0">— выберите режим —</option>

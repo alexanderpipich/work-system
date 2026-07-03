@@ -53,11 +53,12 @@
             </div>
         </div>
         <table>
-            <thead><tr><th>Страна</th><th>Режим</th><th>Статус</th><th>Действия</th></tr></thead>
+            <thead><tr><th>Страна</th><th>Алиасы</th><th>Режим</th><th>Статус</th><th>Действия</th></tr></thead>
             <tbody>
             {% for c in countries %}
             <tr>
                 <td><strong>{{ c.name }}</strong></td>
+                <td>{% if c.aliases %}<span style="color:var(--muted);font-size:13px">{{ c.aliases }}</span>{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
                 <td>
                     {% set r = regimes.get(c.regime_id) %}
                     {% if r %}<span class="regime-pill">{{ r.name }}</span>{% else %}<span style="color:var(--muted)">—</span>{% endif %}

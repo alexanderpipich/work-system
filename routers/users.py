@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
 from access_scope_helpers import active_scope_values, sync_access_scopes
+from country_helpers import build_country_matcher
 from dependencies import get_db
 from inn_sync import set_employee_inn
 from rbac import require_permission
@@ -227,8 +228,8 @@ async def upload_users_submit(
             }
         )
 
-    countries = session.query(Country).filter(Country.is_active == True).all()
-    country_by_name = {normalize_text(c.name).casefold(): c.id for c in countries}
+    # Матчер имя/алиас → country_id (алиасы сокращений: «РФ»→«Россия»).
+    country_by_name = build_country_matcher(session)
 
     def cell_text(value):
         if value is None or pd.isna(value):

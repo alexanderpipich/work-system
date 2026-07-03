@@ -535,6 +535,7 @@ class Country(Base):
     name = Column(String, nullable=False)
     regime_id = Column(Integer, ForeignKey("citizenship_regimes.id"), nullable=False)
     is_active = Column(Boolean, default=True)
+    aliases = Column(String, nullable=True)  # CSV сокращений для матчинга («РФ»→«Россия»)
 
 
 class RegimeDocumentRule(Base):
