@@ -135,5 +135,59 @@ class ReconciliationTests(unittest.TestCase):
         self.assertFalse(b["to_send"][0]["already_sent"])
 
 
+class FormatAndMultiTkTests(unittest.TestCase):
+    """Правка 1 (пул): фильтр формата ГМ/СМ + мультивыбор ТК."""
+
+    def setUp(self):
+        self.s = _session()
+        self.s.add_all([
+            Store(tk_number=7, display_name="Лента-7", format="ГМ", is_active=True),
+            Store(tk_number=8, display_name="Лента-8", format="СМ", is_active=True),
+        ])
+        self.s.add_all([
+            StoreContact(store_id=1, email="r7@ex.com", role="director", for_reconciliation=True, is_active=True),
+            StoreContact(store_id=2, email="r8@ex.com", role="director", for_reconciliation=True, is_active=True),
+        ])
+        self.s.add_all([
+            Shift(store="Лента-7", format="ГМ", request_type="Основные заказы",
+                  employee="Иванов И.И.", service="У1", hours=50, shift_date=date(2026, 4, 5)),
+            Shift(store="Лента-8", format="СМ", request_type="Основные заказы",
+                  employee="Петров П.П.", service="У1", hours=20, shift_date=date(2026, 4, 6)),
+        ])
+        self.s.commit()
+
+    def tearDown(self):
+        self.s.close()
+
+    def _tks(self, data):
+        return sorted(l["tk"] for l in data["to_send"])
+
+    def test_format_filter_gm_only_excludes_sm(self):
+        data = collect_reconciliation(self.s, "B", 2026, 4, formats=["ГМ"])
+        self.assertEqual(self._tks(data), [7])
+
+    def test_format_filter_sm_only(self):
+        data = collect_reconciliation(self.s, "B", 2026, 4, formats=["СМ"])
+        self.assertEqual(self._tks(data), [8])
+
+    def test_empty_formats_means_all(self):
+        data = collect_reconciliation(self.s, "B", 2026, 4, formats=None)
+        self.assertEqual(self._tks(data), [7, 8])
+
+    def test_multi_tk_filter_as_list(self):
+        data = collect_reconciliation(self.s, "B", 2026, 4, tk_filter=[8])
+        self.assertEqual(self._tks(data), [8])
+
+    def test_tk_filter_scalar_still_works(self):
+        # обратная совместимость: одно число, как раньше
+        data = collect_reconciliation(self.s, "B", 2026, 4, tk_filter=7)
+        self.assertEqual(self._tks(data), [7])
+
+    def test_attachment_respects_format(self):
+        # XLS по ТК-8 при фильтре только ГМ → смен нет (0 часов).
+        _, xls = build_reconciliation_attachment(self.s, 8, "B", 2026, 4, formats=["ГМ"])
+        self.assertTrue(xls.startswith(b"PK"))  # валидный xlsx, но пустой по сменам
+
+
 if __name__ == "__main__":
     unittest.main()

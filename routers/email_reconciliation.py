@@ -6,7 +6,7 @@
 Ничего не уходит без явного нажатия. Идемпотентность по (ТК, период, тип).
 """
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -16,12 +16,14 @@ from email_engine import send_email
 from models import EmailLog, ReconciliationNotification
 from rbac import require_permission
 from reconciliation_helpers import (
+    RECON_FORMATS,
     RECON_TYPES,
     build_reconciliation_attachment,
     collect_reconciliation,
     resolve_default_period,
 )
 from time_helpers import now_utc
+from utils import normalize_format
 
 router = APIRouter()
 from fastapi.templating import Jinja2Templates
@@ -31,9 +33,15 @@ templates = Jinja2Templates(directory="templates")
 _manage = require_permission("email.manage")
 
 
-def _parse_tk(value: str):
-    value = (value or "").strip()
-    return int(value) if value.isdigit() else None
+def _parse_formats(values):
+    """Список форматов из формы → нормализованный список из RECON_FORMATS.
+    Пусто → [] (означает «все форматы»)."""
+    result = []
+    for v in values or []:
+        fmt = normalize_format(v)
+        if fmt in RECON_FORMATS and fmt not in result:
+            result.append(fmt)
+    return result
 
 
 def _normalize_type(value: str) -> str:
@@ -84,16 +92,18 @@ def reconciliation_preview(
     user=Depends(_manage),
     recon_type: str = "",
     month: str = "",
-    tk: str = "",
+    formats: list[str] = Query(default=[]),
     message: str = "",
     error: str = "",
 ):
     def_type, def_year, def_month = resolve_default_period()
     rtype = _normalize_type(recon_type) if recon_type else def_type
     year, mon = _parse_month(month, def_year, def_month)
+    fmt_list = _parse_formats(formats)
 
-    data = collect_reconciliation(session, rtype, year, mon, tk_filter=_parse_tk(tk))
-    filters = {"recon_type": rtype, "month": f"{year:04d}-{mon:02d}", "tk": tk}
+    data = collect_reconciliation(session, rtype, year, mon, formats=fmt_list or None)
+    filters = {"recon_type": rtype, "month": f"{year:04d}-{mon:02d}",
+               "formats": fmt_list, "all_formats": list(RECON_FORMATS)}
     return _render(request, user, session, data=data, filters=filters,
                    message=message, error=error)
 
@@ -105,29 +115,34 @@ def reconciliation_send(
     user=Depends(_manage),
     recon_type: str = Form(""),
     month: str = Form(""),
-    tk: str = Form(""),
+    formats: list[str] = Form(default=[]),
+    tks: list[int] = Form(default=[]),
 ):
     def_type, def_year, def_month = resolve_default_period()
     rtype = _normalize_type(recon_type) if recon_type else def_type
     year, mon = _parse_month(month, def_year, def_month)
-    single_tk = _parse_tk(tk)
-    filters = {"recon_type": rtype, "month": f"{year:04d}-{mon:02d}", "tk": tk}
+    fmt_list = _parse_formats(formats)
+    filters = {"recon_type": rtype, "month": f"{year:04d}-{mon:02d}",
+               "formats": fmt_list, "all_formats": list(RECON_FORMATS)}
 
-    data = collect_reconciliation(session, rtype, year, mon, tk_filter=single_tk)
+    data = collect_reconciliation(session, rtype, year, mon, formats=fmt_list or None)
 
-    if single_tk is not None and not data["to_send"]:
+    selected = {int(t) for t in tks}
+    to_process = [l for l in data["to_send"] if l["tk"] in selected]
+    if not to_process:
         return _render(request, user, session, data=data, filters=filters,
-                       message=f"По ТК {single_tk} нет получателей for_reconciliation — отправлять некому.")
+                       error="Выберите хотя бы один ТК (галочками) для отправки.")
 
     sent = failed = skipped = 0
     errors = []
 
-    for letter in data["to_send"]:
+    for letter in to_process:
         if letter["already_sent"]:
             skipped += 1
             continue
 
-        filename, xls_bytes = build_reconciliation_attachment(session, letter["tk"], rtype, year, mon)
+        filename, xls_bytes = build_reconciliation_attachment(
+            session, letter["tk"], rtype, year, mon, formats=fmt_list or None)
         result = send_email(
             to=letter["contacts"],
             subject=letter["subject"],
@@ -184,19 +199,13 @@ def reconciliation_send(
 
     session.commit()
 
-    fresh = collect_reconciliation(session, rtype, year, mon, tk_filter=None)
-    fresh_filters = {"recon_type": rtype, "month": f"{year:04d}-{mon:02d}", "tk": ""}
+    fresh = collect_reconciliation(session, rtype, year, mon, formats=fmt_list or None)
 
-    if single_tk is not None:
-        if skipped and not sent and not failed:
-            message = f"ТК {single_tk}: уже отправлено за этот период/тип — повтор пропущен."
-        else:
-            message = f"ТК {single_tk}: отправлено {sent}, не отправлено {failed}."
-    else:
-        message = f"Готово. Отправлено: {sent}, не отправлено: {failed}, пропущено (уже отправлено): {skipped}."
+    message = (f"Готово по {len(to_process)} выбранным ТК. Отправлено: {sent}, "
+               f"не отправлено: {failed}, пропущено (уже отправлено): {skipped}.")
 
     return _render(
-        request, user, session, data=fresh, filters=fresh_filters,
+        request, user, session, data=fresh, filters=filters,
         results={"sent": sent, "failed": failed, "skipped": skipped, "errors": errors},
         message=message,
     )

@@ -18,6 +18,11 @@ from planning_pdf import COMPANY_NAME_PLAIN, build_filename, build_planning_pdf
 from routers.planning_bp import PLANNING_DIR, _employees_for_tk, _parse_date, _period
 from store_helpers import extract_tk_number
 from unplanned_helpers import MONTHS_NOM
+from utils import normalize_format
+
+# БП формируется ТОЛЬКО для гипермаркетов (формат ГМ). Прочие форматы (СМ и т.п.)
+# и ТК без записи в справочнике магазинов — не кандидаты на бланк планирования.
+BP_FORMAT = "ГМ"
 
 
 def resolve_period(date_from: str, date_to: str):
@@ -142,6 +147,9 @@ def collect_planning_bp(session: Session, date_from, date_to, tk_filter=None) ->
     no_contacts = []
     for tk in sorted(tks):
         store = stores.get(tk)
+        # БП только для ГМ: ТК без записи в Store или иного формата — не кандидат.
+        if store is None or normalize_format(store.format) != BP_FORMAT:
+            continue
         employees = _employees_for_tk(session, tk)
 
         contacts = []

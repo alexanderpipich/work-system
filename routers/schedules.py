@@ -10,7 +10,21 @@ from dependencies import get_db
 from models import Shift
 from rbac import canonical_role, require_permission
 from shift_helpers import is_no_plan_shift
+from store_helpers import extract_tk_number
 from time_helpers import business_today
+
+
+def _sort_stores_by_tk(stores):
+    """Числовая сортировка магазинов по номеру ТК (по возрастанию).
+
+    Строковая сортировка ставит «Лента-10» раньше «Лента-2» — неверно. Здесь
+    сортируем по извлечённому номеру ТК; магазины без распознанного номера —
+    в конец, стабильно по названию.
+    """
+    return sorted(
+        stores,
+        key=lambda s: (extract_tk_number(s) is None, extract_tk_number(s) or 0, s or ""),
+    )
 
 
 router = APIRouter()
@@ -116,8 +130,8 @@ def economist_schedules(
     if not user.is_admin:
         store_query = store_query.filter(Shift.city.in_(allowed_cities))
 
-    all_stores = store_query.order_by(Shift.store.asc()).all()
-    store_list = [s[0] for s in all_stores]
+    all_stores = store_query.all()
+    store_list = _sort_stores_by_tk([s[0] for s in all_stores])
 
     rows = []
     days = []
@@ -203,7 +217,7 @@ def hr_schedules(
     store_query = session.query(Shift.store).distinct()
     if allowed_cities is not None:
         store_query = store_query.filter(Shift.city.in_(allowed_cities))
-    store_list = [s[0] for s in store_query.order_by(Shift.store.asc()).all()]
+    store_list = _sort_stores_by_tk([s[0] for s in store_query.all()])
 
     rows = []
     days = []
@@ -258,8 +272,8 @@ def admin_schedules(
     if not date_from and not date_to:
         date_from, date_to = _default_week_range()
 
-    all_stores = session.query(Shift.store).distinct().order_by(Shift.store.asc()).all()
-    store_list = [s[0] for s in all_stores]
+    all_stores = session.query(Shift.store).distinct().all()
+    store_list = _sort_stores_by_tk([s[0] for s in all_stores])
 
     rows = []
     days = []

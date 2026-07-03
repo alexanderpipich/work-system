@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
+from country_helpers import parse_aliases
 from dependencies import get_db
 from document_helpers import employee_document_status, employee_names
 from models import CitizenshipRegime, Country, DocumentType, RegimeDocumentRule, User
@@ -171,6 +172,7 @@ def country_add(
     session: Session = Depends(get_db),
     user=Depends(_mgmt),
     name: str = Form(""),
+    aliases: str = Form(""),
     regime_id: int = Form(0),
     is_active: str = Form("1"),
 ):
@@ -180,7 +182,12 @@ def country_add(
         return templates.TemplateResponse(request, "citizenship_country_edit.html", {
             "user": user, "country": None, "regimes": regimes, "error": "Название и режим обязательны",
         })
-    country = Country(name=name, regime_id=regime_id, is_active=is_active == "1")
+    country = Country(
+        name=name,
+        aliases=", ".join(parse_aliases(aliases)) or None,
+        regime_id=regime_id,
+        is_active=is_active == "1",
+    )
     session.add(country)
     session.flush()
     create_audit_log(session, request, user, "create", "country", entity_id=country.id, entity_name=name)
@@ -267,6 +274,7 @@ def country_edit_save(
     session: Session = Depends(get_db),
     user=Depends(_mgmt),
     name: str = Form(""),
+    aliases: str = Form(""),
     regime_id: int = Form(0),
     is_active: str = Form("1"),
 ):
@@ -280,6 +288,7 @@ def country_edit_save(
             "user": user, "country": country, "regimes": regimes, "error": "Название и режим обязательны",
         })
     country.name = name
+    country.aliases = ", ".join(parse_aliases(aliases)) or None
     country.regime_id = regime_id
     country.is_active = is_active == "1"
     create_audit_log(session, request, user, "update", "country", entity_id=country_id, entity_name=name)

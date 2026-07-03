@@ -23,10 +23,12 @@ from shift_helpers import is_no_plan_shift
 from store_helpers import extract_tk_number
 from time_helpers import business_today
 from unplanned_helpers import MONTHS_GEN, MONTHS_NOM
+from utils import normalize_format
 
 LEGAL_ENTITY_LABEL = COMPANY_NAME_PLAIN  # «ООО ПРОГРЕСС»
 
 RECON_TYPES = ("A", "B")
+RECON_FORMATS = ("ГМ", "СМ")  # форматы для фильтра рассылки сверок
 
 
 # --- Периоды и подписи ---------------------------------------------------
@@ -78,8 +80,35 @@ def resolve_default_period(today=None):
 
 # --- Смены ----------------------------------------------------------------
 
-def shifts_for_period(session: Session, date_from, date_to, tk_filter=None):
-    """Смены за период, сгруппированные по ТК, БЕЗ смен без плана."""
+def _tk_filter_set(tk_filter):
+    """Нормализовать tk_filter в set номеров ТК или None (все).
+
+    Совместимо со скаляром (одно число, старое поведение) и списком/set (мультивыбор).
+    """
+    if tk_filter is None:
+        return None
+    if isinstance(tk_filter, (list, tuple, set)):
+        values = {int(v) for v in tk_filter if v is not None}
+        return values or None
+    return {int(tk_filter)}
+
+
+def _format_filter_set(formats):
+    """Нормализовать список форматов в set из {'ГМ','СМ',...} или None (все)."""
+    if not formats:
+        return None
+    values = {normalize_format(f) for f in formats if normalize_format(f)}
+    return values or None
+
+
+def shifts_for_period(session: Session, date_from, date_to, tk_filter=None, formats=None):
+    """Смены за период, сгруппированные по ТК, БЕЗ смен без плана.
+
+    tk_filter — None (все), скаляр или список ТК (мультивыбор).
+    formats — None (все) или список форматов {'ГМ','СМ'} (фильтр по Shift.format).
+    """
+    tks_allowed = _tk_filter_set(tk_filter)
+    formats_allowed = _format_filter_set(formats)
     rows = (
         session.query(Shift)
         .filter(Shift.shift_date >= date_from, Shift.shift_date <= date_to)
@@ -89,10 +118,12 @@ def shifts_for_period(session: Session, date_from, date_to, tk_filter=None):
     for s in rows:
         if is_no_plan_shift(s):
             continue
+        if formats_allowed is not None and normalize_format(s.format) not in formats_allowed:
+            continue
         tk = extract_tk_number(s.store)
         if tk is None:
             continue
-        if tk_filter is not None and tk != tk_filter:
+        if tks_allowed is not None and tk not in tks_allowed:
             continue
         group = groups.setdefault(tk, {"store_str": s.store, "shifts": []})
         group["shifts"].append(s)
@@ -139,7 +170,7 @@ def _body(tk, store, period_words):
     return body_text, body_html
 
 
-def collect_reconciliation(session: Session, recon_type, year, month, tk_filter=None) -> dict:
+def collect_reconciliation(session: Session, recon_type, year, month, tk_filter=None, formats=None) -> dict:
     """
     Собрать магазины к рассылке сверки, построить письма.
 
@@ -147,10 +178,12 @@ def collect_reconciliation(session: Session, recon_type, year, month, tk_filter=
       to_send: [letter, ...] — магазины с контактами for_reconciliation
       no_contacts: [{tk, store, shift_count, employees_count, hours}, ...]
       total_letters / total_pending / already_sent_count / stores_without_contacts
+
+    tk_filter — None/скаляр/список ТК; formats — None или список {'ГМ','СМ'}.
     """
     period_from, period_to = period_for(recon_type, year, month)
     period_words = period_label_words(recon_type, year, month)
-    groups = shifts_for_period(session, period_from, period_to, tk_filter=tk_filter)
+    groups = shifts_for_period(session, period_from, period_to, tk_filter=tk_filter, formats=formats)
 
     tks = list(groups.keys())
     stores = {}
@@ -237,10 +270,14 @@ def collect_reconciliation(session: Session, recon_type, year, month, tk_filter=
     }
 
 
-def build_reconciliation_attachment(session: Session, tk, recon_type, year, month):
-    """Сгенерировать XLS-сверку по ТК+период+тип, вернуть (filename, bytes)."""
+def build_reconciliation_attachment(session: Session, tk, recon_type, year, month, formats=None):
+    """Сгенерировать XLS-сверку по ТК+период+тип, вернуть (filename, bytes).
+
+    formats — фильтр формата (тот же, что в предпросмотре), чтобы XLS содержал
+    ровно те смены, что и письмо (иначе письмо по ГМ, а в XLS попадут СМ-смены).
+    """
     period_from, period_to = period_for(recon_type, year, month)
-    groups = shifts_for_period(session, period_from, period_to, tk_filter=tk)
+    groups = shifts_for_period(session, period_from, period_to, tk_filter=tk, formats=formats)
     shifts = groups.get(tk, {}).get("shifts", [])
 
     store = session.query(Store).filter(Store.tk_number == tk).first()

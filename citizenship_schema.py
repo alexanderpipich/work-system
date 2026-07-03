@@ -17,3 +17,7 @@ def ensure_citizenship_columns():
         connection.execute(text(
             "ALTER TABLE document_types ADD COLUMN IF NOT EXISTS is_student_doc BOOLEAN DEFAULT FALSE"
         ))
+        # Алиасы сокращений страны (CSV) для матчинга в загрузчиках («РФ»→«Россия»).
+        connection.execute(text(
+            "ALTER TABLE countries ADD COLUMN IF NOT EXISTS aliases VARCHAR"
+        ))
