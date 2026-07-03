@@ -43,7 +43,7 @@ def normalize_format(value) -> str:
 
 def normalize_role(value) -> str:
     role = normalize_text(value).lower()
-    allowed = {"admin", "superadmin", "hr_lead", "hr_manager", "employee", "brigadier", "economist"}
+    allowed = {"admin", "superadmin", "hr_lead", "hr_manager", "employee", "brigadier", "economist", "headhunter"}
 
     if role in allowed:
         return role

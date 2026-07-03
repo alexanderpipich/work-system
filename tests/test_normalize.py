@@ -36,6 +36,7 @@ class NormalizePhoneAndRoleTests(unittest.TestCase):
         self.assertEqual(normalize_role(" ECONOMIST "), "economist")
         self.assertEqual(normalize_role(" HR_LEAD "), "hr_lead")
         self.assertEqual(normalize_role("superadmin"), "superadmin")
+        self.assertEqual(normalize_role(" HEADHUNTER "), "headhunter")
         self.assertEqual(normalize_role("unknown"), "employee")
 
 

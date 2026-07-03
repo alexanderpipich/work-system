@@ -110,6 +110,9 @@ ROUTE_PERMISSION_MATRIX = [
     ("economist.dashboard",
         ["superadmin", "economist"],
         ["hr_lead", "hr_manager", "brigadier", "employee"]),
+    ("headhunter.dashboard",
+        ["superadmin", "headhunter"],
+        ["economist", "hr_lead", "hr_manager", "brigadier", "employee"]),
     # bypass-only: planning scenarios, monitoring settings
     ("admin.settings",
         ["superadmin"],
@@ -227,6 +230,23 @@ class HrPayrollBoundaryTests(unittest.TestCase):
             with self.subTest(role=role):
                 self.assertFalse(_allowed("admin.settings", role))
                 self.assertFalse(_allowed("admin.dashboard", role))
+
+
+class HeadhunterBoundaryTests(unittest.TestCase):
+    """Подборщик видит только свой дашборд-заглушку, без payroll/документов/реквизитов."""
+
+    def test_headhunter_has_own_dashboard(self):
+        self.assertTrue(_allowed("headhunter.dashboard", "headhunter"))
+
+    def test_headhunter_blocked_from_sensitive_areas(self):
+        for perm in (
+            "payroll.view", "payroll.manage",
+            "documents.view", "documents.manage",
+            "requisites.view", "requisites.manage",
+            "employees.view", "admin.dashboard",
+        ):
+            with self.subTest(perm=perm):
+                self.assertFalse(_allowed(perm, "headhunter"))
 
 
 if __name__ == "__main__":

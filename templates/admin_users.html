@@ -241,6 +241,7 @@
         .role-admin { background: #fee4e2; color: #b42318; }
         .role-economist { background: #f4ebff; color: #6941c6; }
         .role-brigadier { background: #e0f2fe; color: #026aa2; }
+        .role-headhunter { background: #fdf2fa; color: #c11574; }
         .role-employee { background: #f2f4f7; color: #344054; }
 
         .role-form {
@@ -367,6 +368,7 @@
                         <option value="economist" {% if filters and filters.role == 'economist' %}selected{% endif %}>Экономист</option>
                         <option value="hr_manager" {% if filters and filters.role == 'hr_manager' %}selected{% endif %}>HR-менеджер</option>
                         <option value="hr_lead" {% if filters and filters.role == 'hr_lead' %}selected{% endif %}>HR Lead</option>
+                        <option value="headhunter" {% if filters and filters.role == 'headhunter' %}selected{% endif %}>Подборщик</option>
                         <option value="superadmin" {% if filters and filters.role == 'superadmin' %}selected{% endif %}>Superadmin</option>
                     </select>
                 </div>
@@ -421,6 +423,8 @@
                                 {% if user.brigadier_store %}
                                     <div class="small-note">{{ user.brigadier_store }}</div>
                                 {% endif %}
+                            {% elif user.role == "headhunter" %}
+                                <span class="pill role-headhunter">Подборщик</span>
                             {% else %}
                                 <span class="pill role-employee">Сотрудник</span>
                             {% endif %}
@@ -436,6 +440,7 @@
                                     <option value="economist" {% if user.role == "economist" %}selected{% endif %}>Экономист</option>
                                     <option value="hr_manager" {% if user.role == "hr_manager" %}selected{% endif %}>HR-менеджер</option>
                                     <option value="hr_lead" {% if user.role == "hr_lead" %}selected{% endif %}>HR Lead</option>
+                                    <option value="headhunter" {% if user.role == "headhunter" %}selected{% endif %}>Подборщик</option>
                                     <option value="superadmin" {% if user.role == "superadmin" or user.role == "admin" or user.is_admin %}selected{% endif %}>Superadmin</option>
                                 </select>
 

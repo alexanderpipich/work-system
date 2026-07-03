@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from dependencies import get_db
 from models import User
-from rbac import canonical_role, is_superadmin
+from rbac import ROLE_HEADHUNTER, canonical_role, is_superadmin
 from utils import normalize_phone, verify_password
 
 
@@ -59,6 +59,9 @@ def login_submit(
 
     if user.role == "brigadier":
         return RedirectResponse(url="/brigadier", status_code=302)
+
+    if canonical_role(user) == ROLE_HEADHUNTER:
+        return RedirectResponse(url="/headhunter", status_code=302)
 
     return RedirectResponse(url="/cabinet", status_code=302)
 

@@ -12,6 +12,7 @@ templates = Jinja2Templates(directory="templates")
 require_hr_dashboard = require_permission("employees.view", audit_denied=True)
 _admin_dashboard = require_permission("admin.dashboard")
 _economist_dashboard = require_permission("economist.dashboard")
+_headhunter_dashboard = require_permission("headhunter.dashboard")
 
 
 @router.get("/admin", response_class=HTMLResponse)
@@ -25,6 +26,11 @@ def economist_dashboard(request: Request, user=Depends(_economist_dashboard)):
         request, "economist_dashboard.html",
         {"user": user, "allowed_cities": get_economist_cities(user)},
     )
+
+
+@router.get("/headhunter", response_class=HTMLResponse)
+def headhunter_dashboard(request: Request, user=Depends(_headhunter_dashboard)):
+    return templates.TemplateResponse(request, "headhunter.html", {"user": user})
 
 
 @router.get("/hr", response_class=HTMLResponse)

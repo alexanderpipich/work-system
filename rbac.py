@@ -11,6 +11,7 @@ ROLE_HR_LEAD = "hr_lead"
 ROLE_HR_MANAGER = "hr_manager"
 ROLE_ECONOMIST = "economist"
 ROLE_BRIGADIER = "brigadier"
+ROLE_HEADHUNTER = "headhunter"
 ROLE_EMPLOYEE = "employee"
 
 ROLES = {
@@ -19,6 +20,7 @@ ROLES = {
     ROLE_HR_MANAGER,
     ROLE_ECONOMIST,
     ROLE_BRIGADIER,
+    ROLE_HEADHUNTER,
     ROLE_EMPLOYEE,
 }
 
@@ -45,6 +47,9 @@ PERMISSIONS = {
         "legal_entities.manage", "economist.dashboard",
     },
     ROLE_BRIGADIER: {"schedules.view"},
+    # Минимальный набор под кабинет-заглушку: доступ только к своему дашборду.
+    # Права под реальные функции (мессенджер/вакансии) добавятся, когда появятся функции.
+    ROLE_HEADHUNTER: {"headhunter.dashboard"},
     ROLE_EMPLOYEE: {"profile.own", "documents.own", "schedules.own"},
 }
 
