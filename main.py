@@ -39,6 +39,7 @@ from routers.email_unplanned import router as email_unplanned_router
 from routers.email_planning_bp import router as email_planning_bp_router
 from routers.email_reconciliation import router as email_reconciliation_router
 from routers.planning_bp import router as planning_bp_router
+from routers.qr import router as qr_router
 from routers.stores import router as stores_router
 from routers.reports import router as reports_router
 from routers.schedules import router as schedules_router
@@ -76,6 +77,7 @@ app.include_router(hr_router)
 app.include_router(lmk_router)
 app.include_router(maintenance_router)
 app.include_router(planning_bp_router)
+app.include_router(qr_router)
 app.include_router(payroll_router)
 app.include_router(payroll_runs_router)
 app.include_router(rates_router)

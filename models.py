@@ -54,6 +54,7 @@ class User(Base):
     is_student = Column(Boolean, default=False)
     legal_entity = Column(String, nullable=True)
     inn = Column(String, nullable=True)  # ИНН сотрудника (Блок 2 нормализации, canonical). НЕ путать с LegalEntity.inn.
+    qr_image_path = Column(String, nullable=True)  # Загруженная QR-картинка-пропуск сотрудника (не генерируется).
 
 
 class LegalEntity(Base):
