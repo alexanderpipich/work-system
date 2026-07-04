@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 import pandas as pd
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -473,13 +475,25 @@ def update_user(
     is_student: str = Form(""),
     legal_entity: str = Form(default=""),
     inn: str = Form(default=""),
+    f_user_id: str = Form(default=""),
+    f_phone: str = Form(default=""),
+    f_employee_name: str = Form(default=""),
+    f_role: str = Form(default=""),
     session: Session = Depends(get_db),
     admin=Depends(require_user_management),
 ):
+    # Опциональные f_* — текущие фильтры списка; пробрасываются в редирект, чтобы после
+    # сохранения не слетать в начало несортированного списка (контракт полей данных неизменен).
+    filters = {"user_id": f_user_id, "phone": f_phone, "employee_name": f_employee_name, "role": f_role}
+    query = {key: value for key, value in filters.items() if value}
+    redirect_base = "/admin/users"
+    if query:
+        redirect_base = f"{redirect_base}?{urlencode(query)}"
+
     user = session.query(User).filter(User.id == user_id).first()
 
     if not user:
-        return RedirectResponse(url="/admin/users", status_code=302)
+        return RedirectResponse(url=redirect_base, status_code=302)
 
     role_clean = normalize_role(role)
     scope_value = _default_city_scope(session, role_clean, scope_cities or economist_stores)
@@ -526,7 +540,7 @@ def update_user(
         )
     session.commit()
 
-    return RedirectResponse(url=f"/admin/users#user-{user_id}", status_code=302)
+    return RedirectResponse(url=f"{redirect_base}#user-{user_id}", status_code=302)
 
 
 @router.post("/admin/delete-user", response_class=HTMLResponse)
