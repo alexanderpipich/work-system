@@ -386,6 +386,7 @@
             <a href="/admin">Назад в админку</a>
             <a href="/admin/create-user">Создать пользователя</a>
             <a href="/admin/upload-users">Импорт пользователей</a>
+            <a href="/admin/users/pending">Несозданные{% if pending_count is defined and pending_count %} ({{ pending_count }}){% endif %}</a>
             <a href="/logout">Выйти</a>
         </div>
     </div>
@@ -482,6 +483,7 @@
 
                 <div class="ucard">
                     <div class="summary-line">
+                        <span>Должность: <b>{{ user.job_title or '—' }}</b></span>
                         <span>Гражданство: <b>{{ user.citizenship_country or '—' }}</b></span>
                         <span>ИНН: <b>{{ user.inn or '—' }}</b></span>
                         <span>Студент: <b>{{ 'да' if user.is_student else 'нет' }}</b></span>
@@ -534,6 +536,16 @@
                                         <option value="0">— не выбрано —</option>
                                         {% for c in countries %}
                                         <option value="{{ c.id }}" {% if c.id == ns.sel %}selected{% endif %}>{{ c.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label>Должность</label>
+                                    <select name="job_title">
+                                        <option value="">— не выбрано —</option>
+                                        {% for jt in job_titles %}
+                                        <option value="{{ jt }}" {% if user.job_title == jt %}selected{% endif %}>{{ jt }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>

@@ -1,4 +1,5 @@
 import logging
+import re
 
 import pandas as pd
 from fastapi import APIRouter, Depends, File, Request, UploadFile
@@ -8,11 +9,11 @@ from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
 from dependencies import get_db
-from models import Shift, UploadLog
+from models import Shift, TimebookEmployee, UploadLog
 from payroll_adjustments import reconcile_sent_payroll_runs
 from rbac import require_permission
-from time_helpers import business_today
-from utils import normalize_format, normalize_text
+from time_helpers import business_today, now_utc
+from utils import normalize_format, normalize_phone, normalize_text
 
 _require_upload = require_permission("shifts.upload")
 
@@ -56,9 +57,90 @@ def _choose_last_text(values, default=""):
     return clean_values[-1] if clean_values else default
 
 
+def _resolve_col(df, candidates, fallback_index):
+    """Найти колонку по заголовку (подстрока, регистр/пробелы игнор), иначе по индексу.
+
+    candidates — упорядоченный список подстрок (специфичные раньше общих).
+    В реальных данных телефон/табельный иногда смещены — заголовок надёжнее индекса.
+    """
+    normalized = {col: re.sub(r"\s+", " ", str(col)).strip().lower() for col in df.columns}
+    for sub in candidates:
+        for col, name in normalized.items():
+            if sub in name:
+                return df[col]
+    if fallback_index < len(df.columns):
+        return df.iloc[:, fallback_index]
+    return None
+
+
+def _cell_phone(value):
+    if value is None or pd.isna(value):
+        return ""
+    return normalize_phone(value)
+
+
+def _cell_str(value):
+    if value is None or pd.isna(value):
+        return ""
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return normalize_text(value)
+
+
+def _extract_timebook_contacts(df):
+    """{нормализованное ФИО: {phone, inn, tab}} из timebook, последнее непустое значение."""
+    emp = _resolve_col(df, ["фио сотрудника исполнителя", "фио сотрудника", "фио", "исполнител"], 13)
+    if emp is None:
+        return {}
+    phone = _resolve_col(df, ["номер телефона", "телефон"], 15)
+    inn = _resolve_col(df, ["инн сотрудника", "инн"], 16)
+    tab = _resolve_col(df, ["табельный номер", "табельный"], 14)
+
+    contacts = {}
+    for i in range(len(df)):
+        name = _cell_str(emp.iloc[i])
+        if not name:
+            continue
+        rec = contacts.setdefault(name, {"phone": "", "inn": "", "tab": ""})
+        if phone is not None:
+            p = _cell_phone(phone.iloc[i])
+            if p:
+                rec["phone"] = p
+        if inn is not None:
+            v = _cell_str(inn.iloc[i])
+            if v:
+                rec["inn"] = v
+        if tab is not None:
+            v = _cell_str(tab.iloc[i])
+            if v:
+                rec["tab"] = v
+    return contacts
+
+
+def _upsert_timebook_contacts(session, contacts):
+    """Сохранить связку ФИО→контакты в стейджинг (непустое обновляет). Смены не трогаем."""
+    for name, rec in contacts.items():
+        if not (rec["phone"] or rec["inn"] or rec["tab"]):
+            continue
+        row = session.query(TimebookEmployee).filter(TimebookEmployee.employee_name == name).first()
+        if not row:
+            row = TimebookEmployee(employee_name=name)
+            session.add(row)
+        if rec["phone"]:
+            row.phone = rec["phone"]
+        if rec["inn"]:
+            row.inn = rec["inn"]
+        if rec["tab"]:
+            row.tab_number = rec["tab"]
+        row.updated_at = now_utc()
+
+
 def _normalize_upload_dataframe(df):
     if len(df.columns) < 27:
         raise ValueError("Недостаточно колонок в Excel-файле")
+
+    # Контакты (телефон/ИНН/табельный) — из ПОЛНОГО df по заголовку, до слайса.
+    contacts = _extract_timebook_contacts(df)
 
     # A=0 store, C=2 format, E=4 city, H=7 date,
     # J=9 request_type, M=12 service, N=13 employee, AA=26 hours.
@@ -96,7 +178,7 @@ def _normalize_upload_dataframe(df):
     df = df[valid_mask].copy()
 
     if df.empty:
-        return df, skipped_invalid
+        return df, skipped_invalid, contacts
 
     # request_type is part of the business identity: no-plan shifts must stay
     # separate from normal planned shifts for display and payroll.
@@ -104,7 +186,7 @@ def _normalize_upload_dataframe(df):
         hours=("hours", "sum"),
         city=("city", _choose_last_text),
     )
-    return grouped, skipped_invalid
+    return grouped, skipped_invalid, contacts
 
 
 def _shift_query(session, row):
@@ -119,7 +201,8 @@ def _shift_query(session, row):
 
 
 def _process_shift_dataframe(session, df):
-    rows, skipped_invalid = _normalize_upload_dataframe(df)
+    rows, skipped_invalid, contacts = _normalize_upload_dataframe(df)
+    _upsert_timebook_contacts(session, contacts)
     added = 0
     updated = 0
     skipped_duplicates = skipped_invalid

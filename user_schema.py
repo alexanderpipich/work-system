@@ -26,3 +26,6 @@ def ensure_user_profile_columns():
         connection.execute(text(
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS qr_image_path VARCHAR"
         ))
+        connection.execute(text(
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title VARCHAR"
+        ))

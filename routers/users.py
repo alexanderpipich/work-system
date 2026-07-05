@@ -4,6 +4,7 @@ import pandas as pd
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -14,7 +15,7 @@ from dependencies import get_db
 from inn_sync import set_employee_inn
 from rbac import require_permission
 from legal_entity_helpers import active_legal_entities
-from models import Country, Shift, User
+from models import JOB_TITLES, Country, Shift, TimebookEmployee, User
 from utils import (
     get_password_hash,
     normalize_phone,
@@ -40,6 +41,7 @@ def _user_payload(user):
         "citizenship_country_id": getattr(user, "citizenship_country_id", None),
         "is_student": getattr(user, "is_student", False),
         "legal_entity": user.legal_entity,
+        "job_title": getattr(user, "job_title", None),
     }
 
 
@@ -50,6 +52,57 @@ def _default_city_scope(session, role, raw_scope):
         return raw
     cities = [row[0] for row in session.query(Shift.city).filter(Shift.city != None).distinct().order_by(Shift.city).all() if row[0]]
     return ", ".join(cities)
+
+
+def pending_employees(session):
+    """ФИО из смен, у которых НЕТ аккаунта User (нормализованное сравнение).
+
+    Для каждого — подтянутые из timebook телефон/ИНН/табельный (стейджинг
+    TimebookEmployee), кол-во смен и последний ТК/город для контекста.
+    """
+    shift_names = {
+        normalize_text(e) for (e,) in session.query(Shift.employee).distinct().all() if normalize_text(e)
+    }
+    user_names = {
+        normalize_text(n) for (n,) in session.query(User.employee_name).distinct().all() if normalize_text(n)
+    }
+    pending = sorted(shift_names - user_names)
+    if not pending:
+        return []
+
+    counts = {
+        normalize_text(emp): cnt
+        for emp, cnt in session.query(Shift.employee, func.count(Shift.id)).group_by(Shift.employee).all()
+    }
+
+    last = {}
+    for emp, store, city, _d in (
+        session.query(Shift.employee, Shift.store, Shift.city, Shift.shift_date)
+        .filter(Shift.employee.in_(pending))
+        .order_by(Shift.shift_date.asc())
+        .all()
+    ):
+        last[normalize_text(emp)] = {"store": store, "city": city}
+
+    contacts = {
+        row.employee_name: row
+        for row in session.query(TimebookEmployee).filter(TimebookEmployee.employee_name.in_(pending)).all()
+    }
+
+    result = []
+    for name in pending:
+        c = contacts.get(name)
+        result.append({
+            "name": name,
+            "phone": (c.phone if c else "") or "",
+            "inn": (c.inn if c else "") or "",
+            "tab": (c.tab_number if c else "") or "",
+            "count": counts.get(name, 0),
+            "last_store": last.get(name, {}).get("store") or "",
+            "last_city": last.get(name, {}).get("city") or "",
+            "has_phone": bool(c and c.phone),
+        })
+    return result
 def render_users(request: Request, session, message=None, error=None, filters=None):
     users = session.query(User).order_by(User.employee_name.asc()).all()
     legal_entities = active_legal_entities(session)
@@ -61,6 +114,7 @@ def render_users(request: Request, session, message=None, error=None, filters=No
             "users": users,
             "legal_entities": legal_entities,
             "countries": countries,
+            "job_titles": JOB_TITLES,
             "message": message,
             "error": error,
             "filters": filters or {},
@@ -450,6 +504,8 @@ def admin_users(
             "users": users,
             "legal_entities": active_legal_entities(session),
             "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
+            "job_titles": JOB_TITLES,
+            "pending_count": len(pending_employees(session)),
             "message": None,
             "error": None,
             "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users},
@@ -475,6 +531,7 @@ def update_user(
     is_student: str = Form(""),
     legal_entity: str = Form(default=""),
     inn: str = Form(default=""),
+    job_title: str = Form(default=""),
     f_user_id: str = Form(default=""),
     f_phone: str = Form(default=""),
     f_employee_name: str = Form(default=""),
@@ -508,6 +565,12 @@ def update_user(
     user.citizenship_country_id = citizenship_country_id or None
     user.is_student = bool(is_student)
     user.legal_entity = normalize_text(legal_entity) or None
+    # Должность: пустое ИЛИ одно из фиксированного списка; иначе не меняем.
+    job_title_clean = normalize_text(job_title)
+    if not job_title_clean:
+        user.job_title = None
+    elif job_title_clean in JOB_TITLES:
+        user.job_title = job_title_clean
 
     inn_clean = normalize_text(inn)
     if inn_clean:
@@ -541,6 +604,105 @@ def update_user(
     session.commit()
 
     return RedirectResponse(url=f"{redirect_base}#user-{user_id}", status_code=302)
+
+
+@router.get("/admin/users/pending", response_class=HTMLResponse)
+def users_pending_page(
+    request: Request,
+    session: Session = Depends(get_db),
+    admin=Depends(require_user_management),
+):
+    return templates.TemplateResponse(
+        request,
+        "users_pending.html",
+        {"pending": pending_employees(session), "message": None, "error": None},
+    )
+
+
+@router.post("/admin/users/pending/create", response_class=HTMLResponse)
+async def users_pending_create(
+    request: Request,
+    session: Session = Depends(get_db),
+    admin=Depends(require_user_management),
+):
+    form = await request.form()
+    password = str(form.get("new_password") or "").strip()
+
+    if not password:
+        return templates.TemplateResponse(
+            request,
+            "users_pending.html",
+            {"pending": pending_employees(session), "message": None,
+             "error": "Задайте пароль — он будет установлен всем создаваемым сотрудникам"},
+        )
+
+    try:
+        row_count = int(form.get("row_count") or 0)
+    except ValueError:
+        row_count = 0
+
+    created = 0
+    no_phone = []
+    skipped = []
+
+    for i in range(row_count):
+        if not form.get(f"sel_{i}"):
+            continue
+        name = normalize_text(form.get(f"name_{i}") or "")
+        if not name:
+            continue
+
+        phone = normalize_phone(form.get(f"phone_{i}") or "")
+        if not phone:
+            no_phone.append(name)
+            continue
+
+        # Идемпотентность: уже есть по телефону ИЛИ по ФИО — пропускаем.
+        exists = session.query(User).filter(
+            (User.phone == phone) | (User.employee_name == name)
+        ).first()
+        if exists:
+            skipped.append(name)
+            continue
+
+        user = User(
+            phone=phone,
+            password_hash=get_password_hash(password),
+            employee_name=name,
+            is_admin=False,
+            role="employee",
+        )
+        session.add(user)
+        try:
+            session.flush()
+            staged = session.query(TimebookEmployee).filter(
+                TimebookEmployee.employee_name == name
+            ).first()
+            if staged and normalize_text(staged.inn):
+                set_employee_inn(session, user, staged.inn, source="timebook", actor=admin, request=request)
+            create_audit_log(
+                session, request, admin,
+                "user_created_from_shifts", "user", user.id, user.employee_name,
+                new_value=_user_payload(user), comment="created from timebook shifts",
+            )
+            session.commit()
+            created += 1
+        except IntegrityError:
+            session.rollback()
+            skipped.append(name)
+
+    parts = [f"Создано: {created}"]
+    if skipped:
+        parts.append(f"пропущено (уже есть): {len(skipped)}")
+    if no_phone:
+        parts.append(f"без телефона (не создано): {len(no_phone)}")
+
+    return templates.TemplateResponse(
+        request,
+        "users_pending.html",
+        {"pending": pending_employees(session), "message": "; ".join(parts),
+         "error": None, "no_phone": no_phone},
+    )
 
 
 @router.post("/admin/delete-user", response_class=HTMLResponse)

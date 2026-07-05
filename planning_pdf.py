@@ -158,8 +158,8 @@ def build_planning_pdf(path, *, tk_number, object_address, city, date_from, date
     """
     Собрать PDF бланка планирования.
 
-    employees — список ФИО (уже отсортированный). ТК и адрес одинаковы во всех
-    строках таблицы (как образец).
+    employees — список сотрудников (уже отсортированный). Каждый элемент — либо
+    строка ФИО, либо пара (ФИО, должность). ТК и адрес одинаковы во всех строках.
     """
     _register_fonts()
     path = str(path)
@@ -199,17 +199,26 @@ def build_planning_pdf(path, *, tk_number, object_address, city, date_from, date
     data = [[
         Paragraph("ТК", head_cell),
         Paragraph("РАБОТНИК", head_cell),
+        Paragraph("должность", head_cell),
         Paragraph("адрес", head_cell),
     ]]
-    for name in employees:
+    for item in employees:
+        # Совместимость: элемент — строка ФИО ИЛИ пара (ФИО, должность).
+        if isinstance(item, (tuple, list)):
+            name = item[0]
+            job = item[1] if len(item) > 1 and item[1] else ""
+        else:
+            name = item
+            job = ""
         data.append([
             Paragraph(tk_cell, cell),
             Paragraph(name, cell),
+            Paragraph(job or "", cell),
             Paragraph(addr, cell),
         ])
 
     # Таблица по центру страницы, оливковые полосы без сетки.
-    col_w = [12 * mm, 72 * mm, 64 * mm]
+    col_w = [12 * mm, 58 * mm, 26 * mm, 52 * mm]
     table = Table(data, colWidths=col_w, repeatRows=1, hAlign="CENTER")
     style = [
         ("BACKGROUND", (0, 0), (-1, 0), HEAD_BG),

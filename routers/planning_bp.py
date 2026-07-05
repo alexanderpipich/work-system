@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
 from dependencies import get_db
-from models import EmployeeStoreAssignment, PlanningForm, Store
+from models import EmployeeStoreAssignment, PlanningForm, Store, User
 from planning_pdf import build_filename, build_planning_pdf
 from rbac import require_permission
 from store_helpers import extract_tk_number
@@ -52,7 +52,11 @@ def _parse_date(value: str):
 
 
 def _employees_for_tk(session: Session, tk: int):
-    """Активные сотрудники, привязанные к этому ТК, по ФИО (без дублей)."""
+    """Активные сотрудники ТК: список пар (ФИО, должность) без дублей, по ФИО.
+
+    Должность берётся из User.job_title (матч по нормализованному ФИО); если User
+    не найден или должность не задана — пустая строка (в БП будет пустая ячейка).
+    """
     rows = (
         session.query(EmployeeStoreAssignment)
         .filter(EmployeeStoreAssignment.is_active == True)
@@ -63,7 +67,16 @@ def _employees_for_tk(session: Session, tk: int):
         for r in rows
         if r.employee_name and extract_tk_number(r.store) == tk
     }
-    return sorted(names)
+
+    # ФИО → должность из User (матч по нормализованному имени; legacy-данные
+    # могут отличаться регистром/пробелами, поэтому нормализуем обе стороны).
+    job_by_name = {}
+    for user in session.query(User).filter(User.job_title != None).all():
+        key = normalize_text(user.employee_name)
+        if key in names:
+            job_by_name[key] = user.job_title
+
+    return [(name, job_by_name.get(name, "")) for name in sorted(names)]
 
 
 def _history(session: Session):

@@ -34,6 +34,27 @@ class Shift(Base):
     )
 
 
+class TimebookEmployee(Base):
+    """Стейджинг контактов из timebook (ФИО→телефон/ИНН/табельный).
+
+    Смены (Shift) не хранят телефон/ИНН — эти поля тянутся из timebook и оседают
+    здесь, чтобы экран «несозданные» мог предзаполнить данные при создании User.
+    Ключ — нормализованное ФИО; при каждой загрузке непустые значения обновляются.
+    """
+    __tablename__ = "timebook_employees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_name = Column(String, unique=True, nullable=False, index=True)
+    phone = Column(String, nullable=True)
+    inn = Column(String, nullable=True)
+    tab_number = Column(String, nullable=True)
+    updated_at = Column(DateTime, default=now_utc)
+
+
+# Фиксированный справочник должностей (4.54). Пустое значение допустимо.
+JOB_TITLES = ["ОПРР", "РТЗ", "ПЕКАРНЯ", "ГАСТРОНОМ", "ПУ"]
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -55,6 +76,7 @@ class User(Base):
     legal_entity = Column(String, nullable=True)
     inn = Column(String, nullable=True)  # ИНН сотрудника (Блок 2 нормализации, canonical). НЕ путать с LegalEntity.inn.
     qr_image_path = Column(String, nullable=True)  # Загруженная QR-картинка-пропуск сотрудника (не генерируется).
+    job_title = Column(String, nullable=True)  # Должность (JOB_TITLES). Бизнес-поле, НЕ путать с системной role.
 
 
 class LegalEntity(Base):
