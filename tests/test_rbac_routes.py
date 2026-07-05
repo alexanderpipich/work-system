@@ -113,6 +113,14 @@ ROUTE_PERMISSION_MATRIX = [
     ("headhunter.dashboard",
         ["superadmin", "headhunter"],
         ["economist", "hr_lead", "hr_manager", "brigadier", "employee"]),
+
+    # справочник магазинов: витрина — всем ролям; контакты — всем кроме рядового employee
+    ("stores.directory.view",
+        ["superadmin", "hr_lead", "hr_manager", "economist", "brigadier", "headhunter", "employee"],
+        []),
+    ("stores.contacts.view",
+        ["superadmin", "hr_lead", "hr_manager", "economist", "brigadier", "headhunter"],
+        ["employee"]),
     # bypass-only: planning scenarios, monitoring settings
     ("admin.settings",
         ["superadmin"],

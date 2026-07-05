@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ТК {{ store.tk_number }} — {{ store.display_name or 'магазин' }}</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); }
+
+        .topbar {
+            position: sticky; top: 0; z-index: 20;
+            background: rgba(255, 255, 255, 0.96);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 10px 26px rgba(11, 20, 117, 0.08);
+        }
+        .topbar-inner {
+            max-width: 900px; margin: 0 auto; padding: 12px 18px;
+            display: flex; align-items: center; justify-content: space-between; gap: 14px;
+        }
+        .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .brand img { width: 54px; height: 54px; object-fit: contain; border-radius: 14px; background: #fff; flex-shrink: 0; }
+        .brand-title { margin: 0; font-size: 22px; line-height: 1.1; color: var(--brand-blue); }
+        .logout {
+            text-decoration: none; color: var(--brand-blue); font-weight: 700;
+            border: 1px solid rgba(11, 20, 117, 0.16); padding: 10px 14px;
+            border-radius: 12px; background: #fff; white-space: nowrap;
+        }
+
+        .page { max-width: 900px; margin: 0 auto; padding: 20px 18px 36px; }
+
+        .back { display: inline-block; margin-bottom: 14px; text-decoration: none; color: var(--brand-blue); font-weight: 700; }
+
+        .card {
+            background: var(--card-bg); border-radius: 22px;
+            box-shadow: var(--shadow); padding: 22px 20px; margin-bottom: 18px;
+        }
+
+        .head-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .tk-badge { font-size: 15px; font-weight: 800; color: var(--brand-blue); background: rgba(11, 20, 117, 0.08); border-radius: 10px; padding: 6px 12px; }
+        .fmt-badge { font-size: 13px; font-weight: 700; color: #8f3e20; background: rgba(245, 138, 101, 0.14); border-radius: 999px; padding: 6px 12px; }
+        .store-name { margin: 0; font-size: 24px; color: var(--brand-blue); }
+
+        .rows { margin-top: 8px; }
+        .row { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .row:last-child { border-bottom: none; }
+        .row .k { width: 150px; flex: 0 0 auto; color: var(--muted); font-weight: 700; }
+        .row .v { color: var(--text); }
+
+        .card-title { margin: 0 0 12px; color: var(--brand-blue); font-size: 18px; }
+
+        .contact {
+            border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px;
+        }
+        .contact:last-child { margin-bottom: 0; }
+        .contact-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .contact-email { font-weight: 700; color: var(--brand-blue); font-size: 15px; word-break: break-all; }
+        .role-pill { font-size: 12px; font-weight: 700; color: #374151; background: #f1f3f7; border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; }
+        .contact-name { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+        .flags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+        .flag { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 4px 9px; background: #eefbf3; color: #067647; border: 1px solid rgba(6, 118, 71, 0.14); }
+
+        .empty { color: var(--muted); font-size: 14px; }
+
+        @media (max-width: 520px) {
+            .row { flex-direction: column; gap: 2px; }
+            .row .k { width: auto; }
+            .brand-title { font-size: 19px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="brand">
+                <img src="/static/logo-alex.jpg" alt="Логотип">
+                <h1 class="brand-title">Магазин</h1>
+            </div>
+            <a href="/logout" class="logout">Выйти</a>
+        </div>
+    </header>
+
+    <main class="page">
+        <a class="back" href="/stores">← К списку магазинов</a>
+
+        <section class="card">
+            <div class="head-row">
+                <span class="tk-badge">ТК {{ store.tk_number }}</span>
+                {% if store.format %}<span class="fmt-badge">{{ store.format }}</span>{% endif %}
+            </div>
+            <h2 class="store-name">{{ store.display_name or ('ТК ' ~ store.tk_number) }}</h2>
+
+            <div class="rows">
+                <div class="row"><span class="k">Город</span><span class="v">{{ store.city or '—' }}</span></div>
+                <div class="row"><span class="k">Формат</span><span class="v">{{ store.format or '—' }}</span></div>
+                <div class="row"><span class="k">Адрес объекта</span><span class="v">{{ store.object_address or '—' }}</span></div>
+                {% if store.comment %}
+                <div class="row"><span class="k">Комментарий</span><span class="v">{{ store.comment }}</span></div>
+                {% endif %}
+            </div>
+        </section>
+
+        {% if can_view_contacts %}
+        <section class="card">
+            <h3 class="card-title">Контакты</h3>
+            {% if contacts %}
+                {% for contact in contacts %}
+                <div class="contact">
+                    <div class="contact-top">
+                        <span class="contact-email">{{ contact.email }}</span>
+                        <span class="role-pill">{{ roles.get(contact.role, contact.role) }}</span>
+                    </div>
+                    {% if contact.name %}<p class="contact-name">{{ contact.name }}</p>{% endif %}
+                    {% if contact.for_planning or contact.for_reconciliation or contact.for_unplanned %}
+                    <div class="flags">
+                        {% if contact.for_planning %}<span class="flag">Бланки планирования</span>{% endif %}
+                        {% if contact.for_reconciliation %}<span class="flag">Сверки</span>{% endif %}
+                        {% if contact.for_unplanned %}<span class="flag">Смены без плана</span>{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty">Контакты не заданы.</div>
+            {% endif %}
+        </section>
+        {% endif %}
+    </main>
+</body>
+</html>

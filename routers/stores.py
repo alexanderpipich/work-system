@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from audit_helpers import create_audit_log
 from dependencies import get_db
 from models import STORE_CONTACT_ROLES, Shift, Store, StoreContact
-from rbac import require_permission
+from rbac import has_permission, require_permission
 from store_helpers import extract_tk_number, migrate_legacy_store_settings, populate_stores_from_shifts
 from time_helpers import now_utc
 
@@ -18,6 +18,7 @@ templates = Jinja2Templates(directory="templates")
 
 _view = require_permission("stores.view")
 _manage = require_permission("stores.manage")
+_directory = require_permission("stores.directory.view")
 
 
 def _shift_tks(session: Session) -> set:
@@ -298,3 +299,77 @@ def admin_store_contact_delete(
         )
         session.commit()
     return RedirectResponse(f"/admin/stores/{store_id}?message=Контакт удалён", status_code=302)
+
+
+# ── read-only справочник (все авторизованные роли) ────────────────────────────
+
+@router.get("/stores", response_class=HTMLResponse)
+def stores_directory(
+    request: Request,
+    session: Session = Depends(get_db),
+    user=Depends(_directory),
+    tk: str = "",
+    name: str = "",
+    city: str = "",
+    format: str = "",
+):
+    query = session.query(Store).filter(Store.is_active == True)
+
+    if tk.strip():
+        try:
+            query = query.filter(Store.tk_number == int(tk.strip()))
+        except ValueError:
+            query = query.filter(Store.tk_number == -1)
+    if name.strip():
+        query = query.filter(Store.display_name.ilike(f"%{name.strip()}%"))
+    if city.strip():
+        query = query.filter(Store.city.ilike(f"%{city.strip()}%"))
+    if format.strip():
+        query = query.filter(Store.format.ilike(f"%{format.strip()}%"))
+
+    # tk_number — целочисленная колонка (NOT NULL), сортировка нативно числовая.
+    stores = query.order_by(Store.tk_number.asc()).all()
+
+    return templates.TemplateResponse(
+        request,
+        "stores_directory.html",
+        {
+            "user": user,
+            "stores": stores,
+            "filters": {"tk": tk, "name": name, "city": city, "format": format},
+        },
+    )
+
+
+@router.get("/stores/{store_id}", response_class=HTMLResponse)
+def store_card(
+    store_id: int,
+    request: Request,
+    session: Session = Depends(get_db),
+    user=Depends(_directory),
+):
+    store = session.query(Store).filter(Store.id == store_id, Store.is_active == True).first()
+    if not store:
+        return RedirectResponse("/stores", status_code=302)
+
+    can_view_contacts = has_permission(user, "stores.contacts.view")
+    contacts = []
+    if can_view_contacts:
+        contacts = (
+            session.query(StoreContact)
+            .filter(StoreContact.store_id == store_id, StoreContact.is_active == True)
+            .order_by(StoreContact.id.asc())
+            .all()
+        )
+
+    return templates.TemplateResponse(
+        request,
+        "store_card.html",
+        {
+            "user": user,
+            "store": store,
+            "can_view_contacts": can_view_contacts,
+            "contacts": contacts,
+            "roles": STORE_CONTACT_ROLES,
+        },
+    )

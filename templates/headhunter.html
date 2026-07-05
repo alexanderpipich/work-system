@@ -107,6 +107,18 @@
             font-weight: 700;
         }
 
+        .dir-link {
+            display: inline-block;
+            margin-top: 14px;
+            text-decoration: none;
+            color: var(--brand-blue);
+            font-weight: 700;
+            border: 1px solid rgba(11, 20, 117, 0.16);
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #fff;
+        }
+
         .blocks {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -175,6 +187,7 @@
         <section class="card">
             <h2 class="welcome-title">Добро пожаловать!</h2>
             <p class="employee-name">{{ user.employee_name or "Подборщик" }}</p>
+            <a href="/stores" class="dir-link">Справочник магазинов →</a>
         </section>
 
         <div class="blocks">

@@ -34,23 +34,27 @@ PERMISSIONS = {
         "payroll.view", "payroll.export", "payroll.summary_view",
         "rates.view", "lmk.view", "password.reset_limited",
         "audit.hr_view", "hr_team.manage", "schedules.view",
+        "stores.directory.view", "stores.contacts.view",
     },
     ROLE_HR_MANAGER: {
         "employees.view", "employees.manage", "documents.view", "documents.manage",
         "requisites.view", "requisites.manage", "reports.view", "payroll.view", "payroll.export",
         "rates.view", "lmk.view", "password.reset_limited", "schedules.view",
+        "stores.directory.view", "stores.contacts.view",
     },
     ROLE_ECONOMIST: {
         "employees.view", "employees.manage", "documents.view", "documents.verify",
         "schedules.view", "payroll.view", "payroll.manage", "payroll.send",
         "adjustments.manage", "rates.view", "rates.manage", "requisites.view", "lmk.manage", "reports.view",
         "legal_entities.manage", "economist.dashboard",
+        "stores.directory.view", "stores.contacts.view",
     },
-    ROLE_BRIGADIER: {"schedules.view"},
-    # Минимальный набор под кабинет-заглушку: доступ только к своему дашборду.
+    ROLE_BRIGADIER: {"schedules.view", "stores.directory.view", "stores.contacts.view"},
+    # Минимальный набор под кабинет-заглушку: доступ к своему дашборду + справочник магазинов.
     # Права под реальные функции (мессенджер/вакансии) добавятся, когда появятся функции.
-    ROLE_HEADHUNTER: {"headhunter.dashboard"},
-    ROLE_EMPLOYEE: {"profile.own", "documents.own", "schedules.own"},
+    ROLE_HEADHUNTER: {"headhunter.dashboard", "stores.directory.view", "stores.contacts.view"},
+    # Рядовой сотрудник видит справочник магазинов, но НЕ контакты (stores.contacts.view).
+    ROLE_EMPLOYEE: {"profile.own", "documents.own", "schedules.own", "stores.directory.view"},
 }
 
 
