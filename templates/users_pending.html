@@ -122,5 +122,26 @@
         {% endif %}
     </div>
 </div>
+<script>
+(function () {
+    var form = document.querySelector('form[action="/admin/users/pending/create"]');
+    if (!form) return;
+    // Ввод телефона = явное намерение создать: авто-отмечаем чекбокс строки.
+    form.addEventListener('input', function (e) {
+        var t = e.target;
+        if (!t.name || t.name.indexOf('phone_') !== 0) return;
+        var idx = t.name.slice('phone_'.length);
+        var box = form.querySelector('input[type="checkbox"][name="sel_' + idx + '"]');
+        if (box) box.checked = t.value.trim() !== '';
+    });
+    // Не отправлять молча при пустом выборе — иначе тихое «Создано: 0».
+    form.addEventListener('submit', function (e) {
+        if (!form.querySelector('input[type="checkbox"][name^="sel_"]:checked')) {
+            e.preventDefault();
+            alert('Не выбрано ни одного сотрудника. Впишите телефон или отметьте строку галочкой.');
+        }
+    });
+})();
+</script>
 </body>
 </html>
