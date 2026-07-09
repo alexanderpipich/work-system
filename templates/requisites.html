@@ -515,12 +515,23 @@
                 <div style="padding:12px 16px;background:#eef1ff;color:#0b1475;font-size:13px;font-weight:700;border-bottom:1px solid rgba(11,20,117,0.10);">
                     Обновлено существующих реквизитов ({{ changes_report|length }}):
                 </div>
-                {% for item in changes_report %}
+                {% for item in changes_report[:10] %}
                     <div style="display:flex;justify-content:space-between;gap:16px;padding:10px 16px;border-bottom:1px solid #e7eaff;font-size:13px;background:#fff;">
                         <span style="color:#0b1475;font-weight:600;white-space:nowrap;">{{ item.name }}</span>
                         <span style="color:#374151;text-align:right;">{{ item.changes }}</span>
                     </div>
                 {% endfor %}
+                {% if changes_report|length > 10 %}
+                    <details>
+                        <summary style="padding:10px 16px;font-size:13px;font-weight:700;color:#0b1475;background:#f7f8ff;cursor:pointer;">Показать все {{ changes_report|length }}</summary>
+                        {% for item in changes_report[10:] %}
+                            <div style="display:flex;justify-content:space-between;gap:16px;padding:10px 16px;border-bottom:1px solid #e7eaff;font-size:13px;background:#fff;">
+                                <span style="color:#0b1475;font-weight:600;white-space:nowrap;">{{ item.name }}</span>
+                                <span style="color:#374151;text-align:right;">{{ item.changes }}</span>
+                            </div>
+                        {% endfor %}
+                    </details>
+                {% endif %}
             </div>
         {% endif %}
 
@@ -529,9 +540,17 @@
                 <div style="padding:12px 16px;background:#fff1ed;color:#b42318;font-size:13px;font-weight:700;border-bottom:1px solid rgba(180,35,24,0.12);">
                     Реквизиты не привязаны к пользователю — ФИО не совпало ({{ unmatched_users|length }}):
                 </div>
-                {% for name in unmatched_users %}
+                {% for name in unmatched_users[:10] %}
                     <div style="padding:10px 16px;border-bottom:1px solid #fde8e1;font-size:13px;background:#fff;color:#b42318;">{{ name }}</div>
                 {% endfor %}
+                {% if unmatched_users|length > 10 %}
+                    <details>
+                        <summary style="padding:10px 16px;font-size:13px;font-weight:700;color:#b42318;background:#fff7f5;cursor:pointer;">Показать все {{ unmatched_users|length }}</summary>
+                        {% for name in unmatched_users[10:] %}
+                            <div style="padding:10px 16px;border-bottom:1px solid #fde8e1;font-size:13px;background:#fff;color:#b42318;">{{ name }}</div>
+                        {% endfor %}
+                    </details>
+                {% endif %}
             </div>
         {% endif %}
     </div>
