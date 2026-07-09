@@ -3,7 +3,7 @@ from typing import Optional
 from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from access import accessible_employee_names
@@ -21,10 +21,12 @@ from document_helpers import (
     active_document_types,
     batch_employee_completeness,
     build_document_registry_rows,
+    classify_document,
     computed_document_status,
     document_file_exists,
     economist_employee_names,
     employee_names,
+    latest_employee_document,
     normalize_employee_folder,
     parse_bool,
     parse_date,
@@ -340,6 +342,126 @@ def _render_matrix(request, session, user, *, tk_filter="", name_filter=""):
             "error": None,
         },
     )
+
+
+def _matrix_cell_payload(document):
+    """Состояние клетки матрицы после отметки/снятия. Статус считает общая
+    `classify_document` — своей статус-логики здесь нет."""
+    return {
+        "ok": True,
+        "status": classify_document(document),
+        "document_id": document.id if document else None,
+        "marked": document is not None,
+        "expiry_date": document.expiry_date.isoformat() if document and document.expiry_date else "",
+    }
+
+
+@router.post("/admin/documents/matrix/toggle")
+def admin_documents_matrix_toggle(
+    request: Request,
+    user_id: int = Form(...),
+    document_type_id: int = Form(...),
+    action: str = Form("mark"),
+    expiry_date: str = Form(""),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    """Отметка «документ есть» без загрузки файла (и снятие такой отметки).
+
+    Документы со сроком (`requires_expiry_date`) требуют дату окончания — без неё
+    зелёного не будет. Записи со сканом (`file_path`) отметкой не трогаются.
+    """
+    employee = session.query(User).filter(User.id == user_id).first()
+    if not employee:
+        return JSONResponse({"ok": False, "error": "Сотрудник не найден"}, status_code=404)
+
+    document_type = session.query(DocumentType).filter(
+        DocumentType.id == document_type_id,
+        DocumentType.is_active == True,
+    ).first()
+    if not document_type:
+        return JSONResponse({"ok": False, "error": "Тип документа не найден"}, status_code=404)
+
+    employee_name = normalize_text(employee.employee_name)
+    document = latest_employee_document(session, employee_name, document_type.id)
+    if document is not None and document.file_path:
+        return JSONResponse(
+            {"ok": False, "error": "У документа загружен файл — снимайте или меняйте его в карточке документа"},
+            status_code=400,
+        )
+
+    if action == "unmark":
+        if document is None:
+            return JSONResponse(_matrix_cell_payload(None))
+        document_id = document.id
+        old_value = {"status": document.status, "expiry_date": str(document.expiry_date or "")}
+        session.delete(document)
+        create_audit_log(
+            session,
+            request,
+            user,
+            "document_mark_removed",
+            "employee_document",
+            document_id,
+            f"{employee_name} / {document_type.name}",
+            old_value=old_value,
+        )
+        session.commit()
+        return JSONResponse(_matrix_cell_payload(None))
+
+    if document_type.requires_expiry_date:
+        try:
+            parsed_expiry = parse_date(expiry_date)
+        except DocumentDateParseError:
+            return JSONResponse({"ok": False, "error": INVALID_DATE_MESSAGE, "needs_expiry": True}, status_code=400)
+        if not parsed_expiry:
+            return JSONResponse(
+                {"ok": False, "error": f"Для документа «{document_type.name}» нужна дата окончания", "needs_expiry": True},
+                status_code=400,
+            )
+        is_permanent = False
+    else:
+        parsed_expiry = None
+        is_permanent = bool(document_type.allow_permanent)
+
+    if document is None:
+        document = EmployeeDocument(
+            user_id=employee.id,
+            employee_name=employee_name,
+            document_type_id=document_type.id,
+            uploaded_by=user.id,
+            uploaded_at=now_utc(),
+        )
+        session.add(document)
+
+    document.expiry_date = parsed_expiry
+    document.is_permanent = is_permanent
+    document.file_path = None
+    document.original_filename = None
+    document.status = "verified"
+    document.verified_by = user.id
+    document.verified_at = now_utc()
+    document.updated_at = now_utc()
+    session.flush()
+
+    create_audit_log(
+        session,
+        request,
+        user,
+        "document_marked_manually",
+        "employee_document",
+        document.id,
+        f"{employee_name} / {document_type.name}",
+        new_value={
+            "employee_name": employee_name,
+            "document_type_id": document_type.id,
+            "status": document.status,
+            "expiry_date": str(parsed_expiry or ""),
+            "is_permanent": is_permanent,
+        },
+    )
+    session.commit()
+    return JSONResponse(_matrix_cell_payload(document))
 
 
 async def _create_employee_document(

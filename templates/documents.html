@@ -91,7 +91,17 @@
         .mcell.expired { background: #fee2e2; color: #991b1b; }
         .mcell.missing { background: #f1f5f9; color: #94a3b8; }
         .mcell.na { background: #f8fafc; color: #cbd5e1; }
+        .mcell.clickable { cursor: pointer; }
+        .mcell.clickable:hover { box-shadow: 0 0 0 2px var(--brand-blue); }
+        .mcell.manual { font-size: 14px; }
         .matrix-filter { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+        .mark-popover { position: absolute; z-index: 50; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(16,24,40,0.14); padding: 12px; width: 230px; font-size: 13px; }
+        .mark-popover .title { font-weight: 700; color: var(--brand-blue); margin-bottom: 8px; }
+        .mark-popover input[type=date] { width: 100%; margin-bottom: 8px; }
+        .mark-popover .actions { display: flex; gap: 6px; }
+        .mark-popover button { flex: 1; padding: 7px 8px; border-radius: 8px; border: 1px solid var(--brand-blue); background: var(--brand-blue); color: #fff; font-weight: 700; font-size: 12px; cursor: pointer; }
+        .mark-popover button.secondary { background: #fff; color: #b42318; border-color: #f0c1b8; }
+        .mark-popover .err { color: #b42318; font-weight: 700; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -166,8 +176,21 @@
                 <td class="name-col">{{ emp.employee_name }}</td>
                 {% for icon_key, title in matrix_columns %}
                 {% set item = row.get(icon_key) %}
+                {% set dtype = item.document_type if item else None %}
+                {% set doc = item.document if item else None %}
+                {% set has_file = doc and doc.file_path %}
                 <td title="{{ title }}: {{ item.status if item else 'н/д' }}">
-                    {% if item %}
+                    {% if item and dtype and not has_file %}
+                    <span class="mcell clickable {{ item.status }}{% if doc %} manual{% endif %}"
+                          role="button" tabindex="0"
+                          data-user-id="{{ emp.id }}"
+                          data-type-id="{{ dtype.id }}"
+                          data-type-name="{{ title }}"
+                          data-requires-expiry="{{ 1 if dtype.requires_expiry_date else 0 }}"
+                          data-marked="{{ 1 if doc else 0 }}"
+                          data-expiry="{{ doc.expiry_date if doc and doc.expiry_date else '' }}"
+                          data-employee="{{ emp.employee_name }}">{{ '✓' if doc else '●' }}</span>
+                    {% elif item %}
                     <span class="mcell {{ item.status }}">●</span>
                     {% else %}
                     <span class="mcell na">–</span>
@@ -340,5 +363,134 @@
     </section>
 {% endif %}
 </div>
+{% if view == 'matrix' %}
+<script>
+(function () {
+    const STATUSES = ['ok', 'expiring_soon', 'pending', 'expired', 'missing'];
+    let popover = null;
+
+    function closePopover() {
+        if (popover) { popover.remove(); popover = null; }
+    }
+
+    function applyPayload(cell, data) {
+        STATUSES.forEach(s => cell.classList.remove(s));
+        cell.classList.add(data.status);
+        cell.classList.toggle('manual', !!data.marked);
+        cell.textContent = data.marked ? '✓' : '●';
+        cell.dataset.marked = data.marked ? '1' : '0';
+        cell.dataset.expiry = data.expiry_date || '';
+        const td = cell.closest('td');
+        if (td) { td.title = cell.dataset.typeName + ': ' + data.status; }
+    }
+
+    async function send(cell, action, expiry, onError) {
+        const body = new URLSearchParams({
+            user_id: cell.dataset.userId,
+            document_type_id: cell.dataset.typeId,
+            action: action,
+            expiry_date: expiry || '',
+        });
+        let data;
+        try {
+            const response = await fetch('/admin/documents/matrix/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body,
+            });
+            data = await response.json();
+        } catch (e) {
+            data = { ok: false, error: 'Сессия истекла — обновите страницу' };
+        }
+        if (data && data.ok) {
+            closePopover();
+            applyPayload(cell, data);
+        } else {
+            onError((data && data.error) || 'Ошибка сохранения');
+        }
+    }
+
+    function openPopover(cell) {
+        closePopover();
+        const marked = cell.dataset.marked === '1';
+        const needsExpiry = cell.dataset.requiresExpiry === '1';
+
+        popover = document.createElement('div');
+        popover.className = 'mark-popover';
+        const title = document.createElement('div');
+        title.className = 'title';
+        title.textContent = cell.dataset.typeName + ' — ' + cell.dataset.employee;
+        popover.appendChild(title);
+
+        let dateInput = null;
+        if (needsExpiry) {
+            const hint = document.createElement('div');
+            hint.className = 'muted';
+            hint.style.marginBottom = '6px';
+            hint.textContent = 'Дата окончания обязательна';
+            popover.appendChild(hint);
+            dateInput = document.createElement('input');
+            dateInput.type = 'date';
+            dateInput.value = cell.dataset.expiry || '';
+            popover.appendChild(dateInput);
+        }
+
+        const error = document.createElement('div');
+        error.className = 'err';
+        error.style.display = 'none';
+        const showError = (text) => { error.textContent = text; error.style.display = 'block'; };
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        if (needsExpiry || !marked) {
+            const save = document.createElement('button');
+            save.type = 'button';
+            save.textContent = marked ? 'Обновить' : 'Отметить';
+            save.addEventListener('click', () => send(cell, 'mark', dateInput ? dateInput.value : '', showError));
+            actions.appendChild(save);
+        }
+        if (marked) {
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'secondary';
+            remove.textContent = 'Снять';
+            remove.addEventListener('click', () => send(cell, 'unmark', '', showError));
+            actions.appendChild(remove);
+        }
+        popover.appendChild(actions);
+        popover.appendChild(error);
+        popover.addEventListener('click', (event) => event.stopPropagation());
+
+        document.body.appendChild(popover);
+        const box = cell.getBoundingClientRect();
+        popover.style.top = (window.scrollY + box.bottom + 6) + 'px';
+        popover.style.left = Math.max(8, Math.min(window.scrollX + box.left - 100, window.scrollX + window.innerWidth - 246)) + 'px';
+        if (dateInput) { dateInput.focus(); }
+    }
+
+    function handle(cell) {
+        // Бессрочный тип и пустая клетка — отмечаем сразу, без поповера.
+        if (cell.dataset.requiresExpiry === '0' && cell.dataset.marked === '0') {
+            send(cell, 'mark', '', (text) => window.alert(text));
+            return;
+        }
+        openPopover(cell);
+    }
+
+    document.addEventListener('click', (event) => {
+        const cell = event.target.closest('.mcell.clickable');
+        if (!cell) { closePopover(); return; }
+        event.stopPropagation();
+        handle(cell);
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') { closePopover(); return; }
+        if (event.key !== 'Enter' && event.key !== ' ') { return; }
+        const cell = event.target.closest && event.target.closest('.mcell.clickable');
+        if (cell) { event.preventDefault(); handle(cell); }
+    });
+})();
+</script>
+{% endif %}
 </body>
 </html>

@@ -242,28 +242,32 @@ def employee_document_rows(session, user, required_only=True):
     return rows
 
 
+def classify_document(doc, today=None):
+    """Статус документа для матрицы/карточки комплектности: ok / expiring_soon /
+    pending / expired / missing. Единственный источник этой классификации."""
+    today = today or business_today()
+    if not doc or doc.status in {"rejected", "archived"}:
+        return "missing"
+    if not doc.is_permanent and doc.expiry_date and doc.expiry_date < today:
+        return "expired"
+    if doc.status == "verified":
+        if not doc.is_permanent and doc.expiry_date and doc.expiry_date <= today + timedelta(days=EXPIRY_WARNING_DAYS):
+            return "expiring_soon"
+        return "ok"
+    if doc.status in {"uploaded", "pending_verification"}:
+        return "pending"
+    return "missing"
+
+
 def employee_document_status(session, user) -> list[dict]:
     today = business_today()
-
-    def _classify(doc):
-        if not doc or doc.status in {"rejected", "archived"}:
-            return "missing"
-        if not doc.is_permanent and doc.expiry_date and doc.expiry_date < today:
-            return "expired"
-        if doc.status == "verified":
-            if not doc.is_permanent and doc.expiry_date and doc.expiry_date <= today + timedelta(days=EXPIRY_WARNING_DAYS):
-                return "expiring_soon"
-            return "ok"
-        if doc.status in {"uploaded", "pending_verification"}:
-            return "pending"
-        return "missing"
 
     def _rows(doc_types):
         return [
             {
                 "document_type": dt,
                 "required": True,
-                "status": _classify(latest_employee_document(session, user.employee_name, dt.id)),
+                "status": classify_document(latest_employee_document(session, user.employee_name, dt.id), today),
             }
             for dt in doc_types
         ]
@@ -414,19 +418,6 @@ def batch_employee_completeness(session, users: list) -> dict:
         if nk not in reqs_by_name:
             reqs_by_name[nk] = req
 
-    def _classify(doc):
-        if not doc or doc.status in {"rejected", "archived"}:
-            return "missing"
-        if not doc.is_permanent and doc.expiry_date and doc.expiry_date < today:
-            return "expired"
-        if doc.status == "verified":
-            if not doc.is_permanent and doc.expiry_date and doc.expiry_date <= today + timedelta(days=EXPIRY_WARNING_DAYS):
-                return "expiring_soon"
-            return "ok"
-        if doc.status in {"uploaded", "pending_verification"}:
-            return "pending"
-        return "missing"
-
     def _doc_types_for(user):
         if getattr(user, "is_student", False):
             base = [dt for dt in all_doc_types if not dt.is_student_doc and 1 <= dt.sort_order <= 5]
@@ -453,6 +444,7 @@ def batch_employee_completeness(session, users: list) -> dict:
                 "icon_key": "requisites",
                 "status": req_status,
                 "document_type": None,
+                "document": None,
                 "source": "requisite",
             }
         }
@@ -463,8 +455,9 @@ def batch_employee_completeness(session, users: list) -> dict:
                 "position": i,
                 "title": ICON_KEY_TITLES.get(ik, dt.name),
                 "icon_key": ik,
-                "status": _classify(doc),
+                "status": classify_document(doc, today),
                 "document_type": dt,
+                "document": doc,
                 "source": "document",
             }
         result[user.id] = items
