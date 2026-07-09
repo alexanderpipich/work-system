@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гражданство сотрудников</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475; --brand-peach: #f58a65; --bg: #f4f5f7;
+            --card-bg: #fff; --text: #1f2937; --muted: #6b7280; --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+            --error-bg: #fff1ed; --error-text: #b42318;
+            --success-bg: #eefbf3; --success-text: #067647;
+            --warn-bg: #fff7ed; --warn-text: #9a3412;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); padding: 28px 18px 36px; }
+        .page { max-width: 1100px; margin: 0 auto; }
+        .topbar, .card { background: var(--card-bg); border-radius: 22px; box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand img { width: 60px; height: 60px; object-fit: contain; border-radius: 16px; background: #fff; }
+        .brand-title { margin: 0; font-size: 26px; color: var(--brand-blue); }
+        .brand-sub { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+        .toolbar a { text-decoration: none; color: var(--brand-blue); font-weight: 700; border: 1px solid rgba(11,20,117,.12); padding: 10px 14px; border-radius: 12px; background: #fff; white-space: nowrap; }
+        .filters { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+        .field label { display: block; font-size: 12px; font-weight: 700; color: var(--brand-blue); margin-bottom: 6px; }
+        .field input[type="text"] { height: 42px; border: 1px solid var(--border); border-radius: 12px; padding: 0 12px; font-size: 14px; background: #fff; min-width: 260px; }
+        .check { display: flex; align-items: center; gap: 8px; height: 42px; font-size: 14px; }
+        .btn { height: 42px; border: none; border-radius: 12px; padding: 0 18px; font-weight: 700; cursor: pointer; background: linear-gradient(135deg, var(--brand-blue), #18239a); color: #fff; }
+        .btn-row { height: 36px; padding: 0 14px; border-radius: 10px; font-size: 13px; }
+        .counter { color: var(--muted); font-size: 14px; margin-left: auto; }
+        .counter b { color: var(--warn-text); }
+        .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 16px; }
+        table { width: 100%; border-collapse: collapse; min-width: 820px; background: #fff; }
+        th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+        th { background: #fafbfc; color: var(--brand-blue); font-size: 13px; font-weight: 700; }
+        tr.missing { background: var(--warn-bg); }
+        td select { height: 36px; border: 1px solid var(--border); border-radius: 10px; padding: 0 8px; font-size: 14px; background: #fff; min-width: 210px; }
+        .current { font-weight: 700; }
+        .current.none { color: var(--warn-text); }
+        .row-status { font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .row-status.ok { color: var(--success-text); }
+        .row-status.err { color: var(--error-text); }
+        .empty { color: var(--muted); font-size: 15px; padding: 8px 0; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1 class="brand-title">Гражданство сотрудников</h1>
+                <p class="brand-sub">Массовая правка: гражданство видно у всех сразу, каждая строка сохраняется отдельно.</p>
+            </div>
+        </div>
+        <div class="toolbar">
+            <a href="/admin/citizenship/regimes">← К режимам</a>
+            <a href="/admin/users">К пользователям</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <form method="get" action="/admin/users/citizenship" class="filters">
+            <div class="field">
+                <label>Поиск по ФИО</label>
+                <input type="text" name="q" value="{{ q }}" placeholder="Фамилия или часть ФИО">
+            </div>
+            <label class="check">
+                <input type="checkbox" name="only_missing" value="1" {% if only_missing %}checked{% endif %}>
+                Только без гражданства
+            </label>
+            <button type="submit" class="btn">Найти</button>
+            <div class="counter">Без гражданства всего: <b>{{ missing_count }}</b></div>
+        </form>
+    </div>
+
+    <div class="card">
+        {% if users %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ФИО</th>
+                        <th>Текущее гражданство</th>
+                        <th>Новое гражданство</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr id="row-{{ u.id }}" class="{% if not u.citizenship_country_id %}missing{% endif %}" data-user-id="{{ u.id }}">
+                        <td>{{ u.employee_name }}</td>
+                        <td>
+                            <span class="current {% if not u.citizenship_country_id %}none{% endif %}">
+                                {{ country_names.get(u.citizenship_country_id, '— не указано —') }}
+                            </span>
+                        </td>
+                        <td>
+                            <select name="citizenship_country_id">
+                                <option value="0">— не указано —</option>
+                                {% for c in countries %}
+                                <option value="{{ c.id }}" {% if u.citizenship_country_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-row">Сохранить</button>
+                            <span class="row-status"></span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty">По фильтру сотрудников не найдено.</div>
+        {% endif %}
+    </div>
+</div>
+<script>
+(function () {
+    async function save(row) {
+        const select = row.querySelector('select');
+        const status = row.querySelector('.row-status');
+        const button = row.querySelector('button');
+        const body = new URLSearchParams({ citizenship_country_id: select.value });
+
+        button.disabled = true;
+        status.className = 'row-status';
+        status.textContent = 'Сохраняю…';
+
+        let data;
+        try {
+            const response = await fetch('/admin/users/' + row.dataset.userId + '/citizenship', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body,
+            });
+            data = await response.json();
+        } catch (e) {
+            data = { ok: false, error: 'Сессия истекла — обновите страницу' };
+        }
+        button.disabled = false;
+
+        if (data && data.ok) {
+            const current = row.querySelector('.current');
+            const name = data.citizenship_name || '— не указано —';
+            current.textContent = name;
+            current.classList.toggle('none', !data.citizenship_country_id);
+            row.classList.toggle('missing', !data.citizenship_country_id);
+            status.className = 'row-status ok';
+            status.textContent = '✓ сохранено';
+        } else {
+            status.className = 'row-status err';
+            status.textContent = (data && data.error) || 'Ошибка';
+        }
+    }
+
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest('.btn-row');
+        if (!button) { return; }
+        save(button.closest('tr'));
+    });
+})();
+</script>
+</body>
+</html>

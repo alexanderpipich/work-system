@@ -2,7 +2,7 @@ from urllib.parse import urlencode
 
 import pandas as pd
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
@@ -604,6 +604,88 @@ def update_user(
     session.commit()
 
     return RedirectResponse(url=f"{redirect_base}#user-{user_id}", status_code=302)
+
+
+@router.get("/admin/users/citizenship", response_class=HTMLResponse)
+def users_citizenship_page(
+    request: Request,
+    q: str = "",
+    only_missing: str = "",
+    session: Session = Depends(get_db),
+    admin=Depends(require_user_management),
+):
+    """Компактный вид массовой правки гражданства: строка на сотрудника, всё видно
+    сразу (в аккордеоне /admin/users гражданство скрыто до раскрытия карточки)."""
+    query = session.query(User)
+    name_filter = normalize_text(q)
+    if name_filter:
+        query = query.filter(User.employee_name.ilike(f"%{name_filter}%"))
+    if only_missing:
+        query = query.filter(User.citizenship_country_id == None)
+
+    # Без гражданства — наверх: их и надо заполнить.
+    users = sorted(
+        query.all(),
+        key=lambda u: (u.citizenship_country_id is not None, normalize_text(u.employee_name).lower()),
+    )
+    countries = session.query(Country).filter(Country.is_active == True).order_by(Country.name).all()
+    return templates.TemplateResponse(
+        request,
+        "users_citizenship.html",
+        {
+            "users": users,
+            "countries": countries,
+            "country_names": {c.id: c.name for c in countries},
+            "missing_count": session.query(User).filter(User.citizenship_country_id == None).count(),
+            "q": name_filter,
+            "only_missing": bool(only_missing),
+        },
+    )
+
+
+@router.post("/admin/users/{user_id}/citizenship")
+def update_user_citizenship(
+    request: Request,
+    user_id: int,
+    citizenship_country_id: int = Form(0),
+    session: Session = Depends(get_db),
+    admin=Depends(require_user_management),
+):
+    """Точечное сохранение гражданства одной строки — тем же механизмом, что update_user
+    (стр. 565). Всю форму пользователя ради одного поля не гоняем."""
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user:
+        return JSONResponse({"ok": False, "error": "Сотрудник не найден"}, status_code=404)
+
+    country = None
+    if citizenship_country_id:
+        country = session.query(Country).filter(
+            Country.id == citizenship_country_id,
+            Country.is_active == True,
+        ).first()
+        if not country:
+            return JSONResponse({"ok": False, "error": "Страна не найдена"}, status_code=400)
+
+    old_country_id = user.citizenship_country_id
+    user.citizenship_country_id = citizenship_country_id or None
+
+    create_audit_log(
+        session,
+        request,
+        admin,
+        "user_citizenship_updated",
+        "user",
+        user.id,
+        user.employee_name,
+        old_value={"citizenship_country_id": old_country_id},
+        new_value={"citizenship_country_id": user.citizenship_country_id},
+    )
+    session.commit()
+    return JSONResponse({
+        "ok": True,
+        "citizenship_country_id": user.citizenship_country_id,
+        "citizenship_name": country.name if country else "",
+    })
 
 
 @router.get("/admin/users/pending", response_class=HTMLResponse)
