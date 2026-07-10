@@ -27,6 +27,26 @@ DEFAULT_REQUEST_TYPE = "Основные заказы"
 NO_PLAN_REQUEST_TYPE = "Смена без плана"
 SHIFT_KEY_COLUMNS = ["store", "format", "date", "service", "employee", "request_type"]
 
+# Строка заголовков в отчёте смен — вторая (первая занята агрегатами «Итого:»).
+TIMEBOOK_HEADER_ROW = 1
+
+EMPLOYEE_CANDIDATES = ["фио сотрудника исполнителя", "фио сотрудника", "фио"]
+
+# (поле, кандидаты-заголовки, fallback-индекс, обязательное).
+# Индексы — страховка на случай отсутствия заголовка; порядок колонок в отчёте
+# уже менялся, поэтому первичен ЗАГОЛОВОК.
+SHIFT_COLUMN_SPECS = [
+    ("store", "Магазин", ["магазин"], 0, True),
+    ("format", "Формат", ["формат"], 2, True),
+    ("city", "Город", ["город"], 4, False),
+    ("date", "Дата", ["дата"], 7, True),
+    ("request_type", "Тип заявки", ["тип заявки"], 9, False),
+    ("service", "Услуга", ["услуга"], 13, True),
+    ("employee", "ФИО сотрудника Исполнителя", EMPLOYEE_CANDIDATES, 14, True),
+    # Часы — ТОЛЬКО числовая колонка. Соседняя «…, чч:мм» — timedelta, не парсится.
+    ("hours", "ПланФакт … (в числовом формате), часы", ["в числовом формате"], 27, True),
+]
+
 
 def recent_upload_logs(session):
     return session.query(UploadLog).order_by(
@@ -58,19 +78,21 @@ def _choose_last_text(values, default=""):
 
 
 def _resolve_col(df, candidates, fallback_index):
-    """Найти колонку по заголовку (подстрока, регистр/пробелы игнор), иначе по индексу.
+    """Найти колонку по заголовку, иначе по индексу. Вернуть (Series | None, by_header).
 
-    candidates — упорядоченный список подстрок (специфичные раньше общих).
-    В реальных данных телефон/табельный иногда смещены — заголовок надёжнее индекса.
+    Сначала точное совпадение заголовка, потом подстрочное — иначе «формат» матчит
+    «ПланФакт … (в числовом формате), часы». candidates — упорядоченный список
+    (специфичные раньше общих). Заголовок надёжнее индекса: формат отчёта уже менялся.
     """
     normalized = {col: re.sub(r"\s+", " ", str(col)).strip().lower() for col in df.columns}
-    for sub in candidates:
-        for col, name in normalized.items():
-            if sub in name:
-                return df[col]
+    for match in (lambda sub, name: name == sub, lambda sub, name: sub in name):
+        for sub in candidates:
+            for col, name in normalized.items():
+                if match(sub, name):
+                    return df[col], True
     if fallback_index < len(df.columns):
-        return df.iloc[:, fallback_index]
-    return None
+        return df.iloc[:, fallback_index], False
+    return None, False
 
 
 def _cell_phone(value):
@@ -89,12 +111,12 @@ def _cell_str(value):
 
 def _extract_timebook_contacts(df):
     """{нормализованное ФИО: {phone, inn, tab}} из timebook, последнее непустое значение."""
-    emp = _resolve_col(df, ["фио сотрудника исполнителя", "фио сотрудника", "фио", "исполнител"], 13)
+    emp, _ = _resolve_col(df, EMPLOYEE_CANDIDATES + ["исполнител"], 14)
     if emp is None:
         return {}
-    phone = _resolve_col(df, ["номер телефона", "телефон"], 15)
-    inn = _resolve_col(df, ["инн сотрудника", "инн"], 16)
-    tab = _resolve_col(df, ["табельный номер", "табельный"], 14)
+    phone, _ = _resolve_col(df, ["номер телефона", "телефон"], 16)
+    inn, _ = _resolve_col(df, ["инн сотрудника", "инн"], 17)
+    tab, _ = _resolve_col(df, ["табельный номер", "табельный"], 15)
 
     contacts = {}
     for i in range(len(df)):
@@ -135,26 +157,44 @@ def _upsert_timebook_contacts(session, contacts):
         row.updated_at = now_utc()
 
 
-def _normalize_upload_dataframe(df):
-    if len(df.columns) < 27:
-        raise ValueError("Недостаточно колонок в Excel-файле")
+def _build_shift_dataframe(df):
+    """Собрать df смен по ЗАГОЛОВКАМ колонок (fallback — индекс).
 
-    # Контакты (телефон/ИНН/табельный) — из ПОЛНОГО df по заголовку, до слайса.
+    Устойчиво к добавлению/перестановке колонок в отчёте, пока заголовки называются
+    по-прежнему. Отсутствие обязательного заголовка — внятная ошибка, не тихий мусор.
+    """
+    columns = {}
+    matched_by_header = 0
+    missing = []
+    for field, title, candidates, fallback_index, required in SHIFT_COLUMN_SPECS:
+        series, by_header = _resolve_col(df, candidates, fallback_index)
+        matched_by_header += int(by_header)
+        if series is None:
+            if required:
+                missing.append(title)
+            continue
+        columns[field] = series.reset_index(drop=True)
+
+    if missing:
+        raise ValueError("Не найдена колонка: " + ", ".join(f"«{title}»" for title in missing))
+
+    if matched_by_header == 0:
+        # Все колонки пришлось брать по индексу — заголовков нет ни одного.
+        # Молча разложить данные по позициям опаснее, чем упасть.
+        raise ValueError("Не распознаны заголовки колонок — ожидается строка 2 файла")
+
+    for field in ("city", "request_type"):
+        if field not in columns:
+            columns[field] = pd.Series([""] * len(df))
+
+    return pd.DataFrame({field: columns[field] for field, *_ in SHIFT_COLUMN_SPECS})
+
+
+def _normalize_upload_dataframe(df):
+    # Контакты (телефон/ИНН/табельный) — из ПОЛНОГО df по заголовку, до сборки.
     contacts = _extract_timebook_contacts(df)
 
-    # A=0 store, C=2 format, E=4 city, H=7 date,
-    # J=9 request_type, M=12 service, N=13 employee, AA=26 hours.
-    df = df.iloc[:, [0, 2, 4, 7, 9, 12, 13, 26]].copy()
-    df.columns = [
-        "store",
-        "format",
-        "city",
-        "date",
-        "request_type",
-        "service",
-        "employee",
-        "hours",
-    ]
+    df = _build_shift_dataframe(df)
 
     if df.empty:
         raise ValueError("Файл пуст")
@@ -364,7 +404,7 @@ async def admin_upload_submit(
         )
 
     try:
-        df = pd.read_excel(file.file)
+        df = pd.read_excel(file.file, header=TIMEBOOK_HEADER_ROW)
         result = _process_shift_dataframe(session, df)
         _write_upload_log(session, request, admin, file.filename, result=result)
 

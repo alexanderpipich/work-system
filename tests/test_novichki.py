@@ -28,16 +28,18 @@ def _session():
 
 class ResolveColTests(unittest.TestCase):
     def test_matches_by_header_even_when_shifted(self):
-        # Телефон НЕ на индексе 15, а по заголовку — должен найтись по заголовку.
+        # Телефон НЕ на индексе 16, а по заголовку — должен найтись по заголовку.
         df = pd.DataFrame({"Магазин": ["A"], "Номер телефона": [79990001122]})
-        col = _resolve_col(df, ["номер телефона", "телефон"], 15)
+        col, by_header = _resolve_col(df, ["номер телефона", "телефон"], 16)
         self.assertIsNotNone(col)
+        self.assertTrue(by_header)
         self.assertEqual(col.iloc[0], 79990001122)
 
     def test_falls_back_to_index_when_no_header(self):
-        df = pd.DataFrame([[f"v{i}" for i in range(17)]], columns=[f"c{i}" for i in range(17)])
-        col = _resolve_col(df, ["телефон"], 15)
-        self.assertEqual(col.iloc[0], "v15")
+        df = pd.DataFrame([[f"v{i}" for i in range(18)]], columns=[f"c{i}" for i in range(18)])
+        col, by_header = _resolve_col(df, ["телефон"], 16)
+        self.assertFalse(by_header)
+        self.assertEqual(col.iloc[0], "v16")
 
 
 class ExtractContactsTests(unittest.TestCase):
@@ -57,13 +59,13 @@ class ExtractContactsTests(unittest.TestCase):
         self.assertEqual(rec["tab"], "42")
 
     def test_index_fallback(self):
-        # 17 безымянных колонок: ФИО=13, табельный=14, телефон=15, ИНН=16.
-        row = [None] * 17
-        row[13] = "Петров П.П."
-        row[14] = "77"
-        row[15] = 79995556677
-        row[16] = "111222333"
-        df = pd.DataFrame([row], columns=[f"c{i}" for i in range(17)])
+        # Новый формат, 18 безымянных колонок: ФИО=14, табельный=15, телефон=16, ИНН=17.
+        row = [None] * 18
+        row[14] = "Петров П.П."
+        row[15] = "77"
+        row[16] = 79995556677
+        row[17] = "111222333"
+        df = pd.DataFrame([row], columns=[f"c{i}" for i in range(18)])
         contacts = _extract_timebook_contacts(df)
         self.assertIn("Петров П.П.", contacts)
         rec = contacts["Петров П.П."]
