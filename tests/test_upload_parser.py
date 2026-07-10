@@ -114,6 +114,35 @@ class NewFormatParsingTests(unittest.TestCase):
         self.assertEqual(rows.iloc[0]["service"], "2ур_Услуги по разработке планограмм")
 
 
+class PhoneInTabColumnTests(unittest.TestCase):
+    """В отчёте заказчика телефон лежит в «Табельный номер», а «Номер телефона» пуст."""
+
+    def _contacts(self, tab, phone):
+        df = _new_df(1)
+        df.loc[0, "Табельный номер сотрудника"] = tab
+        df.loc[0, "Номер телефона"] = phone
+        return _extract_timebook_contacts(df)["Мирзокулова Рушана Шухрат Кизи"]
+
+    def test_phone_like_tab_becomes_phone(self):
+        rec = self._contacts(tab="79990050445", phone=" ")
+        self.assertEqual(rec["phone"], "79990050445")
+        # Номер телефона табельным не считается.
+        self.assertEqual(rec["tab"], "")
+
+    def test_eight_prefix_also_recognized(self):
+        self.assertEqual(self._contacts(tab="89990050445", phone=" ")["phone"], "89990050445")
+
+    def test_real_tab_number_is_not_mistaken_for_phone(self):
+        rec = self._contacts(tab="12345", phone=" ")
+        self.assertEqual(rec["tab"], "12345")
+        self.assertEqual(rec["phone"], "")
+
+    def test_filled_phone_column_wins(self):
+        rec = self._contacts(tab="79990050445", phone="79111112233")
+        self.assertEqual(rec["phone"], "79111112233")
+        self.assertEqual(rec["tab"], "79990050445")
+
+
 class OldFormatParsingTests(unittest.TestCase):
     """Старый формат: те же заголовки на других позициях — находятся по имени."""
 

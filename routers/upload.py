@@ -101,6 +101,14 @@ def _cell_phone(value):
     return normalize_phone(value)
 
 
+_PHONE_LIKE = re.compile(r"^[78]\d{10}$")
+
+
+def _looks_like_phone(value):
+    """11 цифр, начинается с 7/8 — российский номер. Табельные короче (42, 12345)."""
+    return bool(_PHONE_LIKE.match(re.sub(r"\D", "", str(value))))
+
+
 def _cell_str(value):
     if value is None or pd.isna(value):
         return ""
@@ -124,18 +132,24 @@ def _extract_timebook_contacts(df):
         if not name:
             continue
         rec = contacts.setdefault(name, {"phone": "", "inn": "", "tab": ""})
-        if phone is not None:
-            p = _cell_phone(phone.iloc[i])
-            if p:
-                rec["phone"] = p
+
+        phone_value = _cell_phone(phone.iloc[i]) if phone is not None else ""
+        tab_value = _cell_str(tab.iloc[i]) if tab is not None else ""
+
+        # В отчёте заказчика телефон иногда лежит в колонке табельного, а «Номер
+        # телефона» пуст. Номер как табельный не сохраняем — это не табельный.
+        if not phone_value and _looks_like_phone(tab_value):
+            phone_value = normalize_phone(tab_value)
+            tab_value = ""
+
+        if phone_value:
+            rec["phone"] = phone_value
+        if tab_value:
+            rec["tab"] = tab_value
         if inn is not None:
             v = _cell_str(inn.iloc[i])
             if v:
                 rec["inn"] = v
-        if tab is not None:
-            v = _cell_str(tab.iloc[i])
-            if v:
-                rec["tab"] = v
     return contacts
 
 
