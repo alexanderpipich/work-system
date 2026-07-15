@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from database import Base
-from document_helpers import classify_document
+from document_helpers import classify_document, false_green_count, false_green_documents
 from models import AuditLog, DocumentType, EmployeeDocument, User
 from routers.documents import admin_documents_matrix_toggle
 from time_helpers import business_today
@@ -45,13 +45,14 @@ class MatrixMarkTests(unittest.TestCase):
     def tearDown(self):
         self.s.close()
 
-    def _toggle(self, type_id, action="mark", expiry_date=""):
+    def _toggle(self, type_id, action="mark", expiry_date="", permanent=""):
         return _payload(admin_documents_matrix_toggle(
             request=None,
             user_id=self.employee.id,
             document_type_id=type_id,
             action=action,
             expiry_date=expiry_date,
+            permanent=permanent,
             session=self.s,
             user=self.admin,
         ))
@@ -141,7 +142,7 @@ class MatrixMarkTests(unittest.TestCase):
         self.assertFalse(self._toggle(999)["ok"])
         data = _payload(admin_documents_matrix_toggle(
             request=None, user_id=4242, document_type_id=3, action="mark",
-            expiry_date="", session=self.s, user=self.admin,
+            expiry_date="", permanent="", session=self.s, user=self.admin,
         ))
         self.assertFalse(data["ok"])
 
@@ -169,11 +170,131 @@ class ClassifyDocumentTests(unittest.TestCase):
         self.assertEqual(classify_document(doc), "expiring_soon")
 
 
+class DecoupledFlagsTests(unittest.TestCase):
+    """Раздел 1: тип с ОБОИМИ флагами (requires_expiry_date + allow_permanent) —
+    выбор «дата ИЛИ бессрочно». Паспорт РФ/иностранец на одном типе."""
+
+    def setUp(self):
+        self.s = _session()
+        self.admin = SimpleNamespace(id=1, role="superadmin", is_admin=True)
+        self.employee = User(phone="+70000000002", password_hash="x", employee_name="Петров П.П.", role="employee")
+        self.s.add(self.employee)
+        # Паспорт: и срок можно, и бессрочно можно (резидент РФ — бессрочно, иностранец — срок).
+        self.s.add(DocumentType(id=3, name="Паспорт", sort_order=3, is_active=True,
+                                requires_expiry_date=True, allow_permanent=True))
+        # ЛМК: срок обязателен, бессрочность недоступна.
+        self.s.add(DocumentType(id=2, name="ЛМК", sort_order=2, is_active=True,
+                                requires_expiry_date=True, allow_permanent=False))
+        self.s.commit()
+
+    def tearDown(self):
+        self.s.close()
+
+    def _toggle(self, type_id, action="mark", expiry_date="", permanent=""):
+        return _payload(admin_documents_matrix_toggle(
+            request=None, user_id=self.employee.id, document_type_id=type_id,
+            action=action, expiry_date=expiry_date, permanent=permanent,
+            session=self.s, user=self.admin,
+        ))
+
+    def _doc(self, type_id):
+        return self.s.query(EmployeeDocument).filter(EmployeeDocument.document_type_id == type_id).first()
+
+    def test_both_flags_with_date_is_green(self):
+        far = business_today() + timedelta(days=200)
+        data = self._toggle(3, expiry_date=far.isoformat())
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["status"], "ok")
+        doc = self._doc(3)
+        self.assertEqual(doc.expiry_date, far)
+        self.assertFalse(doc.is_permanent)
+
+    def test_both_flags_permanent_is_green_without_date(self):
+        data = self._toggle(3, permanent="1")
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["status"], "ok")
+        self.assertTrue(data["permanent"])
+        doc = self._doc(3)
+        self.assertTrue(doc.is_permanent)
+        self.assertIsNone(doc.expiry_date)
+
+    def test_permanent_refused_when_type_forbids(self):
+        # ЛМК: allow_permanent=False → «бессрочно» недоступно.
+        data = self._toggle(2, permanent="1")
+        self.assertFalse(data["ok"])
+        self.assertIsNone(self._doc(2))
+
+
+class DiagnosticsTests(unittest.TestCase):
+    """Раздел 2: критерий ложно-зелёных отличает инициализацию от легитимной бессрочности."""
+
+    def setUp(self):
+        self.s = _session()
+        self.emp = User(phone="+70000000003", password_hash="x", employee_name="Сидоров С.С.", role="employee")
+        self.s.add(self.emp)
+        # Тип требует срок И бессрочность недоступна → is_permanent тут невозможен легитимно.
+        self.s.add(DocumentType(id=2, name="ЛМК", sort_order=2, is_active=True,
+                                requires_expiry_date=True, allow_permanent=False))
+        # Тип, где бессрочность легитимна.
+        self.s.add(DocumentType(id=3, name="Паспорт", sort_order=3, is_active=True,
+                                requires_expiry_date=True, allow_permanent=True))
+        self.s.commit()
+
+    def tearDown(self):
+        self.s.close()
+
+    def _permanent_doc(self, type_id):
+        doc = EmployeeDocument(
+            user_id=self.emp.id, employee_name="Сидоров С.С.", document_type_id=type_id,
+            file_path=None, status="verified", is_permanent=True, expiry_date=None,
+        )
+        self.s.add(doc)
+        self.s.commit()
+        return doc
+
+    def test_false_green_is_found(self):
+        self._permanent_doc(2)
+        pairs = false_green_documents(self.s)
+        self.assertEqual(len(pairs), 1)
+        self.assertEqual(pairs[0][1].name, "ЛМК")
+        self.assertEqual(false_green_count(self.s), 1)
+
+    def test_legitimate_permanent_is_not_flagged(self):
+        # Тот же признак is_permanent, но тип allow_permanent=True → легитимно, не ловим.
+        self._permanent_doc(3)
+        self.assertEqual(false_green_documents(self.s), [])
+        self.assertEqual(false_green_count(self.s), 0)
+
+    def test_dated_document_is_not_flagged(self):
+        doc = EmployeeDocument(
+            user_id=self.emp.id, employee_name="Сидоров С.С.", document_type_id=2,
+            status="verified", is_permanent=False, expiry_date=business_today() + timedelta(days=100),
+        )
+        self.s.add(doc)
+        self.s.commit()
+        self.assertEqual(false_green_documents(self.s), [])
+
+    def test_diagnostics_does_not_mutate(self):
+        self._permanent_doc(2)
+        before = {
+            (d.id, d.status, d.is_permanent, d.expiry_date)
+            for d in self.s.query(EmployeeDocument).all()
+        }
+        false_green_documents(self.s)
+        false_green_count(self.s)
+        after = {
+            (d.id, d.status, d.is_permanent, d.expiry_date)
+            for d in self.s.query(EmployeeDocument).all()
+        }
+        self.assertEqual(before, after)
+
+
 class MatrixToggleRouteTests(unittest.TestCase):
     def test_route_registered(self):
         import main
         paths = {r.path for r in main.app.routes}
         self.assertIn("/admin/documents/matrix/toggle", paths)
+        self.assertIn("/admin/documents/diagnostics", paths)
 
 
 if __name__ == "__main__":

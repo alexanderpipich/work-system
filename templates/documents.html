@@ -130,6 +130,13 @@
     {% if error %}<div class="card error">{{ error }}</div>{% endif %}
 
 {% if view == 'matrix' %}
+    {% if false_green_count %}
+    <section class="card" style="border:1px solid #f0c1b8;background:#fef3f0">
+        <a href="/admin/documents/diagnostics" style="font-weight:700;color:#b42318;text-decoration:none">
+            ⚠ Требуют срок: {{ false_green_count }} — помечены бессрочными, но тип требует дату. Открыть диагностику →
+        </a>
+    </section>
+    {% endif %}
     <section class="card">
         <h2>Фильтры матрицы</h2>
         <form method="get" action="{{ base_path }}" class="matrix-filter">
@@ -187,7 +194,9 @@
                           data-type-id="{{ dtype.id }}"
                           data-type-name="{{ title }}"
                           data-requires-expiry="{{ 1 if dtype.requires_expiry_date else 0 }}"
+                          data-allow-permanent="{{ 1 if dtype.allow_permanent else 0 }}"
                           data-marked="{{ 1 if doc else 0 }}"
+                          data-permanent="{{ 1 if doc and doc.is_permanent else 0 }}"
                           data-expiry="{{ doc.expiry_date if doc and doc.expiry_date else '' }}"
                           data-employee="{{ emp.employee_name }}">{{ '✓' if doc else '●' }}</span>
                     {% elif item %}
@@ -379,17 +388,19 @@
         cell.classList.toggle('manual', !!data.marked);
         cell.textContent = data.marked ? '✓' : '●';
         cell.dataset.marked = data.marked ? '1' : '0';
+        cell.dataset.permanent = data.permanent ? '1' : '0';
         cell.dataset.expiry = data.expiry_date || '';
         const td = cell.closest('td');
         if (td) { td.title = cell.dataset.typeName + ': ' + data.status; }
     }
 
-    async function send(cell, action, expiry, onError) {
+    async function send(cell, action, expiry, permanent, onError) {
         const body = new URLSearchParams({
             user_id: cell.dataset.userId,
             document_type_id: cell.dataset.typeId,
             action: action,
             expiry_date: expiry || '',
+            permanent: permanent ? '1' : '',
         });
         let data;
         try {
@@ -414,6 +425,7 @@
         closePopover();
         const marked = cell.dataset.marked === '1';
         const needsExpiry = cell.dataset.requiresExpiry === '1';
+        const canPermanent = cell.dataset.allowPermanent === '1';
 
         popover = document.createElement('div');
         popover.className = 'mark-popover';
@@ -423,16 +435,37 @@
         popover.appendChild(title);
 
         let dateInput = null;
+        let permInput = null;
         if (needsExpiry) {
             const hint = document.createElement('div');
             hint.className = 'muted';
             hint.style.marginBottom = '6px';
-            hint.textContent = 'Дата окончания обязательна';
+            hint.textContent = canPermanent ? 'Введите дату окончания или отметьте «бессрочно»' : 'Дата окончания обязательна';
             popover.appendChild(hint);
             dateInput = document.createElement('input');
             dateInput.type = 'date';
             dateInput.value = cell.dataset.expiry || '';
             popover.appendChild(dateInput);
+
+            if (canPermanent) {
+                // Оба флага у типа → выбор «дата ИЛИ бессрочно» (взаимоисключающие).
+                const permLabel = document.createElement('label');
+                permLabel.style.display = 'block';
+                permLabel.style.marginBottom = '8px';
+                permLabel.style.fontWeight = '600';
+                permInput = document.createElement('input');
+                permInput.type = 'checkbox';
+                permInput.style.marginRight = '6px';
+                permInput.checked = marked && cell.dataset.permanent === '1';
+                dateInput.disabled = permInput.checked;
+                permLabel.appendChild(permInput);
+                permLabel.appendChild(document.createTextNode('Бессрочно'));
+                popover.appendChild(permLabel);
+                permInput.addEventListener('change', () => {
+                    dateInput.disabled = permInput.checked;
+                    if (permInput.checked) { dateInput.value = ''; }
+                });
+            }
         }
 
         const error = document.createElement('div');
@@ -446,7 +479,10 @@
             const save = document.createElement('button');
             save.type = 'button';
             save.textContent = marked ? 'Обновить' : 'Отметить';
-            save.addEventListener('click', () => send(cell, 'mark', dateInput ? dateInput.value : '', showError));
+            save.addEventListener('click', () => {
+                const perm = permInput && permInput.checked;
+                send(cell, 'mark', perm ? '' : (dateInput ? dateInput.value : ''), perm, showError);
+            });
             actions.appendChild(save);
         }
         if (marked) {
@@ -454,7 +490,7 @@
             remove.type = 'button';
             remove.className = 'secondary';
             remove.textContent = 'Снять';
-            remove.addEventListener('click', () => send(cell, 'unmark', '', showError));
+            remove.addEventListener('click', () => send(cell, 'unmark', '', false, showError));
             actions.appendChild(remove);
         }
         popover.appendChild(actions);
@@ -471,7 +507,7 @@
     function handle(cell) {
         // Бессрочный тип и пустая клетка — отмечаем сразу, без поповера.
         if (cell.dataset.requiresExpiry === '0' && cell.dataset.marked === '0') {
-            send(cell, 'mark', '', (text) => window.alert(text));
+            send(cell, 'mark', '', false, (text) => window.alert(text));
             return;
         }
         openPopover(cell);

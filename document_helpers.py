@@ -275,6 +275,44 @@ def employee_document_status(session, user) -> list[dict]:
     return _rows(required_document_types(session, user))
 
 
+def _false_green_query(session, type_id=None):
+    """Базовый запрос «ложно-зелёных» документов. Критерий: помечен бессрочным
+    (`is_permanent` + пустой `expiry_date`), даёт зелёный (`status="verified"`),
+    но тип СЕЙЧАС требует срок (`requires_expiry_date`) И бессрочность для него
+    невозможна (`allow_permanent=False`). Значит запись осталась с разовой
+    инициализации (флаг «требует срок» тогда был снят) — срок надо дозаполнить.
+    Если тип `allow_permanent=True`, бессрочность легитимна — под критерий не подпадает."""
+    q = (
+        session.query(EmployeeDocument, DocumentType)
+        .join(DocumentType, EmployeeDocument.document_type_id == DocumentType.id)
+        .filter(
+            EmployeeDocument.is_permanent == True,
+            EmployeeDocument.expiry_date.is_(None),
+            EmployeeDocument.status == "verified",
+            DocumentType.requires_expiry_date == True,
+            DocumentType.allow_permanent == False,
+        )
+    )
+    if type_id:
+        q = q.filter(DocumentType.id == type_id)
+    return q
+
+
+def false_green_documents(session, type_id=None):
+    """«Ложно-зелёные» документы как список пар (EmployeeDocument, DocumentType).
+    Только читает — ничего не меняет."""
+    return (
+        _false_green_query(session, type_id)
+        .order_by(DocumentType.sort_order, EmployeeDocument.employee_name)
+        .all()
+    )
+
+
+def false_green_count(session):
+    """Число ложно-зелёных записей (для счётчика/баннера в матрице)."""
+    return _false_green_query(session).count()
+
+
 SORT_ORDER_TO_ICON_KEY = {
     2: "lmk",
     3: "passport",

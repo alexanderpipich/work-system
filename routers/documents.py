@@ -26,6 +26,8 @@ from document_helpers import (
     document_file_exists,
     economist_employee_names,
     employee_names,
+    false_green_count,
+    false_green_documents,
     latest_employee_document,
     normalize_employee_folder,
     parse_bool,
@@ -332,6 +334,7 @@ def _render_matrix(request, session, user, *, tk_filter="", name_filter=""):
             "groups": groups,
             "completeness_map": completeness_map,
             "matrix_columns": MATRIX_COLUMNS,
+            "false_green_count": false_green_count(session),
             "stores": stores,
             "tk_filter": tk_filter,
             "name_filter": name_filter,
@@ -353,6 +356,7 @@ def _matrix_cell_payload(document):
         "document_id": document.id if document else None,
         "marked": document is not None,
         "expiry_date": document.expiry_date.isoformat() if document and document.expiry_date else "",
+        "permanent": bool(document.is_permanent) if document else False,
     }
 
 
@@ -363,13 +367,16 @@ def admin_documents_matrix_toggle(
     document_type_id: int = Form(...),
     action: str = Form("mark"),
     expiry_date: str = Form(""),
+    permanent: str = Form(""),
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
 ):
     """Отметка «документ есть» без загрузки файла (и снятие такой отметки).
 
-    Документы со сроком (`requires_expiry_date`) требуют дату окончания — без неё
-    зелёного не будет. Записи со сканом (`file_path`) отметкой не трогаются.
+    Флаги типа развязаны: при обоих включённых (`requires_expiry_date` И
+    `allow_permanent`) отметка даёт ВЫБОР — ввести дату ИЛИ отметить «бессрочно»
+    (`permanent=1`). «Бессрочно» доступно только если тип его разрешает
+    (`allow_permanent`); иначе нужна дата. Записи со сканом (`file_path`) не трогаются.
     """
     employee = session.query(User).filter(User.id == user_id).first()
     if not employee:
@@ -409,7 +416,17 @@ def admin_documents_matrix_toggle(
         session.commit()
         return JSONResponse(_matrix_cell_payload(None))
 
-    if document_type.requires_expiry_date:
+    if parse_bool(permanent):
+        # «Бессрочно» разрешено только если тип это допускает — иначе обходили бы
+        # требование срока (и такую запись потом ловит диагностика ложно-зелёных).
+        if not document_type.allow_permanent:
+            return JSONResponse(
+                {"ok": False, "error": f"Тип «{document_type.name}» требует срок действия — «бессрочно» недоступно"},
+                status_code=400,
+            )
+        parsed_expiry = None
+        is_permanent = True
+    elif document_type.requires_expiry_date:
         try:
             parsed_expiry = parse_date(expiry_date)
         except DocumentDateParseError:
@@ -931,6 +948,59 @@ def admin_employee_documents(
         current,
         employee_name=user.employee_name,
         status="all",
+    )
+
+
+@router.get("/admin/documents/diagnostics", response_class=HTMLResponse)
+def admin_documents_diagnostics(
+    request: Request,
+    type_id: int = 0,
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    """Диагностика «ложно-зелёных»: помечены бессрочными при снятом флаге срока,
+    а тип теперь требует срок и бессрочность недоступна. Только показывает —
+    ничего не чинит; дозаполняет срок человек (через матрицу или карточку)."""
+    pairs = false_green_documents(session, type_id or None)
+
+    rows = []
+    groups: dict = {}
+    for doc, dtype in pairs:
+        rows.append(
+            {
+                "employee_name": doc.employee_name,
+                "user_id": doc.user_id,
+                "type_name": dtype.name,
+            }
+        )
+        g = groups.setdefault(dtype.id, {"name": dtype.name, "count": 0})
+        g["count"] += 1
+
+    # Все типы, у которых есть ложно-зелёные — для фильтра (без учёта текущего фильтра).
+    all_pairs = false_green_documents(session) if type_id else pairs
+    filter_types: dict = {}
+    for _doc, dtype in all_pairs:
+        filter_types.setdefault(dtype.id, dtype.name)
+
+    no_file_count = (
+        session.query(EmployeeDocument)
+        .filter(EmployeeDocument.file_path.is_(None))
+        .count()
+    )
+
+    return templates.TemplateResponse(
+        request,
+        "documents_diagnostics.html",
+        {
+            "user": user,
+            "rows": rows,
+            "groups": sorted(groups.values(), key=lambda g: (-g["count"], g["name"])),
+            "total": len(rows),
+            "filter_types": sorted(filter_types.items(), key=lambda kv: kv[1]),
+            "type_id": type_id,
+            "no_file_count": no_file_count,
+            "back_url": "/admin/documents?view=matrix",
+        },
     )
 
 
