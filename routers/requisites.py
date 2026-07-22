@@ -11,7 +11,7 @@ from inn_sync import set_employee_inn
 from models import Requisite, Shift, User
 from rbac import canonical_role, require_permission
 from time_helpers import now_utc
-from utils import normalize_text
+from utils import is_scientific_notation, normalize_digits, normalize_text
 
 
 router = APIRouter()
@@ -291,7 +291,10 @@ def upload_requisites(
     current=Depends(_req_manage),
 ):
     try:
-        df = pd.read_excel(file.file)
+        # dtype=str — читать все колонки строками, иначе pandas превращает
+        # ИНН/БИК в float (хвост .0), а 20-значный номер счёта — в научную
+        # нотацию с БЕЗВОЗВРАТНОЙ потерей младших цифр.
+        df = pd.read_excel(file.file, dtype=str)
         df.columns = [str(c).strip() for c in df.columns]
 
         created = 0
@@ -299,6 +302,7 @@ def upload_requisites(
         bad = 0
         unmatched_users = []
         changes_report = []
+        scientific_report = []
 
         truthy = ["да", "yes", "true", "1", "on"]
         falsy = ["нет", "no", "false", "0", "off"]
@@ -310,7 +314,6 @@ def upload_requisites(
             "bik": ["bik", "БИК", "бик"],
             "bank_name": ["bank_name", "НАИМЕНОВАНИЕ БАНКА", "банк", "Банк"],
             "citizenship": ["citizenship", "ГРАЖДАНСТВО", "гражданство"],
-            "is_third_party": ["is_third_party", "третье лицо", "3 лицо", "третье_лицо"],
             "recipient_name": ["recipient_name", "получатель", "ФИО получателя", "фио получателя"],
             "is_active": ["is_active", "активно", "активный"],
             "is_verified": ["is_verified", "проверено", "проверен"],
@@ -336,16 +339,33 @@ def upload_requisites(
             if not user:
                 unmatched_users.append(name)
 
-            inn = get_value(row, "inn")
-            account_number = get_value(row, "account_number")
-            bik = get_value(row, "bik")
+            raw_inn = get_value(row, "inn")
+            raw_account = get_value(row, "account_number")
+            raw_bik = get_value(row, "bik")
+
+            # Научная нотация = уже утерянные данные (счёт схлопнулся во float).
+            # Не восстанавливаем — помечаем строку в отчёте.
+            sci_fields = [
+                label
+                for label, value in (
+                    ("ИНН", raw_inn),
+                    ("счёт", raw_account),
+                    ("БИК", raw_bik),
+                )
+                if is_scientific_notation(value)
+            ]
+            if sci_fields:
+                scientific_report.append({"name": name, "fields": ", ".join(sci_fields)})
+
+            inn = normalize_digits(raw_inn)
+            account_number = normalize_digits(raw_account)
+            bik = normalize_digits(raw_bik)
             bank_name = get_value(row, "bank_name")
             # Гражданство больше НЕ пишется в реквизиты (Блок 1 нормализации) —
             # источник истины: User.citizenship_country_id.
             recipient_name = get_value(row, "recipient_name")
             comment = get_value(row, "comment")
 
-            third_party_raw = get_value(row, "is_third_party").lower()
             active_raw = get_value(row, "is_active").lower()
             verified_raw = get_value(row, "is_verified").lower()
 
@@ -384,11 +404,13 @@ def upload_requisites(
                         row_changes.append(field)
                         setattr(existing, field, value)
 
-                if third_party_raw:
-                    new_tp = third_party_raw in truthy
-                    if existing.is_third_party != new_tp:
-                        existing.is_third_party = new_tp
-                        row_changes.append("3-е лицо")
+                # «Третье лицо» выводится из получателя: заполнен → True.
+                # Считаем по ЭФФЕКТИВНОМУ значению (пустая ячейка не затирала
+                # существующего получателя выше).
+                new_tp = bool((existing.recipient_name or "").strip())
+                if existing.is_third_party != new_tp:
+                    existing.is_third_party = new_tp
+                    row_changes.append("3-е лицо")
 
                 if active_raw:
                     new_active = active_raw not in falsy
@@ -441,7 +463,8 @@ def upload_requisites(
                 continue
 
             # Создание нового реквизита.
-            is_third_party = third_party_raw in truthy
+            # «Третье лицо» выводится из получателя: заполнен → True.
+            is_third_party = bool(recipient_name.strip())
             is_active = active_raw not in falsy
             is_verified = verified_raw in truthy
 
@@ -503,6 +526,7 @@ def upload_requisites(
                 "message": f"Импорт завершён. Создано: {created}, обновлено: {updated}. Некорректных строк: {bad}.",
                 "changes_report": changes_report,
                 "unmatched_users": unmatched_users,
+                "scientific_report": scientific_report,
                 "error": None
             }
         )

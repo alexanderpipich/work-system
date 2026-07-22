@@ -28,6 +28,52 @@ def normalize_text(value) -> str:
     return str(value).strip()
 
 
+# Хвост ".0" у числа, прочитанного как float (напр. "780000000000.0").
+_FLOAT_TAIL_RE = re.compile(r"^(\d+)\.0+$")
+# Научная нотация (напр. "4.0820810900009206e+19") — признак утери точности:
+# 20-значный номер счёта не влезает во float, младшие цифры уже потеряны.
+_SCIENTIFIC_RE = re.compile(r"^\d+(?:\.\d+)?[eE][+-]?\d+$")
+
+
+def is_scientific_notation(value) -> bool:
+    """Похоже ли значение на число в научной нотации (утерянная точность)."""
+    if value is None:
+        return False
+    # NaN не равен сам себе (float/numpy).
+    try:
+        if value != value:
+            return False
+    except Exception:
+        pass
+    return bool(_SCIENTIFIC_RE.match(str(value).strip()))
+
+
+def normalize_digits(value) -> str:
+    """Нормализация числовых идентификаторов (ИНН/счёт/БИК).
+
+    Сохраняет ведущие нули (БИК бывает "04..."), не пытается восстановить
+    данные из научной нотации (утеряны — догадки опаснее).
+    - None/NaN → "";
+    - "780000000000.0" → "780000000000" (отрезать хвост .0);
+    - "4.08e+19" (научная нотация) → вернуть как есть (пометить в отчёте выше);
+    - иначе — обрезать пробелы, оставить как есть (ведущие нули целы).
+    """
+    if value is None:
+        return ""
+    try:
+        if value != value:  # NaN
+            return ""
+    except Exception:
+        pass
+    text = str(value).strip()
+    if not text:
+        return ""
+    match = _FLOAT_TAIL_RE.match(text)
+    if match:
+        return match.group(1)
+    return text
+
+
 def normalize_format(value) -> str:
     if value is None:
         return ""
