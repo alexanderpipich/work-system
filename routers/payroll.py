@@ -29,6 +29,12 @@ templates = Jinja2Templates(directory="templates")
 require_payroll_view = require_permission("payroll.view", audit_denied=True)
 _payroll_manage = require_permission("payroll.manage")
 
+# Запоминаем последний выбор магазинов на /admin/payroll в сессии, чтобы не
+# сбрасывать его на «все» при каждом заходе. "__all__" = компактный признак
+# «выбраны все» (не раздуваем cookie полным списком ТК).
+PAYROLL_STORES_SESSION_KEY = "admin_payroll_selected_stores"
+PAYROLL_STORES_ALL = "__all__"
+
 
 def payroll_redirect_url(base_path, date_from, date_to, employee_name="", stores=None, message=""):
     params = {
@@ -582,18 +588,36 @@ def admin_payroll(
     all_stores = session.query(Shift.store).distinct().order_by(Shift.store.asc()).all()
     store_list = [s[0] for s in all_stores]
 
+    # Отправка формы — запомнить выбор магазинов в сессии (raw stores: список
+    # отмеченных, либо None если не отмечено ни одной). "все" храним сентинелом.
+    if stores_was_submitted:
+        submitted_stores = stores if stores is not None else []
+        if store_list and set(submitted_stores) == set(store_list):
+            request.session[PAYROLL_STORES_SESSION_KEY] = PAYROLL_STORES_ALL
+        else:
+            request.session[PAYROLL_STORES_SESSION_KEY] = submitted_stores
+
     if stores is None and stores_was_submitted and not employee_name.strip():
         stores = []
         shifts = []
 
     if stores is None and not stores_was_submitted:
-        stores = store_list
-        shifts_query = shifts_query.filter(Shift.store.in_(stores))
-        shifts = shifts_query.order_by(
-            Shift.employee.asc(),
-            Shift.store.asc(),
-            Shift.shift_date.asc()
-        ).all()
+        # Обычный заход (без отправки формы) — восстановить прошлый выбор из
+        # сессии; если ничего не запомнено — по умолчанию все магазины.
+        remembered = request.session.get(PAYROLL_STORES_SESSION_KEY)
+        if isinstance(remembered, list):
+            stores = remembered
+        else:
+            stores = store_list
+        if stores:
+            shifts_query = shifts_query.filter(Shift.store.in_(stores))
+            shifts = shifts_query.order_by(
+                Shift.employee.asc(),
+                Shift.store.asc(),
+                Shift.shift_date.asc()
+            ).all()
+        else:
+            shifts = []
 
     rates = load_rates(session)
     payroll_map = {}
