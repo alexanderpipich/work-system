@@ -1,0 +1,61 @@
+{# Переиспользуемый блок «Снимок (PNG) + PDF (печать)».
+   Параметры (задать через {% set %} перед include):
+     export_target   — CSS-селектор снимаемой области для PNG (обязательно, напр. "#schedule-table")
+     export_filename — базовое имя PNG-файла без расширения (обязательно)
+   PNG: html2canvas снимает узел целиком (реальный размер, не вьюпорт).
+   PDF: нативная печать браузера (window.print()) — страница помечает элементы
+        классами .no-print (скрыть в печати) и .print-only (показать только в печати).
+   Готов к переносу в payroll после п.002 — сменить только export_target/export_filename. #}
+<div class="export-buttons">
+    <button type="button" class="export-btn" data-export="png"
+            data-target="{{ export_target }}" data-filename="{{ export_filename }}"
+            title="Снимок таблицы (PNG)">📷 Снимок</button>
+    <button type="button" class="export-btn" data-export="pdf"
+            title="Печать / Сохранить в PDF">📄 PDF</button>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+    (function () {
+        const buttons = document.querySelectorAll(".export-btn");
+        if (!buttons.length) { return; }
+
+        buttons.forEach((btn) => btn.addEventListener("click", async () => {
+            if (btn.dataset.export === "pdf") {
+                window.print();
+                return;
+            }
+
+            // PNG через html2canvas.
+            if (typeof html2canvas === "undefined") {
+                alert("Модуль снимка ещё загружается — повторите через секунду.");
+                return;
+            }
+
+            const node = btn.dataset.target ? document.querySelector(btn.dataset.target) : null;
+            if (!node) { return; }
+
+            // Снимаем узел целиком (широкая таблица не должна обрезаться скроллом).
+            node.classList.add("capturing");
+            const prev = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "…";
+            try {
+                const canvas = await html2canvas(node, {
+                    scale: 2,
+                    backgroundColor: "#ffffff",
+                    windowWidth: node.scrollWidth,
+                });
+                const link = document.createElement("a");
+                link.download = (btn.dataset.filename || "снимок") + ".png";
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            } catch (e) {
+                alert("Не удалось сделать снимок: " + e);
+            } finally {
+                node.classList.remove("capturing");
+                btn.disabled = false;
+                btn.textContent = prev;
+            }
+        }));
+    })();
+</script>

@@ -237,6 +237,31 @@
             color: #8f3e20;
         }
 
+        .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+        .export-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .export-btn {
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            background: #fff;
+            color: var(--brand-blue);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .export-btn:hover { background: #f4f5ff; }
+        .export-btn:disabled { opacity: 0.6; cursor: default; }
+
+        /* Убрать sticky на время снимка html2canvas (иначе шапка/1-я колонка съезжают). */
+        .capturing th, .capturing .left { position: static !important; }
+
+        .print-only { display: none; }
+        .print-heading { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin-bottom: 12px; }
+
         @media (max-width: 980px) {
             .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .stores-grid { column-count: 2; }
@@ -244,14 +269,30 @@
 
         @media (max-width: 700px) {
             .topbar { flex-direction: column; align-items: stretch; }
+            .topbar-actions { justify-content: flex-start; }
             .form-grid { grid-template-columns: 1fr; }
             .stores-grid { column-count: 1; }
+        }
+
+        @media print {
+            @page { size: landscape; margin: 8mm; }
+            body { background: #fff !important; padding: 0; }
+            .page { max-width: none; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .card { box-shadow: none; border-radius: 0; margin: 0; padding: 0; }
+            .table-wrap { overflow: visible !important; border: none; border-radius: 0; }
+            table { min-width: 0 !important; width: 100%; }
+            th { position: static !important; }
+            .left { position: static !important; }
+            tr { break-inside: avoid; }
+            th, td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
 <body>
 <div class="page">
-    <div class="topbar">
+    <div class="topbar no-print">
         <div class="brand">
             <img src="/static/logo-alex.jpg" alt="Логотип">
             <div>
@@ -260,7 +301,14 @@
             </div>
         </div>
 
-        <a href="/admin" class="back-link">Назад в админку</a>
+        <div class="topbar-actions">
+            {% if show_table %}
+                {% set export_target = "#schedule-table" %}
+                {% set export_filename = "график_" ~ date_from ~ "_" ~ date_to %}
+                {% include "_export_buttons.html" %}
+            {% endif %}
+            <a href="/admin" class="back-link">Назад в админку</a>
+        </div>
     </div>
 
     {% if error %}
@@ -269,7 +317,7 @@
         </div>
     {% endif %}
 
-    <div class="card">
+    <div class="card no-print">
         <form method="get" action="/admin/schedules">
             <div class="form-grid">
                 <div class="field">
@@ -326,8 +374,9 @@
 
     {% if show_table %}
         <div class="card">
+            <div class="print-heading print-only">Графики выходов · {{ date_from }} — {{ date_to }}</div>
             <div class="table-wrap">
-                <table>
+                <table id="schedule-table">
                     <thead>
                         <tr>
                             <th class="left">ФИО</th>
