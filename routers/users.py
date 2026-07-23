@@ -478,6 +478,8 @@ def admin_users(
     phone: str = "",
     employee_name: str = "",
     role: str = "",
+    message: str = "",
+    error: str = "",
     session: Session = Depends(get_db),
     admin=Depends(require_user_management),
 ):
@@ -509,8 +511,8 @@ def admin_users(
             "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
             "job_titles": JOB_TITLES,
             "pending_count": len(pending_employees(session)),
-            "message": None,
-            "error": None,
+            "message": message or None,
+            "error": error or None,
             "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users},
             "filters": {
                 "user_id": user_id,

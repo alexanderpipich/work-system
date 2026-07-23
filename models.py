@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, Date, Boolean, UniqueConstraint, ForeignKey, DateTime, Text
+from sqlalchemy.orm import relationship
 from database import Base
 from time_helpers import now_utc
 
@@ -80,6 +81,27 @@ class User(Base):
     # Временный пароль (задан админом/при массовом создании) — сотруднику предлагается сменить.
     # Снимается в False, когда сотрудник сменил пароль сам.
     password_is_temporary = Column(Boolean, default=False)
+    # Загруженные QR-пропуска (до 3, с подписью специальности). qr_image_path выше — legacy,
+    # deprecated после переноса в employee_qr (см. scripts/migrate_qr_codes.py).
+    qr_codes = relationship(
+        "EmployeeQr",
+        back_populates="user",
+        order_by="EmployeeQr.sort_order",
+        cascade="all, delete-orphan",
+    )
+
+
+class EmployeeQr(Base):
+    __tablename__ = "employee_qr"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    image_path = Column(String, nullable=False)
+    label = Column(String, nullable=True)  # подпись специальности (свободный текст)
+    sort_order = Column(Integer, default=0)  # порядок в карусели кабинета
+    created_at = Column(DateTime, default=now_utc)
+
+    user = relationship("User", back_populates="qr_codes")
 
 
 class LegalEntity(Base):

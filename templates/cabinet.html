@@ -383,6 +383,10 @@
             display: block;
         }
 
+        .qr-thumbs { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
+        .qr-thumb-item { display: flex; flex-direction: column; align-items: center; gap: 4px; line-height: normal; border: none; }
+        .qr-cap { font-size: 11px; color: var(--muted); max-width: 84px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
         .qr-overlay {
             position: fixed;
             inset: 0;
@@ -390,13 +394,32 @@
             display: none;
             align-items: center;
             justify-content: center;
+            gap: 12px;
             padding: 24px;
             z-index: 120;
         }
 
+        .qr-stage { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .qr-large-cap { color: #fff; font-size: 15px; font-weight: 600; text-align: center; }
+
+        .qr-nav {
+            background: rgba(255, 255, 255, .16);
+            color: #fff;
+            border: none;
+            font-size: 38px;
+            line-height: 1;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
         .qr-overlay img {
-            max-width: 92vw;
-            max-height: 92vh;
+            max-width: 78vw;
+            max-height: 82vh;
             width: auto;
             height: auto;
             background: #fff;
@@ -682,10 +705,26 @@
                     <p class="employee-name">{{ user.employee_name }}</p>
                     <a href="/cabinet/password" style="display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:var(--brand-blue);text-decoration:none;border-bottom:1px solid rgba(11,20,117,0.25);">Сменить пароль</a>
                 </div>
-                {% if user.qr_image_path %}
-                <button type="button" class="qr-thumb" id="qr-open" title="Показать QR-пропуск">
-                    <img src="/users/{{ user.id }}/qr" alt="QR-пропуск">
-                </button>
+                {% if user.qr_codes or user.qr_image_path %}
+                <div class="qr-thumbs" id="qr-thumbs">
+                    {% if user.qr_codes %}
+                        {% for qr in user.qr_codes %}
+                        <button type="button" class="qr-thumb qr-thumb-item"
+                                data-src="/users/{{ user.id }}/qr/{{ qr.id }}"
+                                data-label="{{ qr.label or 'Пропуск' }}"
+                                title="{{ qr.label or 'QR-пропуск' }}">
+                            <img src="/users/{{ user.id }}/qr/{{ qr.id }}" alt="{{ qr.label or 'QR-пропуск' }}">
+                            <span class="qr-cap">{{ qr.label or 'Пропуск' }}</span>
+                        </button>
+                        {% endfor %}
+                    {% else %}
+                        <button type="button" class="qr-thumb qr-thumb-item"
+                                data-src="/users/{{ user.id }}/qr" data-label="Пропуск" title="QR-пропуск">
+                            <img src="/users/{{ user.id }}/qr" alt="QR-пропуск">
+                            <span class="qr-cap">Пропуск</span>
+                        </button>
+                    {% endif %}
+                </div>
                 {% endif %}
             </div>
         </section>
@@ -946,17 +985,48 @@
         });
     })();</script>
 
-    {% if user.qr_image_path %}
+    {% if user.qr_codes or user.qr_image_path %}
     <div class="qr-overlay" id="qr-overlay">
-        <img src="/users/{{ user.id }}/qr" alt="QR-пропуск">
+        <button type="button" class="qr-nav" id="qr-prev" aria-label="Предыдущий">‹</button>
+        <div class="qr-stage">
+            <img id="qr-large" src="" alt="QR-пропуск">
+            <div class="qr-large-cap" id="qr-large-cap"></div>
+        </div>
+        <button type="button" class="qr-nav" id="qr-next" aria-label="Следующий">›</button>
     </div>
     <script>(function () {
-        var openBtn = document.getElementById('qr-open');
+        var thumbs = Array.prototype.slice.call(document.querySelectorAll('.qr-thumb-item'));
+        if (!thumbs.length) return;
         var overlay = document.getElementById('qr-overlay');
-        if (!openBtn || !overlay) return;
-        openBtn.addEventListener('click', function () { overlay.style.display = 'flex'; });
-        overlay.addEventListener('click', function () { overlay.style.display = 'none'; });
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') overlay.style.display = 'none'; });
+        var large = document.getElementById('qr-large');
+        var cap = document.getElementById('qr-large-cap');
+        var prev = document.getElementById('qr-prev');
+        var next = document.getElementById('qr-next');
+        var items = thumbs.map(function (t) { return { src: t.dataset.src, label: t.dataset.label || '' }; });
+        var multi = items.length > 1;
+        var idx = 0;
+        function show(i) { idx = (i + items.length) % items.length; large.src = items[idx].src; cap.textContent = items[idx].label; }
+        function open(i) { show(i); overlay.style.display = 'flex'; }
+        thumbs.forEach(function (t, i) { t.addEventListener('click', function () { open(i); }); });
+        prev.style.display = multi ? 'flex' : 'none';
+        next.style.display = multi ? 'flex' : 'none';
+        prev.addEventListener('click', function (e) { e.stopPropagation(); show(idx - 1); });
+        next.addEventListener('click', function (e) { e.stopPropagation(); show(idx + 1); });
+        overlay.addEventListener('click', function (e) { if (e.target === overlay || e.target.id === 'qr-large') overlay.style.display = 'none'; });
+        document.addEventListener('keydown', function (e) {
+            if (overlay.style.display !== 'flex') return;
+            if (e.key === 'Escape') overlay.style.display = 'none';
+            if (multi && e.key === 'ArrowLeft') show(idx - 1);
+            if (multi && e.key === 'ArrowRight') show(idx + 1);
+        });
+        var sx = null;
+        overlay.addEventListener('touchstart', function (e) { sx = e.changedTouches[0].clientX; }, { passive: true });
+        overlay.addEventListener('touchend', function (e) {
+            if (sx === null || !multi) { sx = null; return; }
+            var dx = e.changedTouches[0].clientX - sx;
+            if (Math.abs(dx) > 40) { show(dx < 0 ? idx + 1 : idx - 1); }
+            sx = null;
+        });
     })();</script>
     {% endif %}
 </body>
