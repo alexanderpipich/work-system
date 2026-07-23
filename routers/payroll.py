@@ -61,6 +61,7 @@ def economist_payroll(
     date_to: str = "",
     employee_name: str = "",
     stores: list[str] | None = Query(default=None),
+    stores_submitted: str = "",
     message: str = "",
     session: Session = Depends(get_db),
     user=Depends(require_payroll_view),
@@ -70,6 +71,14 @@ def economist_payroll(
         return RedirectResponse("/", status_code=302)
     if request.url.path.startswith("/hr") and role not in {"hr_lead", "hr_manager"}:
         return RedirectResponse("/", status_code=302)
+
+    # Роут общий для /economist/payroll и /hr/payroll (разные роли и наборы
+    # городов) — выбор магазинов держим в РАЗДЕЛЬНЫХ ключах сессии, чтобы он не
+    # протекал между ролями. "все" храним компактным сентинелом PAYROLL_STORES_ALL.
+    stores_scope = "hr" if request.url.path.startswith("/hr") else "economist"
+    stores_session_key = f"payroll_selected_stores:{stores_scope}"
+    stores_was_submitted = stores_submitted == "1"
+
     allowed_cities = get_user_cities(session, user)
 
     if allowed_cities == []:
@@ -170,15 +179,42 @@ def economist_payroll(
         s[0] for s in stores_query.order_by(Shift.store.asc()).all()
     ]
 
-    if stores is None:
-        stores = store_list
-        shifts_query = shifts_query.filter(Shift.store.in_(stores))
-        shifts = shifts_query.order_by(
-            Shift.city.asc(),
-            Shift.store.asc(),
-            Shift.employee.asc(),
-            Shift.shift_date.asc()
-        ).all()
+    # Отправка формы — запомнить выбор магазинов в сессии (список отмеченных,
+    # либо [] если ни одной). Все доступные храним сентинелом «__all__».
+    if stores_was_submitted:
+        submitted_stores = stores if stores is not None else []
+        if store_list and set(submitted_stores) == set(store_list):
+            request.session[stores_session_key] = PAYROLL_STORES_ALL
+        else:
+            request.session[stores_session_key] = submitted_stores
+
+    if stores is None and stores_was_submitted and not employee_name.strip():
+        # Форма отправлена без единой галочки — показать «ничего».
+        stores = []
+        shifts = []
+
+    if stores is None and not stores_was_submitted:
+        # Обычный заход (без отправки формы) — восстановить прошлый выбор из
+        # сессии; если ничего не запомнено или сентинел «все» — по умолчанию
+        # все доступные магазины.
+        remembered = request.session.get(stores_session_key)
+        if isinstance(remembered, list):
+            # Пересечь со скоупом: если у пользователя сузились города, в сессии
+            # могут остаться недоступные ТК — их отсеиваем, не показываем чужое.
+            store_set = set(store_list)
+            stores = [s for s in remembered if s in store_set]
+        else:
+            stores = store_list
+        if stores:
+            shifts_query = shifts_query.filter(Shift.store.in_(stores))
+            shifts = shifts_query.order_by(
+                Shift.city.asc(),
+                Shift.store.asc(),
+                Shift.employee.asc(),
+                Shift.shift_date.asc()
+            ).all()
+        else:
+            shifts = []
 
     rates = load_rates(session)
     payroll_map = {}

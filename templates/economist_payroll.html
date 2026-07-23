@@ -549,6 +549,7 @@
         <h2>Параметры расчёта</h2>
 
         <form method="get" action="{{ '/hr/payroll' if request.url.path.startswith('/hr') else '/economist/payroll' }}">
+            <input type="hidden" name="stores_submitted" value="1">
             <div class="form-grid">
                 <div class="field">
                     <label>Дата начала</label>
