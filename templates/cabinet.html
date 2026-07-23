@@ -669,11 +669,18 @@
     </nav>
 
     <main class="page content">
+        {% if user.password_is_temporary %}
+        <div style="background:#fff7ed;color:#9a3412;border:1px solid rgba(154,52,18,0.18);border-radius:16px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+            <span style="font-size:14px;font-weight:600;">Вы используете временный пароль. Рекомендуем сменить его на свой.</span>
+            <a href="/cabinet/password" style="text-decoration:none;font-weight:700;color:#fff;background:#9a3412;padding:9px 14px;border-radius:12px;white-space:nowrap;">Сменить пароль</a>
+        </div>
+        {% endif %}
         <section class="card">
             <div class="welcome-row">
                 <div>
                     <h2 class="welcome-title">Добро пожаловать!</h2>
                     <p class="employee-name">{{ user.employee_name }}</p>
+                    <a href="/cabinet/password" style="display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:var(--brand-blue);text-decoration:none;border-bottom:1px solid rgba(11,20,117,0.25);">Сменить пароль</a>
                 </div>
                 {% if user.qr_image_path %}
                 <button type="button" class="qr-thumb" id="qr-open" title="Показать QR-пропуск">

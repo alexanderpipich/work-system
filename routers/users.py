@@ -199,6 +199,7 @@ def create_user_submit(
         citizenship_country_id=citizenship_country_id,
         is_student=bool(is_student),
         legal_entity=normalize_text(legal_entity) or None,
+        password_is_temporary=True,  # админ задал пароль — сотруднику предложить сменить
     )
 
     session.add(user)
@@ -374,6 +375,7 @@ async def upload_users_submit(
                 # Пароль — только если в таблице явно указан непустой.
                 if password_clean:
                     existing.password_hash = get_password_hash(password_clean)
+                    existing.password_is_temporary = True  # задан админом → временный
                     row_changes.append("пароль обновлён")
 
                 if row_changes:
@@ -418,6 +420,7 @@ async def upload_users_submit(
                 citizenship_country=citizenship_clean,
                 citizenship_country_id=matched_country_id,
                 legal_entity=legal_clean or None,
+                password_is_temporary=True,  # задан админом при загрузке → временный
             )
 
             session.add(user)
@@ -753,6 +756,7 @@ async def users_pending_create(
             employee_name=name,
             is_admin=False,
             role="employee",
+            password_is_temporary=True,  # общий пароль пачки → сотруднику сменить
         )
         session.add(user)
         try:
@@ -849,6 +853,7 @@ def change_password(
         )
 
     user.password_hash = get_password_hash(new_password_clean)
+    user.password_is_temporary = True  # админ задал пароль → сотруднику предложить сменить
     session.commit()
 
     return render_users(

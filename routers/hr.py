@@ -80,6 +80,7 @@ def hr_reset_password(request: Request, user_id: int = Form(...), new_password: 
     if len(password) < 6:
         return RedirectResponse("/hr/access?error=Пароль должен содержать минимум 6 символов", status_code=302)
     target.password_hash = get_password_hash(password)
+    target.password_is_temporary = True  # HR задал пароль → сотруднику предложить сменить
     create_audit_log(session, request, user, "user_password_reset", "user", target.id, target.employee_name, comment="limited HR reset")
     session.commit()
     return RedirectResponse("/hr/access?message=Пароль изменён", status_code=302)

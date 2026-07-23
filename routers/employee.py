@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from audit_helpers import create_audit_log
 from dependencies import current_user, get_db
 from document_helpers import (
     employee_completeness,
@@ -16,7 +17,7 @@ from document_helpers import (
 from models import Requisite, Shift
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today
-from utils import normalize_text
+from utils import get_password_hash, normalize_text, verify_password
 
 
 router = APIRouter()
@@ -119,6 +120,70 @@ def cabinet(
             "error": None,
         },
     )
+
+
+def validate_password_change(user, current_password, new_password, new_password_repeat):
+    """Проверка смены пароля сотрудником. Возвращает текст ошибки или None.
+
+    Текущий пароль требуем всегда (в т.ч. для временного — он известен сотруднику).
+    Значения паролей нигде не логируются.
+    """
+    current_clean = str(current_password).strip()
+    new_clean = str(new_password).strip()
+    repeat_clean = str(new_password_repeat).strip()
+
+    if not verify_password(current_clean, user.password_hash):
+        return "Текущий пароль неверный"
+    if len(new_clean) < 6:
+        return "Новый пароль должен содержать минимум 6 символов"
+    if new_clean != repeat_clean:
+        return "Новый пароль и повтор не совпадают"
+    if verify_password(new_clean, user.password_hash):
+        return "Новый пароль совпадает с текущим — придумайте другой"
+    return None
+
+
+@router.get("/cabinet/password", response_class=HTMLResponse)
+def cabinet_password_page(
+    request: Request,
+    user=Depends(current_user),
+):
+    return templates.TemplateResponse(
+        request,
+        "cabinet_password.html",
+        {"user": user, "error": None, "message": None},
+    )
+
+
+@router.post("/cabinet/password", response_class=HTMLResponse)
+def cabinet_password_submit(
+    request: Request,
+    current_password: str = Form(""),
+    new_password: str = Form(""),
+    new_password_repeat: str = Form(""),
+    session: Session = Depends(get_db),
+    user=Depends(current_user),
+):
+    def render(error=None, message=None):
+        return templates.TemplateResponse(
+            request,
+            "cabinet_password.html",
+            {"user": user, "error": error, "message": message},
+        )
+
+    error = validate_password_change(user, current_password, new_password, new_password_repeat)
+    if error:
+        return render(error=error)
+
+    user.password_hash = get_password_hash(str(new_password).strip())
+    user.password_is_temporary = False
+    create_audit_log(
+        session, request, user,
+        "password_changed_by_user", "user", user.id, user.employee_name,
+        comment="employee changed own password",  # значения паролей не логируем
+    )
+    session.commit()
+    return render(message="Пароль изменён")
 
 
 @router.get("/brigadier", response_class=HTMLResponse)

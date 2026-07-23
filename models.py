@@ -77,6 +77,9 @@ class User(Base):
     inn = Column(String, nullable=True)  # ИНН сотрудника (Блок 2 нормализации, canonical). НЕ путать с LegalEntity.inn.
     qr_image_path = Column(String, nullable=True)  # Загруженная QR-картинка-пропуск сотрудника (не генерируется).
     job_title = Column(String, nullable=True)  # Должность (JOB_TITLES). Бизнес-поле, НЕ путать с системной role.
+    # Временный пароль (задан админом/при массовом создании) — сотруднику предлагается сменить.
+    # Снимается в False, когда сотрудник сменил пароль сам.
+    password_is_temporary = Column(Boolean, default=False)
 
 
 class LegalEntity(Base):
