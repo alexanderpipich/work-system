@@ -85,6 +85,25 @@
             line-height: 1.45;
         }
 
+        .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+        .export-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .export-btn {
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            background: #fff;
+            color: var(--brand-blue);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .export-btn:hover { background: #f4f5ff; }
+        .export-btn:disabled { opacity: 0.6; cursor: default; }
+
         .back-link {
             text-decoration: none;
             color: var(--brand-blue);
@@ -290,39 +309,81 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 980px;
+            min-width: 1300px;
             background: #fff;
         }
 
         th, td {
-            padding: 12px;
+            padding: 10px;
             text-align: left;
             border-bottom: 1px solid var(--border);
-            font-size: 14px;
+            border-right: 1px solid var(--border);
+            font-size: 13px;
             vertical-align: middle;
         }
 
         th {
             background: #fafbfc;
             color: var(--brand-blue);
-            font-size: 13px;
             font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
 
-        .attention-row,
-        .attention-row .num {
+        .left {
+            min-width: 200px;
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 1;
+        }
+
+        th.left { background: #fafbfc; z-index: 3; }
+        .service { min-width: 230px; }
+        .day-cell { min-width: 46px; text-align: center; }
+
+        .has-hours {
+            font-weight: 700;
+            color: var(--brand-blue);
+            background: rgba(11, 20, 117, 0.04);
+        }
+
+        .no-plan-hours {
+            font-weight: 700;
+            color: #b42318;
+            background: #fff1ed;
+        }
+
+        .total {
+            font-weight: 700;
+            background: rgba(245, 138, 101, 0.10);
+            color: #8f3e20;
+            text-align: center;
+        }
+
+        .attention-row td.left {
             color: #b42318;
             font-weight: 700;
         }
 
-        tbody tr:hover {
-            background: rgba(11, 20, 117, 0.025);
-        }
+        tbody tr:hover td { background: rgba(11, 20, 117, 0.025); }
+        tbody tr:hover td.left { background: #f6f7ff; }
 
         .num {
             text-align: right;
             white-space: nowrap;
         }
+
+        .corr-stack {
+            display: grid;
+            gap: 8px;
+            justify-items: end;
+            min-width: 170px;
+        }
+
+        .corr-line { font-size: 12px; color: var(--muted); }
+        .corr-lmk { color: #b42318; font-weight: 700; }
 
         .pill {
             display: inline-block;
@@ -344,8 +405,8 @@
         }
 
         .money-input {
-            width: 120px;
-            height: 36px;
+            width: 110px;
+            height: 34px;
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 0 10px;
@@ -473,6 +534,12 @@
             margin: 0;
         }
 
+        /* Убрать sticky на время снимка html2canvas (иначе шапка/1-я колонка съезжают). */
+        .capturing th, .capturing .left { position: static !important; }
+
+        .print-only { display: none; }
+        .print-heading { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin-bottom: 12px; }
+
         @media (max-width: 980px) {
             .form-grid,
             .fix-grid,
@@ -505,35 +572,55 @@
                 width: 100%;
             }
         }
+
+        @media print {
+            @page { size: landscape; margin: 8mm; }
+            body { background: #fff !important; padding: 0; }
+            .page { max-width: none; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .card { box-shadow: none; border-radius: 0; margin: 0 0 10px; padding: 0; }
+            .table-wrap { overflow: visible !important; border: none; border-radius: 0; }
+            table { min-width: 0 !important; width: 100%; }
+            th { position: static !important; }
+            .left { position: static !important; }
+            tr { break-inside: avoid; }
+            th, td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
     </style>
 </head>
 <body>
 <div class="page">
-    <div class="topbar">
+    <div class="topbar no-print">
         <div class="brand">
             <img src="/static/logo-alex.jpg" alt="Логотип">
             <div>
                 <h1 class="brand-title">Выплатный табель</h1>
                 <p class="brand-subtitle">
-                    Расчёт выплат по сменам и ЧТС. Следующий этап — фиксация табелей и контроль корректировок.
+                    Часы по дням, ЧТС и сумма по каждой услуге. Корректировки и ЛМК — в отдельной колонке.
                 </p>
             </div>
         </div>
 
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div class="topbar-actions">
+            {% if rows|length > 0 %}
+                {% set export_target = "#payroll-table" %}
+                {% set export_filename = "табель_" ~ date_from ~ "_" ~ date_to %}
+                {% include "_export_buttons.html" %}
+            {% endif %}
             <a href="/admin/payroll/runs" class="back-link">Зафиксированные табели</a>
             <a href="/admin" class="back-link">Назад в админку</a>
-        </div>    
+        </div>
     </div>
 
     {% if error %}
-        <div class="card">
+        <div class="card no-print">
             <div class="err">{{ error }}</div>
         </div>
     {% endif %}
-    
+
     {% if validation_errors %}
-    <div class="card">
+    <div class="card no-print">
         <h2 style="color:#b42318;">Ошибки перед фиксацией</h2>
 
         <div style="
@@ -558,16 +645,13 @@
     </div>
     {% endif %}
 
-
-
-
     {% if message %}
-        <div class="card">
+        <div class="card no-print">
             <div class="msg">{{ message }}</div>
         </div>
     {% endif %}
 
-    <div class="card">
+    <div class="card no-print">
         <h2>Параметры расчёта</h2>
 
         <form method="get" action="/admin/payroll">
@@ -628,7 +712,7 @@
         </form>
     </div>
 
-    <div class="card">
+    <div class="card no-print">
         <h2>Фиксация табеля</h2>
         <p class="hint">
             Кнопка сохраняет снимок табеля за выбранный период. Позже система будет сравнивать новые загрузки с этим снимком
@@ -688,34 +772,49 @@
     </div>
 
     <div class="card">
-        <h2>Результат расчёта</h2>
+        <div class="print-heading print-only">Выплатный табель · {{ date_from }} — {{ date_to }}</div>
+        <h2 class="no-print">Результат расчёта</h2>
 
         <div class="table-wrap">
-            <table>
+            <table id="payroll-table">
                 <thead>
                     <tr>
-                        <th>ФИО</th>
+                        <th class="left">ФИО</th>
                         <th>Магазин</th>
-                        <th class="num">Часы</th>
-                        <th class="num">Основная сумма</th>
-                        <th class="num">Автоматические корректировки</th>
-                        <th class="num">Ручные корректировки</th>
-                        <th class="num">ЛМК</th>
-                        <th class="num">Итого</th>
-                        <th>Статус ЧТС</th>
+                        <th class="service">Услуга</th>
+                        {% for day in days %}
+                            <th class="day-cell">{{ day.strftime("%d.%m") }}</th>
+                        {% endfor %}
+                        <th class="day-cell">Итого</th>
+                        <th class="num">ЧТС</th>
+                        <th class="num">СУММА</th>
+                        <th class="num">Корректировки / ЛМК</th>
+                        <th>Статус</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in rows %}
                     <tr class="{% if row.has_no_plan or (row.hours or 0) == 0 %}attention-row{% endif %}">
-                        <td>{{ row.employee_name }}</td>
+                        <td class="left">{{ row.employee_name }}</td>
                         <td>{{ row.store }}</td>
-                        <td class="num">{{ "%.2f"|format(row.hours or 0) }}</td>
+                        <td class="service">{{ row.service }}</td>
+
+                        {% for day in days %}
+                            {% set value = row.days[day] %}
+                            <td class="day-cell {% if row.no_plan_days[day] %}no-plan-hours{% elif value %}has-hours{% endif %}">
+                                {% if value %}{{ value }}{% else %}—{% endif %}
+                            </td>
+                        {% endfor %}
+
+                        <td class="total">{{ "%.2f"|format(row.hours or 0) }}</td>
+
+                        <td class="num">{{ "%.2f"|format(row.rate_value or 0) }}</td>
 
                         <td class="num">{{ "%.2f"|format(row.amount or 0) }} ₽</td>
 
                         <td class="num">
-                            {% if row.auto_approved_amount or row.auto_pending_amount %}
+                            <div class="corr-stack">
+                                {% if row.auto_approved_amount or row.auto_pending_amount %}
                                 <details class="adjust-menu">
                                     <summary>
                                         <span class="adjust-list">
@@ -804,33 +903,24 @@
                                         <button type="button" class="menu-action" onclick="this.closest('details').removeAttribute('open')">Закрыть</button>
                                     </div>
                                 </details>
-                            {% else %}
-                                —
-                            {% endif %}
-                        </td>
+                                {% endif %}
 
-                        <td class="num">
-                            {% if row.manual_editable %}
-                            <div class="manual-stack">
-                                <input type="hidden" form="payroll-fix-form" name="manual_keys" value="{{ row.manual_key }}">
-                                <input class="money-input" form="payroll-fix-form" type="number" step="0.01" name="manual_amounts" value="{{ row.manual_adjustments or 0 }}">
-                                <input class="comment-input" form="payroll-fix-form" type="text" name="manual_comments" value="{{ row.manual_comment or '' }}" placeholder="Комментарий">
+                                {% if row.manual_editable %}
+                                <div class="manual-stack">
+                                    <input type="hidden" form="payroll-fix-form" name="manual_keys" value="{{ row.manual_key }}">
+                                    <input class="money-input" form="payroll-fix-form" type="number" step="0.01" name="manual_amounts" value="{{ row.manual_adjustments or 0 }}">
+                                    <input class="comment-input" form="payroll-fix-form" type="text" name="manual_comments" value="{{ row.manual_comment or '' }}" placeholder="Комментарий">
+                                </div>
+                                {% endif %}
+
+                                {% if row.lmk_amount %}
+                                    <div class="corr-lmk">ЛМК −{{ "%.2f"|format(row.lmk_amount) }} ₽</div>
+                                {% endif %}
+
+                                {% if not (row.auto_approved_amount or row.auto_pending_amount or row.manual_editable or row.lmk_amount) %}
+                                    <span class="corr-line">—</span>
+                                {% endif %}
                             </div>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-
-                        <td class="num">
-                            {% if row.lmk_amount %}
-                                -{{ "%.2f"|format(row.lmk_amount) }} ₽
-                            {% else %}
-                                —
-                            {% endif %}
-                        </td>
-                        
-                        <td class="num">
-                            <strong>{{ "%.2f"|format(row.total_amount or 0) }} ₽</strong>
                         </td>
 
                         <td>
@@ -847,7 +937,7 @@
 
                     {% if rows|length == 0 %}
                     <tr>
-                        <td colspan="9">Нет данных за выбранный период</td>
+                        <td colspan="{{ days|length + 8 }}">Нет данных за выбранный период</td>
                     </tr>
                     {% endif %}
                 </tbody>

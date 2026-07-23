@@ -15,6 +15,7 @@ from dependencies import current_user, get_db
 from models import PayrollRun, PayrollRunItem, Requisite, Shift, User
 from payroll_closing import close_payroll_run as close_payroll_run_financials
 from rbac import canonical_role, has_permission, is_superadmin, require_permission
+from schedule_grid import days_between
 from time_helpers import now_utc
 from utils import normalize_text
 
@@ -148,6 +149,53 @@ def build_run_rows_for_user(session, user):
 def get_run_items_for_user(session, run_id, user):
     run, items = get_run_items(session, run_id)
     return run, _filter_items_for_user(session, items, user)
+
+
+def build_run_day_rows(run, items):
+    """Строки зафиксированного табеля в виде «по дням» (вид_табелей).
+
+    Агрегирует ИСТОРИЧЕСКИЕ строки прогона (PayrollRunItem) по (ФИО, магазин,
+    услуга): часы раскладываются по дням периода прогона, суммы берутся из
+    прогона как есть — НИЧЕГО не пересчитываем текущими ставками. Колонка
+    «корректировки/ЛМК» = total_amount − amount (авто+ручные−ЛМК, зафиксированные).
+    Общий ИТОГ (часы/суммы) равен sum по items — не меняется."""
+    days = days_between(run.date_from, run.date_to) if run else []
+    day_set = set(days)
+    table = {}
+    order = []
+
+    for item in items:
+        key = (item.employee_name, item.store, item.service)
+        row = table.get(key)
+        if row is None:
+            row = {
+                "employee_name": item.employee_name,
+                "store": item.store,
+                "service": item.service,
+                "days": {day: 0 for day in days},
+                "hours": 0,
+                "rate": item.rate or 0,
+                "amount": 0,
+                "total_amount": 0,
+                "corrections": 0,
+            }
+            table[key] = row
+            order.append(key)
+
+        if item.shift_date in day_set:
+            row["days"][item.shift_date] += item.hours or 0
+        row["hours"] += item.hours or 0
+        if (item.rate or 0) and not row["rate"]:
+            row["rate"] = item.rate or 0
+        row["amount"] += item.amount or 0
+        row["total_amount"] += item.total_amount or 0
+
+    for row in table.values():
+        row["corrections"] = round((row["total_amount"] or 0) - (row["amount"] or 0), 2)
+
+    rows = [table[key] for key in order]
+    rows.sort(key=lambda r: (r["employee_name"] or "", r["store"] or "", r["service"] or ""))
+    return days, rows
 
 def _number(value):
     return value or 0
@@ -365,6 +413,7 @@ def economist_payroll_run_detail(
 
     total_hours = sum(item.hours or 0 for item in items)
     total_amount = sum(item.total_amount or 0 for item in items)
+    days, rows = build_run_day_rows(run, items)
 
     return templates.TemplateResponse(
         request,
@@ -374,6 +423,8 @@ def economist_payroll_run_detail(
             "is_economist_view": True,
             "run": run,
             "items": items,
+            "days": days,
+            "rows": rows,
             "total_hours": total_hours,
             "total_amount": total_amount,
             "closed_by_name": _user_name(session, run.closed_by),
@@ -397,7 +448,8 @@ def hr_payroll_run_detail(request: Request, run_id: int, session: Session = Depe
     run, items = get_run_items_for_user(session, run_id, user)
     if not run or not items:
         return RedirectResponse("/hr/payroll/runs", status_code=302)
-    return templates.TemplateResponse(request, "payroll_run_detail.html", {"user": user, "is_economist_view": True, "run": run, "items": items, "total_hours": sum(item.hours or 0 for item in items), "total_amount": sum(item.total_amount or 0 for item in items), "closed_by_name": _user_name(session, run.closed_by)})
+    days, rows = build_run_day_rows(run, items)
+    return templates.TemplateResponse(request, "payroll_run_detail.html", {"user": user, "is_economist_view": True, "run": run, "items": items, "days": days, "rows": rows, "total_hours": sum(item.hours or 0 for item in items), "total_amount": sum(item.total_amount or 0 for item in items), "closed_by_name": _user_name(session, run.closed_by)})
 
 
 @router.get("/hr/payroll/runs/{run_id}/export")
@@ -443,6 +495,7 @@ def payroll_run_detail(
 
     total_hours = sum(item.hours or 0 for item in items)
     total_amount = sum(item.total_amount or 0 for item in items)
+    days, rows = build_run_day_rows(run, items)
 
     return templates.TemplateResponse(
         request,
@@ -452,6 +505,8 @@ def payroll_run_detail(
             "is_economist_view": False,
             "run": run,
             "items": items,
+            "days": days,
+            "rows": rows,
             "total_hours": total_hours,
             "total_amount": total_amount,
             "closed_by_name": _user_name(session, run.closed_by),

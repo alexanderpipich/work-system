@@ -9,7 +9,8 @@ from access import get_economist_cities, get_user_cities
 from dependencies import get_db
 from models import Shift
 from rbac import canonical_role, require_permission
-from shift_helpers import is_no_plan_shift
+from schedule_grid import build_schedule_rows as _build_schedule_rows
+from schedule_grid import days_between as _days_between
 from store_helpers import extract_tk_number
 from time_helpers import business_today
 
@@ -41,56 +42,6 @@ def _default_week_range() -> tuple[str, str]:
         default_date_from.strftime("%Y-%m-%d"),
         default_date_to.strftime("%Y-%m-%d"),
     )
-
-
-def _days_between(start_date, end_date):
-    days = []
-    current_day = start_date
-
-    while current_day <= end_date:
-        days.append(current_day)
-        current_day += timedelta(days=1)
-
-    return days
-
-
-def _build_schedule_rows(shifts, days, include_city: bool = False):
-    table = {}
-
-    for shift in shifts:
-        is_no_plan = is_no_plan_shift(shift)
-        if include_city:
-            key = (shift.employee, shift.city, shift.store, shift.service, is_no_plan)
-        else:
-            key = (shift.employee, shift.store, shift.service, is_no_plan)
-
-        if key not in table:
-            row = {
-                "employee": shift.employee,
-                "store": shift.store,
-                "service": shift.service,
-                "is_no_plan": is_no_plan,
-                "request_type": shift.request_type,
-                "days": {day: 0 for day in days},
-                "no_plan_days": {day: False for day in days},
-                "total": 0,
-            }
-            if include_city:
-                row["city"] = shift.city
-            table[key] = row
-
-        table[key]["days"][shift.shift_date] += shift.hours
-        if is_no_plan:
-            table[key]["no_plan_days"][shift.shift_date] = True
-        table[key]["total"] += shift.hours
-
-    rows = list(table.values())
-    if include_city:
-        rows.sort(key=lambda x: (x["city"], x["store"], x["employee"], x["service"]))
-    else:
-        rows.sort(key=lambda x: (x["store"], x["employee"], x["service"]))
-
-    return rows
 
 
 @router.get("/economist/schedules", response_class=HTMLResponse)

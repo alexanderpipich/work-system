@@ -82,7 +82,25 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            align-items: center;
         }
+
+        .export-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .export-btn {
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            background: #fff;
+            color: var(--brand-blue);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .export-btn:hover { background: #f4f5ff; }
+        .export-btn:disabled { opacity: 0.6; cursor: default; }
 
         .back-link {
             text-decoration: none;
@@ -134,22 +152,62 @@
         }
 
         th, td {
-            padding: 12px;
+            padding: 10px;
             border-bottom: 1px solid var(--border);
-            font-size: 14px;
+            border-right: 1px solid var(--border);
+            font-size: 13px;
             text-align: left;
+            vertical-align: middle;
         }
 
         th {
             background: #fafbfc;
             color: var(--brand-blue);
             font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .left {
+            min-width: 200px;
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 1;
+        }
+
+        th.left { background: #fafbfc; z-index: 3; }
+        .service { min-width: 230px; }
+        .day-cell { min-width: 46px; text-align: center; }
+
+        .has-hours {
+            font-weight: 700;
+            color: var(--brand-blue);
+            background: rgba(11, 20, 117, 0.04);
+        }
+
+        .total {
+            font-weight: 700;
+            background: rgba(245, 138, 101, 0.10);
+            color: #8f3e20;
+            text-align: center;
         }
 
         .num {
             text-align: right;
             white-space: nowrap;
         }
+
+        .corr-lmk { color: #b42318; font-weight: 700; }
+
+        tbody tr:hover td { background: rgba(11, 20, 117, 0.025); }
+        tbody tr:hover td.left { background: #f6f7ff; }
+
+        .capturing th, .capturing .left { position: static !important; }
+
+        .print-only { display: none; }
+        .print-heading { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin-bottom: 12px; }
 
         @media (max-width: 900px) {
             .summary {
@@ -167,11 +225,26 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        @media print {
+            @page { size: landscape; margin: 8mm; }
+            body { background: #fff !important; padding: 0; }
+            .page { max-width: none; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .card { box-shadow: none; border-radius: 0; margin: 0 0 10px; padding: 0; }
+            .table-wrap { overflow: visible !important; border: none; border-radius: 0; }
+            table { min-width: 0 !important; width: 100%; }
+            th { position: static !important; }
+            .left { position: static !important; }
+            tr { break-inside: avoid; }
+            th, td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
     </style>
 </head>
 <body>
 <div class="page">
-    <div class="topbar">
+    <div class="topbar no-print">
         <div class="brand">
             <img src="/static/logo-alex.jpg" alt="Логотип">
             <div>
@@ -186,6 +259,11 @@
         </div>
 
         <div class="toolbar">
+            {% if rows and rows|length > 0 %}
+                {% set export_target = "#run-table" %}
+                {% set export_filename = "табель_" ~ run.id ~ "_" ~ run.date_from.strftime('%Y-%m-%d') ~ "_" ~ run.date_to.strftime('%Y-%m-%d') %}
+                {% include "_export_buttons.html" %}
+            {% endif %}
             {% if request.url.path.startswith('/hr') %}
                 <a href="/hr/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
                 <a href="/hr/payroll/runs" class="back-link">Все фиксации</a>
@@ -236,7 +314,7 @@
 
             <div class="summary-item">
                 <div class="summary-label">Строк</div>
-                <div class="summary-value">{{ items|length }}</div>
+                <div class="summary-value">{{ rows|length }}</div>
             </div>
 
             <div class="summary-item">
@@ -252,51 +330,49 @@
     </div>
 
     <div class="card">
+        <div class="print-heading print-only">Табель #{{ run.id }} · {{ run.date_from.strftime('%d.%m.%Y') }} — {{ run.date_to.strftime('%d.%m.%Y') }}</div>
         <div class="table-wrap">
-            <table>
+            <table id="run-table">
                 <thead>
                     <tr>
-                        <th>ФИО</th>
+                        <th class="left">ФИО</th>
                         <th>Магазин</th>
-                        <th>Услуга</th>
-                        <th>Дата</th>
-                        <th class="num">Часы</th>
+                        <th class="service">Услуга</th>
+                        {% for day in days %}
+                            <th class="day-cell">{{ day.strftime("%d.%m") }}</th>
+                        {% endfor %}
+                        <th class="day-cell">Итого</th>
                         <th class="num">ЧТС</th>
-                        <th class="num">Основная сумма</th>
-                        <th class="num">Авто</th>
-                        <th class="num">Ручные</th>
-                        <th class="num">ЛМК</th>
-                        <th class="num">Итого</th>
-                        <th>Комментарий</th>
+                        <th class="num">СУММА</th>
+                        <th class="num">Корректировки / ЛМК</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in items %}
+                    {% for row in rows %}
                     <tr>
-                        <td>{{ item.employee_name }}</td>
-                        <td>{{ item.store }}</td>
-                        <td>{{ item.service }}</td>
-                        <td>
-                            {% if item.shift_date %}
-                                {{ item.shift_date.strftime('%d.%m.%Y') }}
-                            {% else %}
-                                —
-                            {% endif %}
+                        <td class="left">{{ row.employee_name }}</td>
+                        <td>{{ row.store }}</td>
+                        <td class="service">{{ row.service }}</td>
+
+                        {% for day in days %}
+                            {% set value = row.days[day] %}
+                            <td class="day-cell {% if value %}has-hours{% endif %}">
+                                {% if value %}{{ value }}{% else %}—{% endif %}
+                            </td>
+                        {% endfor %}
+
+                        <td class="total">{{ "%.2f"|format(row.hours or 0) }}</td>
+                        <td class="num">{{ "%.2f"|format(row.rate or 0) }}</td>
+                        <td class="num">{{ "%.2f"|format(row.amount or 0) }} ₽</td>
+                        <td class="num {% if row.corrections %}corr-lmk{% endif %}">
+                            {% if row.corrections %}{{ "%.2f"|format(row.corrections) }} ₽{% else %}—{% endif %}
                         </td>
-                        <td class="num">{{ "%.2f"|format(item.hours or 0) }}</td>
-                        <td class="num">{{ "%.2f"|format(item.rate or 0) }}</td>
-                        <td class="num">{{ "%.2f"|format(item.amount or 0) }} ₽</td>
-                        <td class="num">{{ "%.2f"|format(item.auto_adjustments_amount or 0) }} ₽</td>
-                        <td class="num">{{ "%.2f"|format(item.manual_adjustments_amount or item.other_amount or 0) }} ₽</td>
-                        <td class="num">-{{ "%.2f"|format(item.lmk_amount or 0) }} ₽</td>
-                        <td class="num">{{ "%.2f"|format(item.total_amount or 0) }} ₽</td>
-                        <td>{{ item.comment or '' }}</td>
                     </tr>
                     {% endfor %}
 
-                    {% if items|length == 0 %}
+                    {% if rows|length == 0 %}
                     <tr>
-                        <td colspan="12">Строк в табеле нет</td>
+                        <td colspan="{{ days|length + 7 }}">Строк в табеле нет</td>
                     </tr>
                     {% endif %}
                 </tbody>

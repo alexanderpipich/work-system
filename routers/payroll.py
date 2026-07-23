@@ -18,6 +18,7 @@ from manual_adjustments import (
 )
 from models import PayrollRun, PayrollRunItem, Requisite, Shift
 from payroll_adjustments import apply_auto_adjustments_to_rows, get_payroll_auto_adjustments
+from schedule_grid import build_payroll_rows, days_between
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today, now_utc
 from rbac import canonical_role, require_permission
@@ -587,6 +588,7 @@ def admin_payroll(
             "payroll.html",
             {
                 "rows": [],
+                "days": [],
                 "date_from": date_from,
                 "date_to": date_to,
                 "employee_name": employee_name,
@@ -656,42 +658,13 @@ def admin_payroll(
             shifts = []
 
     rates = load_rates(session)
-    payroll_map = {}
 
-    for shift in shifts:
-        shift_is_no_plan = is_no_plan_shift(shift)
-        rate = pick_rate(rates, shift)
-        rate_value = rate.hourly_rate if rate else 0
-        amount = 0 if shift_is_no_plan else (shift.hours * rate_value if rate else 0)
-
-        key = (shift.employee, shift.store, shift_is_no_plan)
-
-        if key not in payroll_map:
-            payroll_map[key] = {
-                "employee_name": shift.employee,
-                "store": shift.store,
-                "request_type": shift.request_type,
-                "is_no_plan": shift_is_no_plan,
-                "hours": 0,
-                "amount": 0,
-                "missing_rates": 0,
-                "no_plan_hours": 0,
-                "has_no_plan": False,
-                "manual_key": f"{shift.employee}|||{shift.store}"
-            }
-
-        payroll_map[key]["hours"] += shift.hours
-        payroll_map[key]["amount"] += amount
-
-        if shift_is_no_plan:
-            payroll_map[key]["no_plan_hours"] += shift.hours
-            payroll_map[key]["has_no_plan"] = True
-
-        if not rate and not is_no_plan_shift(shift):
-            payroll_map[key]["missing_rates"] += 1
-
-    rows = list(payroll_map.values())
-    rows.sort(key=lambda x: (x["employee_name"], x["store"], x["is_no_plan"]))
+    # Табель «по дням» (вид_табелей): строка = ФИО+Магазин+Услуга, часы по дням
+    # периода. Расчёт сумм 1:1 как раньше — меняется только гранулярность строк,
+    # итоги обязаны совпасть. Сетка по дням — общий механизм из schedule_grid.
+    days = days_between(start_date, end_date)
+    rows = build_payroll_rows(shifts, days, rates, include_city=False)
+    rows.sort(key=lambda x: (x["employee_name"], x["store"], x["service"] or "", x["is_no_plan"]))
 
     for row in rows:
         row["lmk_amount"] = 0
@@ -708,6 +681,7 @@ def admin_payroll(
         "payroll.html",
         {
             "rows": rows,
+            "days": days,
             "date_from": date_from,
             "date_to": date_to,
             "employee_name": employee_name,
