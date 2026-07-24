@@ -43,6 +43,7 @@ from routers.qr import router as qr_router
 from routers.stores import router as stores_router
 from routers.reports import router as reports_router
 from routers.schedules import router as schedules_router
+from routers.services import router as services_router
 from routers.system import router as system_router
 from routers.upload import router as upload_router
 from routers.users import router as users_router
@@ -89,6 +90,7 @@ app.include_router(email_reconciliation_router)
 app.include_router(stores_router)
 app.include_router(reports_router)
 app.include_router(schedules_router)
+app.include_router(services_router)
 app.include_router(system_router)
 app.include_router(upload_router)
 app.include_router(users_router)

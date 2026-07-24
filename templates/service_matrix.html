@@ -1,0 +1,433 @@
+{% macro render_cell(cell) %}
+    {% if cell.count > 0 %}
+        <td class="{% if cell.count > 1 %}cell-multi{% else %}cell-rate{% endif %}">
+            <details class="cell-menu">
+                <summary>
+                    {% if cell.min == cell.max %}{{ "%g"|format(cell.min) }} ₽{% else %}{{ "%g"|format(cell.min) }}–{{ "%g"|format(cell.max) }} ₽{% endif %}
+                    {% if cell.count > 1 %}<span>({{ cell.count }})</span>{% endif %}
+                </summary>
+                <div class="cell-panel">
+                    {% for r in cell.rates %}
+                    <div class="cell-panel-item">
+                        <strong>{{ "%g"|format(r.hourly_rate or 0) }} ₽</strong>
+                        <div class="cell-panel-meta">
+                            {{ r.city or "любой регион" }}{% if r.format %} · {{ r.format }}{% endif %}
+                            {% if r.store %} · ТК {{ r.store }}{% endif %}
+                            {% if r.employee_name %} · {{ r.employee_name }}{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </details>
+        </td>
+    {% elif cell.orphan %}
+        <td><span class="cell-orphan">нет тарифа</span></td>
+    {% else %}
+        <td><span class="cell-empty">—</span></td>
+    {% endif %}
+{% endmacro %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+    <meta charset="UTF-8">
+    <title>Матрица услуг</title>
+    <style>
+        :root {
+            --brand-blue: #0b1475;
+            --brand-peach: #f58a65;
+            --bg: #f4f5f7;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
+            --error-bg: #fff1ed;
+            --error-text: #b42318;
+            --warn-bg: #fff7ed;
+            --warn-text: #9a3412;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
+                var(--bg);
+            color: var(--text);
+            padding: 28px 18px 36px;
+        }
+
+        .page { max-width: 1600px; margin: 0 auto; }
+
+        .topbar, .card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand img { width: 64px; height: 64px; object-fit: contain; border-radius: 16px; background: #fff; }
+        .brand-title { margin: 0; color: var(--brand-blue); font-size: 28px; }
+        .brand-subtitle { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+
+        .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .export-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .export-btn, .back-link {
+            border: 1px solid rgba(11, 20, 117, 0.12);
+            background: #fff;
+            color: var(--brand-blue);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+        .export-btn:hover, .back-link:hover { background: #f4f5ff; }
+        .export-btn:disabled { opacity: 0.6; cursor: default; }
+
+        h2 { margin: 0 0 16px; color: var(--brand-blue); }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            align-items: end;
+        }
+
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--brand-blue);
+            margin-bottom: 8px;
+        }
+
+        .field input, .field select {
+            width: 100%;
+            height: 46px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0 12px;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .btn {
+            height: 46px;
+            border: none;
+            border-radius: 14px;
+            padding: 0 18px;
+            font-weight: 700;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--brand-blue), #18239a);
+            color: #fff;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .summary-item { border: 1px solid var(--border); background: #fbfcff; border-radius: 16px; padding: 16px; }
+        .summary-item.alert { border-color: rgba(180, 35, 24, 0.25); background: var(--error-bg); }
+        .summary-label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+        .summary-item.alert .summary-label { color: var(--error-text); }
+        .summary-value { color: var(--brand-blue); font-size: 24px; font-weight: 700; }
+        .summary-item.alert .summary-value { color: var(--error-text); }
+
+        .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 16px; }
+
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; background: #fff; }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #fafbfc;
+            color: var(--brand-blue);
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .left {
+            text-align: left;
+            min-width: 320px;
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 1;
+        }
+        th.left { background: #fafbfc; z-index: 3; }
+
+        .base-name { font-weight: 700; color: var(--text); }
+        .badges { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+        .badge-dup { background: var(--error-bg); color: var(--error-text); }
+        .badge-typo { background: var(--warn-bg); color: var(--warn-text); }
+        .badge-norate { background: #eef2ff; color: var(--brand-blue); }
+
+        .variants { margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+        .variants code { background: #f3f4f6; padding: 1px 5px; border-radius: 6px; }
+
+        .cell-rate { font-weight: 700; color: var(--brand-blue); background: rgba(11, 20, 117, 0.04); }
+        .cell-multi { color: #8f3e20; }
+        .cell-orphan { color: var(--error-text); font-weight: 700; background: var(--error-bg); display: block; border-radius: 8px; padding: 4px; }
+        .cell-empty { color: #c3c7cf; }
+
+        .cell-menu { position: relative; }
+        .cell-menu summary { list-style: none; cursor: pointer; }
+        .cell-menu summary::-webkit-details-marker { display: none; }
+        .cell-panel {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 26px;
+            z-index: 10;
+            min-width: 240px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: var(--shadow);
+            padding: 10px;
+            text-align: left;
+        }
+        .cell-panel-item { font-size: 12px; padding: 5px 0; border-top: 1px solid var(--border); }
+        .cell-panel-item:first-child { border-top: 0; }
+        .cell-panel-meta { color: var(--muted); }
+
+        .diag { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+        .diag-block { border: 1px solid var(--border); border-radius: 16px; padding: 14px; background: #fbfcff; }
+        .diag-block h3 { margin: 0 0 10px; color: var(--brand-blue); font-size: 15px; }
+        .diag-list { max-height: 260px; overflow: auto; margin: 0; padding: 0; list-style: none; }
+        .diag-list li { font-size: 13px; padding: 6px 0; border-top: 1px solid var(--border); line-height: 1.4; }
+        .diag-list li:first-child { border-top: 0; }
+        .diag-empty { color: var(--muted); font-size: 13px; }
+
+        .capturing th, .capturing .left { position: static !important; }
+        .print-only { display: none; }
+        .print-heading { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin-bottom: 12px; }
+
+        @media (max-width: 980px) {
+            .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .diag { grid-template-columns: 1fr; }
+            .topbar { flex-direction: column; align-items: stretch; }
+        }
+        @media (max-width: 700px) {
+            .form-grid, .summary { grid-template-columns: 1fr; }
+        }
+
+        @media print {
+            @page { size: landscape; margin: 8mm; }
+            body { background: #fff !important; padding: 0; }
+            .page { max-width: none; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .card { box-shadow: none; border-radius: 0; margin: 0 0 10px; padding: 0; }
+            .table-wrap { overflow: visible !important; border: none; border-radius: 0; }
+            table { min-width: 0 !important; width: 100%; }
+            th, .left { position: static !important; }
+            tr { break-inside: avoid; }
+            th, td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar no-print">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1 class="brand-title">Матрица услуг</h1>
+                <p class="brand-subtitle">Услуги по уровням и тарифам · диагностика дублей и пропусков (только чтение)</p>
+            </div>
+        </div>
+
+        <div class="topbar-actions">
+            {% if rows|length > 0 %}
+                {% set export_target = "#services-table" %}
+                {% set export_filename = "матрица_услуг" %}
+                {% include "_export_buttons.html" %}
+            {% endif %}
+            <a href="/admin/rates" class="back-link">ЧТС (правка)</a>
+            <a href="/admin" class="back-link">Назад в админку</a>
+        </div>
+    </div>
+
+    <div class="card no-print">
+        <h2>Фильтры</h2>
+        <form method="get" action="/admin/services">
+            <div class="form-grid">
+                <div class="field">
+                    <label>Регион</label>
+                    <select name="city">
+                        <option value="">Все регионы</option>
+                        {% for c in cities %}
+                            <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Формат ТК</label>
+                    <select name="fmt">
+                        <option value="">Все форматы</option>
+                        {% for f in formats %}
+                            <option value="{{ f }}" {% if selected_format == f %}selected{% endif %}>{{ f }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Поиск по услуге</label>
+                    <input type="text" name="q" value="{{ search }}" placeholder="часть названия">
+                </div>
+                <div>
+                    <button type="submit" class="btn">Показать</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="summary">
+            <div class="summary-item">
+                <div class="summary-label">Базовых услуг</div>
+                <div class="summary-value">{{ counters.bases }}{% if shown_bases != total_bases %} / {{ total_bases }}{% endif %}</div>
+            </div>
+            <div class="summary-item {% if counters.duplicates %}alert{% endif %}">
+                <div class="summary-label">Дубли написания</div>
+                <div class="summary-value">{{ counters.duplicates }}</div>
+            </div>
+            <div class="summary-item {% if counters.no_rate_services %}alert{% endif %}">
+                <div class="summary-label">Услуги смен без тарифа</div>
+                <div class="summary-value">{{ counters.no_rate_services }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Тарифы без смен</div>
+                <div class="summary-value">{{ counters.rate_no_shift_services }}</div>
+            </div>
+            <div class="summary-item {% if counters.typos %}alert{% endif %}">
+                <div class="summary-label">Похожие имена</div>
+                <div class="summary-value">{{ counters.typos }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="print-heading print-only">Матрица услуг{% if selected_city %} · {{ selected_city }}{% endif %}{% if selected_format %} · {{ selected_format }}{% endif %}</div>
+        <div class="table-wrap">
+            <table id="services-table">
+                <thead>
+                    <tr>
+                        <th class="left">Услуга</th>
+                        {% for level in levels %}
+                            <th>{{ level }} ур.</th>
+                        {% endfor %}
+                        <th>Без уровня</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td class="left">
+                            <span class="base-name">{{ row.base_display }}</span>
+                            {% if row.is_duplicate or row.similar_to or row.has_no_rate %}
+                            <div class="badges">
+                                {% if row.is_duplicate %}<span class="badge badge-dup">дубли написания</span>{% endif %}
+                                {% if row.similar_to %}<span class="badge badge-typo">похоже на опечатку</span>{% endif %}
+                                {% if row.has_no_rate %}<span class="badge badge-norate">есть смены без тарифа</span>{% endif %}
+                            </div>
+                            {% endif %}
+                            {% if row.is_duplicate %}
+                            <div class="variants">Варианты написания:
+                                {% for name in row.original_services %}<code>{{ name }}</code>{% if not loop.last %} {% endif %}{% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if row.similar_to %}
+                            <div class="variants">Похоже на: {{ row.similar_to|join(", ") }}</div>
+                            {% endif %}
+                        </td>
+
+                        {% for level in levels %}
+                            {% set cell = row.cells[level] %}
+                            {{ render_cell(cell) }}
+                        {% endfor %}
+
+                        {% set none_cell = row.cells[none] %}
+                        {{ render_cell(none_cell) }}
+                    </tr>
+                    {% endfor %}
+
+                    {% if rows|length == 0 %}
+                    <tr>
+                        <td colspan="{{ levels|length + 2 }}">Услуг не найдено по фильтру</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card no-print">
+        <h2>Диагностика</h2>
+        <div class="diag">
+            <div class="diag-block">
+                <h3>Услуги из смен без тарифа ({{ no_rate_services|length }})</h3>
+                <p class="diag-empty">Есть в сменах, но нет ни одной ставки — подбор ЧТС даст 0.</p>
+                {% if no_rate_services %}
+                <ul class="diag-list">
+                    {% for s in no_rate_services %}<li>{{ s }}</li>{% endfor %}
+                </ul>
+                {% else %}
+                <p class="diag-empty">Нет — у всех услуг из смен есть тариф.</p>
+                {% endif %}
+            </div>
+            <div class="diag-block">
+                <h3>Тарифы без смен ({{ rate_no_shift_services|length }})</h3>
+                <p class="diag-empty">Есть ставка, но в сменах (по фильтру) услуга не встречалась — возможно устарело.</p>
+                {% if rate_no_shift_services %}
+                <ul class="diag-list">
+                    {% for s in rate_no_shift_services %}<li>{{ s }}</li>{% endfor %}
+                </ul>
+                {% else %}
+                <p class="diag-empty">Нет.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
