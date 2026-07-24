@@ -80,6 +80,15 @@ def levenshtein(a, b):
     return previous[-1]
 
 
+def is_base_rate(rate):
+    """Базовая тарифная сетка (слой 0 pick_rate): пустые store И employee_name.
+
+    Формат/регион остаются ИЗМЕРЕНИЯМИ сетки (одна услуга в ГМ и СМ стоит
+    по-разному) — заполненный format НЕ делает ставку индивидуальной.
+    """
+    return not normalize_text(rate.get("store")) and not normalize_text(rate.get("employee_name"))
+
+
 def build_service_matrix(rate_rows, shift_rows):
     """Собрать матрицу услуг из ставок и услуг смен.
 
@@ -87,16 +96,25 @@ def build_service_matrix(rate_rows, shift_rows):
     employee_name, hourly_rate}`; `shift_rows` — dict `{service}` (уникальные
     услуги смен). Возвращает `{rows, levels, counters, no_rate_services,
     rate_no_shift_services}`.
+
+    В КЛЕТКИ и диагностику по тарифам попадает ТОЛЬКО базовая сетка (слой 0).
+    Индивидуальные ставки (слои 1/2 — по ТК/сотруднику) не мешаются в сетку:
+    считаются отдельным счётчиком и помечаются на строке услуги.
     """
     rate_rows = list(rate_rows)
     shift_rows = list(shift_rows)
 
-    rate_service_strings = {
-        normalize_text(r.get("service")) for r in rate_rows if normalize_text(r.get("service"))
+    base_rate_service_strings = {
+        normalize_text(r.get("service"))
+        for r in rate_rows
+        if normalize_text(r.get("service")) and is_base_rate(r)
     }
     shift_service_strings = {
         normalize_text(s.get("service")) for s in shift_rows if normalize_text(s.get("service"))
     }
+    individual_rates = sum(
+        1 for r in rate_rows if normalize_text(r.get("service")) and not is_base_rate(r)
+    )
 
     bases = {}
 
@@ -109,6 +127,7 @@ def build_service_matrix(rate_rows, shift_rows):
                 "base_key": base_key,
                 "base_variants": set(),
                 "original_services": set(),
+                "individual_count": 0,
                 "cells": {bucket: _empty_cell() for bucket in _LEVEL_BUCKETS},
             }
             bases[base_key] = row
@@ -121,6 +140,10 @@ def build_service_matrix(rate_rows, shift_rows):
         if not normalize_text(service):
             continue
         row, bucket = get_row(service)
+        if not is_base_rate(rate):
+            # Индивидуальная ставка (слой 1/2) — в клетки НЕ кладём, только сигнал.
+            row["individual_count"] += 1
+            continue
         row["cells"][bucket]["rates"].append({
             "city": rate.get("city"),
             "format": rate.get("format"),
@@ -166,8 +189,12 @@ def build_service_matrix(rate_rows, shift_rows):
                 rows[i]["similar_to"].append(rows[j]["base_display"])
                 rows[j]["similar_to"].append(rows[i]["base_display"])
 
-    no_rate_services = sorted(s for s in shift_service_strings if s not in rate_service_strings)
-    rate_no_shift_services = sorted(s for s in rate_service_strings if s not in shift_service_strings)
+    # Диагностика по тарифам — только против БАЗОВОЙ сетки (индивидуальные
+    # ставки не должны раздувать «тарифы без смен»).
+    no_rate_services = sorted(s for s in shift_service_strings if s not in base_rate_service_strings)
+    rate_no_shift_services = sorted(
+        s for s in base_rate_service_strings if s not in shift_service_strings
+    )
 
     counters = {
         "bases": len(rows),
@@ -175,6 +202,7 @@ def build_service_matrix(rate_rows, shift_rows):
         "no_rate_services": len(no_rate_services),
         "rate_no_shift_services": len(rate_no_shift_services),
         "typos": sum(1 for r in rows if r["similar_to"]),
+        "individual_rates": individual_rates,
     }
 
     return {

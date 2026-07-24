@@ -120,5 +120,62 @@ class BuildMatrixTests(unittest.TestCase):
         self.assertEqual(cell["max"], 408)
 
 
+class BaseGridFilterTests(unittest.TestCase):
+    """Матрица показывает ТОЛЬКО базовую сетку (store и employee_name пусты)."""
+
+    def _base(self, **kw):
+        row = {"service": "2ур_Услуга", "city": "Москва", "format": "ГМ",
+               "store": None, "employee_name": None, "hourly_rate": 300}
+        row.update(kw)
+        return row
+
+    def test_store_rate_excluded_from_cells(self):
+        rates = [self._base(store="Лента-1", hourly_rate=350)]
+        matrix = build_service_matrix(rates, [])
+        row = matrix["rows"][0]
+        self.assertEqual(row["cells"][2]["count"], 0)  # в клетку не попала
+        self.assertEqual(row["individual_count"], 1)
+        self.assertEqual(matrix["counters"]["individual_rates"], 1)
+
+    def test_employee_rate_excluded_from_cells(self):
+        rates = [self._base(employee_name="Иванов", hourly_rate=500)]
+        matrix = build_service_matrix(rates, [])
+        row = matrix["rows"][0]
+        self.assertEqual(row["cells"][2]["count"], 0)
+        self.assertEqual(row["individual_count"], 1)
+
+    def test_format_filled_still_base(self):
+        # Заполненный format при пустых store/employee — это БАЗОВАЯ ставка.
+        rates = [self._base(format="СМ", hourly_rate=280)]
+        matrix = build_service_matrix(rates, [])
+        cell = matrix["rows"][0]["cells"][2]
+        self.assertEqual(cell["count"], 1)
+        self.assertEqual(cell["min"], 280)
+        self.assertEqual(matrix["counters"]["individual_rates"], 0)
+
+    def test_individual_counter_sums_layers_1_and_2(self):
+        rates = [
+            self._base(),                              # базовая
+            self._base(store="Лента-1"),               # слой 1
+            self._base(employee_name="Иванов"),        # слой 2
+            self._base(store="Лента-2", employee_name="Петров"),  # слой 2
+        ]
+        matrix = build_service_matrix(rates, [])
+        self.assertEqual(matrix["counters"]["individual_rates"], 3)
+        self.assertEqual(matrix["rows"][0]["cells"][2]["count"], 1)  # только базовая в клетке
+
+    def test_rate_no_shift_uses_base_only(self):
+        # Индивидуальная ставка НЕ должна раздувать «тарифы без смен».
+        rates = [
+            {"service": "2ур_БазаБезСмен", "city": "Москва", "format": "ГМ",
+             "store": None, "employee_name": None, "hourly_rate": 300},
+            {"service": "2ур_ИндивБезСмен", "city": "Москва", "format": "ГМ",
+             "store": "Лента-1", "employee_name": None, "hourly_rate": 350},
+        ]
+        matrix = build_service_matrix(rates, [])
+        self.assertEqual(matrix["counters"]["rate_no_shift_services"], 1)
+        self.assertEqual(matrix["rate_no_shift_services"], ["2ур_БазаБезСмен"])
+
+
 if __name__ == "__main__":
     unittest.main()
