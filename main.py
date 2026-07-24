@@ -15,6 +15,7 @@ from document_helpers import ensure_document_tables
 from legal_entity_helpers import ensure_legal_entities_table
 from payroll_run_helpers import ensure_payroll_run_closing_columns
 from requisite_schema import ensure_requisite_profile_columns
+from service_schema import ensure_service_columns
 from shift_schema import ensure_shift_request_type_unique_key
 from user_schema import ensure_user_profile_columns
 from routers.citizenship import router as citizenship_router
@@ -104,6 +105,7 @@ ensure_citizenship_columns()
 ensure_legal_entities_table()
 ensure_payroll_run_closing_columns()
 ensure_audit_log_table()
+ensure_service_columns()
 
 
 

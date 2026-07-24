@@ -81,7 +81,9 @@ def normalize_format(value) -> str:
     text = str(value).upper().strip()
     compact_text = re.sub(r"\s+", "", text)
 
-    if compact_text in {"ГМ", "СМ"}:
+    # РЦ узаконен как формат наравне с ГМ/СМ (в сменах встречается, тарифов нет →
+    # услуги РЦ = «нет тарифа», но формат легитимный, не «прочее»).
+    if compact_text in {"ГМ", "СМ", "РЦ"}:
         return compact_text
 
     return text

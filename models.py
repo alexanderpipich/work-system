@@ -117,11 +117,29 @@ class LegalEntity(Base):
     updated_at = Column(DateTime, nullable=True)
 
 
+class Service(Base):
+    """Справочник услуг (переделка услуг, этап 1).
+
+    Плоский текст `Nур_услуга` в Rate/Shift — источник дублей и опечаток. Service
+    выносит услугу в самостоятельную сущность (канон + алиасы, как Country).
+    Уровень (1..5) хранится отдельным полем на Rate, не склеен в имя.
+    """
+    __tablename__ = "services"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)  # каноничное имя услуги
+    aliases = Column(String, nullable=True)  # CSV вариантов написания (как Country.aliases)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, nullable=True, default=now_utc)
+
+
 class Rate(Base):
     __tablename__ = "rates"
 
     id = Column(Integer, primary_key=True, index=True)
-    service = Column(String, nullable=False)
+    service = Column(String, nullable=False)  # deprecated (этап 1): оставлен для отката/сверки
+    service_id = Column(Integer, ForeignKey("services.id"), nullable=True)
+    level = Column(Integer, nullable=True)  # уровень услуги 1..5; NULL — услуга без уровня (легитимно)
     format = Column(String, nullable=True)
     city = Column(String, nullable=True, index=True)
     store = Column(String, nullable=True)
