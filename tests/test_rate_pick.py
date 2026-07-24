@@ -67,25 +67,31 @@ class PickRateTests(unittest.TestCase):
         self.assertIsNone(pick_rate([make_rate(100)], make_shift(service="other")))
 
     def test_get_rate_wrapper_loads_rates_once(self):
+        from models import Rate as RateModel, Service
+
         class Query:
-            def __init__(self, rates):
-                self.rates = rates
+            def __init__(self, rows):
+                self.rows = rows
 
             def all(self):
-                return self.rates
+                return self.rows
 
         class Session:
             def __init__(self, rates):
                 self.rates = rates
-                self.query_count = 0
+                self.rate_query_count = 0
 
             def query(self, model):
-                self.query_count += 1
+                # Этап 2: get_rate_for_shift строит резолвер (запрос Service).
+                if model is Service:
+                    return Query([])
+                self.rate_query_count += 1
                 return Query(self.rates)
 
         session = Session([make_rate(100)])
+        # Rate без service_id + услуга без Service → матчинг падает на текст (100 найден).
         self.assertEqual(get_rate_for_shift(session, make_shift()).hourly_rate, 100)
-        self.assertEqual(session.query_count, 1)
+        self.assertEqual(session.rate_query_count, 1)
 
 
 if __name__ == "__main__":

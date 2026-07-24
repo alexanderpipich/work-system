@@ -112,8 +112,26 @@ def load_rates(session):
     return session.query(Rate).all()
 
 
-def pick_rate(rates, shift):
-    candidates = [rate for rate in rates if rate.service == shift.service]
+def pick_rate(rates, shift, resolve=None):
+    # Этап 2 переделки услуг: матчинг услуги по service_id + level (а не по тексту).
+    # `resolve(shift) -> (service_id, level)` строится из справочника Service
+    # (см. service_catalog.build_service_resolver). Фильтры формат/город/store/
+    # employee и три слоя приоритета ниже — НЕ меняются.
+    #
+    # Совместимость/страховка сумм: если резолвер не передан, ИЛИ у Rate не
+    # проставлен service_id (старые/ручные записи), ИЛИ услуга смены без Service
+    # (target_service_id=None) — падаем на прежнее сравнение по тексту. Для
+    # мигрированных данных id+level и текст дают ОДИН И ТОТ ЖЕ Rate → суммы не меняются.
+    target_service_id = target_level = None
+    if resolve is not None:
+        target_service_id, target_level = resolve(shift)
+
+    def _service_matches(rate):
+        if resolve is not None and rate.service_id is not None and target_service_id is not None:
+            return rate.service_id == target_service_id and rate.level == target_level
+        return rate.service == shift.service
+
+    candidates = [rate for rate in rates if _service_matches(rate)]
     valid_candidates = []
 
     for rate in candidates:
@@ -176,5 +194,7 @@ def pick_rate(rates, shift):
 
 
 def get_rate_for_shift(session, shift):
-    return pick_rate(load_rates(session), shift)
+    # Локальный импорт — service_catalog зависит от utils (кольцо на уровне модуля).
+    from service_catalog import build_service_resolver
+    return pick_rate(load_rates(session), shift, resolve=build_service_resolver(session))
 

@@ -19,6 +19,7 @@ from manual_adjustments import (
 from models import PayrollRun, PayrollRunItem, Requisite, Shift
 from payroll_adjustments import apply_auto_adjustments_to_rows, get_payroll_auto_adjustments
 from schedule_grid import build_payroll_rows, days_between
+from service_catalog import build_service_resolver
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today, now_utc
 from rbac import canonical_role, require_permission
@@ -218,11 +219,12 @@ def economist_payroll(
             shifts = []
 
     rates = load_rates(session)
+    resolve = build_service_resolver(session)
     payroll_map = {}
 
     for shift in shifts:
         shift_is_no_plan = is_no_plan_shift(shift)
-        rate = pick_rate(rates, shift)
+        rate = pick_rate(rates, shift, resolve=resolve)
         rate_value = rate.hourly_rate if rate else 0
         amount = 0 if shift_is_no_plan else (shift.hours * rate_value if rate else 0)
 
@@ -401,12 +403,13 @@ def economist_fix_payroll(
     ).all()
 
     rates = load_rates(session)
+    resolve = build_service_resolver(session)
     validation_errors = []
     checked_employees = set()
 
     for shift in shifts:
         shift_is_no_plan = is_no_plan_shift(shift)
-        rate = pick_rate(rates, shift)
+        rate = pick_rate(rates, shift, resolve=resolve)
 
         if not rate and not is_no_plan_shift(shift):
             validation_errors.append(
@@ -478,7 +481,7 @@ def economist_fix_payroll(
 
     for shift in shifts:
         shift_is_no_plan = is_no_plan_shift(shift)
-        rate = pick_rate(rates, shift)
+        rate = pick_rate(rates, shift, resolve=resolve)
         rate_value = rate.hourly_rate if rate else 0
         amount = 0 if shift_is_no_plan else shift.hours * rate_value
         manual_key = (normalize_text(shift.employee), normalize_text(shift.store))
@@ -658,12 +661,13 @@ def admin_payroll(
             shifts = []
 
     rates = load_rates(session)
+    resolve = build_service_resolver(session)
 
     # Табель «по дням» (вид_табелей): строка = ФИО+Магазин+Услуга, часы по дням
     # периода. Расчёт сумм 1:1 как раньше — меняется только гранулярность строк,
     # итоги обязаны совпасть. Сетка по дням — общий механизм из schedule_grid.
     days = days_between(start_date, end_date)
-    rows = build_payroll_rows(shifts, days, rates, include_city=False)
+    rows = build_payroll_rows(shifts, days, rates, include_city=False, resolve=resolve)
     rows.sort(key=lambda x: (x["employee_name"], x["store"], x["service"] or "", x["is_no_plan"]))
 
     for row in rows:
@@ -789,6 +793,7 @@ def fix_payroll(
     shifts = shifts_query.all()
 
     rates = load_rates(session)
+    resolve = build_service_resolver(session)
     validation_errors = []
 
     checked_employees = set()
@@ -796,7 +801,7 @@ def fix_payroll(
     for shift in shifts:
 
         # Проверка ЧТС
-        rate = pick_rate(rates, shift)
+        rate = pick_rate(rates, shift, resolve=resolve)
 
         if not rate and not is_no_plan_shift(shift):
             validation_errors.append(
@@ -901,7 +906,7 @@ def fix_payroll(
 
     for shift in shifts:
 
-        rate = pick_rate(rates, shift)
+        rate = pick_rate(rates, shift, resolve=resolve)
 
         rate_value = rate.hourly_rate if rate else 0
 

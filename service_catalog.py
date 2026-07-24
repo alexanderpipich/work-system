@@ -38,6 +38,45 @@ def collect_base_names(session):
     return sorted(names.values())
 
 
+def build_service_resolver(session):
+    """Фабрика резолвера услуги смены → (service_id, level) с кэшем.
+
+    Один запрос Service на весь расчёт: строит карту имя/алиас → id (имя
+    приоритетнее алиаса, как в странах). Возвращает callable `resolve(shift)`,
+    кэширующий по тексту `shift.service` — много смен с одной услугой не бьют в БД.
+    """
+    name_map = {}
+    alias_map = {}
+    for svc in session.query(Service).all():
+        name_map.setdefault(normalize_text(svc.name), svc.id)
+    for svc in session.query(Service).all():
+        for alias in (svc.aliases or "").split(","):
+            alias_key = normalize_text(alias)
+            if alias_key and alias_key not in name_map:
+                alias_map.setdefault(alias_key, svc.id)
+    lookup = {**alias_map, **name_map}  # имя услуги приоритетнее алиаса
+
+    cache = {}
+
+    def resolve(shift):
+        key = normalize_text(getattr(shift, "service", ""))
+        if key in cache:
+            return cache[key]
+        level, base = _base_of(key)
+        service_id = lookup.get(normalize_text(base)) if base else None
+        result = (service_id, level)
+        cache[key] = result
+        return result
+
+    return resolve
+
+
+def resolve_shift_service(session, shift):
+    """Разовый резолв услуги смены → (service_id, level). Для цикла используйте
+    build_service_resolver (кэш + один запрос)."""
+    return build_service_resolver(session)(shift)
+
+
 def service_diagnostics(session):
     """Переиспользуемая диагностика (для отчёта миграции и UI этапа 5).
 
@@ -76,11 +115,18 @@ def service_diagnostics(session):
         [sorted(variants) for variants in groups.values() if len(variants) > 1]
     )
 
+    # Rate без service_id — не мигрированные/ручные записи. Подбор (этап 2) для
+    # них падает на матчинг по тексту (страховка сумм), но их стоит домигрировать.
+    rates_without_service_id = (
+        session.query(Rate).filter(Rate.service_id.is_(None)).count()
+    )
+
     return {
         "no_tariff_services": sorted(shifts_without_tariff),
         "duplicate_spelling": duplicate_spelling,
         "shifts_without_service": sorted(shifts_without_service),
         "shifts_without_level": shifts_without_level,
+        "rates_without_service_id": rates_without_service_id,
     }
 
 

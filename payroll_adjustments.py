@@ -58,9 +58,12 @@ def find_or_create_adjustment(
 
 
 def reconcile_sent_payroll_runs(session):
+    from service_catalog import build_service_resolver
+
     created = 0
 
     rates = load_rates(session)
+    resolve = build_service_resolver(session)
     sent_runs = session.query(PayrollRun).filter(
         PayrollRun.status == "sent"
     ).all()
@@ -132,7 +135,7 @@ def reconcile_sent_payroll_runs(session):
             if key in snapshot_keys:
                 continue
 
-            rate_obj = pick_rate(rates, shift)
+            rate_obj = pick_rate(rates, shift, resolve=resolve)
             rate_value = rate_obj.hourly_rate if rate_obj else 0
 
             created += find_or_create_adjustment(

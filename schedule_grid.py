@@ -61,7 +61,7 @@ def build_schedule_rows(shifts, days, include_city: bool = False):
     return rows
 
 
-def build_payroll_rows(shifts, days, rates, include_city: bool = False):
+def build_payroll_rows(shifts, days, rates, include_city: bool = False, resolve=None):
     """Табель «по дням» с деньгами.
 
     Строка = (ФИО, [город,] магазин, услуга, is_no_plan) — как в графиках, поэтому
@@ -76,7 +76,7 @@ def build_payroll_rows(shifts, days, rates, include_city: bool = False):
     money = {}
     for shift in shifts:
         is_no_plan = is_no_plan_shift(shift)
-        rate = pick_rate(rates, shift)
+        rate = pick_rate(rates, shift, resolve=resolve)
         rate_value = rate.hourly_rate if rate else 0
         amount = 0 if is_no_plan else (shift.hours * rate_value if rate else 0)
 

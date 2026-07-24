@@ -51,6 +51,7 @@ def main():
     _print_list("Услуги из смен без тарифа (ЧТС=0)", report["no_tariff_services"])
     _print_list("Смены без Service в справочнике", report["shifts_without_service"])
     print(f"  Смен без уровня (level NULL): {report['shifts_without_level']}")
+    print(f"  Rate без service_id (домигрировать): {report['rates_without_service_id']}")
     print(f"  Дубли написания (кандидаты на чистку владельцем): {len(report['duplicate_spelling'])}")
     for pair in report["duplicate_spelling"]:
         print(f"    - {' | '.join(pair)}")
