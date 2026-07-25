@@ -302,11 +302,6 @@
         </div>
 
         <div class="topbar-actions">
-            {% if show_table %}
-                {% set export_target = "#schedule-table" %}
-                {% set export_filename = "график_" ~ date_from ~ "_" ~ date_to %}
-                {% include "_export_buttons.html" %}
-            {% endif %}
             <a href="/admin" class="back-link">Назад в админку</a>
         </div>
     </div>
@@ -375,6 +370,11 @@
     {% if show_table %}
         <div class="card">
             <div class="print-heading print-only">Графики выходов · {{ date_from }} — {{ date_to }}</div>
+            <div class="no-print" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                {% set export_target = "#schedule-table" %}
+                {% set export_filename = "график_" ~ date_from ~ "_" ~ date_to %}
+                {% include "_export_buttons.html" %}
+            </div>
             <div class="table-wrap">
                 <table id="schedule-table">
                     <thead>

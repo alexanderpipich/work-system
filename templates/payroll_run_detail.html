@@ -259,11 +259,6 @@
         </div>
 
         <div class="toolbar">
-            {% if rows and rows|length > 0 %}
-                {% set export_target = "#run-table" %}
-                {% set export_filename = "табель_" ~ run.id ~ "_" ~ run.date_from.strftime('%Y-%m-%d') ~ "_" ~ run.date_to.strftime('%Y-%m-%d') %}
-                {% include "_export_buttons.html" %}
-            {% endif %}
             {% if request.url.path.startswith('/hr') %}
                 <a href="/hr/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
                 <a href="/hr/payroll/runs" class="back-link">Все фиксации</a>
@@ -331,6 +326,13 @@
 
     <div class="card">
         <div class="print-heading print-only">Табель #{{ run.id }} · {{ run.date_from.strftime('%d.%m.%Y') }} — {{ run.date_to.strftime('%d.%m.%Y') }}</div>
+        {% if rows and rows|length > 0 %}
+        <div class="no-print" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            {% set export_target = "#run-table" %}
+            {% set export_filename = "табель_" ~ run.id ~ "_" ~ run.date_from.strftime('%Y-%m-%d') ~ "_" ~ run.date_to.strftime('%Y-%m-%d') %}
+            {% include "_export_buttons.html" %}
+        </div>
+        {% endif %}
         <div class="table-wrap">
             <table id="run-table">
                 <thead>

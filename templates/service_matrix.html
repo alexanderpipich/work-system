@@ -303,11 +303,6 @@
         </div>
 
         <div class="topbar-actions">
-            {% if rows|length > 0 %}
-                {% set export_target = "#services-table" %}
-                {% set export_filename = "матрица_услуг" %}
-                {% include "_export_buttons.html" %}
-            {% endif %}
             <a href="/admin/rates" class="back-link">ЧТС (правка)</a>
             <a href="/admin" class="back-link">Назад в админку</a>
         </div>
@@ -386,6 +381,13 @@
 
     <div class="card">
         <div class="print-heading print-only">Матрица услуг{% if selected_city %} · {{ selected_city }}{% endif %}{% if selected_format %} · {{ selected_format }}{% endif %}</div>
+        {% if rows|length > 0 %}
+        <div class="no-print" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            {% set export_target = "#services-table" %}
+            {% set export_filename = "матрица_услуг" %}
+            {% include "_export_buttons.html" %}
+        </div>
+        {% endif %}
         <div class="table-wrap">
             <table id="services-table">
                 <thead>
