@@ -38,6 +38,23 @@ def collect_base_names(session):
     return sorted(names.values())
 
 
+def get_or_create_service(session, name):
+    """Найти услугу по имени или создать (загрузка тарифа заводит услугу в справочник).
+
+    Дубли написания НЕ склеивает — точное совпадение имени (Вингараж с пробелом и
+    с подчёркиванием → две записи, как в миграции этапа 1).
+    """
+    clean = normalize_text(name)
+    if not clean:
+        return None
+    service = session.query(Service).filter(Service.name == clean).first()
+    if service is None:
+        service = Service(name=clean, is_active=True, created_at=now_utc())
+        session.add(service)
+        session.flush()
+    return service
+
+
 def build_service_resolver(session):
     """Фабрика резолвера услуги смены → (service_id, level) с кэшем.
 

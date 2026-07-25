@@ -347,6 +347,13 @@
                 {% else %}
                     <br>Конфликтов нет — можно применять.
                 {% endif %}
+                {% if rates_preview.duplicate_spelling %}
+                    <br><span style="color:#9a3412;">
+                    Дубли написания услуг ({{ rates_preview.duplicate_spelling | length }}):
+                    {% for pair in rates_preview.duplicate_spelling %}«{{ pair | join('» / «') }}»{% if not loop.last %}; {% endif %}{% endfor %}
+                    — грузятся как разные услуги, чистка вручную (этап 5).
+                    </span>
+                {% endif %}
             </div>
 
             {% if rates_preview.conflicts %}

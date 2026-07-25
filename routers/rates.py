@@ -11,25 +11,28 @@ from sqlalchemy.orm import Session
 from access import accessible_employee_names, apply_shift_scope
 from audit_helpers import create_audit_log
 from dependencies import get_db
-from models import Rate, Shift
+from models import Rate, Service, Shift
 from rbac import canonical_role, require_permission
+from service_catalog import get_or_create_service
+from service_matrix import normalize_service_base
 from utils import normalize_format, normalize_text
 
 
 # --- Загрузка базовой тарифной сетки из Excel -------------------------------
-# Файл "ставки": колонки РЕГИОН / ТК / УСЛУГА + блок "Тариф исполнителя N уровня".
+# Файл "Тарифы_по_уровням.xlsx", лист "ставки": 8 колонок —
+#   РЕГИОН | ТК | УСЛУГА | 1 уровень | 2 уровень | 3 уровень | 4 уровень | 5 уровень.
 # РЕГИОН → Rate.city (матчится со столбцом "Город" отчёта = Shift.city)
 # ТК     → Rate.format (ГМ/СМ/…; жёсткое условие при подборе)
-# УСЛУГА + уровень → Rate.service в виде "Nур_<название>"
-# Тариф исполнителя N уровня → Rate.hourly_rate
+# УСЛУГА → базовое имя услуги (БЕЗ префикса уровня) → Service.name + Rate.service_id
+# "N уровень" → Rate.hourly_rate для Rate.level = N (уровень из КОЛОНКИ, не из текста)
 
 TARIFF_LEVELS = [1, 2, 3, 4, 5]
 TARIFF_REGION_HDR = "РЕГИОН"
 TARIFF_TK_HDR = "ТК"
 TARIFF_SERVICE_HDR = "УСЛУГА"
-TARIFF_PERFORMER_HDR = "Тариф исполнителя {n} уровня"
+TARIFF_PERFORMER_HDR = "{n} уровень"
 TARIFF_SHEET = "ставки"
-TARIFF_HEADER_ROW = 2  # 1-indexed строка заголовков
+TARIFF_HEADER_ROW = 1  # 1-indexed строка заголовков (в новом файле — строка 1)
 
 
 def _tariff_find_col(columns, target):
@@ -40,6 +43,17 @@ def _tariff_find_col(columns, target):
         if re.sub(r"\s+", " ", str(col)).strip().lower() == target_norm:
             return col
     return None
+
+
+def _duplicate_spelling(rows):
+    """Пары/группы разных написаний одной услуги (Вингараж с пробелом/подчёркиванием):
+    схлопываются одной нормализацией, но исходные имена различаются. Только показать."""
+    groups = {}
+    for row in rows:
+        name = row.get("service_name") or ""
+        if name:
+            groups.setdefault(normalize_service_base(name), set()).add(name)
+    return sorted([sorted(variants) for variants in groups.values() if len(variants) > 1])
 
 
 def parse_tariff_grid(file_obj, sheet=TARIFF_SHEET, header_row=TARIFF_HEADER_ROW):
@@ -101,11 +115,16 @@ def parse_tariff_grid(file_obj, sheet=TARIFF_SHEET, header_row=TARIFF_HEADER_ROW
             rows.append({
                 "city": city,
                 "format": fmt or None,
+                # service (текст "Nур_имя") оставлен для фолбэка подбора (этап 2)
+                # и сверки; уровень теперь берётся из КОЛОНКИ в поле level.
                 "service": f"{n}ур_{service_name}",
+                "service_name": service_name,
+                "level": n,
                 "hourly_rate": hourly_rate,
             })
 
-    # выявить конфликты: один ключ city+format+service → разные ставки
+    # выявить конфликты: один ключ city+format+услуга+уровень → разные ставки.
+    # service ("Nур_имя") уже кодирует уровень, поэтому ключ по service level-aware.
     by_key = {}
     for row in rows:
         key = (row["city"], row["format"] or "", row["service"])
@@ -547,6 +566,7 @@ async def upload_rates(
             "cities": cities,
             "formats": formats,
             "conflicts": conflicts,
+            "duplicate_spelling": _duplicate_spelling(rows),
             "sample": rows[:20],
         }
         return _render({"rates_preview": preview, "message": None})
@@ -573,9 +593,16 @@ async def upload_rates(
         deleted = 0
 
     created = 0
+    services_before = session.query(Service).count()
     for row in rows:
+        # Услуга из колонки УСЛУГА заводится в справочник (тариф = источник услуг);
+        # дубли написания НЕ склеиваются. service_id + level — новая модель;
+        # текст service ("Nур_имя") пишем как раньше для фолбэка подбора (этап 2).
+        service = get_or_create_service(session, row["service_name"])
         rate = Rate(
             service=row["service"],
+            service_id=service.id if service else None,
+            level=row["level"],
             format=row["format"],
             city=row["city"],
             store=None,
@@ -586,6 +613,8 @@ async def upload_rates(
         created += 1
 
     session.flush()
+    services_created = session.query(Service).count() - services_before
+    duplicate_spelling = _duplicate_spelling(rows)
     create_audit_log(
         session,
         request,
@@ -593,14 +622,22 @@ async def upload_rates(
         "rates_bulk_uploaded",
         "rate",
         None,
-        f"mode={mode}; создано={created}; удалено={deleted}",
-        new_value={"mode": mode, "created": created, "deleted": deleted},
+        f"mode={mode}; создано={created}; услуг заведено={services_created}; удалено={deleted}",
+        new_value={
+            "mode": mode,
+            "created": created,
+            "services_created": services_created,
+            "deleted": deleted,
+        },
     )
     session.commit()
 
-    return _render({
-        "message": (
-            f"Загрузка завершена ({mode}). Создано ставок: {created}"
-            + (f", удалено базовых: {deleted}" if mode == "replace" else "")
-        )
-    })
+    message = (
+        f"Загрузка завершена ({mode}). Создано ставок: {created}"
+        f"; заведено новых услуг: {services_created}"
+        + (f"; удалено базовых: {deleted}" if mode == "replace" else "")
+    )
+    if duplicate_spelling:
+        variants = "; ".join(" / ".join(pair) for pair in duplicate_spelling)
+        message += f". ⚠ Дубли написания ({len(duplicate_spelling)}): {variants}"
+    return _render({"message": message})
