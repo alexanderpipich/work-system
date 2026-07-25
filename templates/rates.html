@@ -392,6 +392,24 @@
     <div class="card">
         <h2>Список ставок</h2>
 
+        {% set current_layer = layer|default('all') %}
+        {% set rates_base_path = rates_base|default('/admin/rates') %}
+        <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                {% for key, label in [('all','Все'), ('individual','Только индивидуальные'), ('store','По ТК'), ('employee','По сотруднику'), ('base','Только базовые')] %}
+                <a href="{{ rates_base_path }}?layer={{ key }}"
+                   style="padding:7px 12px; border-radius:999px; text-decoration:none; font-size:13px; font-weight:700; border:1px solid var(--border);
+                          {% if current_layer == key %}background:var(--brand-blue); color:#fff; border-color:var(--brand-blue);{% else %}background:#fff; color:var(--brand-blue);{% endif %}">{{ label }}</a>
+                {% endfor %}
+            </div>
+            <div style="color:#64748b; font-size:13px;">
+                Индивидуальных: <b>{{ individual_count|default(0) }}</b> · базовых: <b>{{ base_count|default(0) }}</b> · показано: <b>{{ rates|length }}</b>
+            </div>
+        </div>
+        {% if current_layer == 'individual' %}
+        <p style="color:#9a3412; font-size:13px; margin:0 0 12px;">⚠ Неканонические ЧТС (надбавки по ТК/сотруднику). Базовую сетку здесь не удалить — она грузится из файла (режим «заменить»).</p>
+        {% endif %}
+
         <div class="table-wrap">
             <table>
                 <thead>
@@ -413,13 +431,13 @@
 
                             <td>
                                 {% if is_personal %}
-                                    <span class="pill type-personal">Индивидуальная</span>
+                                    <span class="pill type-personal">Сотрудник: {{ rate.employee_name }}</span>
                                 {% elif is_store %}
-                                    <span class="pill type-store">Магазин</span>
+                                    <span class="pill type-store">ТК: {{ rate.store }}</span>
                                 {% elif is_format %}
-                                    <span class="pill type-format">Формат</span>
+                                    <span class="pill type-format">База (формат {{ rate.format }})</span>
                                 {% else %}
-                                    <span class="pill type-base">Общая</span>
+                                    <span class="pill type-base">База</span>
                                 {% endif %}
                             </td>
 

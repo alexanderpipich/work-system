@@ -168,10 +168,35 @@ def rates_query(session):
     )
 
 
+# Пусто/NULL у store/employee_name = «не задан» (нормализуем оба, иначе базовая с
+# пустой строкой попала бы в индивидуальные).
+_HAS_STORE = and_(Rate.store != None, Rate.store != "")          # noqa: E711
+_HAS_EMPLOYEE = and_(Rate.employee_name != None, Rate.employee_name != "")  # noqa: E711
+_INDIVIDUAL = or_(_HAS_STORE, _HAS_EMPLOYEE)
+_BASE = and_(
+    or_(Rate.store == None, Rate.store == ""),          # noqa: E711
+    or_(Rate.employee_name == None, Rate.employee_name == ""),  # noqa: E711
+)
+
+
+def _apply_layer(query, layer):
+    """Фильтр списка ЧТС по слою. layer: all|individual|store|employee|base."""
+    if layer == "individual":
+        return query.filter(_INDIVIDUAL)
+    if layer == "store":
+        return query.filter(and_(_HAS_STORE, or_(Rate.employee_name == None, Rate.employee_name == "")))  # noqa: E711
+    if layer == "employee":
+        return query.filter(_HAS_EMPLOYEE)
+    if layer == "base":
+        return query.filter(_BASE)
+    return query
+
+
 @router.get("/economist/rates", response_class=HTMLResponse)
 @router.get("/hr/rates", response_class=HTMLResponse)
 def economist_rates(
     request: Request,
+    layer: str = "all",
     session: Session = Depends(get_db),
     user=Depends(require_rate_view),
 ):
@@ -180,7 +205,8 @@ def economist_rates(
         return RedirectResponse("/", status_code=302)
     if request.url.path.startswith("/economist") and role not in {"economist", "superadmin"}:
         return RedirectResponse("/", status_code=302)
-    query = rates_query(session)
+    layer = layer if layer in _ALLOWED_LAYERS else "all"
+    scoped = rates_query(session)
     if role == "hr_manager":
         scoped_stores = [
             row[0]
@@ -188,7 +214,7 @@ def economist_rates(
             if row[0]
         ]
         scoped_employees = accessible_employee_names(session, user)
-        query = query.filter(or_(
+        scoped = scoped.filter(or_(
             and_(Rate.store == None, Rate.employee_name == None),
             Rate.store.in_(scoped_stores or ["__none__"]),
             and_(
@@ -196,13 +222,18 @@ def economist_rates(
                 Rate.employee_name.in_(scoped_employees or ["__none__"]),
             ),
         ))
-    rates = query.all()
+    rates = _apply_layer(scoped, layer).all()
+    rates_base = "/hr/rates" if request.url.path.startswith("/hr") else "/economist/rates"
 
     return templates.TemplateResponse(
         request,
         "economist_rates.html",
         {
             "rates": rates,
+            "layer": layer,
+            "rates_base": rates_base,
+            "individual_count": scoped.filter(_INDIVIDUAL).count(),
+            "base_count": scoped.filter(_BASE).count(),
             "message": None,
             "error": None,
             "read_only": request.url.path.startswith("/hr")
@@ -346,19 +377,31 @@ def economist_delete_rate(
     return RedirectResponse(url="/economist/rates", status_code=302)
 
 
+_ALLOWED_LAYERS = {"all", "individual", "store", "employee", "base"}
+
+
 @router.get("/admin/rates", response_class=HTMLResponse)
 def admin_rates(
     request: Request,
+    layer: str = "all",
     session: Session = Depends(get_db),
     user=Depends(_rates_manage),
 ):
-    rates = rates_query(session).all()
+    """Список ЧТС с фильтром по слою. `layer`: all | individual | store | employee | base.
+    «individual» = неканонические (store или employee заполнены). Подбор/загрузчик не трогаем."""
+    layer = layer if layer in _ALLOWED_LAYERS else "all"
+    scoped = rates_query(session)
+    rates = _apply_layer(scoped, layer).all()
 
     return templates.TemplateResponse(
         request,
         "rates.html",
         {
             "rates": rates,
+            "layer": layer,
+            "rates_base": "/admin/rates",
+            "individual_count": scoped.filter(_INDIVIDUAL).count(),
+            "base_count": scoped.filter(_BASE).count(),
             "message": None,
             "error": None
         }
