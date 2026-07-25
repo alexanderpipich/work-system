@@ -8,6 +8,8 @@
 Разбор имени переиспользует `service_matrix.parse_service_name` (сделан для матрицы).
 """
 
+from types import SimpleNamespace
+
 from models import Rate, Service, Shift
 from service_matrix import normalize_service_base, parse_service_name
 from time_helpers import now_utc
@@ -92,6 +94,29 @@ def resolve_shift_service(session, shift):
     """Разовый резолв услуги смены → (service_id, level). Для цикла используйте
     build_service_resolver (кэш + один запрос)."""
     return build_service_resolver(session)(shift)
+
+
+def diagnose_uploaded_services(session, service_counts):
+    """Диагностика услуг загружаемых смен (этап 4, информационно).
+
+    `service_counts` — dict {текст услуги: число смен}. Резолвит каждую услугу
+    через справочник Service и возвращает:
+      - `unmatched_services`: [{name, shifts_count}] — услуги, которых НЕТ в Service
+        (по ним не подтянется тариф → ЧТС 0). Отсортированы по числу смен убыв.
+      - `services_without_level`: N — число смен с услугой без уровня (`Nур_` нет).
+    НЕ блокирует загрузку и НЕ заводит услуги — только показывает проблему.
+    """
+    resolve = build_service_resolver(session)
+    unmatched = []
+    without_level = 0
+    for service_text, count in service_counts.items():
+        service_id, level = resolve(SimpleNamespace(service=service_text))
+        if service_id is None:
+            unmatched.append({"name": normalize_text(service_text), "shifts_count": int(count)})
+        if level is None:
+            without_level += int(count)
+    unmatched.sort(key=lambda item: (-item["shifts_count"], item["name"]))
+    return {"unmatched_services": unmatched, "services_without_level": without_level}
 
 
 def service_diagnostics(session):

@@ -12,6 +12,7 @@ from dependencies import get_db
 from models import Shift, TimebookEmployee, UploadLog
 from payroll_adjustments import reconcile_sent_payroll_runs
 from rbac import require_permission
+from service_catalog import diagnose_uploaded_services
 from time_helpers import business_today, now_utc
 from utils import normalize_format, normalize_phone, normalize_text
 
@@ -315,12 +316,21 @@ def _process_shift_dataframe(session, df):
     session.commit()
     adjustments_created = reconcile_sent_payroll_runs(session)
 
+    # Диагностика услуг (этап 4): какие услуги из файла не нашлись в справочнике
+    # Service → по ним не подтянется тариф. Информационно, загрузку не блокирует.
+    service_counts = (
+        rows["service"].value_counts().to_dict() if not rows.empty else {}
+    )
+    diagnostics = diagnose_uploaded_services(session, service_counts)
+
     return {
         "added": added,
         "updated": updated,
         "skipped_duplicates": skipped_duplicates,
         "skipped_locked_months": skipped_locked_months,
         "adjustments_created": adjustments_created,
+        "unmatched_services": diagnostics["unmatched_services"],
+        "services_without_level": diagnostics["services_without_level"],
     }
 
 
