@@ -653,6 +653,72 @@
             cursor: pointer;
             font-family: inherit;
         }
+
+        /* ── Анимации ── */
+        @keyframes tileIn {
+            from { opacity: 0; transform: translateY(6px) scale(.96); }
+            to   { opacity: 1; transform: none; }
+        }
+
+        @keyframes pulseBad {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+            50%      { box-shadow: 0 0 0 4px rgba(220, 38, 38, .18); }
+        }
+
+        @keyframes pulseWarn {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+            50%      { box-shadow: 0 0 0 4px rgba(249, 115, 22, .16); }
+        }
+
+        /* плавное сворачивание блока документов */
+        .docs-row {
+            max-height: 240px;
+            overflow-y: hidden;
+            opacity: 1;
+            transition: max-height .28s ease, opacity .2s ease, padding .28s ease;
+        }
+
+        .docs-row.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+        }
+
+        /* каскадное появление плиток */
+        .docs-row:not(.collapsed) .tile { animation: tileIn .34s ease both; }
+        .docs-row .tile:nth-child(1)  { animation-delay: .00s; }
+        .docs-row .tile:nth-child(2)  { animation-delay: .03s; }
+        .docs-row .tile:nth-child(3)  { animation-delay: .06s; }
+        .docs-row .tile:nth-child(4)  { animation-delay: .09s; }
+        .docs-row .tile:nth-child(5)  { animation-delay: .12s; }
+        .docs-row .tile:nth-child(6)  { animation-delay: .15s; }
+        .docs-row .tile:nth-child(7)  { animation-delay: .18s; }
+        .docs-row .tile:nth-child(8)  { animation-delay: .21s; }
+        .docs-row .tile:nth-child(9)  { animation-delay: .24s; }
+        .docs-row .tile:nth-child(10) { animation-delay: .27s; }
+        .docs-row .tile:nth-child(11) { animation-delay: .30s; }
+        .docs-row .tile:nth-child(12) { animation-delay: .33s; }
+
+        /* подсветка проблемных документов */
+        .tile[data-status="expired"] .frame,
+        .tile[data-status="missing"] .frame { animation: pulseBad 2.4s ease-in-out infinite; }
+        .tile[data-status="expiring_soon"] .frame { animation: pulseWarn 2.8s ease-in-out infinite; }
+
+        /* hover плитки */
+        .frame { transition: transform .16s ease, filter .16s ease; }
+        .tile:hover .frame { transform: translateY(-2px); }
+
+        /* модалка */
+        @keyframes ovIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes mIn  { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+        .overlay[style*="flex"] { animation: ovIn .14s ease; }
+        .overlay[style*="flex"] .modal { animation: mIn .2s cubic-bezier(.2,.8,.3,1); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .docs-row, .docs-row .tile, .frame, .overlay, .modal { animation: none !important; transition: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -741,7 +807,7 @@
                     </span>
                 </div>
             </div>
-            <div class="docs-row" id="docs-row" {% if all_ok %}style="display:none"{% endif %}>
+            <div class="docs-row{% if all_ok %} collapsed{% endif %}" id="docs-row">
                 {% for item in completeness %}
                 {% set s = status_styles[item.status] %}
                 {% if item.source == 'document' and item.document %}
@@ -977,10 +1043,10 @@
         var hdr = document.getElementById('docs-hdr');
         var row = document.getElementById('docs-row');
         var chev = document.getElementById('docs-chev');
-        var exp = row.style.display !== 'none';
+        var exp = !row.classList.contains('collapsed');
         hdr.addEventListener('click', function() {
             exp = !exp;
-            row.style.display = exp ? 'flex' : 'none';
+            row.classList.toggle('collapsed', !exp);
             chev.style.transform = exp ? 'rotate(90deg)' : 'rotate(0deg)';
         });
     })();</script>
