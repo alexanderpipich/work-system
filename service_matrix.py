@@ -167,6 +167,15 @@ def build_service_matrix(rate_rows, shift_rows):
             cell["min"] = min(values) if values else None
             cell["max"] = max(values) if values else None
             cell["orphan"] = cell["has_shift"] and cell["count"] == 0
+            # Регион и формат — ИЗМЕРЕНИЯ сетки, не дубли: одна услуга+уровень в
+            # ЛО и СПб — две легитимные ставки. Реальный дубль = одна и та же
+            # (регион, формат) встречается больше раза → «(N)» только для него.
+            region_format = {}
+            for r in cell["rates"]:
+                key = (normalize_text(r.get("city")), normalize_text(r.get("format")))
+                region_format[key] = region_format.get(key, 0) + 1
+            cell["region_format_count"] = len(region_format)
+            cell["has_real_dup"] = any(n > 1 for n in region_format.values())
         variants = sorted(row["base_variants"])
         # Представительное имя строки — самый короткий вариант (обычно эталон).
         row["base_display"] = sorted(row["base_variants"], key=lambda x: (len(x), x))[0] if variants else ""

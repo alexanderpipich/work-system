@@ -43,10 +43,18 @@ def admin_services(
     cities = _distinct_values(session, Rate.city, Shift.city)
     formats = _distinct_values(session, Rate.format, Shift.format)
 
+    # Регион — измерение сетки: при «все регионы» одна услуга+уровень в ЛО и СПб
+    # выглядела бы мнимым дублем. Дефолт — первый регион (чистая сетка «Тарифы по
+    # уровням»); ALL_REGIONS — явный выбор «все», клетка честно считает по регионам.
+    ALL_REGIONS = "__all__"
+    if city == "" and cities:
+        city = cities[0]
+    show_all_regions = city == ALL_REGIONS or not cities
+
     rate_query = session.query(Rate)
     shift_query = session.query(Shift.service).distinct()
 
-    if city:
+    if city and not show_all_regions:
         rate_query = rate_query.filter(Rate.city == city)
         shift_query = shift_query.filter(Shift.city == city)
     if fmt:

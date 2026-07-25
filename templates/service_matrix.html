@@ -1,10 +1,11 @@
 {% macro render_cell(cell) %}
     {% if cell.count > 0 %}
-        <td class="{% if cell.count > 1 %}cell-multi{% else %}cell-rate{% endif %}">
+        <td class="{% if cell.has_real_dup %}cell-dup{% elif cell.count > 1 %}cell-multi{% else %}cell-rate{% endif %}">
             <details class="cell-menu">
                 <summary>
                     {% if cell.min == cell.max %}{{ "%g"|format(cell.min) }} ₽{% else %}{{ "%g"|format(cell.min) }}–{{ "%g"|format(cell.max) }} ₽{% endif %}
-                    {% if cell.count > 1 %}<span>({{ cell.count }})</span>{% endif %}
+                    {# «(N)» — ТОЛЬКО реальный дубль (одна регион+формат дважды); регионы/форматы — не дубль #}
+                    {% if cell.has_real_dup %}<span class="dup-mark" title="Дубль: одна услуга+регион+формат+уровень встречается дважды">⚠ ×{{ cell.count }}</span>{% endif %}
                 </summary>
                 <div class="cell-panel">
                     {% for r in cell.rates %}
@@ -209,7 +210,9 @@
         .variants code { background: #f3f4f6; padding: 1px 5px; border-radius: 6px; }
 
         .cell-rate { font-weight: 700; color: var(--brand-blue); background: rgba(11, 20, 117, 0.04); }
-        .cell-multi { color: #8f3e20; }
+        .cell-multi { font-weight: 700; color: var(--brand-blue); background: rgba(11, 20, 117, 0.04); }
+        .cell-dup { font-weight: 700; color: var(--error-text); background: var(--error-bg); }
+        .dup-mark { font-size: 11px; font-weight: 800; color: var(--error-text); white-space: nowrap; }
         .cell-orphan { color: var(--error-text); font-weight: 700; background: var(--error-bg); display: block; border-radius: 8px; padding: 4px; }
         .cell-empty { color: #c3c7cf; }
 
@@ -300,7 +303,7 @@
                 <div class="field">
                     <label>Регион</label>
                     <select name="city">
-                        <option value="">Все регионы</option>
+                        <option value="__all__" {% if selected_city == '__all__' %}selected{% endif %}>Все регионы</option>
                         {% for c in cities %}
                             <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
                         {% endfor %}

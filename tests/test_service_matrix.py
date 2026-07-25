@@ -12,6 +12,51 @@ from service_matrix import (
 )
 
 
+def _r(service, hourly_rate, city="ЛО", fmt="ГМ", store=None, employee_name=None):
+    return {"service": service, "city": city, "format": fmt,
+            "store": store, "employee_name": employee_name, "hourly_rate": hourly_rate}
+
+
+class RegionCellTests(unittest.TestCase):
+    """Фикс: регион/формат — измерения сетки, а не мнимый дубль."""
+
+    def test_same_service_two_regions_not_duplicate(self):
+        # Табакошоп: ЛО 240 + СПб 240 — две легитимные базовые ставки, НЕ дубль.
+        rates = [_r("2ур_Табакошоп", 240, city="ЛО"), _r("2ур_Табакошоп", 240, city="СПб")]
+        matrix = build_service_matrix(rates, [])
+        row = matrix["rows"][0]
+        cell = row["cells"][2]
+        self.assertEqual(cell["count"], 2)
+        self.assertEqual(cell["region_format_count"], 2)  # две разные (регион,формат)
+        self.assertFalse(cell["has_real_dup"])            # НЕ реальный дубль
+        self.assertFalse(row["is_duplicate"])             # НЕ дубль написания
+
+    def test_real_duplicate_same_region_format(self):
+        # Одна и та же (услуга, уровень, регион, формат) дважды → реальный дубль.
+        rates = [_r("2ур_Табакошоп", 240, city="ЛО"), _r("2ур_Табакошоп", 250, city="ЛО")]
+        matrix = build_service_matrix(rates, [])
+        cell = matrix["rows"][0]["cells"][2]
+        self.assertEqual(cell["count"], 2)
+        self.assertEqual(cell["region_format_count"], 1)
+        self.assertTrue(cell["has_real_dup"])
+
+    def test_two_formats_same_region_not_dup(self):
+        # ГМ + СМ в одном регионе — тоже измерение, не дубль.
+        rates = [_r("2ур_Табакошоп", 240, city="ЛО", fmt="ГМ"),
+                 _r("2ур_Табакошоп", 260, city="ЛО", fmt="СМ")]
+        cell = build_service_matrix(rates, [])["rows"][0]["cells"][2]
+        self.assertEqual(cell["region_format_count"], 2)
+        self.assertFalse(cell["has_real_dup"])
+
+    def test_spelling_duplicate_still_flagged_region_independent(self):
+        # Вингараж пробел/подчёрк в одном регионе → настоящий дубль написания.
+        rates = [_r("Вингараж Универсальные услуги", 100, city="ЛО"),
+                 _r("Вингараж_Универсальные услуги", 100, city="ЛО")]
+        row = build_service_matrix(rates, [])["rows"][0]
+        self.assertTrue(row["is_duplicate"])
+        self.assertEqual(len(row["variants"]), 2)
+
+
 class ParseServiceNameTests(unittest.TestCase):
     def test_with_level_prefix(self):
         self.assertEqual(parse_service_name("2ур_Услуги по выкладке"), (2, "Услуги по выкладке"))
