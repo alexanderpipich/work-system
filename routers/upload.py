@@ -316,6 +316,15 @@ def _process_shift_dataframe(session, df):
     session.commit()
     adjustments_created = reconcile_sent_payroll_runs(session)
 
+    # Автопересчёт рекомендаций мониторинга выходов (глобально, без user-скоупа) —
+    # чтобы после загрузки смен планирование/увольнения были свежими без ручной кнопки.
+    from monitoring_helpers import recompute_recommendations
+    try:
+        recompute_recommendations(session)
+    except Exception:
+        logger.exception("Monitoring recompute after upload failed")
+        session.rollback()
+
     # Диагностика услуг (этап 4): какие услуги из файла не нашлись в справочнике
     # Service → по ним не подтянется тариф. Информационно, загрузку не блокирует.
     service_counts = (

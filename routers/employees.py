@@ -16,7 +16,9 @@ from sqlalchemy.orm import Session
 from access import apply_shift_scope, get_user_cities, get_user_stores, scope_allows_store
 from audit_helpers import create_audit_log
 from dependencies import RedirectException, current_user, get_db
+from document_helpers import citizenship_display
 from models import (
+    EmployeeDismissalDecision,
     EmployeeMonitoringRecommendation,
     EmployeeMonitoringSettings,
     EmployeeStoreAssignment,
@@ -26,6 +28,11 @@ from models import (
     StoreReconciliation,
     StoreReconciliationSettings,
     User,
+)
+from monitoring_helpers import (
+    create_recommendation,
+    get_monitoring_settings,
+    recompute_recommendations,
 )
 from rbac import canonical_role, has_permission, is_superadmin, require_permission
 from time_helpers import business_today, now_utc
@@ -204,33 +211,8 @@ def _build_reconciliation_file(reconciliation, rows):
     reconciliation.file_path = str(path)
 
 
-def _monitoring_settings(session):
-    settings = session.query(EmployeeMonitoringSettings).first()
-    if not settings:
-        settings = EmployeeMonitoringSettings(inactive_days=14, minimum_shifts=3, analysis_days=14)
-        session.add(settings)
-        session.flush()
-    return settings
-
-
-def _create_recommendation(session, request, user, employee, store, city, kind, text_value):
-    exists = session.query(EmployeeMonitoringRecommendation).filter(
-        EmployeeMonitoringRecommendation.employee_name == employee,
-        EmployeeMonitoringRecommendation.store == store,
-        EmployeeMonitoringRecommendation.recommendation_type == kind,
-        EmployeeMonitoringRecommendation.status == "new",
-    ).first()
-    if exists:
-        return 0
-    row = EmployeeMonitoringRecommendation(
-        employee_name=employee, store=store, city=city, recommendation_type=kind,
-        remove_from_planning=kind == "remove_from_planning", add_to_planning=kind == "add_to_planning",
-        recommendation_text=text_value, status="new", created_at=now_utc(),
-    )
-    session.add(row)
-    session.flush()
-    create_audit_log(session, request, user, "monitoring_recommendation_created", "employee_monitoring_recommendation", row.id, f"{employee} / {store}")
-    return 1
+_monitoring_settings = get_monitoring_settings
+_create_recommendation = create_recommendation
 
 
 @router.get("/admin/employees", response_class=HTMLResponse)
@@ -388,19 +370,8 @@ def monitoring_settings_save(request: Request, inactive_days: int = Form(...), m
 @router.post("/economist/employees/monitoring/generate")
 @router.post("/hr/employees/monitoring/generate")
 def monitoring_generate(request: Request, session: Session = Depends(get_db), user=Depends(require_employee_manager)):
-    settings = _monitoring_settings(session); today = business_today(); created = 0
-    assignments = _scope(session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.is_active == True), EmployeeStoreAssignment, user).all()
-    active_keys = {(a.employee_name, a.store) for a in assignments}
-    for item in assignments:
-        last_date = session.query(func.max(Shift.shift_date)).filter(Shift.employee == item.employee_name, Shift.store == item.store).scalar()
-        if not last_date or last_date <= today - timedelta(days=settings.inactive_days):
-            created += _create_recommendation(session, request, user, item.employee_name, item.store, item.city, "remove_from_planning", f"Сотрудник закреплён за магазином, но не имеет смен {settings.inactive_days} дней. Возможно его следует убрать из бланка планирования.")
-    query = session.query(Shift.employee, Shift.store, Shift.city, func.count(Shift.id).label("count")).filter(Shift.shift_date >= today - timedelta(days=settings.analysis_days - 1)).group_by(Shift.employee, Shift.store, Shift.city)
-    query = _scope(query, Shift, user)
-    for item in query.having(func.count(Shift.id) >= settings.minimum_shifts).all():
-        if (item.employee, item.store) not in active_keys:
-            created += _create_recommendation(session, request, user, item.employee, item.store, item.city, "add_to_planning", f"Сотрудник отработал {item.count} смен за последние {settings.analysis_days} дней, но отсутствует в планировании. Возможно его следует добавить.")
-    session.commit(); return _redirect(request, "/monitoring", message=f"Создано рекомендаций: {created}")
+    created = recompute_recommendations(session, request, user)
+    return _redirect(request, "/monitoring", message=f"Создано рекомендаций: {created}")
 
 
 @router.post("/admin/employees/monitoring/process")
@@ -410,6 +381,76 @@ def monitoring_process(request: Request, recommendation_id: int = Form(...), sta
     row = session.query(EmployeeMonitoringRecommendation).filter(EmployeeMonitoringRecommendation.id == recommendation_id).first()
     if row and _scope_allowed(session, user, row.city, row.store) and status in {"accepted", "dismissed"}: row.status=status; row.processed_by=user.id; row.processed_at=now_utc(); session.commit()
     return _redirect(request, "/monitoring", message="Рекомендация обработана")
+
+
+def _dismissal_candidates(session, user):
+    """Пропавшие со смен: последняя смена старше порога inactive_days. Кадровое,
+    показываем ВСЕХ (в БП или нет), с последней сменой, магазином и гражданством."""
+    settings = _monitoring_settings(session)
+    today = business_today()
+    cutoff = today - timedelta(days=settings.inactive_days)
+
+    query = _scope(session.query(Shift.employee, Shift.shift_date, Shift.store, Shift.city), Shift, user)
+    last = {}
+    for employee, day, store, city in query.all():
+        if not employee or not day:
+            continue
+        current = last.get(employee)
+        if current is None or day > current[0]:
+            last[employee] = (day, store, city)
+
+    disappeared = [(emp, d, store, city) for emp, (d, store, city) in last.items() if d <= cutoff]
+    disappeared.sort(key=lambda item: item[1])  # раньше пропавшие — выше
+
+    names = {normalize_text(emp) for emp, *_ in disappeared}
+    users = {
+        normalize_text(u.employee_name): u
+        for u in session.query(User).all() if normalize_text(u.employee_name) in names
+    }
+    decisions = {normalize_text(d.employee_name): d for d in session.query(EmployeeDismissalDecision).all()}
+
+    rows = []
+    for employee, day, store, city in disappeared:
+        key = normalize_text(employee)
+        person = users.get(key)
+        decision = decisions.get(key)
+        rows.append({
+            "employee_name": employee, "last_date": day, "store": store, "city": city,
+            "days_ago": (today - day).days,
+            "citizenship": citizenship_display(session, person) if person else "",
+            "decision": decision.decision if decision else None,
+            "decision_comment": decision.comment if decision else "",
+        })
+    return rows, settings
+
+
+@router.get("/admin/employees/dismissals", response_class=HTMLResponse)
+@router.get("/economist/employees/dismissals", response_class=HTMLResponse)
+@router.get("/hr/employees/dismissals", response_class=HTMLResponse)
+def dismissals_page(request: Request, message: str = "", session: Session = Depends(get_db), user=Depends(require_employee_manager)):
+    rows, settings = _dismissal_candidates(session, user)
+    return templates.TemplateResponse(request, "employees_dismissals.html", _context(request, user, "dismissals", rows=rows, settings=settings, message=message))
+
+
+@router.post("/admin/employees/dismissals/decide")
+@router.post("/economist/employees/dismissals/decide")
+@router.post("/hr/employees/dismissals/decide")
+def dismissals_decide(request: Request, employee_name: str = Form(...), decision: str = Form(...), comment: str = Form(default=""), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
+    if decision not in {"dismiss", "keep"}:
+        return _redirect(request, "/dismissals")
+    key = normalize_text(employee_name)
+    row = session.query(EmployeeDismissalDecision).filter(EmployeeDismissalDecision.employee_name == key).first()
+    if not row:
+        row = EmployeeDismissalDecision(employee_name=key)
+        session.add(row)
+    row.decision = decision
+    row.comment = normalize_text(comment) or None
+    row.decided_by = user.id
+    row.decided_at = now_utc()
+    session.flush()
+    create_audit_log(session, request, user, "dismissal_decision", "employee_dismissal_decision", row.id, key, new_value={"decision": decision})
+    session.commit()
+    return _redirect(request, "/dismissals", message="Решение сохранено")
 
 
 @router.get("/admin/employees/reconciliations", response_class=HTMLResponse)

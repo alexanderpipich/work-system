@@ -97,6 +97,92 @@
     {% if error %}<div class="banner error">{{ error }}</div>{% endif %}
 
     <div class="card">
+        <h2>Магазины и планирование</h2>
+        <p class="hint">Слева — магазины с привязками/рекомендациями (красная точка = есть рекомендации).
+            Справа — сотрудники выбранного магазина. Добавить/убрать — только по вашему клику.</p>
+
+        <form method="post" action="/admin/planning-bp/monitoring/settings"
+              style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border);">
+            <input type="hidden" name="store" value="{{ selected_store }}">
+            <div><label>Нет смен, дней →&nbsp;убрать</label><input type="number" min="1" name="inactive_days" value="{{ settings.inactive_days }}" style="width:90px;"></div>
+            <div><label>Мин. смен →&nbsp;добавить</label><input type="number" min="1" name="minimum_shifts" value="{{ settings.minimum_shifts }}" style="width:90px;"></div>
+            <div><label>Период анализа, дней</label><input type="number" min="1" name="analysis_days" value="{{ settings.analysis_days }}" style="width:90px;"></div>
+            <button type="submit" class="btn">Сохранить пороги</button>
+            <button type="submit" class="btn" formaction="/admin/planning-bp/monitoring/recompute" style="background:var(--muted);">Обновить рекомендации</button>
+        </form>
+
+        <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
+            <div style="flex:0 0 300px; max-width:100%;">
+                <div style="max-height:440px; overflow:auto; border:1px solid var(--border); border-radius:12px;">
+                    {% for s in monitoring_stores %}
+                    <a href="/admin/planning-bp?store={{ s|urlencode }}"
+                       style="display:block; padding:9px 12px; border-bottom:1px solid var(--border); text-decoration:none; color:var(--text); {% if s == selected_store %}background:#eef2ff; font-weight:700;{% endif %}">
+                        {% if s in attention_stores %}<span style="color:#b42318;">●</span> {% endif %}{{ s }}
+                    </a>
+                    {% else %}
+                    <p class="empty" style="padding:12px;">Нет привязок и рекомендаций.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="flex:1 1 420px; min-width:0;">
+                {% if store_block %}
+                    <h3 style="margin-top:0;">{{ store_block.store }}</h3>
+
+                    {% for rec in store_block.remove_recs %}
+                    <div style="border:1px solid #fecdca; background:#fff6f4; border-radius:10px; padding:10px; margin-bottom:8px;">
+                        <b>{{ rec.employee_name }}</b> — {{ rec.recommendation_text }}
+                        <div style="margin-top:6px; display:flex; gap:8px;">
+                            <form method="post" action="/admin/planning-bp/monitoring/accept" onsubmit="return confirm('Убрать {{ rec.employee_name }} из БП?');">
+                                <input type="hidden" name="recommendation_id" value="{{ rec.id }}"><input type="hidden" name="store" value="{{ store_block.store }}">
+                                <button class="btn" style="background:#b42318;">Убрать</button>
+                            </form>
+                            <form method="post" action="/admin/planning-bp/monitoring/dismiss">
+                                <input type="hidden" name="recommendation_id" value="{{ rec.id }}"><input type="hidden" name="store" value="{{ store_block.store }}">
+                                <button class="btn" style="background:var(--muted);">Оставить</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    {% for rec in store_block.add_recs %}
+                    <div style="border:1px solid #b7ebc6; background:#eefbf3; border-radius:10px; padding:10px; margin-bottom:8px;">
+                        <b>{{ rec.employee_name }}</b> — {{ rec.recommendation_text }}
+                        <div style="margin-top:6px; display:flex; gap:8px;">
+                            <form method="post" action="/admin/planning-bp/monitoring/accept" onsubmit="return confirm('Добавить {{ rec.employee_name }} в БП?');">
+                                <input type="hidden" name="recommendation_id" value="{{ rec.id }}"><input type="hidden" name="store" value="{{ store_block.store }}">
+                                <button class="btn" style="background:var(--success-text, #067647);">Добавить</button>
+                            </form>
+                            <form method="post" action="/admin/planning-bp/monitoring/dismiss">
+                                <input type="hidden" name="recommendation_id" value="{{ rec.id }}"><input type="hidden" name="store" value="{{ store_block.store }}">
+                                <button class="btn" style="background:var(--muted);">Не добавлять</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <h4 style="margin:14px 0 6px;">В бланке ({{ store_block.assignments|length }})</h4>
+                    {% if store_block.assignments %}
+                    <ul style="margin:0; padding-left:18px;">
+                        {% for a in store_block.assignments %}<li>{{ a.employee_name }}</li>{% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="empty">Нет закреплённых сотрудников.</p>
+                    {% endif %}
+
+                    <form method="post" action="/admin/planning-bp/assignment/add" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;">
+                        <input type="hidden" name="store" value="{{ store_block.store }}">
+                        <div><label>Добавить вручную (ФИО)</label><input type="text" name="employee_name" placeholder="Фамилия Имя" style="min-width:220px;"></div>
+                        <button type="submit" class="btn">Добавить в БП</button>
+                    </form>
+                {% else %}
+                    <p class="empty">Выберите магазин слева.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
         <h2>Сформировать БП</h2>
         <form method="post" action="/admin/planning-bp/generate" class="form-row"
               onsubmit="return confirm('Сформировать бланк планирования по выбранному магазину?');">

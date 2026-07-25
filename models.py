@@ -510,6 +510,23 @@ class EmployeeMonitoringRecommendation(Base):
     processed_by = Column(Integer, nullable=True)
 
 
+class EmployeeDismissalDecision(Base):
+    """Кадровое решение по пропавшему со смен сотруднику (мониторинг увольнений).
+
+    Один сотрудник — одно текущее решение (dismiss «к увольнению» / keep «оставить»).
+    Список кандидатов вычисляется на лету (последняя смена старше порога); здесь —
+    только зафиксированное человеком решение.
+    """
+    __tablename__ = "employee_dismissal_decisions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_name = Column(String, nullable=False, unique=True)
+    decision = Column(String, nullable=False)  # dismiss | keep
+    comment = Column(Text, nullable=True)
+    decided_by = Column(Integer, nullable=True)
+    decided_at = Column(DateTime, nullable=True)
+
+
 class StoreReconciliationSettings(Base):
     __tablename__ = "store_reconciliation_settings"
 
