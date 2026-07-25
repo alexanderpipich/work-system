@@ -75,6 +75,33 @@ class ParseTariffGridTests(unittest.TestCase):
                          ["Вингараж Универсальные услуги", "Вингараж_Универсальные услуги"])
 
 
+def _file_with_dup_keys(second_price):
+    """Файл, где услуга «Уборка» ЛО/ГМ встречается дважды (дубль ключа)."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "ставки"
+    ws.append(["РЕГИОН", "ТК", "УСЛУГА", "1 уровень", "2 уровень", "3 уровень", "4 уровень", "5 уровень"])
+    ws.append(["Ленинградская область", "ГМ", "Уборка", 200, None, None, None, None])
+    ws.append(["Ленинградская область", "ГМ", "Уборка", second_price, None, None, None, None])
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+class KeyInvariantLoaderTests(unittest.TestCase):
+    def test_different_price_same_key_is_conflict(self):
+        rows, conflicts = parse_tariff_grid(_file_with_dup_keys(350))
+        self.assertEqual(len(conflicts), 1)
+        self.assertEqual(conflicts[0]["service"], "1ур_Уборка")
+
+    def test_same_price_same_key_no_conflict(self):
+        rows, conflicts = parse_tariff_grid(_file_with_dup_keys(200))
+        self.assertEqual(conflicts, [])
+        # обе строки распарсились (схлопывание — на этапе применения)
+        self.assertEqual(len([r for r in rows if r["service"] == "1ур_Уборка"]), 2)
+
+
 class ApplyCreatesModelTests(unittest.TestCase):
     """Симуляция записи upload_rates: Service заводится, Rate с service_id+level."""
 

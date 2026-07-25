@@ -572,14 +572,33 @@ async def upload_rates(
         return _render({"rates_preview": preview, "message": None})
 
     # Применение: конфликты блокируют запись (детерминизм подбора)
+    # Инвариант базовой сетки: на ключ (регион+формат+услуга+уровень) ровно ОДНА цена.
+    # Две РАЗНЫЕ цены на один ключ — ошибка целостности, файл НЕ применяем.
     if conflicts:
         return _render({
             "error": (
-                f"Загрузка отменена: найдено конфликтов ключа "
-                f"город+формат+услуга — {len(conflicts)}. "
-                "Устраните дубли в файле и повторите."
-            )
+                f"Загрузка отменена: {len(conflicts)} дубль(ей) ключа "
+                f"регион+формат+услуга+уровень с РАЗНОЙ ценой (нарушен инвариант «одна "
+                f"цена на ключ»). Разная цена допустима только по магазину/сотруднику. "
+                "Исправьте цены в файле и повторите."
+            ),
+            "rates_preview": {
+                "count": len(rows), "cities": [], "formats": [],
+                "conflicts": conflicts, "duplicate_spelling": [], "sample": [],
+            },
         })
+
+    # Одинаковая цена на один ключ — просто схлопнуть в одну строку (не плодить
+    # дубль ключа в базовой сетке). Разные цены уже отсечены конфликтом выше.
+    seen_keys = set()
+    unique_rows = []
+    for row in rows:
+        key = (row["city"], row["format"] or "", row["service"])
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        unique_rows.append(row)
+    rows = unique_rows
 
     if mode == "replace":
         # Удаляем только строки базовой сетки (без store и employee_name),

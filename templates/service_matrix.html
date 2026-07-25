@@ -49,6 +49,8 @@
             --error-text: #b42318;
             --warn-bg: #fff7ed;
             --warn-text: #9a3412;
+            --success-bg: #eefbf3;
+            --success-text: #067647;
         }
 
         * { box-sizing: border-box; }
@@ -205,6 +207,21 @@
         .badge-typo { background: var(--warn-bg); color: var(--warn-text); }
         .badge-norate { background: #eef2ff; color: var(--brand-blue); }
         .badge-indiv { background: #f3f4f6; color: var(--muted); }
+        .badge-off { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; background: #f3f4f6; color: var(--muted); margin-left: 6px; }
+
+        /* Секция слияния дублей написания */
+        .merge-group { border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; background: #fbfcff; }
+        .merge-group h4 { margin: 0 0 10px; color: var(--brand-blue); font-size: 14px; }
+        .merge-variant { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 7px 0; border-top: 1px solid var(--border); }
+        .merge-variant:first-of-type { border-top: 0; }
+        .merge-variant label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+        .merge-variant .vname { font-weight: 700; }
+        .in-tariff { font-size: 11px; font-weight: 800; color: var(--success-text); background: var(--success-bg); border-radius: 999px; padding: 2px 8px; }
+        .merge-actions { margin-top: 10px; }
+        .btn-merge { height: 40px; border: none; border-radius: 12px; padding: 0 16px; font-weight: 700; cursor: pointer; background: linear-gradient(135deg, var(--brand-blue), #18239a); color: #fff; }
+
+        .banner-ok { background: var(--success-bg); color: var(--success-text); padding: 12px 14px; border-radius: 14px; }
+        .banner-err { background: var(--error-bg); color: var(--error-text); padding: 12px 14px; border-radius: 14px; }
 
         .variants { margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.5; }
         .variants code { background: #f3f4f6; padding: 1px 5px; border-radius: 6px; }
@@ -296,6 +313,9 @@
         </div>
     </div>
 
+    {% if message %}<div class="card no-print"><div class="banner-ok">{{ message }}</div></div>{% endif %}
+    {% if error %}<div class="card no-print"><div class="banner-err">{{ error }}</div></div>{% endif %}
+
     <div class="card no-print">
         <h2>Фильтры</h2>
         <form method="get" action="/admin/services">
@@ -332,20 +352,24 @@
     <div class="card">
         <div class="summary">
             <div class="summary-item">
-                <div class="summary-label">Базовых услуг</div>
-                <div class="summary-value">{{ counters.bases }}{% if shown_bases != total_bases %} / {{ total_bases }}{% endif %}</div>
+                <div class="summary-label">Услуг в справочнике</div>
+                <div class="summary-value">{{ counters.services }}{% if shown_bases != total_bases %} / {{ total_bases }}{% endif %}</div>
+            </div>
+            <div class="summary-item {% if counters.key_errors %}alert{% endif %}">
+                <div class="summary-label">Ошибки тарифа (дубль ключа)</div>
+                <div class="summary-value">{{ counters.key_errors }}</div>
             </div>
             <div class="summary-item {% if counters.duplicates %}alert{% endif %}">
                 <div class="summary-label">Дубли написания</div>
                 <div class="summary-value">{{ counters.duplicates }}</div>
             </div>
-            <div class="summary-item {% if counters.no_rate_services %}alert{% endif %}">
-                <div class="summary-label">Услуги смен без тарифа</div>
-                <div class="summary-value">{{ counters.no_rate_services }}</div>
+            <div class="summary-item {% if counters.no_tariff_services %}alert{% endif %}">
+                <div class="summary-label">Услуги без тарифа</div>
+                <div class="summary-value">{{ counters.no_tariff_services }}</div>
             </div>
             <div class="summary-item">
-                <div class="summary-label">Тарифы без смен</div>
-                <div class="summary-value">{{ counters.rate_no_shift_services }}</div>
+                <div class="summary-label">Смены без справочника</div>
+                <div class="summary-value">{{ counters.unmatched_shift_services }}</div>
             </div>
             <div class="summary-item {% if counters.typos %}alert{% endif %}">
                 <div class="summary-label">Похожие имена</div>
@@ -377,23 +401,19 @@
                     {% for row in rows %}
                     <tr>
                         <td class="left">
-                            <span class="base-name">{{ row.base_display }}</span>
-                            {% if row.is_duplicate or row.similar_to or row.has_no_rate or row.individual_count %}
+                            <span class="base-name">{{ row.name }}</span>
+                            {% if not row.is_active %}<span class="badge badge-off">неактивна</span>{% endif %}
+                            {% if row.has_key_error or row.is_duplicate or row.similar_to or not row.in_rates or row.individual_count %}
                             <div class="badges">
-                                {% if row.is_duplicate %}<span class="badge badge-dup">дубли написания</span>{% endif %}
+                                {% if row.has_key_error %}<span class="badge badge-dup">⚠ дубль ключа (две базовые цены)</span>{% endif %}
+                                {% if row.is_duplicate %}<span class="badge badge-typo">дубль написания → слияние ниже</span>{% endif %}
                                 {% if row.similar_to %}<span class="badge badge-typo">похоже на опечатку</span>{% endif %}
-                                {% if row.has_no_rate %}<span class="badge badge-norate">есть смены без тарифа</span>{% endif %}
+                                {% if not row.in_rates %}<span class="badge badge-norate">нет тарифа</span>{% endif %}
                                 {% if row.individual_count %}<span class="badge badge-indiv">есть индивидуальные ({{ row.individual_count }})</span>{% endif %}
                             </div>
                             {% endif %}
-                            {% if row.is_duplicate %}
-                            <div class="variants">Варианты написания:
-                                {% for name in row.original_services %}<code>{{ name }}</code>{% if not loop.last %} {% endif %}{% endfor %}
-                            </div>
-                            {% endif %}
-                            {% if row.similar_to %}
-                            <div class="variants">Похоже на: {{ row.similar_to|join(", ") }}</div>
-                            {% endif %}
+                            {% if row.aliases %}<div class="variants">Алиасы: <code>{{ row.aliases }}</code></div>{% endif %}
+                            {% if row.similar_to %}<div class="variants">Похоже на: {{ row.similar_to|join(", ") }}</div>{% endif %}
                         </td>
 
                         {% for level in levels %}
@@ -416,29 +436,57 @@
         </div>
     </div>
 
+    {% if dup_groups %}
+    <div class="card no-print">
+        <h2>Слияние дублей написания</h2>
+        <p class="hint">Разные написания одной услуги (напр. пробел / подчёркивание). Выберите канон
+            (в него сольются остальные: их тарифы перепривяжутся, имена уйдут в алиасы, дубли удалятся)
+            и отметьте, какие варианты объединить. Действие необратимо.</p>
+        {% for group in dup_groups %}
+        <form class="merge-group" method="post" action="/admin/services/merge"
+              onsubmit="return confirm('Объединить выбранные услуги в выбранный канон? Действие необратимо.');">
+            <input type="hidden" name="city" value="{{ selected_city }}">
+            <input type="hidden" name="fmt" value="{{ selected_format }}">
+            <h4>Дубль написания: {{ group.variants|length }} варианта</h4>
+            {% for v in group.variants %}
+            <div class="merge-variant">
+                <span class="vname">{{ v.name }}</span>
+                {% if v.in_rates %}<span class="in-tariff">есть в тарифах</span>{% endif %}
+                <label><input type="radio" name="canon_id" value="{{ v.service_id }}" required> сделать каноном</label>
+                <label><input type="checkbox" name="merge_ids" value="{{ v.service_id }}"> объединить</label>
+            </div>
+            {% endfor %}
+            <div class="merge-actions">
+                <button type="submit" class="btn-merge">Объединить выбранные</button>
+            </div>
+        </form>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="card no-print">
         <h2>Диагностика</h2>
         <div class="diag">
             <div class="diag-block">
-                <h3>Услуги из смен без тарифа ({{ no_rate_services|length }})</h3>
-                <p class="diag-empty">Есть в сменах, но нет ни одной ставки — подбор ЧТС даст 0.</p>
-                {% if no_rate_services %}
+                <h3>Услуги без тарифа ({{ no_tariff_services|length }})</h3>
+                <p class="diag-empty">Заведены в справочнике, но ни одной ставки — подбор ЧТС даст 0.</p>
+                {% if no_tariff_services %}
                 <ul class="diag-list">
-                    {% for s in no_rate_services %}<li>{{ s }}</li>{% endfor %}
+                    {% for s in no_tariff_services %}<li>{{ s }}</li>{% endfor %}
                 </ul>
                 {% else %}
-                <p class="diag-empty">Нет — у всех услуг из смен есть тариф.</p>
+                <p class="diag-empty">Нет — у всех услуг справочника есть тариф.</p>
                 {% endif %}
             </div>
             <div class="diag-block">
-                <h3>Тарифы без смен ({{ rate_no_shift_services|length }})</h3>
-                <p class="diag-empty">Есть ставка, но в сменах (по фильтру) услуга не встречалась — возможно устарело.</p>
-                {% if rate_no_shift_services %}
+                <h3>Смены без справочника ({{ unmatched_shift_services|length }})</h3>
+                <p class="diag-empty">Услуга встречается в сменах, но её нет в справочнике Service — по ней не подтянется тариф.</p>
+                {% if unmatched_shift_services %}
                 <ul class="diag-list">
-                    {% for s in rate_no_shift_services %}<li>{{ s }}</li>{% endfor %}
+                    {% for s in unmatched_shift_services %}<li>{{ s }}</li>{% endfor %}
                 </ul>
                 {% else %}
-                <p class="diag-empty">Нет.</p>
+                <p class="diag-empty">Нет — все услуги смен есть в справочнике.</p>
                 {% endif %}
             </div>
         </div>

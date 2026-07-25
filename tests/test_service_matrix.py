@@ -1,5 +1,6 @@
 import os
 import unittest
+from types import SimpleNamespace
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("SECRET_KEY", "test-secret")
@@ -12,69 +13,157 @@ from service_matrix import (
 )
 
 
-def _r(service, hourly_rate, city="ЛО", fmt="ГМ", store=None, employee_name=None):
-    return {"service": service, "city": city, "format": fmt,
+def _svc(sid, name, aliases=None, is_active=True):
+    return SimpleNamespace(id=sid, name=name, aliases=aliases, is_active=is_active)
+
+
+def _rate(service_id, level, hourly_rate, city="ЛО", fmt="ГМ", store=None, employee_name=None):
+    return {"service_id": service_id, "level": level, "city": city, "format": fmt,
             "store": store, "employee_name": employee_name, "hourly_rate": hourly_rate}
 
 
-class RegionCellTests(unittest.TestCase):
-    """Фикс: регион/формат — измерения сетки, а не мнимый дубль."""
+class KeyInvariantCellTests(unittest.TestCase):
+    """Регион/формат — измерения сетки; дубль КЛЮЧА (та же регион+формат дважды) — ошибка."""
 
-    def test_same_service_two_regions_not_duplicate(self):
-        # Табакошоп: ЛО 240 + СПб 240 — две легитимные базовые ставки, НЕ дубль.
-        rates = [_r("2ур_Табакошоп", 240, city="ЛО"), _r("2ур_Табакошоп", 240, city="СПб")]
-        matrix = build_service_matrix(rates, [])
-        row = matrix["rows"][0]
+    def test_two_regions_not_key_error(self):
+        svc = _svc(1, "Табакошоп")
+        rates = [_rate(1, 2, 240, city="ЛО"), _rate(1, 2, 240, city="СПб")]
+        row = build_service_matrix([svc], rates, [])["rows"][0]
         cell = row["cells"][2]
         self.assertEqual(cell["count"], 2)
-        self.assertEqual(cell["region_format_count"], 2)  # две разные (регион,формат)
-        self.assertFalse(cell["has_real_dup"])            # НЕ реальный дубль
-        self.assertFalse(row["is_duplicate"])             # НЕ дубль написания
+        self.assertEqual(cell["region_format_count"], 2)
+        self.assertFalse(cell["has_real_dup"])
+        self.assertFalse(row["has_key_error"])
 
-    def test_real_duplicate_same_region_format(self):
-        # Одна и та же (услуга, уровень, регион, формат) дважды → реальный дубль.
-        rates = [_r("2ур_Табакошоп", 240, city="ЛО"), _r("2ур_Табакошоп", 250, city="ЛО")]
-        matrix = build_service_matrix(rates, [])
+    def test_same_region_format_is_key_error(self):
+        svc = _svc(1, "Табакошоп")
+        rates = [_rate(1, 2, 240, city="ЛО"), _rate(1, 2, 250, city="ЛО")]
+        matrix = build_service_matrix([svc], rates, [])
         cell = matrix["rows"][0]["cells"][2]
-        self.assertEqual(cell["count"], 2)
         self.assertEqual(cell["region_format_count"], 1)
         self.assertTrue(cell["has_real_dup"])
+        self.assertTrue(matrix["rows"][0]["has_key_error"])
+        self.assertEqual(matrix["counters"]["key_errors"], 1)
 
-    def test_two_formats_same_region_not_dup(self):
-        # ГМ + СМ в одном регионе — тоже измерение, не дубль.
-        rates = [_r("2ур_Табакошоп", 240, city="ЛО", fmt="ГМ"),
-                 _r("2ур_Табакошоп", 260, city="ЛО", fmt="СМ")]
-        cell = build_service_matrix(rates, [])["rows"][0]["cells"][2]
+    def test_two_formats_same_region_not_error(self):
+        svc = _svc(1, "Табакошоп")
+        rates = [_rate(1, 2, 240, fmt="ГМ"), _rate(1, 2, 260, fmt="СМ")]
+        cell = build_service_matrix([svc], rates, [])["rows"][0]["cells"][2]
         self.assertEqual(cell["region_format_count"], 2)
         self.assertFalse(cell["has_real_dup"])
 
-    def test_spelling_duplicate_still_flagged_region_independent(self):
-        # Вингараж пробел/подчёрк в одном регионе → настоящий дубль написания.
-        rates = [_r("Вингараж Универсальные услуги", 100, city="ЛО"),
-                 _r("Вингараж_Универсальные услуги", 100, city="ЛО")]
-        row = build_service_matrix(rates, [])["rows"][0]
-        self.assertTrue(row["is_duplicate"])
-        self.assertEqual(len(row["variants"]), 2)
+
+class BuildFromModelTests(unittest.TestCase):
+    def test_rows_from_service_records(self):
+        services = [_svc(1, "Уборка"), _svc(2, "Продавец")]
+        rates = [_rate(1, 2, 306), _rate(1, 3, 400)]
+        matrix = build_service_matrix(services, rates, [])
+        by = {r["name"]: r for r in matrix["rows"]}
+        self.assertEqual(set(by), {"Уборка", "Продавец"})
+        self.assertEqual(by["Уборка"]["cells"][2]["min"], 306)
+        self.assertEqual(by["Уборка"]["cells"][3]["min"], 400)
+        self.assertEqual(by["Уборка"]["cells"][1]["count"], 0)
+
+    def test_level_from_field_not_text(self):
+        # Уровень берётся из rate.level (этап 1/3), не из текста.
+        svc = _svc(1, "Услуга")
+        rates = [_rate(1, 1, 246, city="ЛО", fmt="ГМ"), _rate(1, 1, 408, city="Казань", fmt="СМ")]
+        cell = build_service_matrix([svc], rates, [])["rows"][0]["cells"][1]
+        self.assertEqual(cell["count"], 2)
+        self.assertEqual(cell["min"], 246)
+        self.assertEqual(cell["max"], 408)
+
+    def test_no_tariff_service(self):
+        services = [_svc(1, "Уборка"), _svc(2, "БезТарифа")]
+        rates = [_rate(1, 2, 300)]
+        matrix = build_service_matrix(services, rates, [])
+        self.assertIn("БезТарифа", matrix["no_tariff_services"])
+        self.assertNotIn("Уборка", matrix["no_tariff_services"])
+        self.assertEqual(matrix["counters"]["no_tariff_services"], 1)
+        by = {r["name"]: r for r in matrix["rows"]}
+        self.assertTrue(by["Уборка"]["in_rates"])
+        self.assertFalse(by["БезТарифа"]["in_rates"])
+
+    def test_unmatched_shift_service(self):
+        services = [_svc(1, "Уборка", aliases="Клининг")]
+        rates = [_rate(1, 2, 300)]
+        shifts = ["2ур_Уборка", "2ур_Клининг", "5ур_НетТакой"]
+        matrix = build_service_matrix(services, rates, shifts)
+        # Уборка и её алиас Клининг — сматчены; НетТакой — нет.
+        self.assertEqual(matrix["unmatched_shift_services"], ["5ур_НетТакой"])
+        self.assertEqual(matrix["counters"]["unmatched_shift_services"], 1)
+
+
+class BaseGridFilterTests(unittest.TestCase):
+    """В клетки — только базовая сетка (store и employee_name пусты)."""
+
+    def test_store_rate_excluded_from_cells(self):
+        svc = _svc(1, "Услуга")
+        rates = [_rate(1, 2, 350, store="Лента-1")]
+        matrix = build_service_matrix([svc], rates, [])
+        row = matrix["rows"][0]
+        self.assertEqual(row["cells"][2]["count"], 0)
+        self.assertEqual(row["individual_count"], 1)
+        self.assertEqual(matrix["counters"]["individual_rates"], 1)
+
+    def test_employee_rate_excluded_from_cells(self):
+        svc = _svc(1, "Услуга")
+        rates = [_rate(1, 2, 500, employee_name="Иванов")]
+        row = build_service_matrix([svc], rates, [])["rows"][0]
+        self.assertEqual(row["cells"][2]["count"], 0)
+        self.assertEqual(row["individual_count"], 1)
+
+    def test_format_filled_still_base(self):
+        svc = _svc(1, "Услуга")
+        rates = [_rate(1, 2, 280, fmt="СМ")]
+        matrix = build_service_matrix([svc], rates, [])
+        cell = matrix["rows"][0]["cells"][2]
+        self.assertEqual(cell["count"], 1)
+        self.assertEqual(cell["min"], 280)
+        self.assertEqual(matrix["counters"]["individual_rates"], 0)
+
+    def test_individual_counter_sums_layers_1_and_2(self):
+        svc = _svc(1, "Услуга")
+        rates = [
+            _rate(1, 2, 300),                                   # базовая
+            _rate(1, 2, 300, store="Лента-1"),                 # слой 1
+            _rate(1, 2, 300, employee_name="Иванов"),          # слой 2
+            _rate(1, 2, 300, store="Лента-2", employee_name="Петров"),
+        ]
+        matrix = build_service_matrix([svc], rates, [])
+        self.assertEqual(matrix["counters"]["individual_rates"], 3)
+        self.assertEqual(matrix["rows"][0]["cells"][2]["count"], 1)
+
+
+class SpellingDuplicateTests(unittest.TestCase):
+    def test_spelling_duplicate_grouped(self):
+        # Разные Service с одним base_key — дубль написания (для слияния).
+        services = [_svc(1, "Вингараж Универсальные услуги"),
+                    _svc(2, "Вингараж_Универсальные услуги")]
+        rates = [_rate(1, None, 100)]  # у первого есть тариф
+        matrix = build_service_matrix(services, rates, [])
+        rows = matrix["rows"]
+        self.assertTrue(all(r["is_duplicate"] for r in rows))
+        self.assertEqual(matrix["counters"]["duplicates"], 1)
+        group = rows[0]["dup_group"]
+        self.assertEqual(len(group), 2)
+        in_rates = {g["name"]: g["in_rates"] for g in group}
+        self.assertTrue(in_rates["Вингараж Универсальные услуги"])
+        self.assertFalse(in_rates["Вингараж_Универсальные услуги"])
 
 
 class SimilarNamesTests(unittest.TestCase):
-    """Приставка «не» — разные услуги (квалиф./неквалиф.), НЕ опечатка."""
-
     def test_ne_prefix_not_flagged_as_typo(self):
-        rates = [
-            _r("2ур_Квалифицированные услуги в столовой", 300),
-            _r("2ур_Неквалифицированные услуги в столовой", 250),
-        ]
-        matrix = build_service_matrix(rates, [])
-        by = {r["base_display"]: r for r in matrix["rows"]}
-        self.assertEqual(by["Квалифицированные услуги в столовой"]["similar_to"], [])
-        self.assertEqual(by["Неквалифицированные услуги в столовой"]["similar_to"], [])
+        services = [_svc(1, "Квалифицированные услуги в столовой"),
+                    _svc(2, "Неквалифицированные услуги в столовой")]
+        matrix = build_service_matrix(services, [], [])
+        for row in matrix["rows"]:
+            self.assertEqual(row["similar_to"], [])
         self.assertEqual(matrix["counters"]["typos"], 0)
 
-    def test_real_typo_still_flagged(self):
-        # Настоящая опечатка (расстояние 1, без префикса «не») — помечается.
-        rates = [_r("2ур_торговго зала", 300), _r("2ур_торгового зала", 300)]
-        matrix = build_service_matrix(rates, [])
+    def test_real_typo_flagged(self):
+        services = [_svc(1, "торговго зала"), _svc(2, "торгового зала")]
+        matrix = build_service_matrix(services, [], [])
         self.assertEqual(matrix["counters"]["typos"], 2)
         self.assertTrue(all(r["similar_to"] for r in matrix["rows"]))
 
@@ -93,7 +182,6 @@ class ParseServiceNameTests(unittest.TestCase):
         self.assertEqual(parse_service_name("3УР_Услуги")[0], 3)
 
     def test_does_not_false_match(self):
-        # "ур" не как префикс уровня — не разбирать.
         self.assertEqual(parse_service_name("1урок_чтения"), (None, "1урок_чтения"))
 
     def test_empty(self):
@@ -115,133 +203,6 @@ class LevenshteinTests(unittest.TestCase):
     def test_typo_distance(self):
         self.assertEqual(levenshtein("торговго", "торгового"), 1)
         self.assertTrue(1 <= levenshtein("обслуживаню", "обслуживанию") <= 2)
-
-
-class BuildMatrixTests(unittest.TestCase):
-    def test_groups_by_base_and_level(self):
-        rates = [
-            {"service": "2ур_Услуги по выкладке", "city": "Москва", "format": "ГМ",
-             "store": None, "employee_name": None, "hourly_rate": 306},
-            {"service": "3ур_Услуги по выкладке", "city": "Москва", "format": "ГМ",
-             "store": None, "employee_name": None, "hourly_rate": 400},
-        ]
-        shifts = [{"service": "2ур_Услуги по выкладке"}]
-        matrix = build_service_matrix(rates, shifts)
-
-        self.assertEqual(len(matrix["rows"]), 1)
-        row = matrix["rows"][0]
-        self.assertEqual(row["cells"][2]["count"], 1)
-        self.assertEqual(row["cells"][2]["min"], 306)
-        self.assertEqual(row["cells"][3]["min"], 400)
-        self.assertEqual(row["cells"][1]["count"], 0)
-
-    def test_spelling_duplicate_flagged_and_grouped(self):
-        rates = [
-            {"service": "Вингараж Универсальные услуги", "city": "Москва", "format": "ГМ",
-             "store": None, "employee_name": None, "hourly_rate": 250},
-            {"service": "Вингараж_Универсальные услуги", "city": "Москва", "format": "ГМ",
-             "store": None, "employee_name": None, "hourly_rate": 250},
-        ]
-        matrix = build_service_matrix(rates, [])
-        self.assertEqual(len(matrix["rows"]), 1)
-        row = matrix["rows"][0]
-        self.assertTrue(row["is_duplicate"])
-        self.assertEqual(len(row["variants"]), 2)
-        self.assertEqual(matrix["counters"]["duplicates"], 1)
-
-    def test_shift_without_rate_counted_and_marked(self):
-        rates = [
-            {"service": "2ур_Выкладка", "city": "Москва", "format": "ГМ",
-             "store": None, "employee_name": None, "hourly_rate": 300},
-        ]
-        # Смена с ДРУГИМ написанием — точного Rate нет → подбор даст 0.
-        shifts = [{"service": "2ур_Выкладка"}, {"service": "2ур_Выкладка_особая"}]
-        matrix = build_service_matrix(rates, shifts)
-
-        self.assertEqual(matrix["counters"]["no_rate_services"], 1)
-        self.assertIn("2ур_Выкладка_особая", matrix["no_rate_services"])
-        # Строка «Выкладка особая» имеет клетку-сироту (есть смена, нет тарифа).
-        orphan_rows = [r for r in matrix["rows"] if r["has_no_rate"]]
-        self.assertEqual(len(orphan_rows), 1)
-
-    def test_rate_without_shift_counted(self):
-        rates = [
-            {"service": "2ур_Старьё", "city": "Москва", "format": "ГМ",
-             "store": None, "employee_name": None, "hourly_rate": 300},
-        ]
-        matrix = build_service_matrix(rates, [])
-        self.assertEqual(matrix["counters"]["rate_no_shift_services"], 1)
-        self.assertIn("2ур_Старьё", matrix["rate_no_shift_services"])
-
-    def test_multi_rate_cell_range(self):
-        rates = [
-            {"service": "1ур_Услуга", "city": "Москва", "format": "ГМ",
-             "store": None, "employee_name": None, "hourly_rate": 246},
-            {"service": "1ур_Услуга", "city": "Казань", "format": "СМ",
-             "store": None, "employee_name": None, "hourly_rate": 408},
-        ]
-        matrix = build_service_matrix(rates, [])
-        cell = matrix["rows"][0]["cells"][1]
-        self.assertEqual(cell["count"], 2)
-        self.assertEqual(cell["min"], 246)
-        self.assertEqual(cell["max"], 408)
-
-
-class BaseGridFilterTests(unittest.TestCase):
-    """Матрица показывает ТОЛЬКО базовую сетку (store и employee_name пусты)."""
-
-    def _base(self, **kw):
-        row = {"service": "2ур_Услуга", "city": "Москва", "format": "ГМ",
-               "store": None, "employee_name": None, "hourly_rate": 300}
-        row.update(kw)
-        return row
-
-    def test_store_rate_excluded_from_cells(self):
-        rates = [self._base(store="Лента-1", hourly_rate=350)]
-        matrix = build_service_matrix(rates, [])
-        row = matrix["rows"][0]
-        self.assertEqual(row["cells"][2]["count"], 0)  # в клетку не попала
-        self.assertEqual(row["individual_count"], 1)
-        self.assertEqual(matrix["counters"]["individual_rates"], 1)
-
-    def test_employee_rate_excluded_from_cells(self):
-        rates = [self._base(employee_name="Иванов", hourly_rate=500)]
-        matrix = build_service_matrix(rates, [])
-        row = matrix["rows"][0]
-        self.assertEqual(row["cells"][2]["count"], 0)
-        self.assertEqual(row["individual_count"], 1)
-
-    def test_format_filled_still_base(self):
-        # Заполненный format при пустых store/employee — это БАЗОВАЯ ставка.
-        rates = [self._base(format="СМ", hourly_rate=280)]
-        matrix = build_service_matrix(rates, [])
-        cell = matrix["rows"][0]["cells"][2]
-        self.assertEqual(cell["count"], 1)
-        self.assertEqual(cell["min"], 280)
-        self.assertEqual(matrix["counters"]["individual_rates"], 0)
-
-    def test_individual_counter_sums_layers_1_and_2(self):
-        rates = [
-            self._base(),                              # базовая
-            self._base(store="Лента-1"),               # слой 1
-            self._base(employee_name="Иванов"),        # слой 2
-            self._base(store="Лента-2", employee_name="Петров"),  # слой 2
-        ]
-        matrix = build_service_matrix(rates, [])
-        self.assertEqual(matrix["counters"]["individual_rates"], 3)
-        self.assertEqual(matrix["rows"][0]["cells"][2]["count"], 1)  # только базовая в клетке
-
-    def test_rate_no_shift_uses_base_only(self):
-        # Индивидуальная ставка НЕ должна раздувать «тарифы без смен».
-        rates = [
-            {"service": "2ур_БазаБезСмен", "city": "Москва", "format": "ГМ",
-             "store": None, "employee_name": None, "hourly_rate": 300},
-            {"service": "2ур_ИндивБезСмен", "city": "Москва", "format": "ГМ",
-             "store": "Лента-1", "employee_name": None, "hourly_rate": 350},
-        ]
-        matrix = build_service_matrix(rates, [])
-        self.assertEqual(matrix["counters"]["rate_no_shift_services"], 1)
-        self.assertEqual(matrix["rate_no_shift_services"], ["2ур_БазаБезСмен"])
 
 
 if __name__ == "__main__":
