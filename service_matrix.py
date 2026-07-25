@@ -194,6 +194,10 @@ def build_service_matrix(rate_rows, shift_rows):
             a, b = rows[i]["base_key"], rows[j]["base_key"]
             if not a or not b or abs(len(a) - len(b)) > 2:
                 continue
+            # Различие только в приставке отрицания «не» в начале — это РАЗНЫЕ
+            # услуги (квалиф./неквалиф.), а не опечатка. base_key нормализован.
+            if b == "не" + a or a == "не" + b:
+                continue
             if 1 <= levenshtein(a, b) <= 2:
                 rows[i]["similar_to"].append(rows[j]["base_display"])
                 rows[j]["similar_to"].append(rows[i]["base_display"])

@@ -57,6 +57,28 @@ class RegionCellTests(unittest.TestCase):
         self.assertEqual(len(row["variants"]), 2)
 
 
+class SimilarNamesTests(unittest.TestCase):
+    """Приставка «не» — разные услуги (квалиф./неквалиф.), НЕ опечатка."""
+
+    def test_ne_prefix_not_flagged_as_typo(self):
+        rates = [
+            _r("2ур_Квалифицированные услуги в столовой", 300),
+            _r("2ур_Неквалифицированные услуги в столовой", 250),
+        ]
+        matrix = build_service_matrix(rates, [])
+        by = {r["base_display"]: r for r in matrix["rows"]}
+        self.assertEqual(by["Квалифицированные услуги в столовой"]["similar_to"], [])
+        self.assertEqual(by["Неквалифицированные услуги в столовой"]["similar_to"], [])
+        self.assertEqual(matrix["counters"]["typos"], 0)
+
+    def test_real_typo_still_flagged(self):
+        # Настоящая опечатка (расстояние 1, без префикса «не») — помечается.
+        rates = [_r("2ур_торговго зала", 300), _r("2ур_торгового зала", 300)]
+        matrix = build_service_matrix(rates, [])
+        self.assertEqual(matrix["counters"]["typos"], 2)
+        self.assertTrue(all(r["similar_to"] for r in matrix["rows"]))
+
+
 class ParseServiceNameTests(unittest.TestCase):
     def test_with_level_prefix(self):
         self.assertEqual(parse_service_name("2ур_Услуги по выкладке"), (2, "Услуги по выкладке"))
