@@ -14,7 +14,7 @@ from dependencies import get_db
 from models import Rate, Service, Shift
 from rbac import canonical_role, require_permission
 from service_catalog import get_or_create_service
-from service_matrix import normalize_service_base
+from service_matrix import normalize_service_base, parse_service_name
 from utils import normalize_format, normalize_text
 
 
@@ -179,6 +179,16 @@ _BASE = and_(
 )
 
 
+def _resolve_service_link(session, service_text):
+    """Текст услуги (возможно с префиксом `Nур_`) → (service_id, level) через
+    справочник Service. Делает РУЧНУЮ ставку модель-консистентной (как загрузчик
+    тарифов, этап 3): подбор находит её по service_id+level, а услуга уходит из
+    «без тарифа» в матрице. Услугу заводит, если её ещё нет (дубли не склеивает)."""
+    level, base = parse_service_name(service_text)
+    service = get_or_create_service(session, base) if base else None
+    return (service.id if service else None), level
+
+
 def _apply_layer(query, layer):
     """Фильтр списка ЧТС по слою. layer: all|individual|store|employee|base."""
     if layer == "individual":
@@ -265,8 +275,12 @@ def economist_create_rate(
     if active_to:
         active_to_date = datetime.strptime(active_to, "%Y-%m-%d").date()
 
+    _service_clean = normalize_text(service)
+    _service_id, _level = _resolve_service_link(session, _service_clean)
     rate = Rate(
-        service=normalize_text(service),
+        service=_service_clean,
+        service_id=_service_id,
+        level=_level,
         format=normalize_format(format) or None,
         city=normalize_text(city) or None,
         store=normalize_text(store) or None,
@@ -326,6 +340,7 @@ def economist_update_rate(
         active_to_date = datetime.strptime(active_to, "%Y-%m-%d").date()
 
     rate.service = normalize_text(service)
+    rate.service_id, rate.level = _resolve_service_link(session, rate.service)
     rate.format = normalize_format(format) or None
     rate.city = normalize_text(city) or None
     rate.store = normalize_text(store) or None
@@ -462,8 +477,11 @@ def create_rate(
             }
         )
 
+    service_id, level = _resolve_service_link(session, service_clean)
     rate = Rate(
         service=service_clean,
+        service_id=service_id,
+        level=level,
         format=format_clean,
         city=city_clean,
         store=store_clean,
@@ -521,6 +539,7 @@ def update_rate(
         active_to_date = datetime.strptime(active_to, "%Y-%m-%d").date()
 
     rate.service = normalize_text(service)
+    rate.service_id, rate.level = _resolve_service_link(session, rate.service)
     rate.format = normalize_format(format) or None
     rate.city = normalize_text(city) or None
     rate.store = normalize_text(store) or None

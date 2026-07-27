@@ -804,9 +804,17 @@ def fix_payroll(
         rate = pick_rate(rates, shift, resolve=resolve)
 
         if not rate and not is_no_plan_shift(shift):
-            validation_errors.append(
-                f"{shift.employee} / {shift.store} / {shift.shift_date} — не найдена ЧТС"
-            )
+            # Кликабельная структура: клик → модалка создания ЧТС с предзаполнением.
+            validation_errors.append({
+                "type": "no_rate",
+                "employee": shift.employee,
+                "store": shift.store or "",
+                "city": shift.city or "",
+                "service": shift.service or "",
+                "format": shift.format or "",
+                "date": shift.shift_date.strftime("%Y-%m-%d") if shift.shift_date else "",
+                "message": f"{shift.employee} / {shift.store} / {shift.shift_date} — не найдена ЧТС",
+            })
 
         # Проверка реквизитов сотрудника
         employee_key = normalize_text(shift.employee)
@@ -821,14 +829,18 @@ def fix_payroll(
             ).first()
 
             if not requisite:
-                validation_errors.append(
-                    f"{shift.employee} — отсутствуют активные реквизиты"
-                )
+                validation_errors.append({
+                    "type": "no_requisites",
+                    "employee": shift.employee,
+                    "message": f"{shift.employee} — отсутствуют активные реквизиты",
+                })
 
             elif not requisite.is_verified:
-                validation_errors.append(
-                    f"{shift.employee} — реквизиты не проверены"
-                )
+                validation_errors.append({
+                    "type": "unverified_requisites",
+                    "employee": shift.employee,
+                    "message": f"{shift.employee} — реквизиты не проверены",
+                })
 
     if validation_errors:
 
@@ -849,6 +861,7 @@ def fix_payroll(
             "payroll.html",
             {
                 "rows": [],
+                "days": [],
                 "employees": employees,
                 "stores": stores,
                 "selected_stores": [],

@@ -9,7 +9,7 @@ from audit_helpers import create_audit_log
 from dependencies import get_db
 from models import Rate, Service, Shift
 from rbac import require_permission
-from service_matrix import build_service_matrix, normalize_service_base
+from service_matrix import build_service_matrix, normalize_service_base, parse_service_name
 from utils import normalize_text
 
 
@@ -115,6 +115,27 @@ def admin_services(
             seen_dup.add(row["base_key"])
             dup_groups.append({"base_key": row["base_key"], "variants": row["dup_group"]})
 
+    # Контекст «где встречалась» для услуг без тарифа: до 5 последних смен (магазин/
+    # дата/ФИО) + точный текст услуги смены — для предзаполнения модалки создания ставки.
+    no_tariff = matrix["no_tariff_services"]
+    no_tariff_context = {name: [] for name in no_tariff}
+    if no_tariff:
+        base_to_name = {normalize_service_base(name): name for name in no_tariff}
+        recent = (
+            session.query(Shift.service, Shift.store, Shift.city, Shift.format, Shift.shift_date, Shift.employee)
+            .order_by(Shift.shift_date.desc())
+            .limit(3000)
+            .all()
+        )
+        for svc, store, city_v, fmt, day, emp in recent:
+            _, base = parse_service_name(svc)
+            name = base_to_name.get(normalize_service_base(base))
+            if name and len(no_tariff_context[name]) < 5:
+                no_tariff_context[name].append({
+                    "service": svc, "store": store, "city": city_v, "format": fmt,
+                    "date": day.strftime("%d.%m.%Y") if day else "", "employee": emp,
+                })
+
     return templates.TemplateResponse(
         request,
         "service_matrix.html",
@@ -124,6 +145,7 @@ def admin_services(
             "levels": matrix["levels"],
             "counters": matrix["counters"],
             "no_tariff_services": matrix["no_tariff_services"],
+            "no_tariff_context": no_tariff_context,
             "unmatched_shift_services": matrix["unmatched_shift_services"],
             "cities": cities,
             "formats": formats,

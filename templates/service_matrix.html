@@ -223,6 +223,20 @@
         .banner-ok { background: var(--success-bg); color: var(--success-text); padding: 12px 14px; border-radius: 14px; }
         .banner-err { background: var(--error-bg); color: var(--error-text); padding: 12px 14px; border-radius: 14px; }
 
+        .nt-link { color: var(--brand-blue); font-weight: 700; text-decoration: none; cursor: pointer; }
+        .nt-link:hover { text-decoration: underline; }
+        .nt-ctx { font-size: 11px; color: var(--muted); margin: 2px 0 4px; }
+        .modal-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(15,23,42,.45); align-items: flex-start; justify-content: center; padding: 40px 16px; overflow: auto; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: #fff; border-radius: 18px; padding: 22px; width: 100%; max-width: 520px; box-shadow: var(--shadow); }
+        .modal h3 { margin: 0 0 6px; color: var(--brand-blue); }
+        .modal-hint { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+        .modal label { display: block; font-size: 13px; font-weight: 700; color: var(--brand-blue); margin: 10px 0 4px; }
+        .modal input { width: 100%; height: 42px; border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; font-size: 14px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+        .btn { height: 42px; border: 1px solid var(--border); border-radius: 12px; padding: 0 16px; font-weight: 700; cursor: pointer; background: #fff; color: var(--brand-blue); }
+        .btn-primary { background: linear-gradient(135deg, var(--brand-blue), #18239a); color: #fff; border: none; }
+
         .variants { margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.5; }
         .variants code { background: #f3f4f6; padding: 1px 5px; border-radius: 6px; }
 
@@ -471,10 +485,23 @@
         <div class="diag">
             <div class="diag-block">
                 <h3>Услуги без тарифа ({{ no_tariff_services|length }})</h3>
-                <p class="diag-empty">Заведены в справочнике, но ни одной ставки — подбор ЧТС даст 0.</p>
+                <p class="diag-empty">Заведены в справочнике, но ни одной ставки — подбор ЧТС даст 0. Кликните, чтобы создать ставку.</p>
                 {% if no_tariff_services %}
                 <ul class="diag-list">
-                    {% for s in no_tariff_services %}<li>{{ s }}</li>{% endfor %}
+                    {% for s in no_tariff_services %}
+                    {% set ctx = no_tariff_context.get(s) if no_tariff_context else None %}
+                    {% set ex = ctx[0] if ctx else None %}
+                    <li>
+                        <a href="#" class="nt-link" onclick="return openRateModal(this)"
+                           data-service="{{ ex.service if ex else s }}"
+                           data-city="{{ ex.city if ex else '' }}"
+                           data-format="{{ ex.format if ex else '' }}"
+                           data-store="{{ ex.store if ex else '' }}">{{ s }} → создать ставку</a>
+                        {% if ctx %}
+                        <div class="nt-ctx">Встречалась: {% for e in ctx %}{{ e.store or '—' }} · {{ e.date }} · {{ e.employee }}{% if not loop.last %}; {% endif %}{% endfor %}</div>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
                 </ul>
                 {% else %}
                 <p class="diag-empty">Нет — у всех услуг справочника есть тариф.</p>
@@ -494,5 +521,39 @@
         </div>
     </div>
 </div>
+
+<!-- Модалка: создать ставку для услуги без тарифа (POST /admin/rates). -->
+<div class="modal-overlay" id="rate-modal">
+    <form class="modal" method="post" action="/admin/rates">
+        <h3>Создать ставку</h3>
+        <p class="modal-hint">Услуга/формат/город/магазин подставлены из последней встречи в сменах. Введите ЧТС. Очистите «Магазин» — базовая ставка (канон); оставите — по ТК.</p>
+        <label>Услуга</label><input type="text" name="service" id="rate-service" required>
+        <label>Формат</label><input type="text" name="format" id="rate-format">
+        <label>Город</label><input type="text" name="city" id="rate-city">
+        <label>Магазин (ТК) — очистите для базовой</label><input type="text" name="store" id="rate-store">
+        <label>Сотрудник (для индивидуальной; обычно пусто)</label><input type="text" name="employee_name" id="rate-employee">
+        <label>ЧТС, ₽/час</label><input type="number" step="0.01" name="hourly_rate" required placeholder="напр. 300">
+        <div class="modal-actions">
+            <button type="button" class="btn" onclick="closeModal('rate-modal')">Отмена</button>
+            <button type="submit" class="btn btn-primary">Создать ставку</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function openRateModal(el) {
+        document.getElementById('rate-service').value = el.dataset.service || '';
+        document.getElementById('rate-format').value = el.dataset.format || '';
+        document.getElementById('rate-city').value = el.dataset.city || '';
+        document.getElementById('rate-store').value = el.dataset.store || '';
+        document.getElementById('rate-employee').value = '';
+        document.getElementById('rate-modal').classList.add('open');
+        return false;
+    }
+    document.querySelectorAll('.modal-overlay').forEach(function (ov) {
+        ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.remove('open'); });
+    });
+</script>
 </body>
 </html>

@@ -540,6 +540,25 @@
         .print-only { display: none; }
         .print-heading { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin-bottom: 12px; }
 
+        .err-link { color: #b42318; text-decoration: none; cursor: pointer; }
+        .err-link:hover { text-decoration: underline; }
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 100;
+            background: rgba(15, 23, 42, 0.45); align-items: flex-start; justify-content: center;
+            padding: 40px 16px; overflow: auto;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #fff; border-radius: 18px; padding: 22px; width: 100%; max-width: 520px;
+            box-shadow: var(--shadow);
+        }
+        .modal h3 { margin: 0 0 6px; color: var(--brand-blue); }
+        .modal .modal-hint { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+        .modal label { display: block; font-size: 13px; font-weight: 700; color: var(--brand-blue); margin: 10px 0 4px; }
+        .modal input { width: 100%; height: 42px; border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; font-size: 14px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+        .modal-ctx { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 10px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+
         @media (max-width: 980px) {
             .form-grid,
             .fix-grid,
@@ -626,14 +645,21 @@
             padding:14px;
             background:#fff6f4;
         ">
+            <p style="margin:0 0 10px; color:#9a3412; font-size:13px;">Кликните по ошибке — откроется форма создания недостающего (с предзаполнением).</p>
             {% for err in validation_errors %}
-                <div style="
-                    padding:10px 0;
-                    border-bottom:1px solid #fdd9d3;
-                    color:#b42318;
-                    font-size:14px;
-                ">
-                    {{ err }}
+                <div style="padding:10px 0; border-bottom:1px solid #fdd9d3; font-size:14px;">
+                    {% if err.type == 'no_rate' %}
+                        <a href="#" class="err-link" onclick="return openRateModal(this)"
+                           data-service="{{ err.service }}" data-format="{{ err.format }}"
+                           data-city="{{ err.city }}" data-store="{{ err.store }}">{{ err.message }} → <b>создать ЧТС</b></a>
+                    {% elif err.type == 'no_requisites' %}
+                        <a href="#" class="err-link" onclick="return openReqModal(this)"
+                           data-employee="{{ err.employee }}">{{ err.message }} → <b>создать реквизиты</b></a>
+                    {% elif err.type == 'unverified_requisites' %}
+                        <a href="/admin/requisites" class="err-link">{{ err.message }} → <b>проверить реквизиты</b></a>
+                    {% else %}
+                        <span style="color:#b42318;">{{ err.message }}</span>
+                    {% endif %}
                 </div>
             {% endfor %}
         </div>
@@ -947,6 +973,62 @@
         </div>
     </div>
 </div>
+
+<!-- Модалка: создать ЧТС (POST /admin/rates). Поля предзаполняются из смены. -->
+<div class="modal-overlay" id="rate-modal">
+    <form class="modal" method="post" action="/admin/rates">
+        <h3>Создать ЧТС</h3>
+        <p class="modal-hint">Из смены подставлены услуга/формат/город/магазин. Введите ставку. Очистите «Магазин» — получится <b>базовая</b> ставка (канон); оставите — ставка по ТК.</p>
+        <label>Услуга</label><input type="text" name="service" id="rate-service" required>
+        <label>Формат</label><input type="text" name="format" id="rate-format">
+        <label>Город</label><input type="text" name="city" id="rate-city">
+        <label>Магазин (ТК) — очистите для базовой</label><input type="text" name="store" id="rate-store">
+        <label>Сотрудник (для индивидуальной; обычно пусто)</label><input type="text" name="employee_name" id="rate-employee">
+        <label>ЧТС, ₽/час</label><input type="number" step="0.01" name="hourly_rate" required placeholder="напр. 300">
+        <div class="modal-actions">
+            <button type="button" class="btn" onclick="closeModal('rate-modal')">Отмена</button>
+            <button type="submit" class="btn btn-primary">Создать ставку</button>
+        </div>
+    </form>
+</div>
+
+<!-- Модалка: создать реквизиты (POST /admin/requisites/add). ФИО подставлено. -->
+<div class="modal-overlay" id="req-modal">
+    <form class="modal" method="post" action="/admin/requisites/add">
+        <h3>Создать реквизиты</h3>
+        <p class="modal-hint">Сотрудник подставлен. Заполните платёжные данные (проверку можно поставить позже на /admin/requisites).</p>
+        <label>Сотрудник</label><input type="text" name="employee_name" id="req-employee" required>
+        <label>ИНН</label><input type="text" name="inn">
+        <label>Номер счёта</label><input type="text" name="account_number">
+        <label>БИК</label><input type="text" name="bik">
+        <label>Банк</label><input type="text" name="bank_name">
+        <div class="modal-actions">
+            <button type="button" class="btn" onclick="closeModal('req-modal')">Отмена</button>
+            <button type="submit" class="btn btn-primary">Создать реквизиты</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function openRateModal(el) {
+        document.getElementById('rate-service').value = el.dataset.service || '';
+        document.getElementById('rate-format').value = el.dataset.format || '';
+        document.getElementById('rate-city').value = el.dataset.city || '';
+        document.getElementById('rate-store').value = el.dataset.store || '';
+        document.getElementById('rate-employee').value = '';
+        document.getElementById('rate-modal').classList.add('open');
+        return false;
+    }
+    function openReqModal(el) {
+        document.getElementById('req-employee').value = el.dataset.employee || '';
+        document.getElementById('req-modal').classList.add('open');
+        return false;
+    }
+    document.querySelectorAll('.modal-overlay').forEach(function (ov) {
+        ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.remove('open'); });
+    });
+</script>
 <script>
     const selectAllStores = document.getElementById("select-all-stores");
     const storeCheckboxes = Array.from(document.querySelectorAll(".store-checkbox"));
