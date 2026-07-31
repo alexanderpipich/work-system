@@ -34,6 +34,7 @@ from routers.maintenance import router as maintenance_router
 from routers.payroll import router as payroll_router
 from routers.payroll_runs import router as payroll_runs_router
 from routers.rates import router as rates_router
+from routers.referral import router as referral_router
 from routers.requisites import router as requisites_router
 from routers.email_test import router as email_test_router
 from routers.email_unplanned import router as email_unplanned_router
@@ -83,6 +84,7 @@ app.include_router(qr_router)
 app.include_router(payroll_router)
 app.include_router(payroll_runs_router)
 app.include_router(rates_router)
+app.include_router(referral_router)
 app.include_router(requisites_router)
 app.include_router(email_test_router)
 app.include_router(email_unplanned_router)
@@ -106,6 +108,8 @@ ensure_legal_entities_table()
 ensure_payroll_run_closing_columns()
 ensure_audit_log_table()
 ensure_service_columns()
+from referral_helpers import ensure_referral_settings
+ensure_referral_settings()
 
 
 

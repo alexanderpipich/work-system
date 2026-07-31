@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Акция «Приведи друга»</title>
+    <style>
+        :root { --brand-blue:#0b1475; --bg:#f4f5f7; --card:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb;
+                --ok-bg:#eefbf3; --ok:#067647; --err-bg:#fff1ed; --err:#b42318; --warn-bg:#fff7ed; --warn:#9a3412; }
+        * { box-sizing:border-box; }
+        body { margin:0; font-family:Arial,sans-serif; background:var(--bg); color:var(--text); padding:24px 16px 40px; }
+        .page { max-width:1100px; margin:0 auto; }
+        .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+        h1 { color:var(--brand-blue); margin:0; font-size:26px; }
+        .sub { color:var(--muted); font-size:13px; margin-top:4px; }
+        .back { text-decoration:none; color:var(--brand-blue); font-weight:700; border:1px solid var(--border); padding:9px 14px; border-radius:10px; background:#fff; }
+        .card { background:var(--card); border-radius:18px; box-shadow:0 12px 34px rgba(11,20,117,.06); padding:20px; margin-bottom:18px; }
+        h2 { color:var(--brand-blue); margin:0 0 14px; font-size:18px; }
+        .banner-ok { background:var(--ok-bg); color:var(--ok); padding:12px 14px; border-radius:12px; margin-bottom:14px; }
+        .banner-err { background:var(--err-bg); color:var(--err); padding:12px 14px; border-radius:12px; margin-bottom:14px; }
+        .row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+        label { display:block; font-size:12px; font-weight:700; color:var(--brand-blue); margin-bottom:4px; }
+        input, select { height:42px; border:1px solid var(--border); border-radius:10px; padding:0 12px; font-size:14px; background:#fff; }
+        .btn { height:42px; border:none; border-radius:12px; padding:0 16px; font-weight:700; cursor:pointer; background:linear-gradient(135deg,var(--brand-blue),#18239a); color:#fff; }
+        .btn.light { background:#fff; color:var(--brand-blue); border:1px solid var(--border); }
+        .btn.warn { background:#b42318; color:#fff; }
+        table { width:100%; border-collapse:collapse; font-size:13px; }
+        th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--border); }
+        th { color:var(--muted); font-weight:700; }
+        .pill { display:inline-block; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:800; }
+        .st-active { background:#eef2ff; color:var(--brand-blue); }
+        .st-threshold_reached { background:var(--warn-bg); color:var(--warn); }
+        .st-paid { background:var(--ok-bg); color:var(--ok); }
+        .st-cancelled { background:#f3f4f6; color:var(--muted); }
+        .hit { color:var(--ok); font-weight:800; }
+        .pending-box { border:1px solid #fdd9d3; background:#fff6f4; border-radius:12px; padding:12px; }
+        .empty { color:var(--muted); }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div>
+            <h1>Акция «Приведи друга»</h1>
+            <div class="sub">Порог часов приведённого → премия выгодоприобретателю. Премия попадает в текущий табель после подтверждения.</div>
+        </div>
+        <a class="back" href="{{ base_path }}">← Назад</a>
+    </div>
+
+    {% if message %}<div class="banner-ok">{{ message }}</div>{% endif %}
+    {% if error %}<div class="banner-err">{{ error }}</div>{% endif %}
+
+    {% if pending %}
+    <div class="card">
+        <h2>Премии, ожидающие решения ({{ pending|length }})</h2>
+        <div class="pending-box">
+            <p style="margin:0 0 10px;">Эти премии <b>блокируют формирование табеля</b>, пока не подтвердите или отмените.</p>
+            {% for p in pending %}
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:6px 0; border-top:1px solid #fdd9d3;">
+                <span><b>{{ p.beneficiary_name or '—' }}</b> — премия {{ "%.2f"|format(p.amount or 0) }} ₽</span>
+                <form method="post" action="{{ base_path }}/referral/payout/confirm" style="margin-left:auto;">
+                    <input type="hidden" name="payout_id" value="{{ p.id }}">
+                    <button class="btn">Подтвердить</button>
+                </form>
+                <form method="post" action="{{ base_path }}/referral/payout/cancel">
+                    <input type="hidden" name="payout_id" value="{{ p.id }}">
+                    <button class="btn warn">Отменить</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <h2>Настройки акции (глобальные)</h2>
+        <form method="post" action="{{ base_path }}/referral/settings" class="row">
+            <div><label>Порог часов приведённого</label><input type="number" step="1" min="1" name="hours_threshold" value="{{ settings.hours_threshold }}" style="width:160px;"></div>
+            <div><label>Сумма премии, ₽</label><input type="number" step="0.01" min="0" name="bonus_amount" value="{{ settings.bonus_amount }}" style="width:160px;"></div>
+            <button class="btn">Сохранить</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Создать акцию</h2>
+        <form method="post" action="{{ base_path }}/referral/create" class="row">
+            <div><label>Приведённый (ФИО) — один раз в истории</label><input type="text" name="referred_employee_name" placeholder="Фамилия Имя" required style="min-width:240px;"></div>
+            <div><label>Выгодоприобретатель (кто привёл)</label>
+                <select name="beneficiary_user_id" required style="min-width:240px;">
+                    <option value="" disabled selected>— выберите пользователя —</option>
+                    {% for u in users %}<option value="{{ u.id }}">{{ u.employee_name }}</option>{% endfor %}
+                </select>
+            </div>
+            <button class="btn">Создать</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Акции ({{ rows|length }})</h2>
+        {% if rows %}
+        <table>
+            <thead><tr><th>Приведённый</th><th>Выгодоприобретатель</th><th>Часов / порог</th><th>Статус</th><th>Дата набора</th><th></th></tr></thead>
+            <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td>{{ r.promo.referred_employee_name }}</td>
+                    <td>{{ r.beneficiary }}</td>
+                    <td><span class="{% if r.hours >= settings.hours_threshold %}hit{% endif %}">{{ "%.1f"|format(r.hours) }}</span> / {{ "%.0f"|format(settings.hours_threshold) }}</td>
+                    <td><span class="pill st-{{ r.promo.status }}">{{ r.promo.status }}</span></td>
+                    <td>{{ r.promo.threshold_reached_at.strftime('%d.%m.%Y') if r.promo.threshold_reached_at else '—' }}</td>
+                    <td>
+                        {% if r.promo.status in ['active','threshold_reached'] %}
+                        <form method="post" action="{{ base_path }}/referral/cancel" onsubmit="return confirm('Отменить акцию?');">
+                            <input type="hidden" name="promo_id" value="{{ r.promo.id }}">
+                            <button class="btn light">Отменить</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty">Акций пока нет.</p>
+        {% endif %}
+    </div>
+</div>
+</body>
+</html>

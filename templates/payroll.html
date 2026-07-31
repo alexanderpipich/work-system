@@ -622,6 +622,7 @@
         </div>
 
         <div class="topbar-actions">
+            <a href="/admin/referral" class="back-link">Приведи друга</a>
             <a href="/admin/payroll/runs" class="back-link">Зафиксированные табели</a>
             <a href="/admin" class="back-link">Назад в админку</a>
         </div>
@@ -661,6 +662,30 @@
                         <span style="color:#b42318;">{{ err.message }}</span>
                     {% endif %}
                 </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if referral_pending %}
+    <div class="card no-print">
+        <h2 style="color:#9a3412;">Премии АПД, требующие решения ({{ referral_pending|length }})</h2>
+        <p style="margin:0 0 10px; color:#9a3412; font-size:14px;">Табель не сформировать, пока не подтвердите или отмените каждую премию «Приведи друга».</p>
+        <div style="border:1px solid #fed7aa; border-radius:14px; padding:12px; background:#fff7ed;">
+            {% for p in referral_pending %}
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:8px 0; border-top:1px solid #fed7aa;">
+                <span><b>{{ p.beneficiary_name or '—' }}</b> — премия {{ "%.2f"|format(p.amount or 0) }} ₽ (требует подтверждения)</span>
+                <form method="post" action="/admin/referral/payout/confirm" style="margin-left:auto;">
+                    <input type="hidden" name="payout_id" value="{{ p.id }}">
+                    <input type="hidden" name="back" value="/admin/payroll">
+                    <button type="submit" class="btn btn-primary">Подтвердить</button>
+                </form>
+                <form method="post" action="/admin/referral/payout/cancel">
+                    <input type="hidden" name="payout_id" value="{{ p.id }}">
+                    <input type="hidden" name="back" value="/admin/payroll">
+                    <button type="submit" class="btn btn-peach">Отменить</button>
+                </form>
+            </div>
             {% endfor %}
         </div>
     </div>

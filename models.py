@@ -527,6 +527,55 @@ class EmployeeDismissalDecision(Base):
     decided_at = Column(DateTime, nullable=True)
 
 
+class ReferralPromo(Base):
+    """Акция «Приведи друга» (АПД). Привязана к приведённому сотруднику (по ФИО,
+    уникально за всю историю). Выгодоприобретатель — пользователь, который привёл.
+    Строится по образцу MedicalBookCharge (статусы + привязка к табелю)."""
+    __tablename__ = "referral_promos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    referred_employee_name = Column(String, nullable=False, unique=True)  # приведённый — один раз в истории
+    beneficiary_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    beneficiary_name = Column(String, nullable=True)  # снимок ФИО выгодоприобретателя
+    status = Column(String, default="active")  # active | threshold_reached | paid | cancelled
+    threshold_reached_at = Column(Date, nullable=True)  # дата набора порога (фиксируется хуком)
+    created_by = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=now_utc)
+    cancelled_by = Column(Integer, nullable=True)
+    cancelled_at = Column(DateTime, nullable=True)
+    comment = Column(Text, nullable=True)
+
+
+class ReferralSettings(Base):
+    """Глобальные настройки АПД (синглтон — одна строка)."""
+    __tablename__ = "referral_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    hours_threshold = Column(Float, default=150)
+    bonus_amount = Column(Float, default=5000)
+    updated_by = Column(Integer, nullable=True)
+    updated_at = Column(DateTime, nullable=True)
+
+
+class ReferralPayout(Base):
+    """Премия АПД в табель — pending-корректировка, требует подтверждения человека.
+    pending блокирует формирование/фиксацию табеля."""
+    __tablename__ = "referral_payouts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    promo_id = Column(Integer, ForeignKey("referral_promos.id"), nullable=False)
+    beneficiary_user_id = Column(Integer, nullable=True)
+    beneficiary_name = Column(String, nullable=True)
+    amount = Column(Float, default=0)  # = bonus_amount на момент достижения порога
+    status = Column(String, default="pending")  # pending | confirmed | cancelled
+    run_id = Column(Integer, nullable=True)  # в какой табель попала
+    created_at = Column(DateTime, default=now_utc)
+    confirmed_by = Column(Integer, nullable=True)
+    confirmed_at = Column(DateTime, nullable=True)
+    cancelled_by = Column(Integer, nullable=True)
+    cancelled_at = Column(DateTime, nullable=True)
+
+
 class StoreReconciliationSettings(Base):
     __tablename__ = "store_reconciliation_settings"
 

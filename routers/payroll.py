@@ -18,6 +18,7 @@ from manual_adjustments import (
 )
 from models import PayrollRun, PayrollRunItem, Requisite, Shift
 from payroll_adjustments import apply_auto_adjustments_to_rows, get_payroll_auto_adjustments
+from referral_helpers import apply_confirmed_payouts_to_run, pending_payouts
 from schedule_grid import build_payroll_rows, days_between
 from service_catalog import build_service_resolver
 from shift_helpers import is_no_plan_shift
@@ -520,6 +521,9 @@ def economist_fix_payroll(
 
         session.add(item)
 
+    # АПД: подтверждённые премии (ещё не привязанные) → строкой в этот табель.
+    apply_confirmed_payouts_to_run(session, request, user, run.id)
+
     create_audit_log(
         session,
         request,
@@ -796,6 +800,9 @@ def fix_payroll(
     resolve = build_service_resolver(session)
     validation_errors = []
 
+    # АПД: pending-премии блокируют формирование табеля, пока не подтвердишь/отменишь.
+    referral_pending = pending_payouts(session)
+
     checked_employees = set()
 
     for shift in shifts:
@@ -842,7 +849,7 @@ def fix_payroll(
                     "message": f"{shift.employee} — реквизиты не проверены",
                 })
 
-    if validation_errors:
+    if validation_errors or referral_pending:
 
         employees = sorted({
             normalize_text(s.employee)
@@ -860,6 +867,7 @@ def fix_payroll(
             request,
             "payroll.html",
             {
+                "referral_pending": referral_pending,
                 "rows": [],
                 "days": [],
                 "employees": employees,
@@ -872,7 +880,10 @@ def fix_payroll(
                 "total_amount": 0,
                 "legal_entities": active_legal_entities(session),
                 "message": None,
-                "error": "Обнаружены ошибки перед фиксацией",
+                "error": (
+                    "Обнаружены ошибки перед фиксацией" if validation_errors
+                    else "Требуется решение по премиям АПД перед фиксацией"
+                ),
                 "validation_errors": validation_errors
             }
         )
@@ -972,6 +983,9 @@ def fix_payroll(
         )
 
         session.add(item)
+
+    # АПД: подтверждённые премии (ещё не привязанные) → строкой в этот табель.
+    apply_confirmed_payouts_to_run(session, request, user, run.id)
 
     create_audit_log(
         session,

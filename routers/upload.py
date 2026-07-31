@@ -325,6 +325,14 @@ def _process_shift_dataframe(session, df):
         logger.exception("Monitoring recompute after upload failed")
         session.rollback()
 
+    # АПД: проверить, не набрал ли приведённый порог часов → pending-премия.
+    from referral_helpers import check_referral_thresholds
+    try:
+        check_referral_thresholds(session)
+    except Exception:
+        logger.exception("Referral threshold check after upload failed")
+        session.rollback()
+
     # Диагностика услуг (этап 4): какие услуги из файла не нашлись в справочнике
     # Service → по ним не подтянется тариф. Информационно, загрузку не блокирует.
     service_counts = (
