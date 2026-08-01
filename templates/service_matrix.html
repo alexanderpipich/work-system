@@ -525,6 +525,8 @@
 <!-- Модалка: создать ставку для услуги без тарифа (POST /admin/rates). -->
 <div class="modal-overlay" id="rate-modal">
     <form class="modal" method="post" action="/admin/rates">
+        {# Страница матрицы — обычный GET, возвращаемся на неё же с теми же фильтрами. #}
+        <input type="hidden" name="return_to" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
         <h3>Создать ставку</h3>
         <p class="modal-hint">Услуга/формат/город/магазин подставлены из последней встречи в сменах. Введите ЧТС. Очистите «Магазин» — базовая ставка (канон); оставите — по ТК.</p>
         <label>Услуга</label><input type="text" name="service" id="rate-service" required>

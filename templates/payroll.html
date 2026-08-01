@@ -999,9 +999,15 @@
     </div>
 </div>
 
+{# Куда вернуться после создания из модалки. Экран ошибок приходит из POST
+   /admin/payroll/fix (GET такого пути нет), поэтому собираем GET-адрес табеля с тем
+   же периодом; выбор магазинов восстановится из сессии. #}
+{% set payroll_return_to = '/admin/payroll?date_from=' ~ (date_from or '')|urlencode ~ '&date_to=' ~ (date_to or '')|urlencode ~ ('&employee_name=' ~ employee_name|urlencode if employee_name else '') %}
+
 <!-- Модалка: создать ЧТС (POST /admin/rates). Поля предзаполняются из смены. -->
 <div class="modal-overlay" id="rate-modal">
     <form class="modal" method="post" action="/admin/rates">
+        <input type="hidden" name="return_to" value="{{ payroll_return_to }}">
         <h3>Создать ЧТС</h3>
         <p class="modal-hint">Из смены подставлены услуга/формат/город/магазин. Введите ставку. Очистите «Магазин» — получится <b>базовая</b> ставка (канон); оставите — ставка по ТК.</p>
         <label>Услуга</label><input type="text" name="service" id="rate-service" required>
@@ -1020,6 +1026,7 @@
 <!-- Модалка: создать реквизиты (POST /admin/requisites/add). ФИО подставлено. -->
 <div class="modal-overlay" id="req-modal">
     <form class="modal" method="post" action="/admin/requisites/add">
+        <input type="hidden" name="return_to" value="{{ payroll_return_to }}">
         <h3>Создать реквизиты</h3>
         <p class="modal-hint">Сотрудник подставлен. Заполните платёжные данные (проверку можно поставить позже на /admin/requisites).</p>
         <label>Сотрудник</label><input type="text" name="employee_name" id="req-employee" required>

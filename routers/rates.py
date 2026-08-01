@@ -15,7 +15,7 @@ from models import Rate, Service, Shift
 from rbac import canonical_role, require_permission
 from service_catalog import get_or_create_service
 from service_matrix import normalize_service_base, parse_service_name
-from utils import normalize_format, normalize_text
+from utils import normalize_format, normalize_text, safe_return_to
 
 
 # --- Загрузка базовой тарифной сетки из Excel -------------------------------
@@ -435,6 +435,7 @@ def create_rate(
     active_from: str = Form(default=""),
     active_to: str = Form(default=""),
     comment: str = Form(default=""),
+    return_to: str = Form(default=""),
     session: Session = Depends(get_db),
     user=Depends(_rates_manage),
 ):
@@ -506,7 +507,9 @@ def create_rate(
     )
     session.commit()
 
-    return RedirectResponse(url="/admin/rates", status_code=302)
+    # Ставку могли создать из модалки диагностики табеля — вернуть на ту страницу,
+    # откуда открыли (return_to). Без него — прежний дефолт.
+    return RedirectResponse(url=safe_return_to(return_to, "/admin/rates"), status_code=302)
 
 
 @router.post("/admin/rates/update", response_class=HTMLResponse)

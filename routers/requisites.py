@@ -11,7 +11,7 @@ from inn_sync import set_employee_inn
 from models import Requisite, Shift, User
 from rbac import canonical_role, require_permission
 from time_helpers import now_utc
-from utils import is_scientific_notation, normalize_digits, normalize_text
+from utils import is_scientific_notation, normalize_digits, normalize_text, safe_return_to
 
 
 router = APIRouter()
@@ -116,6 +116,7 @@ def add_requisite(
     is_active: str = Form(default="on"),
     is_verified: str = Form(default=""),
     comment: str = Form(default=""),
+    return_to: str = Form(default=""),
     session: Session = Depends(get_db),
     current=Depends(_req_manage),
 ):
@@ -171,7 +172,8 @@ def add_requisite(
         set_employee_inn(session, user, req.inn, source="requisite", actor=current, request=request)
     session.commit()
 
-    return RedirectResponse("/admin/requisites", status_code=302)
+    # Реквизиты могли создать из модалки диагностики табеля — вернуть туда же.
+    return RedirectResponse(safe_return_to(return_to, "/admin/requisites"), status_code=302)
 
 
 @router.post("/admin/requisites/update")

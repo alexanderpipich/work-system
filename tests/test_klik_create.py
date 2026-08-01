@@ -13,6 +13,7 @@ from database import Base
 from models import Rate, Service
 from routers.rates import _resolve_service_link
 from service_matrix import build_service_matrix
+from utils import safe_return_to
 
 
 def _session():
@@ -82,9 +83,28 @@ class TemplateRenderTests(unittest.TestCase):
         self.assertIn('id="rate-modal"', h)
         self.assertIn('id="req-modal"', h)
 
+    def test_payroll_modals_pass_return_to(self):
+        # Экран ошибок приходит из POST /admin/payroll/fix — return_to обязан быть
+        # GET-адресом табеля с тем же периодом, иначе возврат уронит 405.
+        env = _env()
+        req = SimpleNamespace(url=SimpleNamespace(path="/admin/payroll/fix", query=""))
+        h = env.get_template("payroll.html").render(
+            rows=[], days=[],
+            validation_errors=[{"type": "no_rate", "employee": "Иванов", "store": "Лента-1",
+                                "city": "ЛО", "service": "2ур_Уборка", "format": "ГМ",
+                                "date": "2026-07-20", "message": "нет ЧТС"}],
+            employees=[], stores=[], selected_stores=[], employee_name="Иванов Иван",
+            date_from="2026-07-20", date_to="2026-07-26",
+            total_hours=0, total_amount=0, legal_entities=[], message=None, error=None, request=req)
+        expected = ('name="return_to" value="/admin/payroll?date_from=2026-07-20'
+                    '&amp;date_to=2026-07-26&amp;employee_name=%D0%98')
+        self.assertIn(expected, h)
+        self.assertEqual(h.count('name="return_to"'), 2)  # обе модалки: ЧТС и реквизиты
+        self.assertNotIn('value="/admin/payroll/fix"', h)
+
     def test_services_no_tariff_clickable(self):
         env = _env()
-        req = SimpleNamespace(url=SimpleNamespace(path="/admin/services"))
+        req = SimpleNamespace(url=SimpleNamespace(path="/admin/services", query="city=%D0%9B%D0%9E"))
         h = env.get_template("service_matrix.html").render(
             rows=[], dup_groups=[], levels=[1, 2, 3, 4, 5],
             counters={"services": 1, "duplicates": 0, "key_errors": 0, "no_tariff_services": 1,
@@ -99,6 +119,24 @@ class TemplateRenderTests(unittest.TestCase):
         self.assertIn('data-service="2ур_Уборка"', h)
         self.assertIn("Встречалась: Лента-1", h)
         self.assertIn('id="rate-modal"', h)
+        self.assertIn('name="return_to" value="/admin/services?city=%D0%9B%D0%9E"', h)
+
+
+class SafeReturnToTests(unittest.TestCase):
+    def test_local_path_kept(self):
+        self.assertEqual(
+            safe_return_to("/admin/payroll?date_from=2026-07-20", "/admin/rates"),
+            "/admin/payroll?date_from=2026-07-20",
+        )
+
+    def test_empty_falls_back_to_default(self):
+        self.assertEqual(safe_return_to("", "/admin/rates"), "/admin/rates")
+        self.assertEqual(safe_return_to(None, "/admin/requisites"), "/admin/requisites")
+
+    def test_external_targets_rejected(self):
+        for evil in ("//evil.com", "https://evil.com", "http://evil.com/x",
+                     "/\\evil.com", "evil.com", "/ok\r\nLocation: //evil.com"):
+            self.assertEqual(safe_return_to(evil, "/admin/rates"), "/admin/rates", evil)
 
 
 if __name__ == "__main__":

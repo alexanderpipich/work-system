@@ -99,6 +99,33 @@ def normalize_role(value) -> str:
     return "employee"
 
 
+def safe_return_to(value, default: str) -> str:
+    """Куда вернуть пользователя после сохранения формы.
+
+    `return_to` приходит из скрытого поля модалки (создание ЧТС/реквизитов из
+    кликабельной диагностики табеля) — принимаем ТОЛЬКО локальный путь, чтобы
+    не получить open-redirect. Всё подозрительное → `default` (прежнее поведение).
+    """
+    target = str(value or "").strip()
+
+    if not target:
+        return default
+
+    # Только относительный путь с одним ведущим "/". "//host" и "/\host" браузер
+    # трактует как внешний адрес (protocol-relative) — отбрасываем.
+    if not target.startswith("/"):
+        return default
+
+    if target.startswith("//") or target.startswith("/\\"):
+        return default
+
+    # Перевод строки в Location — заголовочная инъекция.
+    if any(ch in target for ch in ("\r", "\n")):
+        return default
+
+    return target
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(str(plain_password).strip(), hashed_password)
 
