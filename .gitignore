@@ -7,5 +7,6 @@ temp_*.xlsx
 *.log
 .claude/
 p-word list.xlsx
-CLAUDE.md
 generated_files/
+create_admin.py
+spravochniki.sql
