@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}work-system{% endblock %}</title>
+
+    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
+    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
+
+    <link rel="stylesheet" href="/static/app.css?v=2">
+
+    {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+{% block topbar %}
+<header class="topbar {% block topbar_class %}{% endblock %}">
+    <div class="topbar-inner">
+        <div class="brand">
+            <img src="/static/logo-alex.jpg" alt="Логотип">
+            <div>
+                <h1 class="brand-title">{% block brand_title %}work-system{% endblock %}</h1>
+                {% block brand_subtitle %}{% endblock %}
+            </div>
+        </div>
+        <div class="topbar-actions">
+            {% block topbar_actions %}<a href="/logout" class="logout">Выйти</a>{% endblock %}
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block before_content %}{% endblock %}
+
+{% block content %}{% endblock %}
+
+<script src="/static/ui.js?v=1" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

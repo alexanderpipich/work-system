@@ -1,1099 +1,402 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Личный кабинет</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            --error-bg: #fff1ed;
-            --error-text: #b42318;
-        }
-
-        * { box-sizing: border-box; }
-
-        html { scroll-behavior: smooth; }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-        }
-
-        .page {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 0 18px 36px;
-        }
-
-        .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            background: rgba(255, 255, 255, 0.96);
-            border-bottom: 1px solid var(--border);
-            box-shadow: 0 10px 26px rgba(11, 20, 117, 0.08);
-        }
-
-        .topbar-inner {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 12px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
-
-        .brand img {
-            width: 54px;
-            height: 54px;
-            object-fit: contain;
-            border-radius: 14px;
-            background: #fff;
-            flex-shrink: 0;
-        }
-
-        .brand-title {
-            margin: 0;
-            font-size: 24px;
-            line-height: 1.1;
-            color: var(--brand-blue);
-        }
-
-        .logout {
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.16);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-            white-space: nowrap;
-        }
-
-        .quicknav {
-            position: sticky;
-            top: 79px;
-            z-index: 19;
-            background: rgba(244, 245, 247, 0.96);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .quicknav-inner {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 10px 18px;
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 10px;
-        }
-
-        .nav-btn {
-            min-height: 54px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            text-decoration: none;
-            color: var(--brand-blue);
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            font-size: 13px;
-            font-weight: 700;
-            box-shadow: 0 8px 20px rgba(11, 20, 117, 0.06);
-        }
-
-        .nav-btn svg {
-            width: 20px;
-            height: 20px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            flex-shrink: 0;
-        }
-
-        .content {
-            padding-top: 20px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 22px 20px;
-            margin-bottom: 18px;
-        }
-
-        .welcome-title {
-            margin: 0 0 10px;
-            color: var(--brand-blue);
-            font-size: 28px;
-        }
-
-        .employee-name {
-            margin: 0;
-            font-size: 22px;
-            font-weight: 700;
-        }
-
-        .table-title-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-bottom: 14px;
-        }
-
-        .table-title {
-            margin: 0;
-            color: var(--brand-blue);
-            font-size: 22px;
-        }
-
-        .summary-pill {
-            background: rgba(245, 138, 101, 0.12);
-            color: #8f3e20;
-            padding: 10px 14px;
-            border-radius: 999px;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .filter-form {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-            align-items: end;
-            margin-bottom: 16px;
-        }
-
-        .field label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--brand-blue);
-            margin-bottom: 8px;
-        }
-
-        .field input {
-            width: 100%;
-            height: 44px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0 12px;
-            font-size: 14px;
-            background: #fff;
-        }
-
-        .btn {
-            height: 44px;
-            width: 100%;
-            border: none;
-            border-radius: 12px;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            color: #fff;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .error {
-            margin-bottom: 14px;
-            background: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid rgba(180, 35, 24, 0.14);
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        .table-wrap {
-            overflow-x: auto;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 620px;
-            background: #fff;
-        }
-
-        th, td {
-            padding: 13px 14px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            font-size: 14px;
-        }
-
-        th {
-            background: #fafbfc;
-            color: var(--brand-blue);
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        tbody tr:last-child td { border-bottom: none; }
-
-        .hours {
-            font-weight: 700;
-            color: var(--brand-blue);
-        }
-
-        .attention-row,
-        .attention-row .hours {
-            color: var(--error-text);
-            font-weight: 700;
-        }
-
-        .warn-btn {
-            border: none;
-            background: #fff1ed;
-            color: #b42318;
-            border-radius: 999px;
-            padding: 4px 8px;
-            cursor: pointer;
-            font-weight: 700;
-        }
-
-        .empty {
-            padding: 16px 0 2px;
-            color: var(--muted);
-            font-size: 14px;
-        }
-
-        .thin-link {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            text-decoration: none;
-            color: var(--brand-blue);
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 12px 14px;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-
-        .thin-link span {
-            color: var(--muted);
-            font-weight: 400;
-        }
-
-        @media (max-width: 760px) {
-            .quicknav { top: 73px; }
-
-            .quicknav-inner {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .filter-form {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 520px) {
-            .page {
-                padding: 0 12px 28px;
-            }
-
-            .topbar-inner {
-                padding: 10px 12px;
-            }
-
-            .brand img {
-                width: 48px;
-                height: 48px;
-            }
-
-            .brand-title {
-                font-size: 20px;
-            }
-
-            .logout {
-                padding: 9px 11px;
-            }
-
-            .quicknav { top: 69px; }
-
-            .quicknav-inner {
-                padding: 8px 12px;
-                gap: 8px;
-            }
-
-            .nav-btn {
-                min-height: 50px;
-                font-size: 12px;
-            }
-
-            .card {
-                border-radius: 18px;
-                padding: 18px 16px;
-            }
-        }
-
-        /* ── QR-пропуск в шапке кабинета ── */
-        .welcome-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-        }
-
-        .qr-thumb {
-            flex: 0 0 auto;
-            padding: 4px;
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            cursor: pointer;
-            line-height: 0;
-        }
-
-        .qr-thumb img {
-            width: 72px;
-            height: 72px;
-            object-fit: contain;
-            display: block;
-        }
-
-        .qr-thumbs { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
-        .qr-thumb-item { display: flex; flex-direction: column; align-items: center; gap: 4px; line-height: normal; border: none; }
-        .qr-cap { font-size: 11px; color: var(--muted); max-width: 84px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-        .qr-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, .6);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            padding: 24px;
-            z-index: 120;
-        }
-
-        .qr-stage { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        .qr-large-cap { color: #fff; font-size: 15px; font-weight: 600; text-align: center; }
-
-        .qr-nav {
-            background: rgba(255, 255, 255, .16);
-            color: #fff;
-            border: none;
-            font-size: 38px;
-            line-height: 1;
-            width: 54px;
-            height: 54px;
-            border-radius: 50%;
-            cursor: pointer;
-            align-items: center;
-            justify-content: center;
-            flex: 0 0 auto;
-        }
-
-        .qr-overlay img {
-            max-width: 78vw;
-            max-height: 82vh;
-            width: auto;
-            height: auto;
-            background: #fff;
-            padding: 12px;
-            border-radius: 16px;
-            box-shadow: 0 24px 60px rgba(15, 23, 42, .35);
-        }
-
-        /* ── Документы: плитки ── */
-        .docs-hdr {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .docs-chip {
-            font-size: 12px;
-            font-weight: 700;
-            color: #374151;
-            background: #f1f3f7;
-            border: 1px solid var(--border);
-            border-radius: 7px;
-            padding: 5px 11px;
-        }
-
-        .docs-attn {
-            font-size: 12.5px;
-            color: #9a3412;
-            font-weight: 600;
-        }
-
-        .docs-attn b {
-            color: #c2410c;
-            font-weight: 800;
-        }
-
-        .docs-chev {
-            display: inline-flex;
-            color: #9ca3af;
-            transition: transform .15s;
-        }
-
-        .docs-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 3px;
-            overflow-x: auto;
-            padding: 16px 2px 4px;
-        }
-
-        .tile {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 7px;
-            background: none;
-            border: none;
-            padding: 5px 0 0;
-            cursor: pointer;
-            flex: 0 0 auto;
-        }
-
-        .tile:hover .frame {
-            filter: brightness(0.95);
-        }
-
-        .frame {
-            width: 48px;
-            height: 44px;
-            border: 2.5px solid;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .doc-badge {
-            position: absolute;
-            top: -7px;
-            right: -7px;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            color: #fff;
-            font-size: 9px;
-            line-height: 15px;
-            text-align: center;
-            font-weight: 700;
-            box-shadow: 0 0 0 2px #fff;
-        }
-
-        .tile-label {
-            font-size: 8.5px;
-            line-height: 1.15;
-            color: #374151;
-            text-align: center;
-            font-weight: 600;
-            min-height: 20px;
-            max-width: 50px;
-        }
-
-        /* ── Модальное окно ── */
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, .5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 100;
-        }
-
-        .modal {
-            background: #fff;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 380px;
-            overflow: hidden;
-            box-shadow: 0 24px 60px rgba(15, 23, 42, .3);
-        }
-
-        .m-hdr {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 18px 20px 14px;
-        }
-
-        .m-kicker {
-            font-size: 11px;
-            font-weight: 700;
-            color: #9ca3af;
-            text-transform: uppercase;
-            letter-spacing: .4px;
-        }
-
-        .m-title {
-            font-size: 17px;
-            font-weight: 800;
-            color: var(--brand-blue);
-            margin-top: 3px;
-            line-height: 1.2;
-        }
-
-        .m-x {
-            background: #f1f3f7;
-            border: none;
-            border-radius: 8px;
-            width: 30px;
-            height: 30px;
-            font-size: 17px;
-            color: #6b7280;
-            cursor: pointer;
-            line-height: 1;
-            flex: 0 0 auto;
-        }
-
-        .m-prev {
-            margin: 0 20px;
-            height: 150px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            background-image: repeating-linear-gradient(45deg, #eef1f4 0 8px, #f7f9fb 8px 16px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .m-prev span {
-            font-family: ui-monospace, Menlo, monospace;
-            font-size: 11px;
-            color: #94a3b8;
-            text-align: center;
-            padding: 10px;
-        }
-
-        .m-prev img {
-            max-width: 100%;
-            max-height: 148px;
-            object-fit: contain;
-        }
-
-        .m-body {
-            padding: 16px 20px 4px;
-        }
-
-        .m-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 10px 0;
-            border-bottom: 1px solid #f1f3f7;
-        }
-
-        .m-row:last-child {
-            border-bottom: none;
-            align-items: center;
-        }
-
-        .m-row .k { font-size: 12.5px; color: #6b7280; }
-        .m-row .v { font-size: 12.5px; font-weight: 600; color: #1f2937; text-align: right; }
-
-        .m-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 700;
-            border-radius: 999px;
-            padding: 5px 11px;
-        }
-
-        .m-btn {
-            display: block;
-            margin: 6px 20px 20px;
-            width: calc(100% - 40px);
-            background: var(--brand-blue);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 12px;
-            font-size: 13.5px;
-            font-weight: 700;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
-        /* ── Анимации ── */
-        @keyframes tileIn {
-            from { opacity: 0; transform: translateY(6px) scale(.96); }
-            to   { opacity: 1; transform: none; }
-        }
-
-        @keyframes pulseBad {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-            50%      { box-shadow: 0 0 0 4px rgba(220, 38, 38, .18); }
-        }
-
-        @keyframes pulseWarn {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
-            50%      { box-shadow: 0 0 0 4px rgba(249, 115, 22, .16); }
-        }
-
-        /* плавное сворачивание блока документов */
-        .docs-row {
-            max-height: 240px;
-            overflow-y: hidden;
-            opacity: 1;
-            transition: max-height .28s ease, opacity .2s ease, padding .28s ease;
-        }
-
-        .docs-row.collapsed {
-            max-height: 0;
-            opacity: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-            overflow: hidden;
-        }
-
-        /* каскадное появление плиток */
-        .docs-row:not(.collapsed) .tile { animation: tileIn .34s ease both; }
-        .docs-row .tile:nth-child(1)  { animation-delay: .00s; }
-        .docs-row .tile:nth-child(2)  { animation-delay: .03s; }
-        .docs-row .tile:nth-child(3)  { animation-delay: .06s; }
-        .docs-row .tile:nth-child(4)  { animation-delay: .09s; }
-        .docs-row .tile:nth-child(5)  { animation-delay: .12s; }
-        .docs-row .tile:nth-child(6)  { animation-delay: .15s; }
-        .docs-row .tile:nth-child(7)  { animation-delay: .18s; }
-        .docs-row .tile:nth-child(8)  { animation-delay: .21s; }
-        .docs-row .tile:nth-child(9)  { animation-delay: .24s; }
-        .docs-row .tile:nth-child(10) { animation-delay: .27s; }
-        .docs-row .tile:nth-child(11) { animation-delay: .30s; }
-        .docs-row .tile:nth-child(12) { animation-delay: .33s; }
-
-        /* подсветка проблемных документов */
-        .tile[data-status="expired"] .frame,
-        .tile[data-status="missing"] .frame { animation: pulseBad 2.4s ease-in-out infinite; }
-        .tile[data-status="expiring_soon"] .frame { animation: pulseWarn 2.8s ease-in-out infinite; }
-
-        /* hover плитки */
-        .frame { transition: transform .16s ease, filter .16s ease; }
-        .tile:hover .frame { transform: translateY(-2px); }
-
-        /* модалка */
-        @keyframes ovIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes mIn  { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
-        .overlay[style*="flex"] { animation: ovIn .14s ease; }
-        .overlay[style*="flex"] .modal { animation: mIn .2s cubic-bezier(.2,.8,.3,1); }
-
-        @media (prefers-reduced-motion: reduce) {
-            .docs-row, .docs-row .tile, .frame, .overlay, .modal { animation: none !important; transition: none !important; }
-        }
-    </style>
-</head>
-<body>
-    <header class="topbar">
-        <div class="topbar-inner">
-            <div class="brand">
-                <img src="/static/logo-alex.jpg" alt="Логотип">
-                <h1 class="brand-title">Личный кабинет</h1>
-            </div>
-            <a href="/logout" class="logout">Выйти</a>
-        </div>
-    </header>
-
-    <nav class="quicknav" aria-label="Быстрая навигация">
-        <div class="quicknav-inner">
-            <a class="nav-btn" href="/employee_docs">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v5h5"></path><path d="M9 13h6"></path><path d="M9 17h6"></path></svg>
-                Мои документы
-            </a>
-            <a class="nav-btn" href="/vacancies">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V5h6v2"></path><path d="M5 7h14v12H5z"></path><path d="M5 12h14"></path></svg>
-                Вакансии
-            </a>
-            <a class="nav-btn" href="/support">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 16 0"></path><path d="M5 13h3v5H5z"></path><path d="M16 13h3v5h-3z"></path><path d="M12 20h4"></path></svg>
-                Поддержка
-            </a>
-            <a class="nav-btn" href="/stores">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9l1-4h14l1 4"></path><path d="M5 9v10h14V9"></path><path d="M9 19v-6h6v6"></path></svg>
-                Магазины
-            </a>
-            <a class="nav-btn" href="#stats">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path></svg>
-                Статистика
-            </a>
-        </div>
-    </nav>
-
-    <main class="page content">
-        {% if user.password_is_temporary %}
-        <div style="background:#fff7ed;color:#9a3412;border:1px solid rgba(154,52,18,0.18);border-radius:16px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
-            <span style="font-size:14px;font-weight:600;">Вы используете временный пароль. Рекомендуем сменить его на свой.</span>
-            <a href="/cabinet/password" style="text-decoration:none;font-weight:700;color:#fff;background:#9a3412;padding:9px 14px;border-radius:12px;white-space:nowrap;">Сменить пароль</a>
-        </div>
-        {% endif %}
-        <section class="card">
-            <div class="welcome-row">
-                <div>
-                    <h2 class="welcome-title">Добро пожаловать!</h2>
-                    <p class="employee-name">{{ user.employee_name }}</p>
-                    <a href="/cabinet/password" style="display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:var(--brand-blue);text-decoration:none;border-bottom:1px solid rgba(11,20,117,0.25);">Сменить пароль</a>
-                </div>
-                {% if user.qr_codes or user.qr_image_path %}
-                <div class="qr-thumbs" id="qr-thumbs">
-                    {% if user.qr_codes %}
-                        {% for qr in user.qr_codes %}
-                        <button type="button" class="qr-thumb qr-thumb-item"
-                                data-src="/users/{{ user.id }}/qr/{{ qr.id }}"
-                                data-label="{{ qr.label or 'Пропуск' }}"
-                                title="{{ qr.label or 'QR-пропуск' }}">
-                            <img src="/users/{{ user.id }}/qr/{{ qr.id }}" alt="{{ qr.label or 'QR-пропуск' }}">
-                            <span class="qr-cap">{{ qr.label or 'Пропуск' }}</span>
-                        </button>
-                        {% endfor %}
-                    {% else %}
-                        <button type="button" class="qr-thumb qr-thumb-item"
-                                data-src="/users/{{ user.id }}/qr" data-label="Пропуск" title="QR-пропуск">
-                            <img src="/users/{{ user.id }}/qr" alt="QR-пропуск">
-                            <span class="qr-cap">Пропуск</span>
-                        </button>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-        </section>
-
-        <section class="card" style="padding:14px 18px;">
-            <div class="docs-hdr" id="docs-hdr">
-                <span class="docs-chip">Документы сотрудника</span>
-                <div style="display:flex;align-items:center;gap:12px">
-                    {% if not all_ok and attention_count %}
-                    <span class="docs-attn">Требуется внимание: <b>{{ attention_count }}</b></span>
-                    {% endif %}
-                    <span class="docs-chev" id="docs-chev" style="transform:{% if all_ok %}rotate(0deg){% else %}rotate(90deg){% endif %}">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-                    </span>
-                </div>
-            </div>
-            <div class="docs-row{% if all_ok %} collapsed{% endif %}" id="docs-row">
-                {% for item in completeness %}
-                {% set s = status_styles[item.status] %}
-                {% if item.source == 'document' and item.document %}
-                    {% set m_doc_id = item.document.id | string if item.document.file_path else '' %}
-                    {% set m_file_ext = item.file_ext %}
-                    {% set m_has_manual = '1' if not item.document.file_path else '' %}
-                    {% set m_number = item.document.document_number or '—' %}
-                    {% set m_issued = item.document.issue_date.strftime('%d.%m.%Y') if item.document.issue_date else '—' %}
-                    {% set m_expires = 'Бессрочно' if item.document.is_permanent else (item.document.expiry_date.strftime('%d.%m.%Y') if item.document.expiry_date else '—') %}
-                {% elif item.source == 'requisite' and item.requisite %}
-                    {% set m_doc_id = '' %}
-                    {% set m_file_ext = '' %}
-                    {% set m_has_manual = '' %}
-                    {% set m_number = item.requisite.account_number or '—' %}
-                    {% set m_issued = item.requisite.bank_name or '—' %}
-                    {% set m_expires = 'Бессрочно' %}
-                {% else %}
-                    {% set m_doc_id = '' %}
-                    {% set m_file_ext = '' %}
-                    {% set m_has_manual = '' %}
-                    {% set m_number = '—' %}
-                    {% set m_issued = '—' %}
-                    {% set m_expires = '—' %}
-                {% endif %}
-                <button class="tile"
-                        data-title="{{ item.title }}"
-                        data-status="{{ item.status }}"
-                        data-status-label="{{ s.label }}"
-                        data-status-color="{{ s.border }}"
-                        data-status-bg="{{ s.bg }}"
-                        data-glyph="{{ s.glyph }}"
-                        data-source="{{ item.source }}"
-                        data-doc-id="{{ m_doc_id }}"
-                        data-file-ext="{{ m_file_ext }}"
-                        data-has-manual="{{ m_has_manual }}"
-                        data-number="{{ m_number }}"
-                        data-issued="{{ m_issued }}"
-                        data-expires="{{ m_expires }}"
-                        title="{{ item.title }}">
-                    <span class="frame" style="border-color:{{ s.border }};background:{{ s.bg }}">
-                        {% if item.icon_key == 'requisites' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="11" y="17" width="17" height="11" rx="2" fill="#fff" stroke="#3f7d4e" stroke-width="1.6"/><line x1="11" y1="21" x2="28" y2="21" stroke="#3f7d4e" stroke-width="2.4"/><line x1="14" y1="25" x2="19" y2="25" stroke="#3f7d4e" stroke-width="1.4"/><line x1="11" y1="33" x2="30" y2="33" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="38" x2="25" y2="38" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        {% elif item.icon_key == 'lmk' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="20.5" y1="16" x2="20.5" y2="27" stroke="#16a34a" stroke-width="3" stroke-linecap="round"/><line x1="15" y1="21.5" x2="26" y2="21.5" stroke="#16a34a" stroke-width="3" stroke-linecap="round"/><line x1="11" y1="33" x2="30" y2="33" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="38" x2="25" y2="38" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        {% elif item.icon_key == 'passport' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><circle cx="20.5" cy="22" r="5.5" fill="none" stroke="#3f7d4e" stroke-width="1.6"/><circle cx="20.5" cy="22" r="1.6" fill="#3f7d4e"/><line x1="11" y1="33" x2="30" y2="33" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="38" x2="28" y2="38" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        {% elif item.icon_key == 'inn' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="11" y1="17" x2="30" y2="17" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="22" x2="30" y2="22" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="27" x2="24" y2="27" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><circle cx="27" cy="38" r="4.5" fill="none" stroke="#3f7d4e" stroke-width="1.4"/><circle cx="27" cy="38" r="1.5" fill="#3f7d4e"/></svg>
-                        {% elif item.icon_key == 'snils' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="7" y="15" width="27" height="6" fill="#bfe0c6"/><circle cx="20.5" cy="33" r="7" fill="none" stroke="#9bc4a3" stroke-width="1.4"/><circle cx="20.5" cy="33" r="3.4" fill="none" stroke="#9bc4a3" stroke-width="1.2"/><circle cx="20.5" cy="33" r="1.3" fill="#9bc4a3"/></svg>
-                        {% elif item.icon_key == 'registration' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="11" y1="17" x2="30" y2="17" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="22" x2="30" y2="22" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="27" x2="30" y2="27" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="32" x2="22" y2="32" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><rect x="23" y="33" width="9" height="9" fill="none" stroke="#3f7d4e" stroke-width="1.5"/></svg>
-                        {% elif item.icon_key == 'patent' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="11" y="15" width="9" height="11" fill="#eef3ef" stroke="#27433a" stroke-width="1.4"/><line x1="22" y1="17" x2="31" y2="17" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="22" y1="21" x2="31" y2="21" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="22" y1="25" x2="29" y2="25" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="31" x2="30" y2="31" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="36" x2="25" y2="36" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        {% elif item.icon_key == 'fingerprints' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M13 31 Q20.5 17 28 31" fill="none" stroke="#3f7d4e" stroke-width="1.5"/><path d="M15 32 Q20.5 21 26 32" fill="none" stroke="#3f7d4e" stroke-width="1.5"/><path d="M17 33 Q20.5 25 24 33" fill="none" stroke="#3f7d4e" stroke-width="1.5"/><circle cx="20.5" cy="30" r="1.3" fill="#3f7d4e"/><line x1="13" y1="40" x2="28" y2="40" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        {% elif item.icon_key == 'passport_translation' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="11" y1="16" x2="30" y2="16" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="20" x2="22" y2="20" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><text x="11" y="33" font-size="8" fill="#3f7d4e" font-family="sans-serif">A</text><path d="M19 30 H25 M23 28 L25.5 30 L23 32" fill="none" stroke="#3f7d4e" stroke-width="1.3"/><text x="27" y="33" font-size="8" fill="#3f7d4e" font-family="sans-serif">Я</text><circle cx="29" cy="41" r="3.2" fill="none" stroke="#3f7d4e" stroke-width="1.3"/></svg>
-                        {% elif item.icon_key == 'dms' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="10" y="13" width="21" height="29" fill="none" stroke="#9bc4a3" stroke-width="1.3"/><rect x="12.5" y="15.5" width="16" height="24" fill="none" stroke="#cfe3d3" stroke-width="1"/><line x1="15" y1="20" x2="26" y2="20" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="15" y1="24" x2="26" y2="24" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><circle cx="20.5" cy="34" r="4.5" fill="#efe9d8" stroke="#c9bd92" stroke-width="1.2"/></svg>
-                        {% elif item.icon_key == 'migration_card' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="10" y="16" width="21" height="17" fill="none" stroke="#27433a" stroke-width="1.4"/><line x1="20.5" y1="16" x2="20.5" y2="33" stroke="#27433a" stroke-width="1.2"/><line x1="10" y1="24.5" x2="31" y2="24.5" stroke="#27433a" stroke-width="1.2"/><line x1="11" y1="39" x2="28" y2="39" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        {% elif item.icon_key == 'patent_receipts' %}
-                        <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M13 13 H28 V39 L25.5 37 L23 39 L20.5 37 L18 39 L15.5 37 L13 39 Z" fill="#fff" stroke="#27433a" stroke-width="1.5" stroke-linejoin="round"/><line x1="16" y1="19" x2="25" y2="19" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="23" x2="25" y2="23" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><text x="15" y="33" font-size="8" fill="#27433a" font-family="sans-serif" font-weight="bold">₽</text></svg>
-                        {% else %}
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>
-                        {% endif %}
-                        <span class="doc-badge" style="background:{{ s.border }}">{{ s.glyph }}</span>
-                    </span>
-                    <span class="tile-label">{{ item.title }}</span>
-                </button>
-                {% endfor %}
-            </div>
-        </section>
-
-        <section id="stats" class="card">
-            <div class="table-title-row">
-                <h3 class="table-title">Отработанные часы</h3>
-                <div class="summary-pill">Итого за период: {{ total_hours }} ч</div>
-            </div>
-
-            <form method="get" action="/cabinet" class="filter-form">
-                <div class="field">
-                    <label for="date_from">Дата начала</label>
-                    <input type="date" id="date_from" name="date_from" value="{{ date_from }}">
-                </div>
-
-                <div class="field">
-                    <label for="date_to">Дата окончания</label>
-                    <input type="date" id="date_to" name="date_to" value="{{ date_to }}">
-                </div>
-
-                <div>
-                    <button type="submit" class="btn">Показать</button>
-                </div>
-            </form>
-
-            {% if error %}
-                <div class="error">{{ error }}</div>
-            {% endif %}
-
-            {% if shifts %}
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Дата</th>
-                                <th>Часы</th>
-                                <th>Услуга</th>
-                                <th>Тип заявки</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for shift in shifts %}
-                            <tr class="{% if shift.is_attention %}attention-row{% endif %}">
-                                <td>{{ shift.shift_date.strftime("%d.%m.%Y") if shift.shift_date else "" }}</td>
-                                <td class="hours">{{ shift.hours }}</td>
-                                <td>{{ shift.service }}</td>
-                                <td>
-                                    {% if shift.is_no_plan %}
-                                        <span>Смена без плана</span>
-                                        <button
-                                            type="button"
-                                            class="warn-btn"
-                                            onclick="alert('Уважаемый коллега! Просим Вас обратить внимание на данную смену. В настоящий момент данная смена не внесена в план и не попадает в оплату. Если такая смена имела место быть, просим Вас обратиться к администрации ТК, чтобы внести данную смену в план.')"
-                                        >
-                                            !
-                                        </button>
-                                    {% else %}
-                                        {{ shift.request_type or "Основные заказы" }}
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty">За выбранный период записи не найдены.</div>
-            {% endif %}
-        </section>
-
-    </main>
-
-    <div class="overlay" id="modal">
-        <div class="modal">
-            <div class="m-hdr">
-                <div>
-                    <div class="m-kicker">Документ</div>
-                    <div class="m-title" id="m-title"></div>
-                </div>
-                <button class="m-x" id="m-close">×</button>
-            </div>
-            <div class="m-prev" id="m-prev"><span>превью документа</span></div>
-            <div class="m-body">
-                <div class="m-row"><span class="k">Тип</span><span class="v" id="m-type"></span></div>
-                <div class="m-row"><span class="k">Номер</span><span class="v" id="m-number"></span></div>
-                <div class="m-row"><span class="k">Дата выдачи</span><span class="v" id="m-issued"></span></div>
-                <div class="m-row"><span class="k">Срок действия</span><span class="v" id="m-expires"></span></div>
-                <div class="m-row"><span class="k">Статус</span><span class="m-pill" id="m-pill"></span></div>
-            </div>
-            <button class="m-btn" id="m-btn">Закрыть</button>
-        </div>
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет{% endblock %}
+{% block brand_title %}Личный кабинет{% endblock %}
+{% block topbar_class %}topbar-sticky{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика кабинета: приветствие, заголовок таблицы смен, липкая навигация */
+    html { scroll-behavior: smooth; }
+    .content { padding-top: 20px; }
+
+    .welcome-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .welcome-title { margin: 0 0 8px; color: var(--brand-blue); font-size: 24px; letter-spacing: -.3px; }
+    .employee-name { margin: 0; font-size: 20px; font-weight: 700; }
+
+    .pwd-link {
+        display: inline-block;
+        margin-top: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        border-bottom: 1px solid rgba(11, 20, 117, .25);
+    }
+
+    .table-title-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+    .table-title { margin: 0; color: var(--brand-blue); font-size: 19px; }
+    .shifts-table table { min-width: 620px; }
+
+    @media (max-width: 760px) { .quicknav-sticky { top: 69px; } }
+</style>
+{% endblock %}
+
+{% block before_content %}
+<nav class="quicknav quicknav-sticky" aria-label="Быстрая навигация">
+    <div class="quicknav-inner">
+        <a class="nav-btn" href="/employee_docs">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v5h5"></path><path d="M9 13h6"></path><path d="M9 17h6"></path></svg>
+            Мои документы
+        </a>
+        <a class="nav-btn" href="/vacancies">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V5h6v2"></path><path d="M5 7h14v12H5z"></path><path d="M5 12h14"></path></svg>
+            Вакансии
+        </a>
+        <a class="nav-btn" href="/support">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 16 0"></path><path d="M5 13h3v5H5z"></path><path d="M16 13h3v5h-3z"></path><path d="M12 20h4"></path></svg>
+            Поддержка
+        </a>
+        <a class="nav-btn" href="/stores">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9l1-4h14l1 4"></path><path d="M5 9v10h14V9"></path><path d="M9 19v-6h6v6"></path></svg>
+            Магазины
+        </a>
+        <a class="nav-btn" href="#stats">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path></svg>
+            Статистика
+        </a>
     </div>
+</nav>
+{% endblock %}
 
-    <script>(function(){
-        var ov = document.getElementById('modal');
-        var prevArea = document.getElementById('m-prev');
-
-        function openModal(btn) {
-            var title = btn.getAttribute('data-title');
-            var statusLabel = btn.getAttribute('data-status-label');
-            var statusColor = btn.getAttribute('data-status-color');
-            var statusBg = btn.getAttribute('data-status-bg');
-            var glyph = btn.getAttribute('data-glyph');
-            var number = btn.getAttribute('data-number');
-            var issued = btn.getAttribute('data-issued');
-            var expires = btn.getAttribute('data-expires');
-            var docId = btn.getAttribute('data-doc-id');
-            var fileExt = btn.getAttribute('data-file-ext');
-            var hasManual = btn.getAttribute('data-has-manual') === '1';
-            var source = btn.getAttribute('data-source');
-
-            document.getElementById('m-title').textContent = title;
-            document.getElementById('m-type').textContent = title;
-            document.getElementById('m-number').textContent = number || '—';
-            document.getElementById('m-issued').textContent = issued || '—';
-            document.getElementById('m-expires').textContent = expires || '—';
-
-            var pill = document.getElementById('m-pill');
-            pill.textContent = glyph + '  ' + statusLabel;
-            pill.style.background = statusBg;
-            pill.style.color = statusColor;
-            pill.style.border = '1px solid ' + statusColor;
-
-            prevArea.innerHTML = '';
-            if (docId && source === 'document') {
-                var previewUrl = '/documents/preview/' + docId;
-                if (fileExt === 'pdf') {
-                    var link = document.createElement('a');
-                    link.href = previewUrl;
-                    link.target = '_blank';
-                    link.textContent = 'Открыть PDF ↗';
-                    link.style.cssText = 'color:#0b1475;font-weight:700;font-size:13px;';
-                    prevArea.appendChild(link);
-                } else {
-                    var img = document.createElement('img');
-                    img.src = previewUrl;
-                    img.onerror = function() { prevArea.innerHTML = '<span>Превью недоступно</span>'; };
-                    prevArea.appendChild(img);
-                }
-            } else if (hasManual) {
-                prevArea.innerHTML = '<span>Файл не загружен, данные внесены вручную</span>';
-            } else if (source === 'requisite' && issued && issued !== '—') {
-                prevArea.innerHTML = '<span>' + issued + '</span>';
-            } else {
-                prevArea.innerHTML = '<span>Документ не загружен</span>';
-            }
-
-            ov.style.display = 'flex';
-        }
-
-        function closeModal() { ov.style.display = 'none'; }
-
-        document.querySelectorAll('.tile').forEach(function(b) {
-            b.addEventListener('click', function() { openModal(b); });
-        });
-        ov.addEventListener('click', function(e) { if (e.target === ov) closeModal(); });
-        document.getElementById('m-close').addEventListener('click', closeModal);
-        document.getElementById('m-btn').addEventListener('click', closeModal);
-        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
-
-        var hdr = document.getElementById('docs-hdr');
-        var row = document.getElementById('docs-row');
-        var chev = document.getElementById('docs-chev');
-        var exp = !row.classList.contains('collapsed');
-        hdr.addEventListener('click', function() {
-            exp = !exp;
-            row.classList.toggle('collapsed', !exp);
-            chev.style.transform = exp ? 'rotate(90deg)' : 'rotate(0deg)';
-        });
-    })();</script>
-
-    {% if user.qr_codes or user.qr_image_path %}
-    <div class="qr-overlay" id="qr-overlay">
-        <button type="button" class="qr-nav" id="qr-prev" aria-label="Предыдущий">‹</button>
-        <div class="qr-stage">
-            <img id="qr-large" src="" alt="QR-пропуск">
-            <div class="qr-large-cap" id="qr-large-cap"></div>
-        </div>
-        <button type="button" class="qr-nav" id="qr-next" aria-label="Следующий">›</button>
+{% block content %}
+<main class="page page-narrow content">
+    {% if user.password_is_temporary %}
+    <div class="alert alert-warn alert-row mt-0 mb-20">
+        <span>Вы используете временный пароль. Рекомендуем сменить его на свой.</span>
+        <a href="/cabinet/password" class="btn btn-primary btn-sm">Сменить пароль</a>
     </div>
-    <script>(function () {
-        var thumbs = Array.prototype.slice.call(document.querySelectorAll('.qr-thumb-item'));
-        if (!thumbs.length) return;
-        var overlay = document.getElementById('qr-overlay');
-        var large = document.getElementById('qr-large');
-        var cap = document.getElementById('qr-large-cap');
-        var prev = document.getElementById('qr-prev');
-        var next = document.getElementById('qr-next');
-        var items = thumbs.map(function (t) { return { src: t.dataset.src, label: t.dataset.label || '' }; });
-        var multi = items.length > 1;
-        var idx = 0;
-        function show(i) { idx = (i + items.length) % items.length; large.src = items[idx].src; cap.textContent = items[idx].label; }
-        function open(i) { show(i); overlay.style.display = 'flex'; }
-        thumbs.forEach(function (t, i) { t.addEventListener('click', function () { open(i); }); });
-        prev.style.display = multi ? 'flex' : 'none';
-        next.style.display = multi ? 'flex' : 'none';
-        prev.addEventListener('click', function (e) { e.stopPropagation(); show(idx - 1); });
-        next.addEventListener('click', function (e) { e.stopPropagation(); show(idx + 1); });
-        overlay.addEventListener('click', function (e) { if (e.target === overlay || e.target.id === 'qr-large') overlay.style.display = 'none'; });
-        document.addEventListener('keydown', function (e) {
-            if (overlay.style.display !== 'flex') return;
-            if (e.key === 'Escape') overlay.style.display = 'none';
-            if (multi && e.key === 'ArrowLeft') show(idx - 1);
-            if (multi && e.key === 'ArrowRight') show(idx + 1);
-        });
-        var sx = null;
-        overlay.addEventListener('touchstart', function (e) { sx = e.changedTouches[0].clientX; }, { passive: true });
-        overlay.addEventListener('touchend', function (e) {
-            if (sx === null || !multi) { sx = null; return; }
-            var dx = e.changedTouches[0].clientX - sx;
-            if (Math.abs(dx) > 40) { show(dx < 0 ? idx + 1 : idx - 1); }
-            sx = null;
-        });
-    })();</script>
     {% endif %}
-</body>
-</html>
+    <section class="card">
+        <div class="welcome-row">
+            <div>
+                <h2 class="welcome-title">Добро пожаловать!</h2>
+                <p class="employee-name">{{ user.employee_name }}</p>
+                <a href="/cabinet/password" class="pwd-link">Сменить пароль</a>
+            </div>
+            {% if user.qr_codes or user.qr_image_path %}
+            <div class="qr-thumbs" id="qr-thumbs">
+                {% if user.qr_codes %}
+                    {% for qr in user.qr_codes %}
+                    <button type="button" class="qr-thumb qr-thumb-item"
+                            data-src="/users/{{ user.id }}/qr/{{ qr.id }}"
+                            data-label="{{ qr.label or 'Пропуск' }}"
+                            title="{{ qr.label or 'QR-пропуск' }}">
+                        <img src="/users/{{ user.id }}/qr/{{ qr.id }}" alt="{{ qr.label or 'QR-пропуск' }}">
+                        <span class="qr-cap">{{ qr.label or 'Пропуск' }}</span>
+                    </button>
+                    {% endfor %}
+                {% else %}
+                    <button type="button" class="qr-thumb qr-thumb-item"
+                            data-src="/users/{{ user.id }}/qr" data-label="Пропуск" title="QR-пропуск">
+                        <img src="/users/{{ user.id }}/qr" alt="QR-пропуск">
+                        <span class="qr-cap">Пропуск</span>
+                    </button>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="card card-tight">
+        <div class="docs-hdr" id="docs-hdr">
+            <span class="chip">Документы сотрудника</span>
+            <div style="display:flex;align-items:center;gap:12px">
+                {% if not all_ok and attention_count %}
+                <span class="docs-attn">Требуется внимание: <b>{{ attention_count }}</b></span>
+                {% endif %}
+                <span class="docs-chev" id="docs-chev" style="transform:{% if all_ok %}rotate(0deg){% else %}rotate(90deg){% endif %}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                </span>
+            </div>
+        </div>
+        <div class="docs-row{% if all_ok %} collapsed{% endif %}" id="docs-row">
+            {% for item in completeness %}
+            {% set s = status_styles[item.status] %}
+            {% if item.source == 'document' and item.document %}
+                {% set m_doc_id = item.document.id | string if item.document.file_path else '' %}
+                {% set m_file_ext = item.file_ext %}
+                {% set m_has_manual = '1' if not item.document.file_path else '' %}
+                {% set m_number = item.document.document_number or '—' %}
+                {% set m_issued = item.document.issue_date.strftime('%d.%m.%Y') if item.document.issue_date else '—' %}
+                {% set m_expires = 'Бессрочно' if item.document.is_permanent else (item.document.expiry_date.strftime('%d.%m.%Y') if item.document.expiry_date else '—') %}
+            {% elif item.source == 'requisite' and item.requisite %}
+                {% set m_doc_id = '' %}
+                {% set m_file_ext = '' %}
+                {% set m_has_manual = '' %}
+                {% set m_number = item.requisite.account_number or '—' %}
+                {% set m_issued = item.requisite.bank_name or '—' %}
+                {% set m_expires = 'Бессрочно' %}
+            {% else %}
+                {% set m_doc_id = '' %}
+                {% set m_file_ext = '' %}
+                {% set m_has_manual = '' %}
+                {% set m_number = '—' %}
+                {% set m_issued = '—' %}
+                {% set m_expires = '—' %}
+            {% endif %}
+            <button class="tile"
+                    data-title="{{ item.title }}"
+                    data-status="{{ item.status }}"
+                    data-status-label="{{ s.label }}"
+                    data-status-color="{{ s.border }}"
+                    data-status-bg="{{ s.bg }}"
+                    data-glyph="{{ s.glyph }}"
+                    data-source="{{ item.source }}"
+                    data-doc-id="{{ m_doc_id }}"
+                    data-file-ext="{{ m_file_ext }}"
+                    data-has-manual="{{ m_has_manual }}"
+                    data-number="{{ m_number }}"
+                    data-issued="{{ m_issued }}"
+                    data-expires="{{ m_expires }}"
+                    title="{{ item.title }}">
+                <span class="frame" style="border-color:{{ s.border }};background:{{ s.bg }}">
+                    {% if item.icon_key == 'requisites' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="11" y="17" width="17" height="11" rx="2" fill="#fff" stroke="#3f7d4e" stroke-width="1.6"/><line x1="11" y1="21" x2="28" y2="21" stroke="#3f7d4e" stroke-width="2.4"/><line x1="14" y1="25" x2="19" y2="25" stroke="#3f7d4e" stroke-width="1.4"/><line x1="11" y1="33" x2="30" y2="33" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="38" x2="25" y2="38" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    {% elif item.icon_key == 'lmk' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="20.5" y1="16" x2="20.5" y2="27" stroke="#16a34a" stroke-width="3" stroke-linecap="round"/><line x1="15" y1="21.5" x2="26" y2="21.5" stroke="#16a34a" stroke-width="3" stroke-linecap="round"/><line x1="11" y1="33" x2="30" y2="33" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="38" x2="25" y2="38" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    {% elif item.icon_key == 'passport' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><circle cx="20.5" cy="22" r="5.5" fill="none" stroke="#3f7d4e" stroke-width="1.6"/><circle cx="20.5" cy="22" r="1.6" fill="#3f7d4e"/><line x1="11" y1="33" x2="30" y2="33" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="38" x2="28" y2="38" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    {% elif item.icon_key == 'inn' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="11" y1="17" x2="30" y2="17" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="22" x2="30" y2="22" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="27" x2="24" y2="27" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><circle cx="27" cy="38" r="4.5" fill="none" stroke="#3f7d4e" stroke-width="1.4"/><circle cx="27" cy="38" r="1.5" fill="#3f7d4e"/></svg>
+                    {% elif item.icon_key == 'snils' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="7" y="15" width="27" height="6" fill="#bfe0c6"/><circle cx="20.5" cy="33" r="7" fill="none" stroke="#9bc4a3" stroke-width="1.4"/><circle cx="20.5" cy="33" r="3.4" fill="none" stroke="#9bc4a3" stroke-width="1.2"/><circle cx="20.5" cy="33" r="1.3" fill="#9bc4a3"/></svg>
+                    {% elif item.icon_key == 'registration' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="11" y1="17" x2="30" y2="17" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="22" x2="30" y2="22" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="27" x2="30" y2="27" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="32" x2="22" y2="32" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><rect x="23" y="33" width="9" height="9" fill="none" stroke="#3f7d4e" stroke-width="1.5"/></svg>
+                    {% elif item.icon_key == 'patent' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="11" y="15" width="9" height="11" fill="#eef3ef" stroke="#27433a" stroke-width="1.4"/><line x1="22" y1="17" x2="31" y2="17" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="22" y1="21" x2="31" y2="21" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="22" y1="25" x2="29" y2="25" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="31" x2="30" y2="31" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="36" x2="25" y2="36" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    {% elif item.icon_key == 'fingerprints' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M13 31 Q20.5 17 28 31" fill="none" stroke="#3f7d4e" stroke-width="1.5"/><path d="M15 32 Q20.5 21 26 32" fill="none" stroke="#3f7d4e" stroke-width="1.5"/><path d="M17 33 Q20.5 25 24 33" fill="none" stroke="#3f7d4e" stroke-width="1.5"/><circle cx="20.5" cy="30" r="1.3" fill="#3f7d4e"/><line x1="13" y1="40" x2="28" y2="40" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    {% elif item.icon_key == 'passport_translation' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><line x1="11" y1="16" x2="30" y2="16" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="20" x2="22" y2="20" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><text x="11" y="33" font-size="8" fill="#3f7d4e" font-family="sans-serif">A</text><path d="M19 30 H25 M23 28 L25.5 30 L23 32" fill="none" stroke="#3f7d4e" stroke-width="1.3"/><text x="27" y="33" font-size="8" fill="#3f7d4e" font-family="sans-serif">Я</text><circle cx="29" cy="41" r="3.2" fill="none" stroke="#3f7d4e" stroke-width="1.3"/></svg>
+                    {% elif item.icon_key == 'dms' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="10" y="13" width="21" height="29" fill="none" stroke="#9bc4a3" stroke-width="1.3"/><rect x="12.5" y="15.5" width="16" height="24" fill="none" stroke="#cfe3d3" stroke-width="1"/><line x1="15" y1="20" x2="26" y2="20" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="15" y1="24" x2="26" y2="24" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><circle cx="20.5" cy="34" r="4.5" fill="#efe9d8" stroke="#c9bd92" stroke-width="1.2"/></svg>
+                    {% elif item.icon_key == 'migration_card' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><rect x="10" y="16" width="21" height="17" fill="none" stroke="#27433a" stroke-width="1.4"/><line x1="20.5" y1="16" x2="20.5" y2="33" stroke="#27433a" stroke-width="1.2"/><line x1="10" y1="24.5" x2="31" y2="24.5" stroke="#27433a" stroke-width="1.2"/><line x1="11" y1="39" x2="28" y2="39" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    {% elif item.icon_key == 'patent_receipts' %}
+                    <svg width="30" height="38" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg"><path d="M7 3 H28 L34 9 V47 H7 Z" fill="#fff" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M28 3 V9 H34" fill="none" stroke="#27433a" stroke-width="2" stroke-linejoin="round"/><path d="M13 13 H28 V39 L25.5 37 L23 39 L20.5 37 L18 39 L15.5 37 L13 39 Z" fill="#fff" stroke="#27433a" stroke-width="1.5" stroke-linejoin="round"/><line x1="16" y1="19" x2="25" y2="19" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="23" x2="25" y2="23" stroke="#27433a" stroke-width="1.5" stroke-linecap="round"/><text x="15" y="33" font-size="8" fill="#27433a" font-family="sans-serif" font-weight="bold">₽</text></svg>
+                    {% else %}
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>
+                    {% endif %}
+                    <span class="doc-badge" style="background:{{ s.border }}">{{ s.glyph }}</span>
+                </span>
+                <span class="tile-label">{{ item.title }}</span>
+            </button>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section id="stats" class="card">
+        <div class="table-title-row">
+            <h3 class="table-title">Отработанные часы</h3>
+            <div class="pill pill-peach">Итого за период: {{ total_hours }} ч</div>
+        </div>
+
+        <form method="get" action="/cabinet" class="form-grid cols-3 align-end mb-20">
+            <div class="field">
+                <label for="date_from">Дата начала</label>
+                <input type="date" id="date_from" name="date_from" value="{{ date_from }}">
+            </div>
+
+            <div class="field">
+                <label for="date_to">Дата окончания</label>
+                <input type="date" id="date_to" name="date_to" value="{{ date_to }}">
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary btn-block">Показать</button>
+            </div>
+        </form>
+
+        {% if error %}
+            <div class="alert alert-error mt-0 mb-14">{{ error }}</div>
+        {% endif %}
+
+        {% if shifts %}
+            <div class="table-wrap shifts-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Часы</th>
+                            <th>Услуга</th>
+                            <th>Тип заявки</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shift in shifts %}
+                        <tr class="{% if shift.is_attention %}attention-row{% endif %}">
+                            <td>{{ shift.shift_date.strftime("%d.%m.%Y") if shift.shift_date else "" }}</td>
+                            <td class="hours">{{ shift.hours }}</td>
+                            <td>{{ shift.service }}</td>
+                            <td>
+                                {% if shift.is_no_plan %}
+                                    <span>Смена без плана</span>
+                                    <button
+                                        type="button"
+                                        class="warn-btn"
+                                        onclick="alert('Уважаемый коллега! Просим Вас обратить внимание на данную смену. В настоящий момент данная смена не внесена в план и не попадает в оплату. Если такая смена имела место быть, просим Вас обратиться к администрации ТК, чтобы внести данную смену в план.')"
+                                    >
+                                        !
+                                    </button>
+                                {% else %}
+                                    {{ shift.request_type or "Основные заказы" }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty">За выбранный период записи не найдены.</div>
+        {% endif %}
+    </section>
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<div class="overlay" id="modal">
+    <div class="modal">
+        <div class="m-hdr">
+            <div>
+                <div class="m-kicker">Документ</div>
+                <div class="m-title" id="m-title"></div>
+            </div>
+            <button class="m-x" id="m-close">×</button>
+        </div>
+        <div class="m-prev" id="m-prev"><span>превью документа</span></div>
+        <div class="m-body">
+            <div class="m-row"><span class="k">Тип</span><span class="v" id="m-type"></span></div>
+            <div class="m-row"><span class="k">Номер</span><span class="v" id="m-number"></span></div>
+            <div class="m-row"><span class="k">Дата выдачи</span><span class="v" id="m-issued"></span></div>
+            <div class="m-row"><span class="k">Срок действия</span><span class="v" id="m-expires"></span></div>
+            <div class="m-row"><span class="k">Статус</span><span class="m-pill" id="m-pill"></span></div>
+        </div>
+        <button class="m-btn" id="m-btn">Закрыть</button>
+    </div>
+</div>
+
+<script>(function(){
+    var ov = document.getElementById('modal');
+    var prevArea = document.getElementById('m-prev');
+
+    function openModal(btn) {
+        var title = btn.getAttribute('data-title');
+        var statusLabel = btn.getAttribute('data-status-label');
+        var statusColor = btn.getAttribute('data-status-color');
+        var statusBg = btn.getAttribute('data-status-bg');
+        var glyph = btn.getAttribute('data-glyph');
+        var number = btn.getAttribute('data-number');
+        var issued = btn.getAttribute('data-issued');
+        var expires = btn.getAttribute('data-expires');
+        var docId = btn.getAttribute('data-doc-id');
+        var fileExt = btn.getAttribute('data-file-ext');
+        var hasManual = btn.getAttribute('data-has-manual') === '1';
+        var source = btn.getAttribute('data-source');
+
+        document.getElementById('m-title').textContent = title;
+        document.getElementById('m-type').textContent = title;
+        document.getElementById('m-number').textContent = number || '—';
+        document.getElementById('m-issued').textContent = issued || '—';
+        document.getElementById('m-expires').textContent = expires || '—';
+
+        var pill = document.getElementById('m-pill');
+        pill.textContent = glyph + '  ' + statusLabel;
+        pill.style.background = statusBg;
+        pill.style.color = statusColor;
+        pill.style.border = '1px solid ' + statusColor;
+
+        prevArea.innerHTML = '';
+        if (docId && source === 'document') {
+            var previewUrl = '/documents/preview/' + docId;
+            if (fileExt === 'pdf') {
+                var link = document.createElement('a');
+                link.href = previewUrl;
+                link.target = '_blank';
+                link.textContent = 'Открыть PDF ↗';
+                link.style.cssText = 'color:#0b1475;font-weight:700;font-size:13px;';
+                prevArea.appendChild(link);
+            } else {
+                var img = document.createElement('img');
+                img.src = previewUrl;
+                img.onerror = function() { prevArea.innerHTML = '<span>Превью недоступно</span>'; };
+                prevArea.appendChild(img);
+            }
+        } else if (hasManual) {
+            prevArea.innerHTML = '<span>Файл не загружен, данные внесены вручную</span>';
+        } else if (source === 'requisite' && issued && issued !== '—') {
+            prevArea.innerHTML = '<span>' + issued + '</span>';
+        } else {
+            prevArea.innerHTML = '<span>Документ не загружен</span>';
+        }
+
+        ov.style.display = 'flex';
+    }
+
+    function closeModal() { ov.style.display = 'none'; }
+
+    document.querySelectorAll('.tile').forEach(function(b) {
+        b.addEventListener('click', function() { openModal(b); });
+    });
+    ov.addEventListener('click', function(e) { if (e.target === ov) closeModal(); });
+    document.getElementById('m-close').addEventListener('click', closeModal);
+    document.getElementById('m-btn').addEventListener('click', closeModal);
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+    var hdr = document.getElementById('docs-hdr');
+    var row = document.getElementById('docs-row');
+    var chev = document.getElementById('docs-chev');
+    var exp = !row.classList.contains('collapsed');
+    hdr.addEventListener('click', function() {
+        exp = !exp;
+        row.classList.toggle('collapsed', !exp);
+        chev.style.transform = exp ? 'rotate(90deg)' : 'rotate(0deg)';
+    });
+})();</script>
+
+{% if user.qr_codes or user.qr_image_path %}
+<div class="qr-overlay" id="qr-overlay">
+    <button type="button" class="qr-nav" id="qr-prev" aria-label="Предыдущий">‹</button>
+    <div class="qr-stage">
+        <img id="qr-large" src="" alt="QR-пропуск">
+        <div class="qr-large-cap" id="qr-large-cap"></div>
+    </div>
+    <button type="button" class="qr-nav" id="qr-next" aria-label="Следующий">›</button>
+</div>
+<script>(function () {
+    var thumbs = Array.prototype.slice.call(document.querySelectorAll('.qr-thumb-item'));
+    if (!thumbs.length) return;
+    var overlay = document.getElementById('qr-overlay');
+    var large = document.getElementById('qr-large');
+    var cap = document.getElementById('qr-large-cap');
+    var prev = document.getElementById('qr-prev');
+    var next = document.getElementById('qr-next');
+    var items = thumbs.map(function (t) { return { src: t.dataset.src, label: t.dataset.label || '' }; });
+    var multi = items.length > 1;
+    var idx = 0;
+    function show(i) { idx = (i + items.length) % items.length; large.src = items[idx].src; cap.textContent = items[idx].label; }
+    function open(i) { show(i); overlay.style.display = 'flex'; }
+    thumbs.forEach(function (t, i) { t.addEventListener('click', function () { open(i); }); });
+    prev.style.display = multi ? 'flex' : 'none';
+    next.style.display = multi ? 'flex' : 'none';
+    prev.addEventListener('click', function (e) { e.stopPropagation(); show(idx - 1); });
+    next.addEventListener('click', function (e) { e.stopPropagation(); show(idx + 1); });
+    overlay.addEventListener('click', function (e) { if (e.target === overlay || e.target.id === 'qr-large') overlay.style.display = 'none'; });
+    document.addEventListener('keydown', function (e) {
+        if (overlay.style.display !== 'flex') return;
+        if (e.key === 'Escape') overlay.style.display = 'none';
+        if (multi && e.key === 'ArrowLeft') show(idx - 1);
+        if (multi && e.key === 'ArrowRight') show(idx + 1);
+    });
+    var sx = null;
+    overlay.addEventListener('touchstart', function (e) { sx = e.changedTouches[0].clientX; }, { passive: true });
+    overlay.addEventListener('touchend', function (e) {
+        if (sx === null || !multi) { sx = null; return; }
+        var dx = e.changedTouches[0].clientX - sx;
+        if (Math.abs(dx) > 40) { show(dx < 0 ? idx + 1 : idx - 1); }
+        sx = null;
+    });
+})();</script>
+{% endif %}
+{% endblock %}

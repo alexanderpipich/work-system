@@ -1,245 +1,34 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <title>ЧТС</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            --error-bg: #fff1ed;
-            --error-text: #b42318;
-            --success-bg: #eefbf3;
-            --success-text: #067647;
-        }
+{% extends "base.html" %}
 
-        * { box-sizing: border-box; }
+{% block title %}ЧТС{% endblock %}
+{% block brand_title %}ЧТС{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Часовые тарифные ставки: общие, магазинные и индивидуальные</p>{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
-                var(--bg);
-            color: var(--text);
-            padding: 28px 18px 36px;
-        }
+{% block topbar_actions %}
+<a href="/admin/services" class="back-link">Матрица услуг</a>
+<a href="/admin" class="back-link">Назад в админку</a>
+{% endblock %}
 
-        .page { max-width: 1600px; margin: 0 auto; }
+{% block head %}
+<style>
+    /* специфика страницы: ширины редактируемой строки таблицы ставок */
+    .rates-table table { min-width: 1450px; }
+    .inline-form { grid-template-columns: 240px 90px 150px 200px 190px 100px 140px 140px 170px 74px; }
+    @media (max-width: 1100px) {
+        .inline-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+</style>
+{% endblock %}
 
-        .topbar, .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .brand { display: flex; align-items: center; gap: 14px; }
-
-        .brand img {
-            width: 64px;
-            height: 64px;
-            object-fit: contain;
-            border-radius: 16px;
-            background: #fff;
-        }
-
-        .brand-title { margin: 0; color: var(--brand-blue); font-size: 28px; }
-        .brand-subtitle { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
-
-        .back-link {
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-            white-space: nowrap;
-        }
-
-        h2 { margin-top: 0; color: var(--brand-blue); }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 14px;
-        }
-
-        .field label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--brand-blue);
-            margin-bottom: 8px;
-        }
-
-        .field input {
-            width: 100%;
-            height: 44px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0 12px;
-            font-size: 14px;
-            background: #fff;
-        }
-
-        .btn {
-            height: 42px;
-            border: none;
-            border-radius: 12px;
-            padding: 0 14px;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            color: #fff;
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #c23327, #9f1f16);
-            color: #fff;
-        }
-
-        .btn-add {
-            margin-top: 16px;
-            height: 48px;
-            padding: 0 20px;
-        }
-
-        .msg {
-            margin-top: 14px;
-            background: var(--success-bg);
-            color: var(--success-text);
-            border: 1px solid rgba(6, 118, 71, 0.14);
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
-        }
-
-        .err {
-            margin-top: 14px;
-            background: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid rgba(180, 35, 24, 0.14);
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
-        }
-
-        .table-wrap {
-            overflow-x: auto;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1450px;
-            background: #fff;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-            vertical-align: middle;
-        }
-
-        th {
-            background: #fafbfc;
-            color: var(--brand-blue);
-            font-weight: 700;
-        }
-
-        .inline-form {
-            display: grid;
-            grid-template-columns: 260px 90px 160px 210px 100px 130px 130px 180px 80px;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .inline-form input {
-            height: 38px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 0 10px;
-            font-size: 13px;
-            width: 100%;
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .pill {
-            display: inline-block;
-            padding: 7px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .type-base { background: #f2f4f7; color: #344054; }
-        .type-format { background: #e0f2fe; color: #026aa2; }
-        .type-store { background: #fff7ed; color: #9a3412; }
-        .type-personal { background: #f4ebff; color: #6941c6; }
-
-        .row-personal { background: #fcfaff; }
-        .row-store { background: #fffdf8; }
-        .row-format { background: #f8fcff; }
-
-        @media (max-width: 980px) {
-            .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .topbar { flex-direction: column; align-items: stretch; }
-        }
-
-        @media (max-width: 700px) {
-            .form-grid { grid-template-columns: 1fr; }
-        }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1 class="brand-title">ЧТС</h1>
-                <p class="brand-subtitle">Часовые тарифные ставки: общие, магазинные и индивидуальные</p>
-            </div>
+{% block content %}
+<div class="page page-wide">
+    <div class="hero">
+        <div>
+            <h2>Тарифные ставки</h2>
+            <p>Базовая сетка грузится из Excel, надбавки по торговым комплексам и отдельным
+               сотрудникам задаются вручную. Приоритет: сотрудник → магазин → формат → база.</p>
         </div>
-
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <a href="/admin/services" class="back-link">Матрица услуг</a>
-            <a href="/admin" class="back-link">Назад в админку</a>
-        </div>
+        <span class="hero-count">Показано: {{ rates|length }}</span>
     </div>
 
     <div class="card">
@@ -293,27 +82,27 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-add">Добавить ставку</button>
+            <button type="submit" class="btn btn-primary btn-lg mt-20">Добавить ставку</button>
         </form>
 
         {% if message %}
-            <div class="msg">{{ message }}</div>
+            <div class="alert alert-success">{{ message }}</div>
         {% endif %}
 
         {% if error %}
-            <div class="err">{{ error }}</div>
+            <div class="alert alert-error">{{ error }}</div>
         {% endif %}
     </div>
 
     <div class="card">
         <h2>Загрузка тарифной сетки из Excel</h2>
-        <p style="color:#64748b;font-size:13px;margin-top:-4px;">
+        <p class="field-hint mb-14">
             Лист «ставки»: колонки РЕГИОН → Город, ТК → Формат, УСЛУГА + уровень → услуга вида
             «Nур_название», блок «Тариф исполнителя N уровня» → ЧТС.
         </p>
 
         <form method="post" action="/admin/rates/upload" enctype="multipart/form-data">
-            <div class="form-grid">
+            <div class="form-grid cols-2">
                 <div class="field">
                     <label>Файл .xlsx</label>
                     <input type="file" name="file" accept=".xlsx" required>
@@ -327,37 +116,36 @@
                     </select>
                 </div>
             </div>
-            <p style="color:#64748b;font-size:12px;">
+            <p class="field-hint">
                 «Заменить базовую сетку» удаляет только общие ставки (без магазина и сотрудника).
                 Индивидуальные ставки по ТК и сотрудникам не затрагиваются.
             </p>
-            <button type="submit" class="btn btn-primary btn-add">Загрузить</button>
+            <button type="submit" class="btn btn-primary mt-14">Загрузить</button>
         </form>
 
         {% if rates_preview %}
-            <div class="msg" style="margin-top:14px;">
+            <div class="alert alert-success">
                 Найдено ставок: <b>{{ rates_preview.count }}</b>.
                 Города: {{ rates_preview.cities | join(', ') }}.
                 Форматы: {{ rates_preview.formats | join(', ') }}.
                 {% if rates_preview.conflicts %}
-                    <br><span style="color:#b91c1c;">
-                    Конфликтов ключа город+формат+услуга: {{ rates_preview.conflicts | length }}
+                    <br>Конфликтов ключа город+формат+услуга: {{ rates_preview.conflicts | length }}
                     — загрузка в режиме записи будет заблокирована.
-                    </span>
                 {% else %}
                     <br>Конфликтов нет — можно применять.
                 {% endif %}
-                {% if rates_preview.duplicate_spelling %}
-                    <br><span style="color:#9a3412;">
+            </div>
+
+            {% if rates_preview.duplicate_spelling %}
+                <div class="alert alert-warn">
                     Дубли написания услуг ({{ rates_preview.duplicate_spelling | length }}):
                     {% for pair in rates_preview.duplicate_spelling %}«{{ pair | join('» / «') }}»{% if not loop.last %}; {% endif %}{% endfor %}
                     — грузятся как разные услуги, чистка вручную (этап 5).
-                    </span>
-                {% endif %}
-            </div>
+                </div>
+            {% endif %}
 
             {% if rates_preview.conflicts %}
-                <div class="table-wrap" style="margin-top:10px;">
+                <div class="table-wrap mt-14">
                     <table>
                         <thead><tr><th>Город</th><th>Формат</th><th>Услуга</th><th>Ставки</th></tr></thead>
                         <tbody>
@@ -372,7 +160,7 @@
                 </div>
             {% endif %}
 
-            <div class="table-wrap" style="margin-top:10px;">
+            <div class="table-wrap mt-14">
                 <table>
                     <thead><tr><th>Город</th><th>Формат</th><th>Услуга</th><th>ЧТС</th></tr></thead>
                     <tbody>
@@ -384,8 +172,8 @@
                     {% endfor %}
                     </tbody>
                 </table>
-                <p style="color:#64748b;font-size:12px;">Показаны первые {{ rates_preview.sample | length }} строк.</p>
             </div>
+            <p class="field-hint">Показаны первые {{ rates_preview.sample | length }} строк.</p>
         {% endif %}
     </div>
 
@@ -394,23 +182,29 @@
 
         {% set current_layer = layer|default('all') %}
         {% set rates_base_path = rates_base|default('/admin/rates') %}
-        <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+
+        <div class="toolbar">
+            <div class="tabs">
                 {% for key, label in [('all','Все'), ('individual','Только индивидуальные'), ('store','По ТК'), ('employee','По сотруднику'), ('base','Только базовые')] %}
                 <a href="{{ rates_base_path }}?layer={{ key }}"
-                   style="padding:7px 12px; border-radius:999px; text-decoration:none; font-size:13px; font-weight:700; border:1px solid var(--border);
-                          {% if current_layer == key %}background:var(--brand-blue); color:#fff; border-color:var(--brand-blue);{% else %}background:#fff; color:var(--brand-blue);{% endif %}">{{ label }}</a>
+                   class="tab{% if current_layer == key %} is-active{% endif %}">{{ label }}</a>
                 {% endfor %}
             </div>
-            <div style="color:#64748b; font-size:13px;">
-                Индивидуальных: <b>{{ individual_count|default(0) }}</b> · базовых: <b>{{ base_count|default(0) }}</b> · показано: <b>{{ rates|length }}</b>
+            <div class="muted">
+                Индивидуальных: <b>{{ individual_count|default(0) }}</b> ·
+                базовых: <b>{{ base_count|default(0) }}</b> ·
+                показано: <b>{{ rates|length }}</b>
             </div>
         </div>
+
         {% if current_layer == 'individual' %}
-        <p style="color:#9a3412; font-size:13px; margin:0 0 12px;">⚠ Неканонические ЧТС (надбавки по ТК/сотруднику). Базовую сетку здесь не удалить — она грузится из файла (режим «заменить»).</p>
+        <div class="alert alert-warn mt-0 mb-14">
+            Неканонические ЧТС (надбавки по ТК/сотруднику). Базовую сетку здесь не удалить —
+            она грузится из файла (режим «заменить»).
+        </div>
         {% endif %}
 
-        <div class="table-wrap">
+        <div class="table-wrap rates-table">
             <table>
                 <thead>
                     <tr>
@@ -455,14 +249,14 @@
                                     <input type="date" name="active_to" value="{{ rate.active_to.strftime('%Y-%m-%d') if rate.active_to else '' }}">
                                     <input type="text" name="comment" value="{{ rate.comment or '' }}" placeholder="Комментарий">
 
-                                    <button type="submit" class="btn btn-primary">OK</button>
+                                    <button type="submit" class="btn btn-primary btn-sm">OK</button>
                                 </form>
                             </td>
 
                             <td>
                                 <form method="post" action="/admin/rates/delete" onsubmit="return confirm('Удалить ставку?');">
                                     <input type="hidden" name="rate_id" value="{{ rate.id }}">
-                                    <button type="submit" class="btn btn-danger">Удалить</button>
+                                    <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
                                 </form>
                             </td>
                         </tr>
@@ -470,7 +264,7 @@
 
                     {% if rates|length == 0 %}
                     <tr>
-                        <td colspan="4">Ставок пока нет</td>
+                        <td colspan="4" class="muted">Ставок пока нет</td>
                     </tr>
                     {% endif %}
                 </tbody>
@@ -478,5 +272,4 @@
         </div>
     </div>
 </div>
-</body>
-</html>
+{% endblock %}
