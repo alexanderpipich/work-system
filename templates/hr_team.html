@@ -1,12 +1,80 @@
-<!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/static/favicon.ico?v=2"><link rel="stylesheet" href="/static/employees.css"><title>Команда HR</title></head>
-<body><div class="page"><header class="topbar"><div class="brand"><img src="/static/logo-alex.jpg" alt="Логотип"><div><h1>Команда HR</h1><div class="muted">Назначение городов и отдельных магазинов HR-менеджерам</div></div></div><a class="btn light" href="/hr">HR кабинет</a></header>
-{% if message %}<div class="message">{{ message }}</div>{% endif %}
-<section class="panel"><div class="table-wrap"><table><thead><tr><th>HR-менеджер</th><th>Телефон</th><th>Область доступа</th><th>Действие</th></tr></thead><tbody>
-{% for manager in managers %}{% set selected_cities = city_scopes.get(manager.id, []) or [] %}{% set selected_stores = store_scopes.get(manager.id, []) or [] %}
-<tr><td>{{ manager.employee_name }}</td><td>{{ manager.phone }}</td><td><form id="scope-{{ manager.id }}" method="post" action="/hr/team/scopes">
-<input type="hidden" name="user_id" value="{{ manager.id }}"><h3>Города</h3><div class="scope-grid">{% for city in available_cities %}<label class="scope-option"><input type="checkbox" name="scope_cities" value="{{ city }}" {% if city in selected_cities %}checked{% endif %}><span>{{ city }}</span></label>{% endfor %}</div>
-<h3>Конкретные магазины <span class="muted">(не выбирать = все магазины выбранных городов)</span></h3>
-{% for city in available_cities %}<div class="folder"><h4>{{ city }}</h4><div class="scope-grid">{% for store in stores_by_city.get(city, []) %}<label class="scope-option"><input type="checkbox" name="scope_stores" value="{{ store }}" {% if store in selected_stores %}checked{% endif %}><span>{{ store }}</span></label>{% endfor %}</div></div>{% endfor %}
-</form></td><td><button form="scope-{{ manager.id }}" class="btn">Сохранить</button></td></tr>{% endfor %}
-{% if not managers %}<tr><td colspan="4" class="muted">HR-менеджеры пока не созданы</td></tr>{% endif %}</tbody></table></div></section></div></body></html>
+{% extends "base.html" %}
+
+{% block title %}Команда HR{% endblock %}
+{% block brand_title %}Команда HR{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Назначение городов и отдельных магазинов HR-менеджерам</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="/hr">HR кабинет</a>{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: сетка флажков области доступа и группировка магазинов по городам */
+    .scope-form h3 { margin: 16px 0 8px; font-size: 14px; color: var(--brand-blue); }
+    .scope-form h3:first-of-type { margin-top: 0; }
+
+    .scope-grid { display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 8px; }
+
+    .scope-option {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 9px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: #fff;
+        font-size: 13px;
+        cursor: pointer;
+    }
+    .scope-option:hover { background: #f7f8fa; }
+    .scope-option input { width: auto; margin: 0; }
+
+    .folder { border-left: 3px solid #d8def4; padding: 8px 0 8px 14px; margin: 10px 0; }
+    .folder h4 { margin: 0 0 8px; color: var(--brand-blue); font-size: 13.5px; }
+
+    @media (max-width: 1000px) { .scope-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 650px) { .scope-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top">
+
+    {% if message %}<div class="alert alert-success mb-20">{{ message }}</div>{% endif %}
+
+    <div class="card">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>HR-менеджер</th><th>Телефон</th><th>Область доступа</th><th>Действие</th></tr>
+                </thead>
+                <tbody>
+                    {% for manager in managers %}{% set selected_cities = city_scopes.get(manager.id, []) or [] %}{% set selected_stores = store_scopes.get(manager.id, []) or [] %}
+                    <tr>
+                        <td>{{ manager.employee_name }}</td>
+                        <td>{{ manager.phone }}</td>
+                        <td>
+                            <form id="scope-{{ manager.id }}" method="post" action="/hr/team/scopes" class="scope-form">
+                                <input type="hidden" name="user_id" value="{{ manager.id }}">
+
+                                <h3>Города</h3>
+                                <div class="scope-grid">{% for city in available_cities %}<label class="scope-option"><input type="checkbox" name="scope_cities" value="{{ city }}" {% if city in selected_cities %}checked{% endif %}><span>{{ city }}</span></label>{% endfor %}</div>
+
+                                <h3>Конкретные магазины <span class="muted">(не выбирать = все магазины выбранных городов)</span></h3>
+                                {% for city in available_cities %}
+                                <div class="folder">
+                                    <h4>{{ city }}</h4>
+                                    <div class="scope-grid">{% for store in stores_by_city.get(city, []) %}<label class="scope-option"><input type="checkbox" name="scope_stores" value="{{ store }}" {% if store in selected_stores %}checked{% endif %}><span>{{ store }}</span></label>{% endfor %}</div>
+                                </div>
+                                {% endfor %}
+                            </form>
+                        </td>
+                        <td><button form="scope-{{ manager.id }}" class="btn btn-primary btn-sm">Сохранить</button></td>
+                    </tr>
+                    {% endfor %}
+                    {% if not managers %}<tr><td colspan="4" class="muted">HR-менеджеры пока не созданы</td></tr>{% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

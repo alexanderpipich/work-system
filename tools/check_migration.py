@@ -43,7 +43,10 @@ PATTERNS = {
 # Каркас, который по замыслу переезжает в base.html
 EXPECTED_LOST = {
     "name": {"viewport"},
-    "href": {"/static/favicon.ico?v=2", "/static/apple-touch-icon.png?v=2", "/logout"},
+    # employees.css — постраничная таблица стилей блока «Сотрудники»/HR; её место
+    # занял общий app.css из base.html, поэтому ссылка на неё исчезает штатно
+    "href": {"/static/favicon.ico?v=2", "/static/apple-touch-icon.png?v=2", "/logout",
+             "/static/employees.css"},
     "jinja": set(),
 }
 

@@ -1,36 +1,39 @@
-<!doctype html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <link rel="stylesheet" href="/static/employees.css">
-    <title>Мониторинг увольнений</title>
-    <style>
-        .pill { display:inline-block; padding:3px 9px; border-radius:999px; font-size:12px; font-weight:700; }
-        .pill.dismiss { background:#fff1ed; color:#b42318; }
-        .pill.keep { background:#eefbf3; color:#067647; }
-        .pill.none { background:#f3f4f6; color:#6b7280; }
-        .decide-form { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
-        .decide-form input[type=text] { max-width:160px; }
-    </style>
-</head>
-<body>
-<div class="page">
-    <header class="topbar">
-        <div>
-            <h1>Мониторинг увольнений</h1>
-            <div class="muted">Сотрудники, переставшие появляться на сменах — кандидаты на увольнение (кадровое решение человека)</div>
-        </div>
-        <a class="btn light" href="{{ base_path }}">Сотрудники</a>
-    </header>
+{% extends "base.html" %}
 
-    {% if message %}<div class="message">{{ message }}</div>{% endif %}
+{% block title %}Мониторинг увольнений{% endblock %}
+{% block brand_title %}Мониторинг увольнений{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Сотрудники, переставшие появляться на сменах — кандидаты на увольнение (кадровое решение человека)</p>{% endblock %}
 
-    <section class="panel">
-        <p class="muted">Порог: нет смен ≥ <b>{{ settings.inactive_days }}</b> дней. Показаны все пропавшие
+{% block topbar_actions %}<a class="back-link" href="{{ base_path }}">Сотрудники</a>{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: строка решения по сотруднику внутри ячейки таблицы */
+    .decide-form { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .decide-form input[type=text] {
+        max-width: 180px;
+        height: 34px;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        padding: 0 10px;
+        font-family: inherit;
+        font-size: 13px;
+        background: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top">
+
+    {% if message %}<div class="alert alert-success mb-20">{{ message }}</div>{% endif %}
+
+    <div class="card">
+        <p class="field-hint mt-0">Порог: нет смен ≥ <b>{{ settings.inactive_days }}</b> дней. Показаны все пропавшие
             (в бланке планирования или нет). Для мигрантов важно гражданство — чтобы не платить налоги за неработающего.
             Порог правится на экране <a href="/admin/planning-bp">Бланк планирования</a>.</p>
-        <div class="table-wrap">
+
+        <div class="table-wrap mt-14">
             <table>
                 <thead>
                     <tr><th>Сотрудник</th><th>Гражданство</th><th>Последняя смена</th><th>Магазин</th><th>Дней назад</th><th>Решение</th></tr>
@@ -44,14 +47,14 @@
                         <td>{{ row.store or '—' }}{% if row.city %} · {{ row.city }}{% endif %}</td>
                         <td>{{ row.days_ago }}</td>
                         <td>
-                            {% if row.decision == 'dismiss' %}<span class="pill dismiss">к увольнению</span>
-                            {% elif row.decision == 'keep' %}<span class="pill keep">оставить</span>
-                            {% else %}<span class="pill none">нет решения</span>{% endif %}
-                            <form method="post" action="{{ base_path }}/dismissals/decide" class="decide-form" style="margin-top:6px;">
+                            {% if row.decision == 'dismiss' %}<span class="pill pill-danger">к увольнению</span>
+                            {% elif row.decision == 'keep' %}<span class="pill pill-success">оставить</span>
+                            {% else %}<span class="pill pill-neutral">нет решения</span>{% endif %}
+                            <form method="post" action="{{ base_path }}/dismissals/decide" class="decide-form mt-8">
                                 <input type="hidden" name="employee_name" value="{{ row.employee_name }}">
                                 <input type="text" name="comment" value="{{ row.decision_comment }}" placeholder="комментарий">
-                                <button class="btn warn" name="decision" value="dismiss">К увольнению</button>
-                                <button class="btn good" name="decision" value="keep">Оставить</button>
+                                <button class="btn btn-danger btn-sm" name="decision" value="dismiss">К увольнению</button>
+                                <button class="btn btn-primary btn-sm" name="decision" value="keep">Оставить</button>
                             </form>
                         </td>
                     </tr>
@@ -62,7 +65,6 @@
                 </tbody>
             </table>
         </div>
-    </section>
+    </div>
 </div>
-</body>
-</html>
+{% endblock %}

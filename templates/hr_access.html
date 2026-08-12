@@ -1,1 +1,50 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/static/favicon.ico?v=2"><link rel="stylesheet" href="/static/employees.css"><title>Доступ сотрудников</title></head><body><div class="page"><header class="topbar"><div class="brand"><img src="/static/logo-alex.jpg" alt="Логотип"><div><h1>Доступ сотрудников</h1><div class="muted">Сброс паролей разрешён только сотрудникам и бригадирам доступной области</div></div></div><a class="btn light" href="/hr">HR кабинет</a></header>{% if message %}<div class="message">{{ message }}</div>{% endif %}{% if error %}<div class="message" style="color:#b42318;background:#feecea">{{ error }}</div>{% endif %}<section class="panel"><div class="table-wrap"><table><thead><tr><th>ФИО</th><th>Телефон</th><th>Роль</th><th>Новый пароль</th></tr></thead><tbody>{% for row in users %}<tr><td>{{ row.employee_name }}</td><td>{{ row.phone }}</td><td>{{ 'Бригадир' if row.role == 'brigadier' else 'Сотрудник' }}</td><td><form method="post" action="/hr/access/reset-password" class="actions"><input type="hidden" name="user_id" value="{{ row.id }}"><input type="password" name="new_password" minlength="6" placeholder="Минимум 6 символов" required><button class="btn">Сбросить пароль</button></form></td></tr>{% endfor %}{% if not users %}<tr><td colspan="4" class="muted">Доступных пользователей нет</td></tr>{% endif %}</tbody></table></div></section></div></body></html>
+{% extends "base.html" %}
+
+{% block title %}Доступ сотрудников{% endblock %}
+{% block brand_title %}Доступ сотрудников{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Сброс паролей разрешён только сотрудникам и бригадирам доступной области</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="/hr">HR кабинет</a>{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: колонки строки сброса пароля внутри ячейки таблицы */
+    .reset-form { grid-template-columns: minmax(170px, 1fr) auto; }
+    @media (max-width: 720px) { .reset-form { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-narrow page-pad-top">
+
+    {% if message %}<div class="alert alert-success mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mb-20">{{ error }}</div>{% endif %}
+
+    <div class="card">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>ФИО</th><th>Телефон</th><th>Роль</th><th>Новый пароль</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in users %}
+                    <tr>
+                        <td>{{ row.employee_name }}</td>
+                        <td>{{ row.phone }}</td>
+                        <td>{{ 'Бригадир' if row.role == 'brigadier' else 'Сотрудник' }}</td>
+                        <td>
+                            <form method="post" action="/hr/access/reset-password" class="inline-form reset-form">
+                                <input type="hidden" name="user_id" value="{{ row.id }}">
+                                <input type="password" name="new_password" minlength="6" placeholder="Минимум 6 символов" required>
+                                <button class="btn btn-primary btn-sm">Сбросить пароль</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not users %}<tr><td colspan="4" class="muted">Доступных пользователей нет</td></tr>{% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

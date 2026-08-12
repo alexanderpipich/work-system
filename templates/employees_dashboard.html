@@ -1,1 +1,64 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/static/favicon.ico?v=2"><link rel="stylesheet" href="/static/employees.css"><title>Сотрудники</title></head><body><div class="page"><header class="topbar"><div class="brand"><img src="/static/logo-alex.jpg" alt="Логотип"><div><h1>Сотрудники</h1><div class="muted">Планирование, мониторинг и сверки</div></div></div><a class="btn light" href="{{ back_url }}">Назад</a></header><div class="grid"><a class="module" href="{{ base_path }}/planning"><span class="tag">01</span><h2>Бланки планирования</h2><p class="muted">Назначения сотрудников на магазины, сценарии и XLSX-бланки.</p></a><a class="module" href="{{ base_path }}/monitoring"><span class="tag">02</span><h2>Мониторинг сотрудников</h2><p class="muted">Рекомендации по фактическим сменам и назначениям.</p></a><a class="module" href="{{ base_path }}/dismissals"><span class="tag">02б</span><h2>Мониторинг увольнений</h2><p class="muted">Пропавшие со смен — кандидаты на увольнение (кадровое).</p></a><a class="module" href="{{ base_path }}/reconciliations"><span class="tag">03</span><h2>Сверки</h2><p class="muted">Сверки часов по магазинам за фиксированные периоды.</p></a></div></div></body></html>
+{% extends "base.html" %}
+
+{% block title %}Сотрудники{% endblock %}
+{% block brand_title %}Сотрудники{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Планирование, мониторинг и сверки</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="{{ back_url }}">Назад</a>{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: в слоте иконки — порядковый номер шага, а не svg */
+    .icon .step { font-size: 15px; font-weight: 800; letter-spacing: -.3px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top">
+    <div class="grid">
+        <a class="nav-card" href="{{ base_path }}/planning">
+            <span class="icon indigo"><span class="step">01</span></span>
+            <span class="card-body">
+                <span class="card-top">
+                    <span class="title">Бланки планирования</span>
+                </span>
+                <span class="desc">Назначения сотрудников на магазины, сценарии и XLSX-бланки.</span>
+            </span>
+            <span class="go" aria-hidden="true">→</span>
+        </a>
+
+        <a class="nav-card" href="{{ base_path }}/monitoring">
+            <span class="icon sky"><span class="step">02</span></span>
+            <span class="card-body">
+                <span class="card-top">
+                    <span class="title">Мониторинг сотрудников</span>
+                </span>
+                <span class="desc">Рекомендации по фактическим сменам и назначениям.</span>
+            </span>
+            <span class="go" aria-hidden="true">→</span>
+        </a>
+
+        <a class="nav-card" href="{{ base_path }}/dismissals">
+            <span class="icon coral"><span class="step">02б</span></span>
+            <span class="card-body">
+                <span class="card-top">
+                    <span class="title">Мониторинг увольнений</span>
+                </span>
+                <span class="desc">Пропавшие со смен — кандидаты на увольнение (кадровое).</span>
+            </span>
+            <span class="go" aria-hidden="true">→</span>
+        </a>
+
+        <a class="nav-card" href="{{ base_path }}/reconciliations">
+            <span class="icon teal"><span class="step">03</span></span>
+            <span class="card-body">
+                <span class="card-top">
+                    <span class="title">Сверки</span>
+                </span>
+                <span class="desc">Сверки часов по магазинам за фиксированные периоды.</span>
+            </span>
+            <span class="go" aria-hidden="true">→</span>
+        </a>
+    </div>
+</div>
+{% endblock %}

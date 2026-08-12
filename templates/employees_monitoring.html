@@ -1,1 +1,94 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/static/employees.css"><title>Мониторинг сотрудников</title></head><body><div class="page"><header class="topbar"><div><h1>Мониторинг сотрудников</h1><div class="muted">Расхождения между назначениями и фактическими сменами</div></div><a class="btn light" href="{{ base_path }}">Сотрудники</a></header>{% if message %}<div class="message">{{ message }}</div>{% endif %}<section class="panel"><div class="actions"><form method="post" action="{{ base_path }}/monitoring/generate"><button class="btn">Обновить рекомендации</button></form></div>{% if is_admin %}<form method="post" action="/admin/employees/monitoring/settings" class="form-grid"><div class="field"><label>Дней без смен</label><input type="number" name="inactive_days" value="{{ settings.inactive_days }}" min="1"></div><div class="field"><label>Минимум смен для добавления</label><input type="number" name="minimum_shifts" value="{{ settings.minimum_shifts }}" min="1"></div><div class="field"><label>Период анализа, дней</label><input type="number" name="analysis_days" value="{{ settings.analysis_days }}" min="1"></div><button class="btn light">Сохранить настройки</button></form>{% endif %}</section><section class="panel"><div class="tabs"><a class="{{ 'active' if tab=='inactive' }}" href="?tab=inactive">Не работают</a><a class="{{ 'active' if tab=='missing' }}" href="?tab=missing">Не добавлены в планирование</a><a class="{{ 'active' if tab=='all' }}" href="?tab=all">Все рекомендации</a></div><div class="table-wrap"><table><thead><tr><th>Сотрудник</th><th>Магазин</th><th>Город</th><th>Рекомендация</th><th>Статус</th><th>Решение</th></tr></thead><tbody>{% for row in rows %}<tr><td>{{ row.employee_name }}</td><td>{{ row.store }}</td><td>{{ row.city }}</td><td>{{ row.recommendation_text }}</td><td><span class="status {{ row.status }}">{{ row.status }}</span></td><td>{% if row.status=='new' %}<div class="actions"><form method="post" action="{{ base_path }}/monitoring/process"><input type="hidden" name="recommendation_id" value="{{ row.id }}"><input type="hidden" name="status" value="accepted"><button class="btn good">Принять</button></form><form method="post" action="{{ base_path }}/monitoring/process"><input type="hidden" name="recommendation_id" value="{{ row.id }}"><input type="hidden" name="status" value="dismissed"><button class="btn warn">Отклонить</button></form></div>{% endif %}</td></tr>{% endfor %}</tbody></table></div></section></div></body></html>
+{% extends "base.html" %}
+
+{% block title %}Мониторинг сотрудников{% endblock %}
+{% block brand_title %}Мониторинг сотрудников{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Расхождения между назначениями и фактическими сменами</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="{{ base_path }}">Сотрудники</a>{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: вкладки и статусы рекомендаций собираются в Jinja */
+    .tab.active { background: var(--brand-blue); color: #fff; border-color: var(--brand-blue); }
+
+    .pill.new { background: #eef2ff; color: var(--brand-blue); }
+    .pill.accepted { background: var(--success-bg); color: var(--success-text); }
+    .pill.dismissed { background: var(--error-bg); color: var(--error-text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top">
+
+    {% if message %}<div class="alert alert-success mb-20">{{ message }}</div>{% endif %}
+
+    <div class="card">
+        <div class="actions">
+            <form method="post" action="{{ base_path }}/monitoring/generate"><button class="btn btn-primary">Обновить рекомендации</button></form>
+        </div>
+
+        {% if is_admin %}
+        <form method="post" action="/admin/employees/monitoring/settings" class="mt-20">
+            <div class="form-grid align-end">
+                <div class="field">
+                    <label>Дней без смен</label>
+                    <input type="number" name="inactive_days" value="{{ settings.inactive_days }}" min="1">
+                </div>
+                <div class="field">
+                    <label>Минимум смен для добавления</label>
+                    <input type="number" name="minimum_shifts" value="{{ settings.minimum_shifts }}" min="1">
+                </div>
+                <div class="field">
+                    <label>Период анализа, дней</label>
+                    <input type="number" name="analysis_days" value="{{ settings.analysis_days }}" min="1">
+                </div>
+            </div>
+            <button class="btn btn-secondary mt-20">Сохранить настройки</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="tabs mb-14">
+            <a class="tab {{ 'active' if tab=='inactive' }}" href="?tab=inactive">Не работают</a>
+            <a class="tab {{ 'active' if tab=='missing' }}" href="?tab=missing">Не добавлены в планирование</a>
+            <a class="tab {{ 'active' if tab=='all' }}" href="?tab=all">Все рекомендации</a>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Сотрудник</th><th>Магазин</th><th>Город</th><th>Рекомендация</th><th>Статус</th><th>Решение</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td>{{ row.employee_name }}</td>
+                        <td>{{ row.store }}</td>
+                        <td>{{ row.city }}</td>
+                        <td>{{ row.recommendation_text }}</td>
+                        <td><span class="pill {{ row.status }}">{{ row.status }}</span></td>
+                        <td>
+                            {% if row.status=='new' %}
+                            <div class="actions">
+                                <form method="post" action="{{ base_path }}/monitoring/process">
+                                    <input type="hidden" name="recommendation_id" value="{{ row.id }}">
+                                    <input type="hidden" name="status" value="accepted">
+                                    <button class="btn btn-primary btn-sm">Принять</button>
+                                </form>
+                                <form method="post" action="{{ base_path }}/monitoring/process">
+                                    <input type="hidden" name="recommendation_id" value="{{ row.id }}">
+                                    <input type="hidden" name="status" value="dismissed">
+                                    <button class="btn btn-danger btn-sm">Отклонить</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
