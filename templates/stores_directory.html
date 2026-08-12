@@ -1,188 +1,80 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Справочник магазинов</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-        }
+{% extends "base.html" %}
 
-        * { box-sizing: border-box; }
+{% block title %}Справочник магазинов{% endblock %}
+{% block brand_title %}Справочник магазинов{% endblock %}
+{% block topbar_class %}topbar-sticky{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-        }
+{% block head %}
+<style>
+    /* специфика страницы: ширины колонок фильтра справочника */
+    .filters { display: grid; grid-template-columns: 110px minmax(0, 1fr) 160px 140px auto; gap: 12px; align-items: end; }
+    @media (max-width: 760px) {
+        .filters { grid-template-columns: 1fr 1fr; }
+        .filters .field:nth-child(2) { grid-column: 1 / -1; }
+    }
+    @media (max-width: 520px) { .filters { grid-template-columns: 1fr; } }
 
-        .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            background: rgba(255, 255, 255, 0.96);
-            border-bottom: 1px solid var(--border);
-            box-shadow: 0 10px 26px rgba(11, 20, 117, 0.08);
-        }
+    /* специфика страницы: плитка магазина = карточка-ссылка без иконки */
+    .store { display: block; margin-bottom: 0; text-decoration: none; color: inherit; transition: border-color .16s ease, box-shadow .16s ease; }
+    .store:hover { border-color: #c7ccdb; box-shadow: var(--shadow-hover); color: inherit; }
+    .store-line { margin: 3px 0 0; }
+</style>
+{% endblock %}
 
-        .topbar-inner {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 12px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-        }
-
-        .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-        .brand img { width: 54px; height: 54px; object-fit: contain; border-radius: 14px; background: #fff; flex-shrink: 0; }
-        .brand-title { margin: 0; font-size: 24px; line-height: 1.1; color: var(--brand-blue); }
-
-        .logout {
-            text-decoration: none; color: var(--brand-blue); font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.16); padding: 10px 14px;
-            border-radius: 12px; background: #fff; white-space: nowrap;
-        }
-
-        .page { max-width: 1040px; margin: 0 auto; padding: 20px 18px 36px; }
-
-        .card {
-            background: var(--card-bg); border-radius: 22px;
-            box-shadow: var(--shadow); padding: 20px; margin-bottom: 18px;
-        }
-
-        .filters {
-            display: grid;
-            grid-template-columns: 110px minmax(0, 1fr) 160px 140px auto;
-            gap: 12px; align-items: end;
-        }
-        .field label { display: block; font-size: 12px; font-weight: 700; color: var(--brand-blue); margin-bottom: 6px; }
-        .field input {
-            width: 100%; height: 42px; border: 1px solid var(--border);
-            border-radius: 12px; padding: 0 12px; font-size: 14px; background: #fff;
-        }
-        .btn {
-            height: 42px; border: none; border-radius: 12px; padding: 0 16px;
-            font-weight: 700; cursor: pointer; white-space: nowrap;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a); color: #fff;
-        }
-        .btn-light {
-            background: #fff; color: var(--brand-blue); border: 1px solid rgba(11, 20, 117, 0.14);
-            text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-            height: 42px; padding: 0 16px; border-radius: 12px; font-weight: 700;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 14px;
-        }
-
-        .store {
-            display: block;
-            text-decoration: none;
-            color: inherit;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px;
-            background: #fff;
-            transition: box-shadow .15s, transform .05s;
-        }
-        .store:hover { box-shadow: var(--shadow); }
-        .store:active { transform: translateY(1px); }
-
-        .store-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-        .tk-badge {
-            font-size: 13px; font-weight: 800; color: var(--brand-blue);
-            background: rgba(11, 20, 117, 0.08); border-radius: 8px; padding: 4px 9px;
-        }
-        .fmt-badge { font-size: 12px; font-weight: 700; color: #8f3e20; background: rgba(245, 138, 101, 0.14); border-radius: 999px; padding: 4px 10px; }
-        .store-name { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin: 0 0 6px; line-height: 1.25; }
-        .store-line { font-size: 13px; color: var(--muted); margin: 2px 0; }
-
-        .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
-
-        @media (max-width: 760px) {
-            .filters { grid-template-columns: 1fr 1fr; }
-            .filters .field:nth-child(2) { grid-column: 1 / -1; }
-        }
-        @media (max-width: 520px) {
-            .filters { grid-template-columns: 1fr; }
-            .brand-title { font-size: 20px; }
-        }
-    </style>
-</head>
-<body>
-    <header class="topbar">
-        <div class="topbar-inner">
-            <div class="brand">
-                <img src="/static/logo-alex.jpg" alt="Логотип">
-                <h1 class="brand-title">Справочник магазинов</h1>
-            </div>
-            <a href="/logout" class="logout">Выйти</a>
+{% block content %}
+<div class="page page-narrow">
+    <div class="hero">
+        <div>
+            <h2>Магазины</h2>
+            <p>Торговые точки с адресами объектов. Фильтры держат номер ТК, название, город и формат.</p>
         </div>
-    </header>
+    </div>
 
-    <main class="page">
-        <section class="card">
-            <form method="get" action="/stores">
-                <div class="filters">
-                    <div class="field">
-                        <label>Номер ТК</label>
-                        <input type="text" name="tk" value="{{ filters.tk }}" inputmode="numeric">
-                    </div>
-                    <div class="field">
-                        <label>Название</label>
-                        <input type="text" name="name" value="{{ filters.name }}">
-                    </div>
-                    <div class="field">
-                        <label>Город</label>
-                        <input type="text" name="city" value="{{ filters.city }}">
-                    </div>
-                    <div class="field">
-                        <label>Формат</label>
-                        <input type="text" name="format" value="{{ filters.format }}">
-                    </div>
-                    <div style="display:flex;gap:8px">
-                        <button type="submit" class="btn">Найти</button>
-                        <a href="/stores" class="btn-light">Сброс</a>
-                    </div>
+    <section class="card">
+        <form method="get" action="/stores">
+            <div class="filters">
+                <div class="field">
+                    <label>Номер ТК</label>
+                    <input type="text" name="tk" value="{{ filters.tk }}" inputmode="numeric">
                 </div>
-            </form>
-        </section>
+                <div class="field">
+                    <label>Название</label>
+                    <input type="text" name="name" value="{{ filters.name }}">
+                </div>
+                <div class="field">
+                    <label>Город</label>
+                    <input type="text" name="city" value="{{ filters.city }}">
+                </div>
+                <div class="field">
+                    <label>Формат</label>
+                    <input type="text" name="format" value="{{ filters.format }}">
+                </div>
+                <div class="row">
+                    <button type="submit" class="btn btn-primary">Найти</button>
+                    <a href="/stores" class="btn btn-secondary">Сброс</a>
+                </div>
+            </div>
+        </form>
+    </section>
 
-        <section class="card">
-            {% if stores %}
-                <div class="grid">
-                    {% for store in stores %}
-                    <a class="store" href="/stores/{{ store.id }}">
-                        <div class="store-top">
-                            <span class="tk-badge">ТК {{ store.tk_number }}</span>
-                            {% if store.format %}<span class="fmt-badge">{{ store.format }}</span>{% endif %}
-                        </div>
-                        <p class="store-name">{{ store.display_name or ('ТК ' ~ store.tk_number) }}</p>
-                        {% if store.city %}<p class="store-line">🏙 {{ store.city }}</p>{% endif %}
-                        {% if store.object_address %}<p class="store-line">📍 {{ store.object_address }}</p>{% endif %}
-                    </a>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="empty">Магазины не найдены.</div>
-            {% endif %}
-        </section>
-    </main>
-</body>
-</html>
+    <section class="card">
+        {% if stores %}
+            <div class="grid">
+                {% for store in stores %}
+                <a class="card store" href="/stores/{{ store.id }}">
+                    <div class="row row-between mb-8">
+                        <span class="pill">ТК {{ store.tk_number }}</span>
+                        {% if store.format %}<span class="pill pill-peach">{{ store.format }}</span>{% endif %}
+                    </div>
+                    <h3 class="mt-0 mb-8">{{ store.display_name or ('ТК ' ~ store.tk_number) }}</h3>
+                    {% if store.city %}<p class="muted store-line">🏙 {{ store.city }}</p>{% endif %}
+                    {% if store.object_address %}<p class="muted store-line">📍 {{ store.object_address }}</p>{% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty">Магазины не найдены.</div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

@@ -1,68 +1,37 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Несозданные сотрудники</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475; --brand-peach: #f58a65; --bg: #f4f5f7;
-            --card-bg: #fff; --text: #1f2937; --muted: #6b7280; --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            --error-bg: #fff1ed; --error-text: #b42318;
-            --success-bg: #eefbf3; --success-text: #067647;
-            --warn-bg: #fff7ed; --warn-text: #9a3412;
-        }
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); padding: 28px 18px 36px; }
-        .page { max-width: 1200px; margin: 0 auto; }
-        .topbar, .card { background: var(--card-bg); border-radius: 22px; box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
-        .brand { display: flex; align-items: center; gap: 14px; }
-        .brand img { width: 60px; height: 60px; object-fit: contain; border-radius: 16px; background: #fff; }
-        .brand-title { margin: 0; font-size: 26px; color: var(--brand-blue); }
-        .brand-sub { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
-        .toolbar a { text-decoration: none; color: var(--brand-blue); font-weight: 700; border: 1px solid rgba(11,20,117,.12); padding: 10px 14px; border-radius: 12px; background: #fff; white-space: nowrap; }
-        .msg { background: var(--success-bg); color: var(--success-text); border: 1px solid rgba(6,118,71,.14); border-radius: 14px; padding: 12px 14px; font-size: 14px; }
-        .err { background: var(--error-bg); color: var(--error-text); border: 1px solid rgba(180,35,24,.14); border-radius: 14px; padding: 12px 14px; font-size: 14px; }
-        .pw-row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; margin-bottom: 16px; }
-        .field label { display: block; font-size: 12px; font-weight: 700; color: var(--brand-blue); margin-bottom: 6px; }
-        .field input { height: 42px; border: 1px solid var(--border); border-radius: 12px; padding: 0 12px; font-size: 14px; background: #fff; min-width: 220px; }
-        .hint { color: var(--muted); font-size: 13px; }
-        .btn { height: 42px; border: none; border-radius: 12px; padding: 0 18px; font-weight: 700; cursor: pointer; background: linear-gradient(135deg, var(--brand-blue), #18239a); color: #fff; }
-        .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 16px; }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; background: #fff; }
-        th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
-        th { background: #fafbfc; color: var(--brand-blue); font-size: 13px; font-weight: 700; }
-        tr.no-phone { background: var(--warn-bg); }
-        .need-phone { color: var(--warn-text); font-weight: 700; font-size: 12px; }
-        td input[type="text"] { height: 36px; border: 1px solid var(--border); border-radius: 10px; padding: 0 10px; font-size: 14px; background: #fff; min-width: 150px; }
-        .empty { color: var(--muted); font-size: 15px; padding: 8px 0; }
-        .muted { color: var(--muted); }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Несозданные сотрудники{% endblock %}
+{% block brand_title %}Несозданные сотрудники{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">ФИО из смен, у которых ещё нет аккаунта. Отметьте и создайте разом.</p>{% endblock %}
+
+{% block topbar_actions %}
+<a href="/admin/users" class="back-link">← К пользователям</a>
+{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: ширины строки массового создания */
+    .pending-table table { min-width: 900px; }
+    .pending-table td input[type="text"] { min-width: 150px; }
+    .pending-table tr.no-phone { background: var(--warn-bg); }
+    .need-phone { color: var(--warn-text); font-weight: 700; font-size: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="page">
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1 class="brand-title">Несозданные сотрудники</h1>
-                <p class="brand-sub">ФИО из смен, у которых ещё нет аккаунта. Отметьте и создайте разом.</p>
-            </div>
-        </div>
-        <div class="toolbar">
-            <a href="/admin/users">← К пользователям</a>
+    <div class="hero">
+        <div>
+            <h2>Несозданные сотрудники</h2>
+            <p>Список собран по сменам: аккаунта ещё нет. Впишите телефон — строка отметится автоматически,
+               пароль задаётся общий для всех выбранных.</p>
         </div>
     </div>
 
-    {% if message %}<div class="card"><div class="msg">{{ message }}</div></div>{% endif %}
-    {% if error %}<div class="card"><div class="err">{{ error }}</div></div>{% endif %}
+    {% if message %}<div class="alert alert-success mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mb-20">{{ error }}</div>{% endif %}
     {% if no_phone %}
-    <div class="card"><div class="err">Без телефона (не созданы): {{ no_phone | join(', ') }}. Впишите телефон и повторите.</div></div>
+    <div class="alert alert-error mb-20">Без телефона (не созданы): {{ no_phone | join(', ') }}. Впишите телефон и повторите.</div>
     {% endif %}
 
     <div class="card">
@@ -70,15 +39,15 @@
         <form method="post" action="/admin/users/pending/create">
             <input type="hidden" name="row_count" value="{{ pending | length }}">
 
-            <div class="pw-row">
+            <div class="form-grid cols-2 align-end mb-20">
                 <div class="field">
                     <label>Пароль для всех создаваемых</label>
                     <input type="text" name="new_password" placeholder="Общий пароль" required>
                 </div>
-                <div class="hint">Пароль устанавливается всем выбранным сотрудникам. Сотрудник сменит его позже.</div>
+                <p class="field-hint">Пароль устанавливается всем выбранным сотрудникам. Сотрудник сменит его позже.</p>
             </div>
 
-            <div class="table-wrap">
+            <div class="table-wrap pending-table">
                 <table>
                     <thead>
                         <tr>
@@ -113,15 +82,16 @@
                 </table>
             </div>
 
-            <div style="margin-top:16px">
-                <button type="submit" class="btn">Создать выбранных</button>
-            </div>
+            <button type="submit" class="btn btn-primary btn-lg mt-20">Создать выбранных</button>
         </form>
         {% else %}
         <div class="empty">Все сотрудники из смен уже заведены — несозданных нет.</div>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
 <script>
 (function () {
     var form = document.querySelector('form[action="/admin/users/pending/create"]');
@@ -143,5 +113,4 @@
     });
 })();
 </script>
-</body>
-</html>
+{% endblock %}

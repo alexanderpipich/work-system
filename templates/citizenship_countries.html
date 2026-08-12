@@ -1,82 +1,73 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <link rel="icon" href="/static/favicon.ico?v=2">
-    <title>Справочник стран</title>
-    <style>
-        :root { --brand-blue:#0b1475; --brand-peach:#f58a65; --bg:#f4f5f7; --card-bg:#fff; --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --shadow:0 16px 40px rgba(11,20,117,.08); }
-        *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:28px 18px 36px}
-        .page{max-width:1100px;margin:0 auto}
-        .topbar,.card{background:var(--card-bg);border-radius:22px;box-shadow:var(--shadow);padding:20px;margin-bottom:20px}
-        .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px}
-        .brand{display:flex;align-items:center;gap:14px}
-        .brand img{width:64px;height:64px;object-fit:contain;border-radius:16px}
-        h1,h2,h3{color:var(--brand-blue);margin-top:0}
-        .toolbar{display:flex;gap:10px;flex-wrap:wrap}
-        .btn{display:inline-flex;align-items:center;height:42px;padding:0 18px;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;border:none}
-        .btn-primary{background:linear-gradient(135deg,var(--brand-blue),#18239a);color:#fff}
-        .btn-light{background:#fff;color:var(--brand-blue);border:1px solid rgba(11,20,117,.15)}
-        .btn-sm{height:34px;padding:0 12px;font-size:13px}
-        .message{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:14px}
-        table{width:100%;border-collapse:collapse}
-        th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:14px}
-        th{color:var(--brand-blue);font-weight:700;background:#fafbfc}
-        .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700}
-        .badge-on{background:#ecfdf5;color:#065f46}
-        .badge-off{background:#fef2f2;color:#991b1b}
-        .regime-pill{display:inline-block;background:rgba(11,20,117,.08);color:var(--brand-blue);padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700}
-        form{display:inline}
-    </style>
-</head>
-<body><div class="page">
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div><h1>Справочник стран</h1><p style="margin:0;color:var(--muted);font-size:14px">Привязка стран к правовым режимам</p></div>
+{% extends "base.html" %}
+
+{% block title %}Справочник стран{% endblock %}
+{% block brand_title %}Справочник стран{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Привязка стран к правовым режимам</p>{% endblock %}
+
+{% block topbar_actions %}
+<a href="/admin/citizenship/regimes" class="back-link">Режимы</a>
+<a href="/admin" class="back-link">Назад в админку</a>
+<a href="/logout" class="logout">Выйти</a>
+{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: статус берётся выражением 'badge-on' / 'badge-off' */
+    .badge-on { background: var(--success-bg); color: var(--success-text); }
+    .badge-off { background: var(--error-bg); color: var(--error-text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="hero">
+        <div>
+            <h2>Страны</h2>
+            <p>Каждая страна привязана к правовому режиму — он определяет набор обязательных документов.
+               Алиасы используются при загрузке таблиц.</p>
         </div>
-        <div class="toolbar">
-            <a href="/admin/citizenship/regimes" class="btn btn-light">Режимы</a>
-            <a href="/admin" class="btn btn-light">Назад в админку</a>
-            <a href="/logout" class="btn btn-light">Выйти</a>
-        </div>
+        <span class="hero-count">Всего: {{ countries|length }}</span>
     </div>
 
-    {% if message %}<div class="message">{{ message }}</div>{% endif %}
+    {% if message %}<div class="alert alert-success mb-20">{{ message }}</div>{% endif %}
 
     <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <h2 style="margin:0">Страны ({{ countries|length }})</h2>
-            <div class="toolbar">
-                <a href="/admin/citizenship/countries/bulk-add" class="btn btn-light">+ Добавить списком</a>
+        <div class="row row-between mb-14">
+            <h2 class="mb-0">Список стран</h2>
+            <div class="row">
+                <a href="/admin/citizenship/countries/bulk-add" class="btn btn-secondary">+ Добавить списком</a>
                 <a href="/admin/citizenship/countries/add" class="btn btn-primary">+ Добавить страну</a>
             </div>
         </div>
-        <table>
-            <thead><tr><th>Страна</th><th>Алиасы</th><th>Режим</th><th>Статус</th><th>Действия</th></tr></thead>
-            <tbody>
-            {% for c in countries %}
-            <tr>
-                <td><strong>{{ c.name }}</strong></td>
-                <td>{% if c.aliases %}<span style="color:var(--muted);font-size:13px">{{ c.aliases }}</span>{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
-                <td>
-                    {% set r = regimes.get(c.regime_id) %}
-                    {% if r %}<span class="regime-pill">{{ r.name }}</span>{% else %}<span style="color:var(--muted)">—</span>{% endif %}
-                </td>
-                <td><span class="badge {{ 'badge-on' if c.is_active else 'badge-off' }}">{{ 'Активна' if c.is_active else 'Отключена' }}</span></td>
-                <td>
-                    <div class="toolbar">
-                        <a href="/admin/citizenship/countries/{{ c.id }}/edit" class="btn btn-light btn-sm">Изменить</a>
-                        <form method="post" action="/admin/citizenship/countries/{{ c.id }}/toggle">
-                            <button class="btn btn-light btn-sm" type="submit">{{ 'Отключить' if c.is_active else 'Включить' }}</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="4" style="color:var(--muted);text-align:center;padding:24px">Страны ещё не добавлены</td></tr>
-            {% endfor %}
-            </tbody>
-        </table>
+
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Страна</th><th>Алиасы</th><th>Режим</th><th>Статус</th><th>Действия</th></tr></thead>
+                <tbody>
+                {% for c in countries %}
+                <tr>
+                    <td><strong>{{ c.name }}</strong></td>
+                    <td>{% if c.aliases %}<span class="muted">{{ c.aliases }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+                    <td>
+                        {% set r = regimes.get(c.regime_id) %}
+                        {% if r %}<span class="pill pill-info">{{ r.name }}</span>{% else %}<span class="muted">—</span>{% endif %}
+                    </td>
+                    <td><span class="pill {{ 'badge-on' if c.is_active else 'badge-off' }}">{{ 'Активна' if c.is_active else 'Отключена' }}</span></td>
+                    <td>
+                        <div class="actions">
+                            <a href="/admin/citizenship/countries/{{ c.id }}/edit" class="btn btn-secondary btn-sm">Изменить</a>
+                            <form method="post" action="/admin/citizenship/countries/{{ c.id }}/toggle">
+                                <button class="btn btn-secondary btn-sm" type="submit">{{ 'Отключить' if c.is_active else 'Включить' }}</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="muted">Страны ещё не добавлены</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-</div></body></html>
+</div>
+{% endblock %}

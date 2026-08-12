@@ -1,186 +1,84 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Типы документов</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 28px 18px 36px;
-        }
-        .page { max-width: 1500px; margin: 0 auto; }
-        .topbar, .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-        }
-        .brand { display: flex; align-items: center; gap: 14px; }
-        .brand img { width: 64px; height: 64px; object-fit: contain; border-radius: 16px; background: #fff; }
-        h1, h2, h3 { color: var(--brand-blue); margin-top: 0; }
-        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
-        .link, .btn {
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 38px;
-            border: 0;
-            border-radius: 12px;
-            padding: 9px 14px;
-            color: #fff;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .link.secondary { color: var(--brand-blue); background: #fff; border: 1px solid rgba(11, 20, 117, 0.14); }
-        .btn.danger { background: linear-gradient(135deg, #c23327, #9f1f16); }
-        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-        .field { display: flex; flex-direction: column; gap: 6px; }
-        label { color: var(--muted); font-size: 13px; font-weight: 700; }
-        input, textarea, select {
-            width: 100%;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 10px 12px;
-            font-size: 14px;
-            background: #fff;
-        }
-        textarea { min-height: 74px; resize: vertical; }
-        .checks { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
-        .check { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font-weight: 700; }
-        .check input { width: auto; }
-        .message { color: #067647; font-weight: 700; }
-        .error { color: #b42318; font-weight: 700; }
-        .type-card {
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px;
-            background: #fbfcff;
-            margin-bottom: 14px;
-        }
-        .type-card summary {
-            cursor: pointer;
-            list-style: none;
-        }
-        .type-card summary::-webkit-details-marker { display: none; }
-        .type-summary {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-            flex-wrap: wrap;
-        }
-        .type-title {
-            color: var(--brand-blue);
-            font-size: 18px;
-            font-weight: 700;
-        }
-        .readonly-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-            margin: 16px 0;
-        }
-        .readonly-item {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 11px 12px;
-            background: #fff;
-        }
-        .readonly-label {
-            color: var(--muted);
-            font-size: 12px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-        .readonly-value {
-            line-height: 1.45;
-        }
-        .sample-preview {
-            display: block;
-            max-width: 360px;
-            max-height: 240px;
-            object-fit: contain;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: #fff;
-            margin-top: 8px;
-        }
-        .edit-form {
-            display: none;
-            border-top: 1px solid var(--border);
-            margin-top: 16px;
-            padding-top: 16px;
-        }
-        .edit-form.is-open { display: block; }
-        .meta { color: var(--muted); line-height: 1.5; font-size: 13px; }
-        .pill {
-            display: inline-block;
-            padding: 6px 9px;
-            border-radius: 999px;
-            background: #eef4ff;
-            color: var(--brand-blue);
-            font-size: 12px;
-            font-weight: 700;
-            margin: 2px;
-        }
-        .sample { margin-top: 10px; }
-        @media (max-width: 900px) {
-            .grid { grid-template-columns: 1fr; }
-            .readonly-grid { grid-template-columns: 1fr; }
-            .topbar { flex-direction: column; align-items: stretch; }
-        }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1>Типы документов</h1>
-                <div class="meta">Справочник обязательных документов, подсказок и образцов</div>
-            </div>
-        </div>
-        <div class="toolbar">
-            <a href="{{ back_url }}" class="link secondary">{{ back_label }}</a>
-        </div>
-    </div>
+{% extends "base.html" %}
 
-    {% if message %}<div class="card message">{{ message }}</div>{% endif %}
-    {% if error %}<div class="card error">{{ error }}</div>{% endif %}
+{% block title %}Типы документов{% endblock %}
+{% block brand_title %}Типы документов{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Справочник обязательных документов, подсказок и образцов</p>{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ back_url }}" class="back-link">{{ back_label }}</a>
+{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: карточка типа-аккордеона, сетка «только чтение» и миниатюры образцов */
+
+    .field select[multiple] { height: auto; min-height: 96px; padding: 6px 10px; }
+    .field input[type="file"] { height: auto; padding: 9px 12px; }
+    .field-narrow { max-width: 160px; }
+
+    .checks { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+    .check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
+    .check input { width: auto; height: auto; }
+
+    .type-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        background: var(--surface-muted);
+        margin-bottom: 14px;
+    }
+    .type-card summary { cursor: pointer; list-style: none; }
+    .type-card summary::-webkit-details-marker { display: none; }
+    .type-summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+    .type-title { color: var(--brand-blue); font-size: 17px; font-weight: 700; }
+    .type-summary .pill { margin: 2px; }
+
+    .readonly-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+    .readonly-item { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px 12px; background: #fff; }
+    .readonly-label { color: var(--muted); font-size: 12px; font-weight: 700; margin-bottom: 5px; }
+    .readonly-value { line-height: 1.45; }
+
+    .sample-thumb { position: relative; display: inline-block; }
+    .sample-thumb img { height: 72px; display: block; border: 1px solid var(--border); border-radius: 8px; }
+    .sample-del {
+        position: absolute;
+        top: -7px;
+        right: -7px;
+        width: 22px;
+        height: 22px;
+        border: none;
+        border-radius: 50%;
+        background: #dc2626;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1;
+        padding: 0;
+        cursor: pointer;
+    }
+
+    .btn-danger-hard { background: #7f1d1d; }
+    .btn-danger-hard:hover { background: #641414; }
+
+    .edit-form { display: none; border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px; }
+    .edit-form.is-open { display: block; }
+
+    @media (max-width: 900px) {
+        .readonly-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top page-wide">
+
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
 
     <section class="card">
         <h2>Добавить тип документа</h2>
         <form method="post" action="{{ base_path }}/add" enctype="multipart/form-data">
-            <div class="grid">
+            <div class="form-grid cols-2">
                 <div class="field"><label>Название</label><input name="name" required></div>
                 <div class="field">
                     <label>Режимы (пусто = подходит всем)</label>
@@ -205,8 +103,8 @@
                 <label class="check"><input type="checkbox" name="is_active" value="1" checked> Активный</label>
                 <label class="check"><input type="checkbox" name="is_student_doc" value="1"> Студенческий документ</label>
             </div>
-            <div class="field" style="max-width:160px;margin-top:8px"><label>Порядок сортировки</label><input type="number" name="sort_order" value="0" min="0"></div>
-            <p><button class="btn" type="submit">Добавить</button></p>
+            <div class="field field-narrow mt-14"><label>Порядок сортировки</label><input type="number" name="sort_order" value="0" min="0"></div>
+            <button class="btn btn-primary mt-14" type="submit">Добавить</button>
         </form>
     </section>
 
@@ -218,7 +116,7 @@
                 <div class="type-summary">
                     <div>
                         <div class="type-title">{{ item.name }}</div>
-                        <div class="meta">
+                        <div class="muted">
                             {{ item.description or 'Описание не заполнено' }}
                         </div>
                     </div>
@@ -273,56 +171,54 @@
                     <div class="readonly-label">Образцы</div>
                     {% set item_samples = doc_samples_map.get(item.id, []) %}
                     {% if item_samples %}
-                        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px">
+                        <div class="row mt-8">
                         {% for s in item_samples %}
-                            <div style="position:relative;display:inline-block">
+                            <div class="sample-thumb">
                                 <a href="/documents/samples/file/{{ s.id }}" target="_blank">
                                     <img src="/documents/samples/file/{{ s.id }}"
-                                         style="height:72px;border-radius:8px;border:1px solid var(--border);display:block"
                                          alt="{{ s.original_filename or 'образец' }}">
                                 </a>
-                                <form method="post" action="{{ base_path }}/delete-sample-file" style="margin:0"
+                                <form method="post" action="{{ base_path }}/delete-sample-file"
                                       onsubmit="return confirm('Удалить этот образец?')">
                                     <input type="hidden" name="sample_id" value="{{ s.id }}">
-                                    <button type="submit"
-                                            style="position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:none;background:#dc2626;color:#fff;font-size:13px;cursor:pointer;line-height:1;padding:0;font-weight:700">×</button>
+                                    <button type="submit" class="sample-del">×</button>
                                 </form>
                             </div>
                         {% endfor %}
                         </div>
                     {% elif item.sample_image_path %}
-                        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">
-                            <a class="link secondary sample" href="/documents/samples/{{ item.id }}" target="_blank">Открыть образец</a>
-                            <form method="post" action="{{ base_path }}/delete-sample" style="margin:0"
+                        <div class="row mt-8">
+                            <a class="btn btn-secondary btn-sm" href="/documents/samples/{{ item.id }}" target="_blank">Открыть образец</a>
+                            <form method="post" action="{{ base_path }}/delete-sample"
                                   onsubmit="return confirm('Удалить образец «{{ item.name }}»?')">
                                 <input type="hidden" name="type_id" value="{{ item.id }}">
-                                <button type="submit" class="btn danger" style="height:32px;padding:0 12px;font-size:13px">Удалить образец</button>
+                                <button type="submit" class="btn btn-danger btn-sm">Удалить образец</button>
                             </form>
                         </div>
                     {% else %}
-                        <div class="meta sample">Не загружены</div>
+                        <div class="muted mt-8">Не загружены</div>
                     {% endif %}
                 </div>
             </div>
 
             <div class="toolbar">
-                <button class="btn" type="button" data-edit-target="edit-type-{{ item.id }}">Изменить</button>
+                <button class="btn btn-primary" type="button" data-edit-target="edit-type-{{ item.id }}">Изменить</button>
                 <form method="post" action="{{ base_path }}/delete">
                     <input type="hidden" name="type_id" value="{{ item.id }}">
-                    <button class="btn danger" type="submit">Деактивировать</button>
+                    <button class="btn btn-danger" type="submit">Деактивировать</button>
                 </form>
                 {% if is_superadmin_user %}
                 <form method="post" action="{{ base_path }}/hard-delete"
                       onsubmit="return confirm('Удалить тип «{{ item.name }}» навсегда? Это действие необратимо.')">
                     <input type="hidden" name="type_id" value="{{ item.id }}">
-                    <button class="btn danger" type="submit" style="background:linear-gradient(135deg,#7f1d1d,#450a0a)">Удалить</button>
+                    <button class="btn btn-danger btn-danger-hard" type="submit">Удалить</button>
                 </form>
                 {% endif %}
             </div>
 
             <form id="edit-type-{{ item.id }}" class="edit-form" method="post" action="{{ base_path }}/update" enctype="multipart/form-data">
                 <input type="hidden" name="type_id" value="{{ item.id }}">
-                <div class="grid">
+                <div class="form-grid cols-2">
                     <div class="field"><label>Название</label><input name="name" value="{{ item.name }}" required></div>
                     <div class="field">
                         <label>Режимы (пусто = подходит всем)</label>
@@ -351,16 +247,19 @@
                     <label class="check"><input type="checkbox" name="is_active" value="1" {% if item.is_active %}checked{% endif %}> Активный</label>
                     <label class="check"><input type="checkbox" name="is_student_doc" value="1" {% if item.is_student_doc %}checked{% endif %}> Студенческий документ</label>
                 </div>
-                <div class="field" style="max-width:160px;margin-top:8px"><label>Порядок сортировки</label><input type="number" name="sort_order" value="{{ item.sort_order or 0 }}" min="0"></div>
-                <p><button class="btn" type="submit">Сохранить</button></p>
+                <div class="field field-narrow mt-14"><label>Порядок сортировки</label><input type="number" name="sort_order" value="{{ item.sort_order or 0 }}" min="0"></div>
+                <button class="btn btn-primary mt-14" type="submit">Сохранить</button>
             </form>
         </details>
         {% endfor %}
         {% if document_types|length == 0 %}
-            <div class="meta">Типы документов пока не созданы.</div>
+            <div class="empty">Типы документов пока не созданы.</div>
         {% endif %}
     </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
 <script>
     document.querySelectorAll("[data-edit-target]").forEach((button) => {
         button.addEventListener("click", () => {
@@ -371,5 +270,4 @@
         });
     });
 </script>
-</body>
-</html>
+{% endblock %}

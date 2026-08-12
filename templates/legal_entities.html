@@ -1,264 +1,36 @@
-﻿<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Юрлица</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            --success-bg: #eefbf3;
-            --success-text: #067647;
-            --error-bg: #fff1ed;
-            --error-text: #b42318;
-        }
+{% extends "base.html" %}
 
-        * { box-sizing: border-box; }
+{% block title %}Юрлица{% endblock %}
+{% block brand_title %}Юрлица{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Справочник юридических лиц для пользователей и фиксации выплатного табеля</p>{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
-                var(--bg);
-            color: var(--text);
-            padding: 28px 18px 36px;
-        }
+{% block topbar_actions %}
+<a href="{{ back_url or '/admin' }}" class="back-link">Назад</a>
+{% if users_url %}
+    <a href="{{ users_url }}" class="back-link">Пользователи</a>
+{% endif %}
+{% endblock %}
 
-        .page {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+{% block head %}
+<style>
+    /* специфика страницы: ширины редактируемой строки юрлица и кнопка «Активировать» */
 
-        .topbar,
-        .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+    .entities-table table { min-width: 1100px; }
+    .inline-form { grid-template-columns: 2fr 1fr 1fr 2fr 120px 110px; }
+    @media (max-width: 1100px) {
+        .inline-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
 
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-        }
+    .btn-success { background: var(--success-bg); color: var(--success-text); border-color: var(--success-border); }
+    .btn-success:hover { background: #e2f7ec; color: var(--success-text); }
+</style>
+{% endblock %}
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
+{% block content %}
+<div class="page page-pad-top">
 
-        .brand img {
-            width: 64px;
-            height: 64px;
-            object-fit: contain;
-            border-radius: 16px;
-            background: #fff;
-        }
-
-        h1,
-        h2 {
-            margin: 0;
-            color: var(--brand-blue);
-        }
-
-        h1 { font-size: 28px; }
-        h2 { font-size: 22px; margin-bottom: 16px; }
-
-        .subtitle {
-            margin: 6px 0 0;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.45;
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .toolbar a,
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            height: 42px;
-            border: 0;
-            border-radius: 12px;
-            padding: 0 14px;
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .toolbar a,
-        .btn-light {
-            color: var(--brand-blue);
-            background: #fff;
-            border: 1px solid rgba(11, 20, 117, 0.14);
-        }
-
-        .btn-primary {
-            color: #fff;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-        }
-
-        .btn-danger {
-            color: var(--error-text);
-            background: var(--error-bg);
-        }
-
-        .btn-success {
-            color: var(--success-text);
-            background: var(--success-bg);
-        }
-
-        .actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .msg,
-        .err {
-            border-radius: 14px;
-            padding: 12px 14px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .msg {
-            background: var(--success-bg);
-            color: var(--success-text);
-        }
-
-        .err {
-            background: var(--error-bg);
-            color: var(--error-text);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 2fr auto;
-            gap: 12px;
-            align-items: end;
-        }
-
-        .field label {
-            display: block;
-            color: var(--brand-blue);
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        input[type="text"],
-        select {
-            width: 100%;
-            height: 42px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0 12px;
-            background: #fff;
-            font-size: 14px;
-        }
-
-        .table-wrap {
-            overflow-x: auto;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-        }
-
-        table {
-            width: 100%;
-            min-width: 1100px;
-            border-collapse: collapse;
-            background: #fff;
-        }
-
-        th,
-        td {
-            padding: 11px 10px;
-            border-bottom: 1px solid var(--border);
-            text-align: left;
-            vertical-align: middle;
-            font-size: 14px;
-        }
-
-        th {
-            color: var(--brand-blue);
-            background: #fafbfc;
-            font-size: 13px;
-        }
-
-        .row-form {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 2fr 120px 110px;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .status {
-            display: inline-flex;
-            border-radius: 999px;
-            padding: 6px 9px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .active {
-            color: var(--success-text);
-            background: var(--success-bg);
-        }
-
-        .inactive {
-            color: var(--muted);
-            background: #f3f4f6;
-        }
-
-        @media (max-width: 900px) {
-            .topbar { align-items: stretch; flex-direction: column; }
-            .form-grid { grid-template-columns: 1fr; }
-        }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1>Юрлица</h1>
-                <p class="subtitle">Справочник юридических лиц для пользователей и фиксации выплатного табеля</p>
-            </div>
-        </div>
-        <div class="toolbar">
-            <a href="{{ back_url or '/admin' }}">Назад</a>
-            {% if users_url %}
-                <a href="{{ users_url }}">Пользователи</a>
-            {% endif %}
-        </div>
-    </div>
-
-    {% if message %}<div class="msg">{{ message }}</div>{% endif %}
-    {% if error %}<div class="err">{{ error }}</div>{% endif %}
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
 
     <div class="card">
         <h2>Добавить юрлицо</h2>
@@ -280,14 +52,14 @@
                     <label>Комментарий</label>
                     <input type="text" name="comment">
                 </div>
-                <button type="submit" class="btn btn-primary">Добавить</button>
             </div>
+            <button type="submit" class="btn btn-primary mt-14">Добавить</button>
         </form>
     </div>
 
     <div class="card">
         <h2>Список юрлиц</h2>
-        <div class="table-wrap">
+        <div class="table-wrap entities-table">
             <table>
                 <thead>
                     <tr>
@@ -304,7 +76,7 @@
                         <td>
                             <form id="legal-entity-{{ entity.id }}" method="post" action="{{ base_path or '/admin/legal-entities' }}/update"></form>
                             <input form="legal-entity-{{ entity.id }}" type="hidden" name="entity_id" value="{{ entity.id }}">
-                            <div class="row-form">
+                            <div class="inline-form">
                                 <input form="legal-entity-{{ entity.id }}" type="text" name="name" value="{{ entity.name }}" required>
                                 <input form="legal-entity-{{ entity.id }}" type="text" name="short_name" value="{{ entity.short_name or '' }}" placeholder="Короткое имя">
                                 <input form="legal-entity-{{ entity.id }}" type="text" name="inn" value="{{ entity.inn or '' }}" placeholder="ИНН">
@@ -313,14 +85,14 @@
                                     <option value="1" {% if entity.is_active %}selected{% endif %}>Активно</option>
                                     <option value="0" {% if not entity.is_active %}selected{% endif %}>Неактивно</option>
                                 </select>
-                                <button form="legal-entity-{{ entity.id }}" type="submit" class="btn btn-primary">Сохранить</button>
+                                <button form="legal-entity-{{ entity.id }}" type="submit" class="btn btn-primary btn-sm">Сохранить</button>
                             </div>
                         </td>
                         <td>
                             {% if entity.is_active %}
-                                <span class="status active">Активно</span>
+                                <span class="pill pill-success">Активно</span>
                             {% else %}
-                                <span class="status inactive">Неактивно</span>
+                                <span class="pill pill-neutral">Неактивно</span>
                             {% endif %}
                         </td>
                         <td>
@@ -328,7 +100,7 @@
                                 {% if entity.is_active %}
                                     <form method="post" action="{{ base_path or '/admin/legal-entities' }}/delete">
                                         <input type="hidden" name="entity_id" value="{{ entity.id }}">
-                                        <button type="submit" class="btn btn-danger">Деактивировать</button>
+                                        <button type="submit" class="btn btn-danger btn-sm">Деактивировать</button>
                                     </form>
                                 {% else %}
                                     <form method="post" action="{{ base_path or '/admin/legal-entities' }}/update">
@@ -338,14 +110,14 @@
                                         <input type="hidden" name="inn" value="{{ entity.inn or '' }}">
                                         <input type="hidden" name="comment" value="{{ entity.comment or '' }}">
                                         <input type="hidden" name="is_active" value="1">
-                                        <button type="submit" class="btn btn-success">Активировать</button>
+                                        <button type="submit" class="btn btn-success btn-sm">Активировать</button>
                                     </form>
                                 {% endif %}
                                 {% if can_hard_delete %}
                                 <form method="post" action="{{ base_path or '/admin/legal-entities' }}/delete" onsubmit="return confirm('Удалить юрлицо окончательно?');">
                                     <input type="hidden" name="entity_id" value="{{ entity.id }}">
                                     <input type="hidden" name="hard_delete" value="1">
-                                    <button type="submit" class="btn btn-danger">Удалить</button>
+                                    <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
                                 </form>
                                 {% endif %}
                             </div>
@@ -354,13 +126,11 @@
                     {% endfor %}
 
                     {% if entities|length == 0 %}
-                    <tr><td colspan="4">Юрлица пока не созданы</td></tr>
+                    <tr><td colspan="4" class="muted">Юрлица пока не созданы</td></tr>
                     {% endif %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
-</body>
-</html>
-
+{% endblock %}

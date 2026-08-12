@@ -1,411 +1,96 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Пользователи</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            --error-bg: #fff1ed;
-            --error-text: #b42318;
-            --success-bg: #eefbf3;
-            --success-text: #067647;
-        }
+{% extends "base.html" %}
 
-        * { box-sizing: border-box; }
+{% block title %}Пользователи{% endblock %}
+{% block brand_title %}Пользователи{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Фильтры, роли, магазины бригадиров/экономистов, гражданство и юрлица</p>{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
-                var(--bg);
-            color: var(--text);
-            padding: 28px 18px 36px;
-        }
+{% block topbar_actions %}
+<a href="/admin" class="back-link">Назад в админку</a>
+<a href="/admin/create-user" class="back-link">Создать пользователя</a>
+<a href="/admin/upload-users" class="back-link">Импорт пользователей</a>
+<a href="/admin/users/pending" class="back-link">Несозданные{% if pending_count is defined and pending_count %} ({{ pending_count }}){% endif %}</a>
+<a href="/logout" class="logout">Выйти</a>
+{% endblock %}
 
-        .page {
-            max-width: 1700px;
-            margin: 0 auto;
-        }
+{% block head %}
+<style>
+    /* специфика страницы: аккордеон пользователя (компактная строка + карточка) и цвета ролей */
 
-        .topbar,
-        .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+    .table-title-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+    .table-title { margin: 0; color: var(--brand-blue); font-size: 19px; }
 
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-        }
+    .field-full { grid-column: 1 / -1; }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--brand-blue); height: 42px; }
+    .check input { width: auto; height: auto; }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            min-width: 0;
-        }
+    .role-superadmin { background: #fee4e2; color: #b42318; }
+    .role-hr_lead { background: var(--success-bg); color: var(--success-text); }
+    .role-hr_manager { background: var(--warn-bg); color: var(--warn-text); }
+    .role-admin { background: #fee4e2; color: #b42318; }
+    .role-economist { background: #f4ebff; color: #6941c6; }
+    .role-brigadier { background: #e0f2fe; color: #026aa2; }
+    .role-headhunter { background: #fdf2fa; color: #c11574; }
+    .role-employee { background: #f2f4f7; color: #344054; }
 
-        .brand img {
-            width: 64px;
-            height: 64px;
-            object-fit: contain;
-            border-radius: 16px;
-            background: #fff;
-            flex-shrink: 0;
-        }
+    .ulist { display: flex; flex-direction: column; gap: 10px; }
 
-        .brand-title {
-            margin: 0;
-            font-size: 28px;
-            line-height: 1.1;
-            color: var(--brand-blue);
-            font-weight: 700;
-        }
+    .uitem { border: 1px solid var(--border); border-radius: var(--radius); background: #fff; overflow: hidden; }
+    .uitem[open] { box-shadow: var(--shadow-hover); }
 
-        .brand-subtitle {
-            margin: 6px 0 0;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.4;
-        }
+    .urow {
+        list-style: none;
+        cursor: pointer;
+        display: grid;
+        grid-template-columns: 56px 150px minmax(0, 1fr) auto 24px;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 14px;
+        font-size: 14px;
+    }
+    .urow::-webkit-details-marker { display: none; }
+    .uitem[open] > .urow { border-bottom: 1px solid var(--border); background: var(--surface-muted); }
+    .urow .u-id { color: var(--muted); font-weight: 700; }
+    .urow .u-name { font-weight: 700; color: var(--brand-blue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .urow .u-chev { color: #9ca3af; transition: transform .15s; text-align: center; }
+    .uitem[open] > .urow .u-chev { transform: rotate(180deg); }
 
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+    .ucard { padding: 16px 14px; display: flex; flex-direction: column; gap: 16px; }
 
-        .toolbar a {
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-            white-space: nowrap;
-        }
+    .form-block { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; background: #fff; }
+    .form-block h4 { margin: 0 0 12px; font-size: 13px; color: var(--brand-blue); }
 
-        .filters {
-            display: grid;
-            grid-template-columns: 100px 180px minmax(240px, 1fr) 180px 160px;
-            gap: 12px;
-            align-items: end;
-        }
+    .summary-line { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 18px; }
+    .summary-line b { color: var(--text); font-weight: 700; }
 
-        .field label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--brand-blue);
-            margin-bottom: 8px;
-        }
+    .qr-box { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+    .qr-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .qr-item img { width: 72px; height: 72px; object-fit: contain; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+    .qr-label-form { min-width: 150px; }
+    .qr-none { color: var(--muted); font-size: 13px; }
 
-        .field input,
-        .field select {
-            width: 100%;
-            height: 42px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0 12px;
-            font-size: 14px;
-            background: #fff;
-        }
+    .block-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 
-        .btn {
-            height: 42px;
-            border: none;
-            border-radius: 12px;
-            padding: 0 14px;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-        }
+    @media (max-width: 640px) {
+        .urow { grid-template-columns: 40px minmax(0, 1fr) auto 22px; }
+        .urow .u-phone { display: none; }
+    }
+</style>
+{% endblock %}
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            color: #fff;
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #c23327, #9f1f16);
-            color: #fff;
-        }
-
-        .btn-light {
-            background: #fff;
-            color: var(--brand-blue);
-            border: 1px solid rgba(11, 20, 117, 0.14);
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .msg {
-            background: var(--success-bg);
-            color: var(--success-text);
-            border: 1px solid rgba(6, 118, 71, 0.14);
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
-        }
-
-        .err {
-            background: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid rgba(180, 35, 24, 0.14);
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
-        }
-
-        .table-title-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-
-        .table-title {
-            margin: 0;
-            color: var(--brand-blue);
-            font-size: 22px;
-        }
-
-        .table-wrap {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1700px;
-            background: #fff;
-        }
-
-        th, td {
-            padding: 12px 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            font-size: 14px;
-            vertical-align: middle;
-        }
-
-        th {
-            background: #fafbfc;
-            color: var(--brand-blue);
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        tbody tr:hover {
-            background: rgba(11, 20, 117, 0.025);
-        }
-
-        .pill {
-            display: inline-block;
-            padding: 7px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .role-superadmin { background: #fee4e2; color: #b42318; }
-        .role-hr_lead { background: #ecfdf3; color: #067647; }
-        .role-hr_manager { background: #fff6ed; color: #b54708; }
-        .role-admin { background: #fee4e2; color: #b42318; }
-        .role-economist { background: #f4ebff; color: #6941c6; }
-        .role-brigadier { background: #e0f2fe; color: #026aa2; }
-        .role-headhunter { background: #fdf2fa; color: #c11574; }
-        .role-employee { background: #f2f4f7; color: #344054; }
-
-        .role-form {
-            display: grid;
-            grid-template-columns: 130px 150px 220px 150px 160px 100px;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .role-form input,
-        .role-form select {
-            height: 38px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 0 10px;
-            min-width: 120px;
-            background: #fff;
-        }
-
-        .password-form {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .password-form input {
-            height: 38px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 0 10px;
-            min-width: 150px;
-            background: #fff;
-        }
-
-        .muted {
-            color: var(--muted);
-        }
-
-        .small-note {
-            color: var(--muted);
-            font-size: 12px;
-            margin-top: 6px;
-            line-height: 1.35;
-        }
-
-        /* ── Аккордеон пользователей (компактная строка + карточка) ── */
-        .ulist { display: flex; flex-direction: column; gap: 10px; }
-
-        .uitem {
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: #fff;
-            overflow: hidden;
-        }
-        .uitem[open] { box-shadow: var(--shadow); }
-
-        .urow {
-            list-style: none;
-            cursor: pointer;
-            display: grid;
-            grid-template-columns: 56px 150px minmax(0, 1fr) auto 24px;
-            align-items: center;
-            gap: 12px;
-            padding: 13px 14px;
-            font-size: 14px;
-        }
-        .urow::-webkit-details-marker { display: none; }
-        .uitem[open] > .urow { border-bottom: 1px solid var(--border); background: #fafbfc; }
-        .urow .u-id { color: var(--muted); font-weight: 700; }
-        .urow .u-name { font-weight: 700; color: var(--brand-blue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .urow .u-chev { color: #9ca3af; transition: transform .15s; text-align: center; }
-        .uitem[open] > .urow .u-chev { transform: rotate(180deg); }
-
-        .ucard { padding: 16px 14px; display: flex; flex-direction: column; gap: 16px; }
-
-        .form-block {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 14px;
-            background: #fff;
-        }
-        .form-block h4 { margin: 0 0 12px; font-size: 13px; color: var(--brand-blue); }
-
-        .fgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
-        .fgrid .field-full { grid-column: 1 / -1; }
-        .fgrid label { display: block; font-size: 12px; font-weight: 700; color: var(--brand-blue); margin-bottom: 6px; }
-        .fgrid input[type="text"], .fgrid input[type="password"], .fgrid input[type="file"], .fgrid select {
-            width: 100%; height: 40px; border: 1px solid var(--border); border-radius: 10px;
-            padding: 0 10px; font-size: 14px; background: #fff;
-        }
-        .fgrid .check { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--brand-blue); height: 40px; }
-        .fgrid .check input { width: auto; height: auto; }
-
-        .summary-line { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 18px; }
-        .summary-line b { color: var(--text); font-weight: 700; }
-
-        .qr-box { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-        .qr-box img { width: 72px; height: 72px; object-fit: contain; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
-        .qr-none { color: var(--muted); font-size: 13px; }
-
-        .block-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-
-        @media (max-width: 980px) {
-            .filters {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .topbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .filters {
-                grid-template-columns: 1fr;
-            }
-
-            .toolbar a {
-                text-align: center;
-                width: 100%;
-            }
-
-            .urow { grid-template-columns: 40px minmax(0, 1fr) auto 22px; }
-            .urow .u-phone { display: none; }
-            .fgrid { grid-template-columns: 1fr; }
-        }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1 class="brand-title">Пользователи</h1>
-                <p class="brand-subtitle">Фильтры, роли, магазины бригадиров/экономистов, гражданство и юрлица</p>
-            </div>
-        </div>
-
-        <div class="toolbar">
-            <a href="/admin">Назад в админку</a>
-            <a href="/admin/create-user">Создать пользователя</a>
-            <a href="/admin/upload-users">Импорт пользователей</a>
-            <a href="/admin/users/pending">Несозданные{% if pending_count is defined and pending_count %} ({{ pending_count }}){% endif %}</a>
-            <a href="/logout">Выйти</a>
-        </div>
-    </div>
+{% block content %}
+<div class="page page-pad-top page-wide">
 
     {% if message %}
-        <div class="card">
-            <div class="msg">{{ message }}</div>
-        </div>
+        <div class="alert alert-success mt-0 mb-20">{{ message }}</div>
     {% endif %}
 
     {% if error %}
-        <div class="card">
-            <div class="err">{{ error }}</div>
-        </div>
+        <div class="alert alert-error mt-0 mb-20">{{ error }}</div>
     {% endif %}
 
     <div class="card">
         <form method="get" action="/admin/users">
-            <div class="filters">
+            <div class="form-grid align-end">
                 <div class="field">
                     <label>ID</label>
                     <input type="text" name="user_id" value="{{ filters.user_id if filters else '' }}">
@@ -434,18 +119,15 @@
                         <option value="superadmin" {% if filters and filters.role == 'superadmin' %}selected{% endif %}>Superadmin</option>
                     </select>
                 </div>
-
-                <div>
-                    <button type="submit" class="btn btn-primary">Фильтр</button>
-                </div>
             </div>
+            <button type="submit" class="btn btn-primary mt-14">Фильтр</button>
         </form>
     </div>
 
     <div class="card">
         <div class="table-title-row">
             <h2 class="table-title">Список пользователей</h2>
-            <a href="/admin/users" class="btn btn-light">Сбросить фильтр</a>
+            <a href="/admin/users" class="btn btn-secondary">Сбросить фильтр</a>
         </div>
 
         {# Скрытые поля фильтра, повторяются в формах — чтобы после сохранения не терять фильтр. #}
@@ -500,8 +182,8 @@
                             <input type="hidden" name="f_employee_name" value="{{ f_employee_name }}">
                             <input type="hidden" name="f_role" value="{{ f_role }}">
 
-                            <div class="fgrid">
-                                <div>
+                            <div class="form-grid cols-2 align-end">
+                                <div class="field">
                                     <label>Роль</label>
                                     <select name="role">
                                         <option value="employee" {% if user.role == "employee" and not user.is_admin %}selected{% endif %}>Сотрудник</option>
@@ -514,12 +196,12 @@
                                     </select>
                                 </div>
 
-                                <div>
+                                <div class="field">
                                     <label>Магазин бригадира</label>
                                     <input type="text" name="brigadier_store" value="{{ user.brigadier_store or '' }}" placeholder="Магазин бригадира">
                                 </div>
 
-                                <div class="field-full">
+                                <div class="field field-full">
                                     <label>Доступные города (через запятую)</label>
                                     <input type="text" name="scope_cities" value="{{ (city_scopes.get(user.id, []) or []) | join(', ') }}" placeholder="Доступные города через запятую">
                                 </div>
@@ -530,7 +212,7 @@
                                         {% if c.name == user.citizenship_country %}{% set ns.sel = c.id %}{% endif %}
                                     {% endfor %}
                                 {% endif %}
-                                <div>
+                                <div class="field">
                                     <label>Гражданство</label>
                                     <select name="citizenship_country_id">
                                         <option value="0">— не выбрано —</option>
@@ -540,7 +222,7 @@
                                     </select>
                                 </div>
 
-                                <div>
+                                <div class="field">
                                     <label>Должность</label>
                                     <select name="job_title">
                                         <option value="">— не выбрано —</option>
@@ -550,13 +232,13 @@
                                     </select>
                                 </div>
 
-                                <div>
+                                <div class="field">
                                     <label>ИНН</label>
                                     <input type="text" name="inn" value="{{ user.inn or '' }}" placeholder="ИНН"
                                            title="Синхронизируется с реквизитами и документом-ИНН">
                                 </div>
 
-                                <div>
+                                <div class="field">
                                     <label>Юрлицо</label>
                                     <select name="legal_entity">
                                         <option value="">Не выбрано</option>
@@ -586,15 +268,17 @@
                         <h4>QR-коды (пропуска, до 3)</h4>
                         <div class="qr-box">
                             {% for qr in user.qr_codes %}
-                                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                                <div class="qr-item">
                                     <img src="/users/{{ user.id }}/qr/{{ qr.id }}" alt="QR {{ qr.label or '' }}">
-                                    <form method="post" action="/admin/users/{{ user.id }}/qr/{{ qr.id }}/label" class="fgrid" style="min-width:150px">
+                                    <form method="post" action="/admin/users/{{ user.id }}/qr/{{ qr.id }}/label" class="qr-label-form stack">
                                         <input type="hidden" name="f_user_id" value="{{ f_user_id }}">
                                         <input type="hidden" name="f_phone" value="{{ f_phone }}">
                                         <input type="hidden" name="f_employee_name" value="{{ f_employee_name }}">
                                         <input type="hidden" name="f_role" value="{{ f_role }}">
-                                        <input type="text" name="label" value="{{ qr.label or '' }}" placeholder="Специальность" style="width:150px;font-size:12px;">
-                                        <button type="submit" class="btn" style="font-size:12px;padding:4px 8px;">Подпись</button>
+                                        <div class="field">
+                                            <input type="text" name="label" value="{{ qr.label or '' }}" placeholder="Специальность">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm">Подпись</button>
                                     </form>
                                     <form method="post" action="/admin/users/{{ user.id }}/qr/{{ qr.id }}/delete"
                                           onsubmit="return confirm('Удалить этот QR?');">
@@ -602,14 +286,14 @@
                                         <input type="hidden" name="f_phone" value="{{ f_phone }}">
                                         <input type="hidden" name="f_employee_name" value="{{ f_employee_name }}">
                                         <input type="hidden" name="f_role" value="{{ f_role }}">
-                                        <button type="submit" class="btn btn-danger" style="font-size:12px;padding:4px 8px;">Удалить</button>
+                                        <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
                                     </form>
                                 </div>
                             {% endfor %}
 
                             {# Legacy: единичный QR, ещё не перенесённый в employee_qr #}
                             {% if not user.qr_codes and user.qr_image_path %}
-                                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                                <div class="qr-item">
                                     <img src="/users/{{ user.id }}/qr" alt="QR {{ user.employee_name }}">
                                     <span class="qr-none">Legacy (перенесётся миграцией)</span>
                                     <form method="post" action="/admin/users/{{ user.id }}/qr/delete"
@@ -618,7 +302,7 @@
                                         <input type="hidden" name="f_phone" value="{{ f_phone }}">
                                         <input type="hidden" name="f_employee_name" value="{{ f_employee_name }}">
                                         <input type="hidden" name="f_role" value="{{ f_role }}">
-                                        <button type="submit" class="btn btn-danger" style="font-size:12px;padding:4px 8px;">Удалить</button>
+                                        <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
                                     </form>
                                 </div>
                             {% endif %}
@@ -629,16 +313,16 @@
                         </div>
 
                         {% if user.qr_codes|length < 3 %}
-                        <form method="post" action="/admin/users/{{ user.id }}/qr" enctype="multipart/form-data" class="fgrid" style="margin-top:10px;">
+                        <form method="post" action="/admin/users/{{ user.id }}/qr" enctype="multipart/form-data" class="form-grid cols-2 mt-14">
                             <input type="hidden" name="f_user_id" value="{{ f_user_id }}">
                             <input type="hidden" name="f_phone" value="{{ f_phone }}">
                             <input type="hidden" name="f_employee_name" value="{{ f_employee_name }}">
                             <input type="hidden" name="f_role" value="{{ f_role }}">
-                            <div class="field-full">
+                            <div class="field field-full">
                                 <label>Добавить QR (PNG/JPG)</label>
                                 <input type="file" name="qr_image" accept="image/png,image/jpeg" required>
                             </div>
-                            <div class="field-full">
+                            <div class="field field-full">
                                 <label>Подпись специальности (необязательно)</label>
                                 <input type="text" name="label" placeholder="напр. Пекарь">
                             </div>
@@ -647,15 +331,15 @@
                             </div>
                         </form>
                         {% else %}
-                        <p class="qr-none" style="margin-top:8px;">Достигнут максимум (3 QR). Удалите один, чтобы добавить новый.</p>
+                        <p class="qr-none mt-8">Достигнут максимум (3 QR). Удалите один, чтобы добавить новый.</p>
                         {% endif %}
                     </div>
 
                     <div class="form-block">
                         <h4>Пароль и удаление</h4>
-                        <form method="post" action="/admin/change-password" class="fgrid">
+                        <form method="post" action="/admin/change-password" class="form-grid cols-2">
                             <input type="hidden" name="user_id" value="{{ user.id }}">
-                            <div class="field-full">
+                            <div class="field field-full">
                                 <label>Новый пароль</label>
                                 <input type="password" name="new_password" placeholder="Новый пароль" required>
                             </div>
@@ -679,7 +363,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>(function () {
     // После сохранения возвращаемся на #user-{id} — раскрываем эту карточку и прокручиваем к ней.
     var hash = window.location.hash;
@@ -691,6 +377,4 @@
         }
     }
 })();</script>
-</body>
-</html>
-
+{% endblock %}
