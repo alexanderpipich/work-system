@@ -837,6 +837,10 @@ body:has(.page-wide)   { --page-max: 1600px; }
 .hours { font-weight: 700; color: var(--brand-blue); }
 .attention-row, .attention-row .hours { color: var(--error-text); font-weight: 700; }
 
+/* Страница без .hero: заголовок раздела живёт в топбаре, и контент иначе
+   прилипает к его нижней границе. */
+.page-pad-top { padding-top: 20px; }
+
 .warn-btn {
     border: none;
     background: var(--error-bg);
@@ -851,6 +855,31 @@ body:has(.page-wide)   { --page-max: 1600px; }
 /* ── Печать и экспорт (html2canvas / PDF) ─────────────────────────────── */
 .print-only { display: none; }
 
+/* Кнопки партиала _export_buttons.html. Он подключается на несколько страниц,
+   поэтому оформление живёт здесь, а не в block head каждой из них.
+   .export-row (выравнивание ряда) у страниц разное — оно остаётся локальным. */
+.export-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.export-btn {
+    border: 1px solid rgba(11, 20, 117, .12);
+    background: #fff;
+    color: var(--brand-blue);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.export-btn:hover { background: #f4f5ff; }
+.export-btn:disabled { opacity: .6; cursor: default; }
+
+/* html2canvas снимает таблицу целиком: липкие ячейки на время съёмки отпускаем,
+   иначе они впечатываются в кадр не на своём месте. */
+.capturing th,
+.capturing .left { position: static !important; }
+
 @media print {
     .no-print { display: none !important; }
     .print-only { display: block !important; }
@@ -862,6 +891,26 @@ body:has(.page-wide)   { --page-max: 1600px; }
     .table-wrap th { position: static; }
     a { text-decoration: none; color: var(--text); }
 }
+
+/* ── Предпросмотр рассылок ────────────────────────────────────────────── */
+/* Общее для admin_email_unplanned / admin_email_planning_bp /
+   admin_email_reconciliation — блоки писем там совпадают дословно. */
+.counters { display: flex; gap: 24px; flex-wrap: wrap; }
+.counter { font-size: 14px; color: var(--muted); }
+.counter b { display: block; color: var(--brand-blue); font-size: 20px; }
+
+.letter { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; }
+.letter-head { background: var(--surface-muted); padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.letter-tk { font-weight: 700; color: var(--brand-blue); }
+.letter-subject { font-size: 13px; margin-top: 6px; word-break: break-word; }
+.letter-to { font-size: 13px; color: var(--success-text); margin-top: 6px; }
+.letter-body { padding: 16px 18px; }
+.letter-body summary { cursor: pointer; color: var(--brand-blue); font-weight: 700; font-size: 13px; }
+.letter-html { margin-top: 10px; border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 12px; }
+
+.no-contacts { border: 1px solid var(--error-border); border-radius: var(--radius-sm); overflow: hidden; }
+.no-contacts-head { padding: 12px 16px; background: var(--error-bg); color: var(--error-text); font-size: 13px; font-weight: 700; }
+.no-contacts-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--error-border); font-size: 13px; }
 
 /* ── Адаптив ──────────────────────────────────────────────────────────── */
 @media (max-width: 980px) {

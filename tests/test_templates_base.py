@@ -81,13 +81,31 @@ class PageWidthAlignmentTests(unittest.TestCase):
                 )
 
     def test_templates_use_only_known_modifiers(self):
-        known = set(re.findall(r"body:has\(\.(page-[a-z0-9-]+)\)", open(APP_CSS, encoding="utf-8").read()))
+        """Каждый page-* класс в шаблонах должен быть объявлен в app.css.
+
+        Ширинные (те, что задают --page-max) обязаны иметь пару body:has(), иначе шапка
+        отвяжется от контента. Прочие page-* — обычные утилиты вроде .page-pad-top,
+        парного правила им не нужно, но объявленными быть обязаны — иначе опечатка
+        в имени класса пройдёт молча.
+        """
+        with open(APP_CSS, encoding="utf-8") as f:
+            css = f.read()
+
+        width_mods = set(re.findall(r"^\.(page-[a-z0-9-]+)\s*\{[^}]*--page-max", css, re.M))
+        paired = set(re.findall(r"body:has\(\.(page-[a-z0-9-]+)\)", css))
+        declared = set(re.findall(r"\.(page-[a-z0-9-]+)\s*[,{]", css))
+
         for name in sorted(n for n in os.listdir(TEMPLATES) if n.endswith(".html")):
             with open(os.path.join(TEMPLATES, name), encoding="utf-8") as f:
                 used = set(re.findall(r'class="[^"]*\b(page-[a-z0-9-]+)\b', f.read()))
             for mod in sorted(used):
                 with self.subTest(template=name, modifier=mod):
-                    self.assertIn(mod, known, "%s: .%s без правила body:has()" % (name, mod))
+                    self.assertIn(mod, declared,
+                                  "%s: класс .%s нигде не объявлен в app.css" % (name, mod))
+                    if mod in width_mods:
+                        self.assertIn(mod, paired,
+                                      "%s: у ширинного .%s нет body:has() — шапка уедет"
+                                      % (name, mod))
 
 
 if __name__ == "__main__":

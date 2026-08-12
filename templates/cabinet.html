@@ -8,7 +8,6 @@
 <style>
     /* специфика кабинета: приветствие, заголовок таблицы смен, липкая навигация */
     html { scroll-behavior: smooth; }
-    .content { padding-top: 20px; }
 
     .welcome-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .welcome-title { margin: 0 0 8px; color: var(--brand-blue); font-size: 24px; letter-spacing: -.3px; }
@@ -59,7 +58,7 @@
 {% endblock %}
 
 {% block content %}
-<main class="page page-narrow content">
+<main class="page page-narrow page-pad-top">
     {% if user.password_is_temporary %}
     <div class="alert alert-warn alert-row mt-0 mb-20">
         <span>Вы используете временный пароль. Рекомендуем сменить его на свой.</span>
