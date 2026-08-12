@@ -1,412 +1,179 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Кабинет экономиста</title>
+{% extends "base.html" %}
 
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-        }
+{% block title %}Кабинет экономиста{% endblock %}
+{% block brand_title %}Кабинет экономиста{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Финансовый контроль, выплаты, реквизиты и проверка табелей</p>{% endblock %}
 
-        * {
-            box-sizing: border-box;
-        }
+{% block topbar_actions %}
+<a href="/stores" class="back-link">Справочник магазинов</a>
+{% if user.is_admin %}
+    <a href="/admin" class="back-link">Админка</a>
+{% endif %}
+<a href="/logout" class="logout">Выйти</a>
+{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
-                var(--bg);
+{% block head %}
+<style>
+    /* специфика страницы: буквенные иконки разделов вместо svg */
+    .nav-card .icon { font-size: 17px; font-weight: 800; letter-spacing: -.2px; }
+    .nav-card .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+</style>
+{% endblock %}
 
-            color: var(--text);
-            padding: 28px 18px 36px;
-        }
-
-        .page {
-            max-width: 1500px;
-            margin: 0 auto;
-        }
-
-        .topbar,
-        .card {
-            background: var(--card-bg);
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-            padding: 22px;
-            margin-bottom: 20px;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .brand img {
-            width: 72px;
-            height: 72px;
-            object-fit: contain;
-            border-radius: 16px;
-            background: #fff;
-        }
-
-        .brand-title {
-            margin: 0;
-            font-size: 30px;
-            color: var(--brand-blue);
-            font-weight: 700;
-        }
-
-        .brand-subtitle {
-            margin: 8px 0 0;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .toolbar a {
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-            white-space: nowrap;
-        }
-
-        .section-title {
-            margin: 0 0 18px;
-            color: var(--brand-blue);
-            font-size: 24px;
-        }
-
-        .cities {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .city-pill {
-            background: #eef4ff;
-            color: var(--brand-blue);
-            padding: 10px 14px;
-            border-radius: 999px;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .modules {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 18px;
-        }
-
-        .module-card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 22px 20px;
-            text-decoration: none;
-            color: inherit;
-            border: 1px solid transparent;
-            transition: transform .14s ease, box-shadow .2s ease, border-color .2s ease;
-            min-height: 180px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .module-card:hover {
-            transform: translateY(-3px);
-            border-color: rgba(11, 20, 117, 0.08);
-            box-shadow: 0 18px 45px rgba(11, 20, 117, 0.11);
-        }
-
-        .card-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 18px;
-        }
-
-        .icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            font-weight: 700;
-            background: rgba(245, 138, 101, 0.14);
-            color: #8f3e20;
-        }
-
-        .tag {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--brand-blue);
-            background: rgba(11, 20, 117, 0.08);
-            padding: 8px 10px;
-            border-radius: 999px;
-        }
-
-        .module-title {
-            margin: 0 0 10px;
-            color: var(--brand-blue);
-            font-size: 20px;
-        }
-
-        .module-text {
-            color: var(--muted);
-            line-height: 1.5;
-            font-size: 14px;
-            min-height: 60px;
-        }
-
-        .module-btn {
-            display: none;
-        }
-
-        .muted {
-            color: var(--muted);
-        }
-
-        @media (max-width: 800px) {
-            .modules {
-                grid-template-columns: 1fr;
-            }
-
-            .topbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-    </style>
-</head>
-
-<body>
+{% block content %}
 <div class="page">
-
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-
-            <div>
-                <h1 class="brand-title">Кабинет экономиста</h1>
-
-                <p class="brand-subtitle">
-                    Финансовый контроль, выплаты, реквизиты и проверка табелей
-                </p>
-            </div>
+    <section class="group mt-20">
+        <div class="group-hdr">
+            <h2 class="group-title">Разделы</h2>
         </div>
 
-        <div class="toolbar">
-            <a href="/logout">Выйти</a>
-            <a href="/stores">Справочник магазинов</a>
+        <div class="grid">
 
-            {% if user.is_admin %}
-                <a href="/admin">Админка</a>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="card">
-        <h2 class="section-title">Разделы</h2>
-
-        <div class="modules">
-
-            <a href="/economist/rates" class="module-card">
-                <div>
-                    <div class="card-top">
-                        <div class="icon">₽</div>
-                        <div class="tag">Готово</div>
-                    </div>
-                    <h3 class="module-title">ЧТС</h3>
-
-                    <div class="module-text">
-                        Управление часовыми тарифными ставками сотрудников
-                    </div>
-                </div>
+            <a href="/economist/rates" class="nav-card">
+                <span class="icon amber">₽</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">ЧТС</span>
+                        <span class="chip">Готово</span>
+                    </span>
+                    <span class="desc">Управление часовыми тарифными ставками сотрудников</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
             </a>
 
-            <a href="/economist/employees" class="module-card">
-                <div><div class="card-top"><div class="icon">СОТ</div><div class="tag">Новый модуль</div></div>
-                    <h3 class="module-title">Сотрудники</h3><div class="module-text">Планирование, мониторинг, сверки и смены без плана по доступным городам</div></div>
-            </a>
-            <a href="/economist/payroll" class="module-card">
-                <div>
-                    <div class="card-top">
-                        <div class="icon">▦</div>
-                        <div class="tag">В работе</div>
-                    </div>
-                    <h3 class="module-title">Выплатный табель</h3>
-
-                    <div class="module-text">
-                        Проверка, фиксация и отправка табелей в оплату
-                    </div>
-                </div>
+            <a href="/economist/employees" class="nav-card">
+                <span class="icon indigo">СОТ</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">Сотрудники</span>
+                        <span class="chip">Новый модуль</span>
+                    </span>
+                    <span class="desc">Планирование, мониторинг, сверки и смены без плана по доступным городам</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
             </a>
 
-            <a href="/economist/schedules" class="module-card">
-                <div>
-                    <div class="card-top">
-                        <div class="icon">□</div>
-                        <div class="tag">Готово</div>
-                    </div>
-                    <h3 class="module-title">Графики выходов</h3>
-
-                    <div class="module-text">
-                        Контроль фактических выходов сотрудников
-                    </div>
-                </div>
+            <a href="/economist/payroll" class="nav-card">
+                <span class="icon amber">▦</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">Выплатный табель</span>
+                        <span class="chip">В работе</span>
+                    </span>
+                    <span class="desc">Проверка, фиксация и отправка табелей в оплату</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
             </a>
 
-            <a href="/economist/requisites" class="module-card">
-                <div>
-                    <div class="card-top">
-                        <div class="icon">▣</div>
-                        <div class="tag">Готово</div>
-                    </div>
-                    <h3 class="module-title">Реквизиты</h3>
-
-                    <div class="module-text">
-                        Банковские реквизиты сотрудников и третьих лиц
-                    </div>
-                </div>
+            <a href="/economist/schedules" class="nav-card">
+                <span class="icon violet">□</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">Графики выходов</span>
+                        <span class="chip">Готово</span>
+                    </span>
+                    <span class="desc">Контроль фактических выходов сотрудников</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
             </a>
 
-            <a href="/economist/adjustments" class="module-card">
-                <div>
-                    <div class="card-top">
-                        <div class="icon">!</div>
-                        <div class="tag">Готово</div>
-                    </div>
-                    <h3 class="module-title">Корректировки</h3>
-
-                    <div class="module-text">
-                        Подтверждение и отклонение автоматических корректировок по доступным городам
-                    </div>
-                </div>
+            <a href="/economist/requisites" class="nav-card">
+                <span class="icon teal">▣</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">Реквизиты</span>
+                        <span class="chip">Готово</span>
+                    </span>
+                    <span class="desc">Банковские реквизиты сотрудников и третьих лиц</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
             </a>
 
-            <a href="/economist/lmk" class="module-card">
-                <div>
-                    <div class="card-top">
-                        <div class="icon">✚</div>
-                        <div class="tag">Готово</div>
-                    </div>
-                    <h3 class="module-title">ЛМК</h3>
-
-                    <div class="module-text">
-                        Удержания за личные медицинские книжки по доступным городам
-                    </div>
-                </div>
+            <a href="/economist/adjustments" class="nav-card">
+                <span class="icon coral">!</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">Корректировки</span>
+                        <span class="chip">Готово</span>
+                    </span>
+                    <span class="desc">Подтверждение и отклонение автоматических корректировок по доступным городам</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
             </a>
 
-            <a href="/economist/legal-entities" class="module-card">
-                <div>
-                    <div class="card-top">
-                        <div class="icon">ЮЛ</div>
-                        <div class="tag">Справочник</div>
-                    </div>
-                    <h3 class="module-title">Юрлица</h3>
-
-                    <div class="module-text">
-                        Справочник юридических лиц для сотрудников и выплат
-                    </div>
-                </div>
+            <a href="/economist/lmk" class="nav-card">
+                <span class="icon rose">✚</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">ЛМК</span>
+                        <span class="chip">Готово</span>
+                    </span>
+                    <span class="desc">Удержания за личные медицинские книжки по доступным городам</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
             </a>
 
-           
-            <a href="/economist/documents" class="module-card">
-                <div>
-                    <div class="card-top">
-                        <div class="icon">▤</div>
-                        <div class="tag">Планируется</div>
-                    </div>
-                    <h3 class="module-title">Документы</h3>
-
-                    <div class="module-text">
-                        Реестры, ведомости и документы выплат
-                    </div>
-                </div>
+            <a href="/economist/legal-entities" class="nav-card">
+                <span class="icon teal">ЮЛ</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">Юрлица</span>
+                        <span class="chip">Справочник</span>
+                    </span>
+                    <span class="desc">Справочник юридических лиц для сотрудников и выплат</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
             </a>
 
-            <a href="/economist/document-types" class="module-card">
-                <div>
-                    <div class="card-top">
-                        <div class="icon">ТИП</div>
-                        <div class="tag">Справочник</div>
-                    </div>
-                    <h3 class="module-title">Типы документов</h3>
-
-                    <div class="module-text">
-                        Настройка обязательных документов, подсказок, гражданства и образцов
-                    </div>
-                </div>
+            <a href="/economist/documents" class="nav-card">
+                <span class="icon coral">▤</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">Документы</span>
+                        <span class="chip">Планируется</span>
+                    </span>
+                    <span class="desc">Реестры, ведомости и документы выплат</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
             </a>
 
-            <a href="/economist/reports" class="module-card">
-                <div>
-                    <div class="card-top">
-                        <div class="icon">REP</div>
-                        <div class="tag">Новый модуль</div>
-                    </div>
-                    <h3 class="module-title">Отчеты</h3>
-
-                    <div class="module-text">
-                        Управленческие таблицы по городам, выплатам, корректировкам, ЛМК и документам
-                    </div>
-                </div>
+            <a href="/economist/document-types" class="nav-card">
+                <span class="icon violet">ТИП</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">Типы документов</span>
+                        <span class="chip">Справочник</span>
+                    </span>
+                    <span class="desc">Настройка обязательных документов, подсказок, гражданства и образцов</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
             </a>
 
-            <a href="/economist/analytics" class="module-card">
-                <div>
-                    <div class="card-top">
-                        <div class="icon">AN</div>
-                        <div class="tag">Новый модуль</div>
-                    </div>
-                    <h3 class="module-title">Аналитика</h3>
+            <a href="/economist/reports" class="nav-card">
+                <span class="icon lime">REP</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">Отчеты</span>
+                        <span class="chip">Новый модуль</span>
+                    </span>
+                    <span class="desc">Управленческие таблицы по городам, выплатам, корректировкам, ЛМК и документам</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
+            </a>
 
-                    <div class="module-text">
-                        KPI, предупреждения и динамика выплат, часов, документов, корректировок и ЛМК по доступным городам
-                    </div>
-                </div>
+            <a href="/economist/analytics" class="nav-card">
+                <span class="icon amber">AN</span>
+                <span class="card-body">
+                    <span class="card-top">
+                        <span class="title">Аналитика</span>
+                        <span class="chip">Новый модуль</span>
+                    </span>
+                    <span class="desc">KPI, предупреждения и динамика выплат, часов, документов, корректировок и ЛМК по доступным городам</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
             </a>
 
         </div>
-    </div>
-
+    </section>
 </div>
-</body>
-</html>
+{% endblock %}

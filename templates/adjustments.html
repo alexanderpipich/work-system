@@ -1,331 +1,81 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <title>Корректировки</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            --success-bg: #eefbf3;
-            --success-text: #067647;
-            --error-bg: #fff1ed;
-            --error-text: #b42318;
-            --warn-bg: #fff7ed;
-            --warn-text: #9a3412;
-        }
+{% extends "base.html" %}
 
-        * { box-sizing: border-box; }
+{% block title %}Корректировки{% endblock %}
+{% block brand_title %}Корректировки{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Автоматически найденные изменения после отправки табелей в оплату</p>{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
-                var(--bg);
-            color: var(--text);
-            padding: 28px 18px 36px;
-        }
+{% block topbar_actions %}
+{% if show_upload_link %}
+    <a href="/admin/upload" class="back-link">Загрузка данных</a>
+{% endif %}
+<a href="{{ back_url or '/admin' }}" class="back-link">{{ back_label or 'Назад' }}</a>
+{% endblock %}
 
-        .page {
-            max-width: 1700px;
-            margin: 0 auto;
-        }
+{% block head %}
+<style>
+    /* специфика страницы: широкая таблица корректировок и селект фильтра */
+    .adjustments-table table { min-width: 1500px; }
+    .adjustments-table .num { text-align: right; white-space: nowrap; }
 
-        .topbar,
-        .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+    .filter-select {
+        min-width: 280px;
+        height: 40px;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-sm);
+        padding: 0 12px;
+        color: var(--text);
+        background: #fff;
+        font-family: inherit;
+        font-size: 14px;
+    }
 
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-        }
+    .amount-plus { color: var(--success-text); font-weight: 700; }
+    .amount-minus { color: var(--error-text); font-weight: 700; }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
+    /* Зелёной кнопки «подтвердить» в системе нет — она только здесь. */
+    .btn-ok { background: var(--success-text); color: #fff; }
+    .btn-ok:hover { background: #05633c; color: #fff; }
+</style>
+{% endblock %}
 
-        .brand img {
-            width: 64px;
-            height: 64px;
-            object-fit: contain;
-            border-radius: 16px;
-            background: #fff;
-        }
-
-        .brand-title {
-            margin: 0;
-            color: var(--brand-blue);
-            font-size: 28px;
-        }
-
-        .brand-subtitle {
-            margin: 6px 0 0;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.45;
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .back-link,
-        .filter-link {
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-            white-space: nowrap;
-        }
-
-        .filter-link.active {
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            color: #fff;
-        }
-
-        .filters {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .filter-form {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            width: 100%;
-        }
-
-        .filter-label {
-            color: var(--muted);
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .filter-select {
-            min-width: 280px;
-            height: 40px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0 12px;
-            color: var(--text);
-            background: #fff;
-            font-size: 14px;
-        }
-
-        .filter-button {
-            height: 40px;
-            border: none;
-            border-radius: 12px;
-            padding: 0 14px;
-            font-weight: 700;
-            cursor: pointer;
-            color: #fff;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-        }
-
-        .table-wrap {
-            overflow-x: auto;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1500px;
-            background: #fff;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            font-size: 14px;
-            vertical-align: middle;
-        }
-
-        th {
-            background: #fafbfc;
-            color: var(--brand-blue);
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .num {
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .pill {
-            display: inline-block;
-            padding: 7px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .pill-pending {
-            background: var(--warn-bg);
-            color: var(--warn-text);
-        }
-
-        .pill-approved {
-            background: var(--success-bg);
-            color: var(--success-text);
-        }
-
-        .pill-rejected {
-            background: var(--error-bg);
-            color: var(--error-text);
-        }
-
-        .pill-applied {
-            background: #eef2ff;
-            color: #344054;
-        }
-
-        .amount-plus {
-            color: #067647;
-            font-weight: 700;
-        }
-
-        .amount-minus {
-            color: #b42318;
-            font-weight: 700;
-        }
-
-        .btn {
-            height: 36px;
-            border: none;
-            border-radius: 12px;
-            padding: 0 12px;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-            color: #fff;
-        }
-
-        .btn-ok {
-            background: linear-gradient(135deg, #067647, #0a8f59);
-        }
-
-        .btn-bad {
-            background: linear-gradient(135deg, #c23327, #9f1f16);
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: nowrap;
-        }
-
-        .muted {
-            color: var(--muted);
-        }
-
-        .empty {
-            color: var(--muted);
-            padding: 24px;
-        }
-
-        @media (max-width: 800px) {
-            .topbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-    </style>
-</head>
-
-<body>
-<div class="page">
-
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1 class="brand-title">Корректировки</h1>
-                <p class="brand-subtitle">
-                    Автоматически найденные изменения после отправки табелей в оплату
-                </p>
-            </div>
-        </div>
-
-        <div class="toolbar">
-            {% if show_upload_link %}
-                <a href="/admin/upload" class="back-link">Загрузка данных</a>
-            {% endif %}
-            <a href="{{ back_url or '/admin' }}" class="back-link">{{ back_label or 'Назад' }}</a>
-        </div>
-    </div>
+{% block content %}
+<div class="page page-wide">
 
     {% if message %}
-    <div class="card">
-        <div class="pill pill-approved">{{ message }}</div>
-    </div>
+    <div class="alert alert-success">{{ message }}</div>
     {% endif %}
 
     {% if error %}
-    <div class="card">
-        <div class="pill pill-rejected">{{ error }}</div>
-    </div>
+    <div class="alert alert-error">{{ error }}</div>
     {% endif %}
 
-    <div class="card">
-        <div class="filters">
-            <form method="get" action="{{ base_path or '/admin/adjustments' }}" class="filter-form">
-                <input type="hidden" name="status" value="{{ status }}">
-                <label class="filter-label" for="employee-filter">ФИО</label>
-                <select id="employee-filter" name="employee_name" class="filter-select">
-                    <option value="">Все сотрудники</option>
-                    {% for employee in employee_options or [] %}
-                        <option value="{{ employee }}" {% if employee == employee_name %}selected{% endif %}>{{ employee }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="filter-button">Показать</button>
-                {% if employee_name %}
-                    <a href="{{ base_path or '/admin/adjustments' }}?status={{ status }}" class="filter-link">Сбросить ФИО</a>
-                {% endif %}
-            </form>
-            <a href="{{ base_path or '/admin/adjustments' }}?status=applied" class="filter-link {% if status == 'applied' %}active{% endif %}">Применены</a>
-            <a href="{{ base_path or '/admin/adjustments' }}?status=pending" class="filter-link {% if status == 'pending' %}active{% endif %}">Ожидают</a>
-            <a href="{{ base_path or '/admin/adjustments' }}?status=approved" class="filter-link {% if status == 'approved' %}active{% endif %}">Подтверждены</a>
-            <a href="{{ base_path or '/admin/adjustments' }}?status=rejected" class="filter-link {% if status == 'rejected' %}active{% endif %}">Отклонены</a>
-            <a href="{{ base_path or '/admin/adjustments' }}?status=all" class="filter-link {% if status == 'all' %}active{% endif %}">Все</a>
+    <div class="card mt-20">
+        <form method="get" action="{{ base_path or '/admin/adjustments' }}" class="row mb-14">
+            <input type="hidden" name="status" value="{{ status }}">
+            <label class="muted" for="employee-filter">ФИО</label>
+            <select id="employee-filter" name="employee_name" class="filter-select">
+                <option value="">Все сотрудники</option>
+                {% for employee in employee_options or [] %}
+                    <option value="{{ employee }}" {% if employee == employee_name %}selected{% endif %}>{{ employee }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Показать</button>
+            {% if employee_name %}
+                <a href="{{ base_path or '/admin/adjustments' }}?status={{ status }}" class="back-link">Сбросить ФИО</a>
+            {% endif %}
+        </form>
+
+        <div class="tabs">
+            <a href="{{ base_path or '/admin/adjustments' }}?status=applied" class="tab {% if status == 'applied' %}is-active{% endif %}">Применены</a>
+            <a href="{{ base_path or '/admin/adjustments' }}?status=pending" class="tab {% if status == 'pending' %}is-active{% endif %}">Ожидают</a>
+            <a href="{{ base_path or '/admin/adjustments' }}?status=approved" class="tab {% if status == 'approved' %}is-active{% endif %}">Подтверждены</a>
+            <a href="{{ base_path or '/admin/adjustments' }}?status=rejected" class="tab {% if status == 'rejected' %}is-active{% endif %}">Отклонены</a>
+            <a href="{{ base_path or '/admin/adjustments' }}?status=all" class="tab {% if status == 'all' %}is-active{% endif %}">Все</a>
         </div>
     </div>
 
     <div class="card">
-        <div class="table-wrap">
+        <div class="table-wrap adjustments-table">
             <table>
                 <thead>
                 <tr>
@@ -390,13 +140,13 @@
 
                     <td>
                         {% if item.status == "applied" %}
-                            <span class="pill pill-applied">Применено</span>
+                            <span class="pill pill-neutral">Применено</span>
                         {% elif item.status == "approved" %}
-                            <span class="pill pill-approved">Подтверждено</span>
+                            <span class="pill pill-success">Подтверждено</span>
                         {% elif item.status == "rejected" %}
-                            <span class="pill pill-rejected">Отклонено</span>
+                            <span class="pill pill-danger">Отклонено</span>
                         {% else %}
-                            <span class="pill pill-pending">Ожидает</span>
+                            <span class="pill pill-warn">Ожидает</span>
                         {% endif %}
                     </td>
 
@@ -419,14 +169,14 @@
                                 <input type="hidden" name="adjustment_id" value="{{ item.id }}">
                                 <input type="hidden" name="status" value="{{ status }}">
                                 <input type="hidden" name="employee_name" value="{{ employee_name or '' }}">
-                                <button type="submit" class="btn btn-ok">Подтвердить</button>
+                                <button type="submit" class="btn btn-ok btn-sm">Подтвердить</button>
                             </form>
 
                             <form method="post" action="{{ base_path or '/admin/adjustments' }}/reject">
                                 <input type="hidden" name="adjustment_id" value="{{ item.id }}">
                                 <input type="hidden" name="status" value="{{ status }}">
                                 <input type="hidden" name="employee_name" value="{{ employee_name or '' }}">
-                                <button type="submit" class="btn btn-bad">Отклонить</button>
+                                <button type="submit" class="btn btn-danger btn-sm">Отклонить</button>
                             </form>
                         </div>
                         {% else %}
@@ -447,5 +197,4 @@
     </div>
 
 </div>
-</body>
-</html>
+{% endblock %}

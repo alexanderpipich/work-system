@@ -1,3 +1,5 @@
+{% extends "base.html" %}
+
 {% macro render_cell(cell) %}
     {% if cell.count > 0 %}
         <td class="{% if cell.has_real_dup %}cell-dup{% elif cell.count > 1 %}cell-multi{% else %}cell-rate{% endif %}">
@@ -27,308 +29,190 @@
         <td><span class="cell-empty">—</span></td>
     {% endif %}
 {% endmacro %}
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <title>Матрица услуг</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            --error-bg: #fff1ed;
-            --error-text: #b42318;
-            --warn-bg: #fff7ed;
-            --warn-text: #9a3412;
-            --success-bg: #eefbf3;
-            --success-text: #067647;
-        }
 
-        * { box-sizing: border-box; }
+{% block title %}Матрица услуг{% endblock %}
+{% block brand_title %}Матрица услуг{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Услуги по уровням и тарифам · диагностика дублей и пропусков (только чтение)</p>{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
-                var(--bg);
-            color: var(--text);
-            padding: 28px 18px 36px;
-        }
+{% block topbar_class %}no-print{% endblock %}
 
-        .page { max-width: 1600px; margin: 0 auto; }
+{% block topbar_actions %}
+<a href="/admin/rates" class="back-link">ЧТС (правка)</a>
+<a href="/admin" class="back-link">Назад в админку</a>
+{% endblock %}
 
-        .topbar, .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+{% block head %}
+<style>
+    /* ── Специфика страницы: матрица «услуга × уровень» ──────────────────── */
+    .services-table table { min-width: 1100px; }
+    .services-table th,
+    .services-table td {
+        padding: 10px;
+        text-align: center;
+        border-right: 1px solid var(--border);
+        font-size: 13px;
+    }
+    .services-table th { z-index: 2; }
 
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-        }
+    /* Липкая первая колонка (услуга). */
+    .services-table .left {
+        text-align: left;
+        min-width: 320px;
+        position: sticky;
+        left: 0;
+        background: #fff;
+        z-index: 1;
+    }
+    .services-table th.left { background: var(--surface-muted); z-index: 3; }
 
-        .brand { display: flex; align-items: center; gap: 14px; }
-        .brand img { width: 64px; height: 64px; object-fit: contain; border-radius: 16px; background: #fff; }
-        .brand-title { margin: 0; color: var(--brand-blue); font-size: 28px; }
-        .brand-subtitle { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+    .base-name { font-weight: 700; color: var(--text); }
+    .badges { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
 
-        .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .export-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: var(--radius-pill);
+        font-size: 11px;
+        font-weight: 800;
+    }
+    .badge-dup { background: var(--error-bg); color: var(--error-text); }
+    .badge-typo { background: var(--warn-bg); color: var(--warn-text); }
+    .badge-norate { background: #eef2ff; color: var(--brand-blue); }
+    .badge-indiv { background: #f3f4f6; color: var(--muted); }
+    .badge-off {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: var(--radius-pill);
+        font-size: 11px;
+        font-weight: 800;
+        background: #f3f4f6;
+        color: var(--muted);
+        margin-left: 6px;
+    }
 
-        .export-btn, .back-link {
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            background: #fff;
-            color: var(--brand-blue);
-            font-weight: 700;
-            font-size: 14px;
-            padding: 10px 14px;
-            border-radius: 12px;
-            cursor: pointer;
-            white-space: nowrap;
-            text-decoration: none;
-        }
-        .export-btn:hover, .back-link:hover { background: #f4f5ff; }
-        .export-btn:disabled { opacity: 0.6; cursor: default; }
+    .variants { margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .variants code { background: #f3f4f6; padding: 1px 5px; border-radius: 6px; }
 
-        h2 { margin: 0 0 16px; color: var(--brand-blue); }
+    /* Ячейка матрицы с раскрывающимся списком ставок. */
+    .cell-rate { font-weight: 700; color: var(--brand-blue); background: rgba(11, 20, 117, 0.04); }
+    .cell-multi { font-weight: 700; color: var(--brand-blue); background: rgba(11, 20, 117, 0.04); }
+    .cell-dup { font-weight: 700; color: var(--error-text); background: var(--error-bg); }
+    .dup-mark { font-size: 11px; font-weight: 800; color: var(--error-text); white-space: nowrap; }
+    .cell-orphan { color: var(--error-text); font-weight: 700; background: var(--error-bg); display: block; border-radius: 8px; padding: 4px; }
+    .cell-empty { color: #c3c7cf; }
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 14px;
-            align-items: end;
-        }
+    .cell-menu { position: relative; }
+    .cell-menu summary { list-style: none; cursor: pointer; }
+    .cell-menu summary::-webkit-details-marker { display: none; }
+    .cell-panel {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        top: 26px;
+        z-index: 10;
+        min-width: 240px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: var(--shadow-hover);
+        padding: 10px;
+        text-align: left;
+    }
+    .cell-panel-item { font-size: 12px; padding: 5px 0; border-top: 1px solid var(--border); }
+    .cell-panel-item:first-child { border-top: 0; }
+    .cell-panel-meta { color: var(--muted); }
 
-        .field label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--brand-blue);
-            margin-bottom: 8px;
-        }
+    /* Сводка-счётчики. */
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .summary-item { border: 1px solid var(--border); background: #fbfcff; border-radius: var(--radius); padding: 16px; }
+    .summary-item a { color: inherit; text-decoration: none; }
+    .summary-item.link { cursor: pointer; }
+    .summary-item.link:hover { border-color: rgba(11, 20, 117, 0.3); }
+    .summary-item.is-alert { border-color: rgba(180, 35, 24, 0.25); background: var(--error-bg); }
+    .summary-label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+    .summary-item.is-alert .summary-label { color: var(--error-text); }
+    .summary-value { color: var(--brand-blue); font-size: 24px; font-weight: 700; }
+    .summary-item.is-alert .summary-value { color: var(--error-text); }
 
-        .field input, .field select {
-            width: 100%;
-            height: 46px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0 12px;
-            font-size: 14px;
-            background: #fff;
-        }
+    /* Секция слияния дублей написания. */
+    .merge-group { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; background: #fbfcff; }
+    .merge-group h4 { margin: 0 0 10px; color: var(--brand-blue); font-size: 14px; }
+    .merge-variant { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 7px 0; border-top: 1px solid var(--border); }
+    .merge-variant:first-of-type { border-top: 0; }
+    .merge-variant label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+    .merge-variant .vname { font-weight: 700; }
+    .in-tariff { font-size: 11px; font-weight: 800; color: var(--success-text); background: var(--success-bg); border-radius: var(--radius-pill); padding: 2px 8px; }
+    .merge-actions { margin-top: 10px; }
 
-        .btn {
-            height: 46px;
-            border: none;
-            border-radius: 14px;
-            padding: 0 18px;
-            font-weight: 700;
-            cursor: pointer;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            color: #fff;
-        }
+    /* Диагностика. */
+    .diag { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .diag-block { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; background: #fbfcff; }
+    .diag-block h3 { margin: 0 0 10px; color: var(--brand-blue); font-size: 15px; }
+    .diag-list { max-height: 260px; overflow: auto; margin: 0; padding: 0; list-style: none; }
+    .diag-list li { font-size: 13px; padding: 6px 0; border-top: 1px solid var(--border); line-height: 1.4; }
+    .diag-list li:first-child { border-top: 0; }
+    .diag-empty { color: var(--muted); font-size: 13px; }
 
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 14px;
-        }
+    .nt-link { color: var(--brand-blue); font-weight: 700; text-decoration: none; cursor: pointer; }
+    .nt-link:hover { text-decoration: underline; }
+    .nt-ctx { font-size: 11px; color: var(--muted); margin: 2px 0 4px; }
 
-        .summary-item a { color: inherit; text-decoration: none; }
-        .summary-item.link { cursor: pointer; }
-        .summary-item.link:hover { border-color: rgba(11, 20, 117, 0.3); }
+    /* ── Экспорт (кнопки партиала _export_buttons.html) ─────────────────── */
+    .export-row { justify-content: flex-end; }
 
-        .summary-item { border: 1px solid var(--border); background: #fbfcff; border-radius: 16px; padding: 16px; }
-        .summary-item.alert { border-color: rgba(180, 35, 24, 0.25); background: var(--error-bg); }
-        .summary-label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
-        .summary-item.alert .summary-label { color: var(--error-text); }
-        .summary-value { color: var(--brand-blue); font-size: 24px; font-weight: 700; }
-        .summary-item.alert .summary-value { color: var(--error-text); }
+    /* Убрать sticky на время снимка html2canvas (иначе шапка/1-я колонка съезжают). */
 
-        .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 16px; }
+    .print-heading { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin-bottom: 12px; }
 
-        table { width: 100%; border-collapse: collapse; min-width: 1100px; background: #fff; }
+    /* ── Модалка «создать ставку» ───────────────────────────────────────── */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0; z-index: 100;
+        background: rgba(15, 23, 42, .45); align-items: flex-start; justify-content: center;
+        padding: 40px 16px; overflow: auto;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-overlay .modal {
+        background: #fff; border-radius: var(--radius-lg); padding: 22px; width: 100%; max-width: 520px;
+        box-shadow: var(--shadow-modal);
+    }
+    .modal h3 { margin: 0 0 6px; color: var(--brand-blue); }
+    .modal-hint { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+    .modal label { display: block; font-size: 13px; font-weight: 700; color: var(--brand-blue); margin: 10px 0 4px; }
+    .modal input {
+        width: 100%; height: 42px; border: 1px solid var(--border-strong);
+        border-radius: 10px; padding: 0 12px; font-family: inherit; font-size: 14px;
+    }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
 
-        th, td {
-            padding: 10px;
-            text-align: center;
-            border-bottom: 1px solid var(--border);
-            border-right: 1px solid var(--border);
-            font-size: 13px;
-            vertical-align: middle;
-        }
+    @media (max-width: 980px) {
+        .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .diag { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+        .summary { grid-template-columns: 1fr; }
+    }
 
-        th {
-            background: #fafbfc;
-            color: var(--brand-blue);
-            font-weight: 700;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
+    /* Уникальное для печати матрицы: альбомный лист и снятие липкой колонки. */
+    @media print {
+        @page { size: landscape; margin: 8mm; }
+        .page { max-width: none; }
+        .services-table table { min-width: 0 !important; width: 100%; }
+        .services-table .left { position: static !important; }
+        tr { break-inside: avoid; }
+        th, td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+{% endblock %}
 
-        .left {
-            text-align: left;
-            min-width: 320px;
-            position: sticky;
-            left: 0;
-            background: #fff;
-            z-index: 1;
-        }
-        th.left { background: #fafbfc; z-index: 3; }
+{% block content %}
+<div class="page page-wide">
+    {% if message %}<div class="alert alert-success no-print">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error no-print">{{ error }}</div>{% endif %}
 
-        .base-name { font-weight: 700; color: var(--text); }
-        .badges { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 999px;
-            font-size: 11px;
-            font-weight: 800;
-        }
-        .badge-dup { background: var(--error-bg); color: var(--error-text); }
-        .badge-typo { background: var(--warn-bg); color: var(--warn-text); }
-        .badge-norate { background: #eef2ff; color: var(--brand-blue); }
-        .badge-indiv { background: #f3f4f6; color: var(--muted); }
-        .badge-off { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; background: #f3f4f6; color: var(--muted); margin-left: 6px; }
-
-        /* Секция слияния дублей написания */
-        .merge-group { border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; background: #fbfcff; }
-        .merge-group h4 { margin: 0 0 10px; color: var(--brand-blue); font-size: 14px; }
-        .merge-variant { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 7px 0; border-top: 1px solid var(--border); }
-        .merge-variant:first-of-type { border-top: 0; }
-        .merge-variant label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
-        .merge-variant .vname { font-weight: 700; }
-        .in-tariff { font-size: 11px; font-weight: 800; color: var(--success-text); background: var(--success-bg); border-radius: 999px; padding: 2px 8px; }
-        .merge-actions { margin-top: 10px; }
-        .btn-merge { height: 40px; border: none; border-radius: 12px; padding: 0 16px; font-weight: 700; cursor: pointer; background: linear-gradient(135deg, var(--brand-blue), #18239a); color: #fff; }
-
-        .banner-ok { background: var(--success-bg); color: var(--success-text); padding: 12px 14px; border-radius: 14px; }
-        .banner-err { background: var(--error-bg); color: var(--error-text); padding: 12px 14px; border-radius: 14px; }
-
-        .nt-link { color: var(--brand-blue); font-weight: 700; text-decoration: none; cursor: pointer; }
-        .nt-link:hover { text-decoration: underline; }
-        .nt-ctx { font-size: 11px; color: var(--muted); margin: 2px 0 4px; }
-        .modal-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(15,23,42,.45); align-items: flex-start; justify-content: center; padding: 40px 16px; overflow: auto; }
-        .modal-overlay.open { display: flex; }
-        .modal { background: #fff; border-radius: 18px; padding: 22px; width: 100%; max-width: 520px; box-shadow: var(--shadow); }
-        .modal h3 { margin: 0 0 6px; color: var(--brand-blue); }
-        .modal-hint { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
-        .modal label { display: block; font-size: 13px; font-weight: 700; color: var(--brand-blue); margin: 10px 0 4px; }
-        .modal input { width: 100%; height: 42px; border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; font-size: 14px; }
-        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
-        .btn { height: 42px; border: 1px solid var(--border); border-radius: 12px; padding: 0 16px; font-weight: 700; cursor: pointer; background: #fff; color: var(--brand-blue); }
-        .btn-primary { background: linear-gradient(135deg, var(--brand-blue), #18239a); color: #fff; border: none; }
-
-        .variants { margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.5; }
-        .variants code { background: #f3f4f6; padding: 1px 5px; border-radius: 6px; }
-
-        .cell-rate { font-weight: 700; color: var(--brand-blue); background: rgba(11, 20, 117, 0.04); }
-        .cell-multi { font-weight: 700; color: var(--brand-blue); background: rgba(11, 20, 117, 0.04); }
-        .cell-dup { font-weight: 700; color: var(--error-text); background: var(--error-bg); }
-        .dup-mark { font-size: 11px; font-weight: 800; color: var(--error-text); white-space: nowrap; }
-        .cell-orphan { color: var(--error-text); font-weight: 700; background: var(--error-bg); display: block; border-radius: 8px; padding: 4px; }
-        .cell-empty { color: #c3c7cf; }
-
-        .cell-menu { position: relative; }
-        .cell-menu summary { list-style: none; cursor: pointer; }
-        .cell-menu summary::-webkit-details-marker { display: none; }
-        .cell-panel {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            top: 26px;
-            z-index: 10;
-            min-width: 240px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            background: #fff;
-            box-shadow: var(--shadow);
-            padding: 10px;
-            text-align: left;
-        }
-        .cell-panel-item { font-size: 12px; padding: 5px 0; border-top: 1px solid var(--border); }
-        .cell-panel-item:first-child { border-top: 0; }
-        .cell-panel-meta { color: var(--muted); }
-
-        .diag { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-        .diag-block { border: 1px solid var(--border); border-radius: 16px; padding: 14px; background: #fbfcff; }
-        .diag-block h3 { margin: 0 0 10px; color: var(--brand-blue); font-size: 15px; }
-        .diag-list { max-height: 260px; overflow: auto; margin: 0; padding: 0; list-style: none; }
-        .diag-list li { font-size: 13px; padding: 6px 0; border-top: 1px solid var(--border); line-height: 1.4; }
-        .diag-list li:first-child { border-top: 0; }
-        .diag-empty { color: var(--muted); font-size: 13px; }
-
-        .capturing th, .capturing .left { position: static !important; }
-        .print-only { display: none; }
-        .print-heading { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin-bottom: 12px; }
-
-        @media (max-width: 980px) {
-            .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .diag { grid-template-columns: 1fr; }
-            .topbar { flex-direction: column; align-items: stretch; }
-        }
-        @media (max-width: 700px) {
-            .form-grid, .summary { grid-template-columns: 1fr; }
-        }
-
-        @media print {
-            @page { size: landscape; margin: 8mm; }
-            body { background: #fff !important; padding: 0; }
-            .page { max-width: none; }
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            .card { box-shadow: none; border-radius: 0; margin: 0 0 10px; padding: 0; }
-            .table-wrap { overflow: visible !important; border: none; border-radius: 0; }
-            table { min-width: 0 !important; width: 100%; }
-            th, .left { position: static !important; }
-            tr { break-inside: avoid; }
-            th, td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="topbar no-print">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1 class="brand-title">Матрица услуг</h1>
-                <p class="brand-subtitle">Услуги по уровням и тарифам · диагностика дублей и пропусков (только чтение)</p>
-            </div>
-        </div>
-
-        <div class="topbar-actions">
-            <a href="/admin/rates" class="back-link">ЧТС (правка)</a>
-            <a href="/admin" class="back-link">Назад в админку</a>
-        </div>
-    </div>
-
-    {% if message %}<div class="card no-print"><div class="banner-ok">{{ message }}</div></div>{% endif %}
-    {% if error %}<div class="card no-print"><div class="banner-err">{{ error }}</div></div>{% endif %}
-
-    <div class="card no-print">
+    <div class="card no-print mt-20">
         <h2>Фильтры</h2>
         <form method="get" action="/admin/services">
-            <div class="form-grid">
+            <div class="form-grid align-end">
                 <div class="field">
                     <label>Регион</label>
                     <select name="city">
@@ -352,7 +236,7 @@
                     <input type="text" name="q" value="{{ search }}" placeholder="часть названия">
                 </div>
                 <div>
-                    <button type="submit" class="btn">Показать</button>
+                    <button type="submit" class="btn btn-primary">Показать</button>
                 </div>
             </div>
         </form>
@@ -364,15 +248,15 @@
                 <div class="summary-label">Услуг в справочнике</div>
                 <div class="summary-value">{{ counters.services }}{% if shown_bases != total_bases %} / {{ total_bases }}{% endif %}</div>
             </div>
-            <div class="summary-item {% if counters.key_errors %}alert{% endif %}">
+            <div class="summary-item {% if counters.key_errors %}is-alert{% endif %}">
                 <div class="summary-label">Ошибки тарифа (дубль ключа)</div>
                 <div class="summary-value">{{ counters.key_errors }}</div>
             </div>
-            <div class="summary-item {% if counters.duplicates %}alert{% endif %}">
+            <div class="summary-item {% if counters.duplicates %}is-alert{% endif %}">
                 <div class="summary-label">Дубли написания</div>
                 <div class="summary-value">{{ counters.duplicates }}</div>
             </div>
-            <div class="summary-item {% if counters.no_tariff_services %}alert{% endif %}">
+            <div class="summary-item {% if counters.no_tariff_services %}is-alert{% endif %}">
                 <div class="summary-label">Услуги без тарифа</div>
                 <div class="summary-value">{{ counters.no_tariff_services }}</div>
             </div>
@@ -380,7 +264,7 @@
                 <div class="summary-label">Смены без справочника</div>
                 <div class="summary-value">{{ counters.unmatched_shift_services }}</div>
             </div>
-            <div class="summary-item {% if counters.typos %}alert{% endif %}">
+            <div class="summary-item {% if counters.typos %}is-alert{% endif %}">
                 <div class="summary-label">Похожие имена</div>
                 <div class="summary-value">{{ counters.typos }}</div>
             </div>
@@ -396,13 +280,13 @@
     <div class="card">
         <div class="print-heading print-only">Матрица услуг{% if selected_city %} · {{ selected_city }}{% endif %}{% if selected_format %} · {{ selected_format }}{% endif %}</div>
         {% if rows|length > 0 %}
-        <div class="no-print" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+        <div class="no-print row export-row mb-8">
             {% set export_target = "#services-table" %}
             {% set export_filename = "матрица_услуг" %}
             {% include "_export_buttons.html" %}
         </div>
         {% endif %}
-        <div class="table-wrap">
+        <div class="table-wrap services-table">
             <table id="services-table">
                 <thead>
                     <tr>
@@ -455,7 +339,7 @@
     {% if dup_groups %}
     <div class="card no-print">
         <h2>Слияние дублей написания</h2>
-        <p class="hint">Разные написания одной услуги (напр. пробел / подчёркивание). Выберите канон
+        <p class="field-hint mt-0 mb-14">Разные написания одной услуги (напр. пробел / подчёркивание). Выберите канон
             (в него сольются остальные: их тарифы перепривяжутся, имена уйдут в алиасы, дубли удалятся)
             и отметьте, какие варианты объединить. Действие необратимо.</p>
         {% for group in dup_groups %}
@@ -473,7 +357,7 @@
             </div>
             {% endfor %}
             <div class="merge-actions">
-                <button type="submit" class="btn-merge">Объединить выбранные</button>
+                <button type="submit" class="btn btn-primary">Объединить выбранные</button>
             </div>
         </form>
         {% endfor %}
@@ -536,12 +420,14 @@
         <label>Сотрудник (для индивидуальной; обычно пусто)</label><input type="text" name="employee_name" id="rate-employee">
         <label>ЧТС, ₽/час</label><input type="number" step="0.01" name="hourly_rate" required placeholder="напр. 300">
         <div class="modal-actions">
-            <button type="button" class="btn" onclick="closeModal('rate-modal')">Отмена</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('rate-modal')">Отмена</button>
             <button type="submit" class="btn btn-primary">Создать ставку</button>
         </div>
     </form>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     function openRateModal(el) {
@@ -557,5 +443,4 @@
         ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.remove('open'); });
     });
 </script>
-</body>
-</html>
+{% endblock %}

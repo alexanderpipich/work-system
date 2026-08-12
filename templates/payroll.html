@@ -1,654 +1,282 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <title>Выплатный табель</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            --error-bg: #fff1ed;
-            --error-text: #b42318;
-            --success-bg: #eefbf3;
-            --success-text: #067647;
-            --warn-bg: #fff7ed;
-            --warn-text: #9a3412;
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
-                var(--bg);
-            color: var(--text);
-            padding: 28px 18px 36px;
-        }
-
-        .page {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-
-        .topbar,
-        .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .brand img {
-            width: 64px;
-            height: 64px;
-            object-fit: contain;
-            border-radius: 16px;
-            background: #fff;
-        }
-
-        .brand-title {
-            margin: 0;
-            color: var(--brand-blue);
-            font-size: 28px;
-        }
-
-        .brand-subtitle {
-            margin: 6px 0 0;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.45;
-        }
-
-        .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-
-        .export-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-
-        .export-btn {
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            background: #fff;
-            color: var(--brand-blue);
-            font-weight: 700;
-            font-size: 14px;
-            padding: 10px 14px;
-            border-radius: 12px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .export-btn:hover { background: #f4f5ff; }
-        .export-btn:disabled { opacity: 0.6; cursor: default; }
-
-        .back-link {
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-            white-space: nowrap;
-        }
-
-        h2 {
-            margin: 0 0 16px;
-            color: var(--brand-blue);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 14px;
-            align-items: end;
-        }
-
-        .fix-grid {
-            display: grid;
-            grid-template-columns: minmax(220px, 1fr) minmax(260px, 2fr);
-            gap: 14px;
-            align-items: end;
-        }
-
-        .fix-actions {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 14px;
-        }
-
-        .fix-actions .btn {
-            width: auto;
-            min-width: 190px;
-        }
-
-        .field label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--brand-blue);
-            margin-bottom: 8px;
-        }
-
-        .field input,
-        .field select {
-            width: 100%;
-            height: 46px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0 12px;
-            font-size: 14px;
-            background: #fff;
-        }
-
-        .stores-box {
-            margin-top: 18px;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px;
-            background: #fbfcff;
-        }
-
-        .stores-title {
-            margin: 0 0 12px;
-            color: var(--brand-blue);
-            font-size: 16px;
-        }
-
-        .stores-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .stores-header .stores-title {
-            margin: 0;
-        }
-
-        .stores-toggle {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--brand-blue);
-            font-size: 14px;
-            font-weight: 700;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-
-        .stores-grid {
-            column-count: 3;
-            column-gap: 16px;
-        }
-
-        .store-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            break-inside: avoid;
-            -webkit-column-break-inside: avoid;
-            margin-bottom: 10px;
-        }
-
-        .manual-stack {
-            display: grid;
-            gap: 6px;
-            min-width: 150px;
-        }
-
-        .comment-input {
-            width: 100%;
-            min-width: 140px;
-            height: 34px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 0 9px;
-            font-size: 12px;
-            background: #fff;
-        }
-
-        .btn {
-            height: 46px;
-            border: none;
-            border-radius: 14px;
-            padding: 0 18px;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            color: #fff;
-        }
-
-        .btn-peach {
-            background: linear-gradient(135deg, var(--brand-peach), #d9633d);
-            color: #fff;
-        }
-
-        .msg {
-            background: var(--success-bg);
-            color: var(--success-text);
-            border: 1px solid rgba(6, 118, 71, 0.14);
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
-            margin-top: 12px;
-        }
-
-        .err {
-            background: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid rgba(180, 35, 24, 0.14);
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
-            margin-top: 12px;
-        }
-
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 14px;
-        }
-
-        .summary-item {
-            border: 1px solid var(--border);
-            background: #fbfcff;
-            border-radius: 16px;
-            padding: 16px;
-        }
-
-        .summary-label {
-            color: var(--muted);
-            font-size: 13px;
-            margin-bottom: 8px;
-        }
-
-        .summary-value {
-            color: var(--brand-blue);
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .table-wrap {
-            overflow-x: auto;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1300px;
-            background: #fff;
-        }
-
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            border-right: 1px solid var(--border);
-            font-size: 13px;
-            vertical-align: middle;
-        }
-
-        th {
-            background: #fafbfc;
-            color: var(--brand-blue);
-            font-weight: 700;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-
-        .left {
-            min-width: 200px;
-            position: sticky;
-            left: 0;
-            background: #fff;
-            z-index: 1;
-        }
-
-        th.left { background: #fafbfc; z-index: 3; }
-        .service { min-width: 230px; }
-        .day-cell { min-width: 46px; text-align: center; }
-
-        .has-hours {
-            font-weight: 700;
-            color: var(--brand-blue);
-            background: rgba(11, 20, 117, 0.04);
-        }
-
-        .no-plan-hours {
-            font-weight: 700;
-            color: #b42318;
-            background: #fff1ed;
-        }
-
-        .total {
-            font-weight: 700;
-            background: rgba(245, 138, 101, 0.10);
-            color: #8f3e20;
-            text-align: center;
-        }
-
-        .attention-row td.left {
-            color: #b42318;
-            font-weight: 700;
-        }
-
-        tbody tr:hover td { background: rgba(11, 20, 117, 0.025); }
-        tbody tr:hover td.left { background: #f6f7ff; }
-
-        .num {
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .corr-stack {
-            display: grid;
-            gap: 8px;
-            justify-items: end;
-            min-width: 170px;
-        }
-
-        .corr-line { font-size: 12px; color: var(--muted); }
-        .corr-lmk { color: #b42318; font-weight: 700; }
-
-        .pill {
-            display: inline-block;
-            padding: 7px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .pill-ok {
-            background: var(--success-bg);
-            color: var(--success-text);
-        }
-
-        .pill-warn {
-            background: var(--warn-bg);
-            color: var(--warn-text);
-        }
-
-        .money-input {
-            width: 110px;
-            height: 34px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 0 10px;
-            text-align: right;
-            font-size: 14px;
-        }
-
-        .adjust-menu {
-            position: relative;
-            display: inline-block;
-        }
-
-        .adjust-menu summary {
-            list-style: none;
-            cursor: pointer;
-            font-weight: 700;
-            color: var(--brand-blue);
-        }
-
-        .adjust-menu summary::-webkit-details-marker { display: none; }
-
-        .adjust-list {
-            display: inline-flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
-        }
-
-        .adjust-pill {
-            display: inline-flex;
-            justify-content: center;
-            min-width: 92px;
-            border-radius: 999px;
-            padding: 5px 9px;
-            font-size: 12px;
-            font-weight: 800;
-        }
-
-        .adjust-pill.approved {
-            background: var(--success-bg);
-            color: var(--success-text);
-        }
-
-        .adjust-pill.pending {
-            background: var(--error-bg);
-            color: var(--error-text);
-        }
-
-        .adjust-menu-panel {
-            position: absolute;
-            right: 0;
-            top: 28px;
-            z-index: 10;
-            min-width: 150px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            background: #fff;
-            box-shadow: var(--shadow);
-            padding: 8px;
-        }
-
-        .menu-action {
-            width: 100%;
-            height: 34px;
-            border: 0;
-            border-radius: 8px;
-            background: #f9fafb;
-            color: var(--brand-blue);
-            font-weight: 700;
-            cursor: pointer;
-            margin-bottom: 6px;
-        }
-
-        .menu-action.danger {
-            background: var(--error-bg);
-            color: var(--error-text);
-            margin-bottom: 0;
-        }
-
-        .adjust-info-panel {
-            width: 320px;
-            max-height: 260px;
-            overflow: auto;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: #fbfcff;
-            padding: 10px;
-            margin: 2px 0 8px;
-            color: var(--text);
-            text-align: left;
-            box-shadow: inset 0 0 0 1px rgba(11, 20, 117, 0.03);
-        }
-
-        .adjust-info-panel[hidden] {
-            display: none;
-        }
-
-        .adjust-info-title {
-            margin: 0 0 8px;
-            color: var(--brand-blue);
-            font-size: 13px;
-            font-weight: 800;
-        }
-
-        .adjust-info-item {
-            padding: 8px 0;
-            border-top: 1px solid var(--border);
-            font-size: 12px;
-            line-height: 1.45;
-        }
-
-        .adjust-info-item:first-of-type {
-            border-top: 0;
-            padding-top: 0;
-        }
-
-        .adjust-info-meta {
-            color: var(--muted);
-            margin-top: 3px;
-        }
-
-        .hint {
-            color: var(--muted);
-            line-height: 1.6;
-            margin: 0;
-        }
-
-        /* Убрать sticky на время снимка html2canvas (иначе шапка/1-я колонка съезжают). */
-        .capturing th, .capturing .left { position: static !important; }
-
-        .print-only { display: none; }
-        .print-heading { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin-bottom: 12px; }
-
-        .err-link { color: #b42318; text-decoration: none; cursor: pointer; }
-        .err-link:hover { text-decoration: underline; }
-        .modal-overlay {
-            display: none; position: fixed; inset: 0; z-index: 100;
-            background: rgba(15, 23, 42, 0.45); align-items: flex-start; justify-content: center;
-            padding: 40px 16px; overflow: auto;
-        }
-        .modal-overlay.open { display: flex; }
-        .modal {
-            background: #fff; border-radius: 18px; padding: 22px; width: 100%; max-width: 520px;
-            box-shadow: var(--shadow);
-        }
-        .modal h3 { margin: 0 0 6px; color: var(--brand-blue); }
-        .modal .modal-hint { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
-        .modal label { display: block; font-size: 13px; font-weight: 700; color: var(--brand-blue); margin: 10px 0 4px; }
-        .modal input { width: 100%; height: 42px; border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; font-size: 14px; }
-        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
-        .modal-ctx { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 10px; font-size: 12px; color: var(--muted); margin-top: 8px; }
-
-        @media (max-width: 980px) {
-            .form-grid,
-            .fix-grid,
-            .summary {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .stores-grid {
-                column-count: 2;
-            }
-
-            .topbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-
-        @media (max-width: 700px) {
-            .form-grid,
-            .fix-grid,
-            .summary {
-                grid-template-columns: 1fr;
-            }
-
-            .stores-grid {
-                column-count: 1;
-            }
-
-            .fix-actions .btn {
-                width: 100%;
-            }
-        }
-
-        @media print {
-            @page { size: landscape; margin: 8mm; }
-            body { background: #fff !important; padding: 0; }
-            .page { max-width: none; }
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            .card { box-shadow: none; border-radius: 0; margin: 0 0 10px; padding: 0; }
-            .table-wrap { overflow: visible !important; border: none; border-radius: 0; }
-            table { min-width: 0 !important; width: 100%; }
-            th { position: static !important; }
-            .left { position: static !important; }
-            tr { break-inside: avoid; }
-            th, td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="topbar no-print">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1 class="brand-title">Выплатный табель</h1>
-                <p class="brand-subtitle">
-                    Часы по дням, ЧТС и сумма по каждой услуге. Корректировки и ЛМК — в отдельной колонке.
-                </p>
-            </div>
-        </div>
-
-        <div class="topbar-actions">
-            <a href="/admin/referral" class="back-link">Приведи друга</a>
-            <a href="/admin/payroll/runs" class="back-link">Зафиксированные табели</a>
-            <a href="/admin" class="back-link">Назад в админку</a>
-        </div>
-    </div>
-
+{% extends "base.html" %}
+
+{% block title %}Выплатный табель{% endblock %}
+{% block brand_title %}Выплатный табель{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Часы по дням, ЧТС и сумма по каждой услуге. Корректировки и ЛМК — в отдельной колонке.</p>{% endblock %}
+
+{% block topbar_class %}no-print{% endblock %}
+
+{% block topbar_actions %}
+<a href="/admin/referral" class="back-link">Приведи друга</a>
+<a href="/admin/payroll/runs" class="back-link">Зафиксированные табели</a>
+<a href="/admin" class="back-link">Назад в админку</a>
+{% endblock %}
+
+{% block head %}
+<style>
+    /* ── Специфика страницы: широкая таблица «дни × услуги» ──────────────── */
+    .payroll-table table { min-width: 1300px; }
+    .payroll-table th,
+    .payroll-table td {
+        padding: 10px;
+        border-right: 1px solid var(--border);
+        font-size: 13px;
+    }
+    .payroll-table th { z-index: 2; }
+
+    /* Липкая первая колонка (ФИО) — только у этой таблицы. */
+    .payroll-table .left {
+        min-width: 200px;
+        position: sticky;
+        left: 0;
+        background: #fff;
+        z-index: 1;
+    }
+    .payroll-table th.left { background: var(--surface-muted); z-index: 3; }
+    .payroll-table .service { min-width: 230px; }
+    .payroll-table .day-cell { min-width: 46px; text-align: center; }
+
+    .payroll-table .has-hours {
+        font-weight: 700;
+        color: var(--brand-blue);
+        background: rgba(11, 20, 117, 0.04);
+    }
+    .payroll-table .no-plan-hours {
+        font-weight: 700;
+        color: var(--error-text);
+        background: var(--error-bg);
+    }
+    .payroll-table .total {
+        font-weight: 700;
+        background: rgba(245, 138, 101, 0.10);
+        color: #8f3e20;
+        text-align: center;
+    }
+    /* Подсвечивается только ФИО, а не вся строка (в отличие от .attention-row). */
+    .payroll-table .row-attention td.left { color: var(--error-text); font-weight: 700; }
+    .payroll-table tbody tr:hover td.left { background: #f6f7ff; }
+    .payroll-table .num { text-align: right; white-space: nowrap; }
+
+    /* Колонка «Корректировки / ЛМК». */
+    .corr-stack { display: grid; gap: 8px; justify-items: end; min-width: 170px; }
+    .corr-line { font-size: 12px; color: var(--muted); }
+    .corr-lmk { color: var(--error-text); font-weight: 700; }
+
+    .manual-stack { display: grid; gap: 6px; min-width: 150px; }
+
+    .money-input {
+        width: 110px;
+        height: 34px;
+        border: 1px solid var(--border-strong);
+        border-radius: 10px;
+        padding: 0 10px;
+        text-align: right;
+        font-size: 14px;
+        font-family: inherit;
+    }
+
+    .comment-input {
+        width: 100%;
+        min-width: 140px;
+        height: 34px;
+        border: 1px solid var(--border-strong);
+        border-radius: 10px;
+        padding: 0 9px;
+        font-size: 12px;
+        background: #fff;
+        font-family: inherit;
+    }
+
+    /* Меню автокорректировок в ячейке таблицы. */
+    .adjust-menu { position: relative; display: inline-block; }
+    .adjust-menu summary {
+        list-style: none;
+        cursor: pointer;
+        font-weight: 700;
+        color: var(--brand-blue);
+    }
+    .adjust-menu summary::-webkit-details-marker { display: none; }
+
+    .adjust-list { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+    .adjust-pill {
+        display: inline-flex;
+        justify-content: center;
+        min-width: 92px;
+        border-radius: var(--radius-pill);
+        padding: 5px 9px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+    .adjust-pill.approved { background: var(--success-bg); color: var(--success-text); }
+    .adjust-pill.pending { background: var(--error-bg); color: var(--error-text); }
+
+    .adjust-menu-panel {
+        position: absolute;
+        right: 0;
+        top: 28px;
+        z-index: 10;
+        min-width: 150px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: var(--shadow-hover);
+        padding: 8px;
+    }
+
+    .menu-action {
+        width: 100%;
+        height: 34px;
+        border: 0;
+        border-radius: 8px;
+        background: #f9fafb;
+        color: var(--brand-blue);
+        font-family: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        margin-bottom: 6px;
+    }
+    .menu-action.danger { background: var(--error-bg); color: var(--error-text); margin-bottom: 0; }
+
+    .adjust-info-panel {
+        width: 320px;
+        max-height: 260px;
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fbfcff;
+        padding: 10px;
+        margin: 2px 0 8px;
+        color: var(--text);
+        text-align: left;
+    }
+    .adjust-info-panel[hidden] { display: none; }
+    .adjust-info-title { margin: 0 0 8px; color: var(--brand-blue); font-size: 13px; font-weight: 800; }
+    .adjust-info-item { padding: 8px 0; border-top: 1px solid var(--border); font-size: 12px; line-height: 1.45; }
+    .adjust-info-item:first-of-type { border-top: 0; padding-top: 0; }
+    .adjust-info-meta { color: var(--muted); margin-top: 3px; }
+
+    /* ── Параметры расчёта: список магазинов в три колонки ───────────────── */
+    .fix-grid {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) minmax(260px, 2fr);
+        gap: 14px;
+        align-items: end;
+    }
+    .fix-actions .btn { min-width: 190px; }
+
+    .stores-box {
+        margin-top: 18px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        background: #fbfcff;
+    }
+    .stores-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .stores-title { margin: 0; color: var(--brand-blue); font-size: 16px; }
+    .stores-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--brand-blue);
+        font-size: 14px;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .stores-grid { column-count: 3; column-gap: 16px; }
+    .store-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        break-inside: avoid;
+        -webkit-column-break-inside: avoid;
+        margin-bottom: 10px;
+    }
+
+    /* ── Сводка ─────────────────────────────────────────────────────────── */
+    .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .summary-item { border: 1px solid var(--border); background: #fbfcff; border-radius: var(--radius); padding: 16px; }
+    .summary-label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+    .summary-value { color: var(--brand-blue); font-size: 24px; font-weight: 700; }
+
+    /* ── Экран ошибок перед фиксацией ───────────────────────────────────── */
+    .card > h2.is-error { color: var(--error-text); }
+    .card > h2.is-warn { color: var(--warn-text); }
+    .errors-box { max-height: 400px; overflow: auto; }
+    .errors-item { padding: 10px 0; border-bottom: 1px solid var(--error-border); font-size: 14px; }
+    .referral-item { padding: 8px 0; border-top: 1px solid var(--warn-border); }
+    .err-link { color: var(--error-text); text-decoration: none; cursor: pointer; }
+    .err-link:hover { text-decoration: underline; }
+
+    /* ── Кнопка «персиковая» (фиксация табеля) ──────────────────────────── */
+    .btn-peach { background: var(--brand-peach); color: #fff; }
+    .btn-peach:hover { background: #d9633d; color: #fff; }
+
+    /* ── Экспорт (кнопки партиала _export_buttons.html) ─────────────────── */
+
+    /* Убрать sticky на время снимка html2canvas (иначе шапка/1-я колонка съезжают). */
+
+    .print-heading { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin-bottom: 12px; }
+
+    /* ── Модалки (создать ЧТС / реквизиты) ──────────────────────────────── */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0; z-index: 100;
+        background: rgba(15, 23, 42, 0.45); align-items: flex-start; justify-content: center;
+        padding: 40px 16px; overflow: auto;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-overlay .modal {
+        background: #fff; border-radius: var(--radius-lg); padding: 22px; width: 100%; max-width: 520px;
+        box-shadow: var(--shadow-modal);
+    }
+    .modal h3 { margin: 0 0 6px; color: var(--brand-blue); }
+    .modal .modal-hint { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+    .modal label { display: block; font-size: 13px; font-weight: 700; color: var(--brand-blue); margin: 10px 0 4px; }
+    .modal input {
+        width: 100%; height: 42px; border: 1px solid var(--border-strong);
+        border-radius: 10px; padding: 0 12px; font-family: inherit; font-size: 14px;
+    }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+    @media (max-width: 980px) {
+        .fix-grid, .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .stores-grid { column-count: 2; }
+    }
+
+    @media (max-width: 700px) {
+        .fix-grid, .summary { grid-template-columns: 1fr; }
+        .stores-grid { column-count: 1; }
+        .fix-actions .btn { width: 100%; }
+    }
+
+    /* Уникальное для печати табеля: альбомный лист и снятие липкой колонки. */
+    @media print {
+        @page { size: landscape; margin: 8mm; }
+        .page { max-width: none; }
+        .payroll-table table { min-width: 0 !important; width: 100%; }
+        .payroll-table .left { position: static !important; }
+        tr { break-inside: avoid; }
+        th, td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-wide">
     {% if error %}
-        <div class="card no-print">
-            <div class="err">{{ error }}</div>
-        </div>
+        <div class="alert alert-error no-print">{{ error }}</div>
     {% endif %}
 
     {% if validation_errors %}
-    <div class="card no-print">
-        <h2 style="color:#b42318;">Ошибки перед фиксацией</h2>
+    <div class="card no-print mt-20">
+        <h2 class="is-error">Ошибки перед фиксацией</h2>
 
-        <div style="
-            max-height:400px;
-            overflow:auto;
-            border:1px solid #fecdca;
-            border-radius:16px;
-            padding:14px;
-            background:#fff6f4;
-        ">
-            <p style="margin:0 0 10px; color:#9a3412; font-size:13px;">Кликните по ошибке — откроется форма создания недостающего (с предзаполнением).</p>
+        <div class="alert alert-error errors-box mt-0">
+            <p class="mt-0 mb-8">Кликните по ошибке — откроется форма создания недостающего (с предзаполнением).</p>
             {% for err in validation_errors %}
-                <div style="padding:10px 0; border-bottom:1px solid #fdd9d3; font-size:14px;">
+                <div class="errors-item">
                     {% if err.type == 'no_rate' %}
                         <a href="#" class="err-link" onclick="return openRateModal(this)"
                            data-service="{{ err.service }}" data-format="{{ err.format }}"
@@ -659,7 +287,7 @@
                     {% elif err.type == 'unverified_requisites' %}
                         <a href="/admin/requisites" class="err-link">{{ err.message }} → <b>проверить реквизиты</b></a>
                     {% else %}
-                        <span style="color:#b42318;">{{ err.message }}</span>
+                        <span>{{ err.message }}</span>
                     {% endif %}
                 </div>
             {% endfor %}
@@ -668,23 +296,25 @@
     {% endif %}
 
     {% if referral_pending %}
-    <div class="card no-print">
-        <h2 style="color:#9a3412;">Премии АПД, требующие решения ({{ referral_pending|length }})</h2>
-        <p style="margin:0 0 10px; color:#9a3412; font-size:14px;">Табель не сформировать, пока не подтвердите или отмените каждую премию «Приведи друга».</p>
-        <div style="border:1px solid #fed7aa; border-radius:14px; padding:12px; background:#fff7ed;">
+    <div class="card no-print mt-20">
+        <h2 class="is-warn">Премии АПД, требующие решения ({{ referral_pending|length }})</h2>
+        <p class="field-hint mt-0">Табель не сформировать, пока не подтвердите или отмените каждую премию «Приведи друга».</p>
+        <div class="alert alert-warn">
             {% for p in referral_pending %}
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:8px 0; border-top:1px solid #fed7aa;">
+            <div class="row row-between referral-item">
                 <span><b>{{ p.beneficiary_name or '—' }}</b> — премия {{ "%.2f"|format(p.amount or 0) }} ₽ (требует подтверждения)</span>
-                <form method="post" action="/admin/referral/payout/confirm" style="margin-left:auto;">
-                    <input type="hidden" name="payout_id" value="{{ p.id }}">
-                    <input type="hidden" name="back" value="/admin/payroll">
-                    <button type="submit" class="btn btn-primary">Подтвердить</button>
-                </form>
-                <form method="post" action="/admin/referral/payout/cancel">
-                    <input type="hidden" name="payout_id" value="{{ p.id }}">
-                    <input type="hidden" name="back" value="/admin/payroll">
-                    <button type="submit" class="btn btn-peach">Отменить</button>
-                </form>
+                <div class="row">
+                    <form method="post" action="/admin/referral/payout/confirm">
+                        <input type="hidden" name="payout_id" value="{{ p.id }}">
+                        <input type="hidden" name="back" value="/admin/payroll">
+                        <button type="submit" class="btn btn-primary">Подтвердить</button>
+                    </form>
+                    <form method="post" action="/admin/referral/payout/cancel">
+                        <input type="hidden" name="payout_id" value="{{ p.id }}">
+                        <input type="hidden" name="back" value="/admin/payroll">
+                        <button type="submit" class="btn btn-peach">Отменить</button>
+                    </form>
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -692,17 +322,15 @@
     {% endif %}
 
     {% if message %}
-        <div class="card no-print">
-            <div class="msg">{{ message }}</div>
-        </div>
+        <div class="alert alert-success no-print">{{ message }}</div>
     {% endif %}
 
-    <div class="card no-print">
+    <div class="card no-print mt-20">
         <h2>Параметры расчёта</h2>
 
         <form method="get" action="/admin/payroll">
             <input type="hidden" name="stores_submitted" value="1">
-            <div class="form-grid">
+            <div class="form-grid align-end">
                 <div class="field">
                     <label>Дата начала</label>
                     <input type="date" name="date_from" value="{{ date_from }}">
@@ -760,12 +388,12 @@
 
     <div class="card no-print">
         <h2>Фиксация табеля</h2>
-        <p class="hint">
+        <p class="field-hint mt-0">
             Кнопка сохраняет снимок табеля за выбранный период. Позже система будет сравнивать новые загрузки с этим снимком
             и предлагать корректировки в следующий выплатный период.
         </p>
 
-        <form id="payroll-fix-form" method="post" action="/admin/payroll/fix">
+        <form id="payroll-fix-form" method="post" action="/admin/payroll/fix" class="mt-14">
             <input type="hidden" name="date_from" value="{{ date_from }}">
             <input type="hidden" name="date_to" value="{{ date_to }}">
             <input type="hidden" name="employee_name" value="{{ employee_name }}">
@@ -791,7 +419,7 @@
 
             </div>
 
-            <div class="fix-actions">
+            <div class="row fix-actions mt-14">
                 <button type="submit" class="btn btn-peach" onclick="return confirm('Зафиксировать табель за выбранный период?');">Зафиксировать табель</button>
                 <button type="submit" class="btn btn-primary" formaction="/admin/payroll/manual-adjustments/save">Сохранить ручные корректировки</button>
             </div>
@@ -819,8 +447,8 @@
 
     <div class="card">
         <div class="print-heading print-only">Выплатный табель · {{ date_from }} — {{ date_to }}</div>
-        <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-            <h2 style="margin:0;">Результат расчёта</h2>
+        <div class="no-print row row-between mb-14">
+            <h2 class="mt-0 mb-0">Результат расчёта</h2>
             {% if rows|length > 0 %}
                 {% set export_target = "#payroll-table" %}
                 {% set export_filename = "табель_" ~ date_from ~ "_" ~ date_to %}
@@ -828,7 +456,7 @@
             {% endif %}
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap payroll-table">
             <table id="payroll-table">
                 <thead>
                     <tr>
@@ -847,7 +475,7 @@
                 </thead>
                 <tbody>
                     {% for row in rows %}
-                    <tr class="{% if row.has_no_plan or (row.hours or 0) == 0 %}attention-row{% endif %}">
+                    <tr class="{% if row.has_no_plan or (row.hours or 0) == 0 %}row-attention{% endif %}">
                         <td class="left">{{ row.employee_name }}</td>
                         <td>{{ row.store }}</td>
                         <td class="service">{{ row.service }}</td>
@@ -982,7 +610,7 @@
                             {% elif row.missing_rates and row.missing_rates > 0 %}
                                 <span class="pill pill-warn">Нет ЧТС: {{ row.missing_rates }}</span>
                             {% else %}
-                                <span class="pill pill-ok">ОК</span>
+                                <span class="pill pill-success">ОК</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -1017,7 +645,7 @@
         <label>Сотрудник (для индивидуальной; обычно пусто)</label><input type="text" name="employee_name" id="rate-employee">
         <label>ЧТС, ₽/час</label><input type="number" step="0.01" name="hourly_rate" required placeholder="напр. 300">
         <div class="modal-actions">
-            <button type="button" class="btn" onclick="closeModal('rate-modal')">Отмена</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('rate-modal')">Отмена</button>
             <button type="submit" class="btn btn-primary">Создать ставку</button>
         </div>
     </form>
@@ -1035,12 +663,14 @@
         <label>БИК</label><input type="text" name="bik">
         <label>Банк</label><input type="text" name="bank_name">
         <div class="modal-actions">
-            <button type="button" class="btn" onclick="closeModal('req-modal')">Отмена</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('req-modal')">Отмена</button>
             <button type="submit" class="btn btn-primary">Создать реквизиты</button>
         </div>
     </form>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     function openRateModal(el) {
@@ -1142,5 +772,4 @@
 
     syncSelectAllStores();
 </script>
-</body>
-</html>
+{% endblock %}

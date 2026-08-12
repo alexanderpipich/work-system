@@ -1,179 +1,138 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Бланк планирования</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --olive: #8a9a3a;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            --error-bg: #fff1ed;
-            --error-text: #b42318;
-            --success-bg: #eefbf3;
-            --success-text: #067647;
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
-                var(--bg);
-            color: var(--text);
-            padding: 28px 18px 36px;
-        }
-        .page { max-width: 980px; margin: 0 auto; }
-        .topbar, .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 20px 24px;
-            margin-bottom: 20px;
-        }
-        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
-        .brand-title { margin: 0; font-size: 24px; color: var(--brand-blue); font-weight: 700; }
-        .brand-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
-        .toolbar a {
-            text-decoration: none; color: var(--brand-blue);
-            border: 1.5px solid var(--brand-blue); border-radius: 10px;
-            padding: 7px 16px; font-size: 14px; font-weight: 600;
-        }
-        .toolbar a:hover { background: var(--brand-blue); color: #fff; }
-        h2 { margin: 0 0 16px; font-size: 20px; color: var(--brand-blue); }
-        .banner { padding: 12px 18px; border-radius: 12px; font-size: 14px; margin-bottom: 18px; }
-        .banner.success { background: var(--success-bg); color: var(--success-text); }
-        .banner.error { background: var(--error-bg); color: var(--error-text); }
-        .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
-        label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
-        select, input {
-            border: 1.5px solid var(--border); border-radius: 10px;
-            padding: 9px 14px; font-size: 14px; outline: none; background: #fff;
-        }
-        select:focus { border-color: var(--olive); }
-        .btn {
-            background: linear-gradient(135deg, #6f7d29, var(--olive));
-            color: #fff; border: none; border-radius: 10px;
-            padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer;
-        }
-        .btn:hover { opacity: 0.92; }
-        .hint { font-size: 13px; color: var(--muted); margin-top: 12px; }
-        .download-link {
-            display: inline-block; margin-top: 4px; text-decoration: none; font-weight: 600;
-            color: var(--success-text); border: 1.5px solid var(--success-text);
-            border-radius: 10px; padding: 8px 16px; font-size: 14px;
-        }
-        .download-link:hover { background: var(--success-text); color: #fff; }
-        table.history { width: 100%; border-collapse: collapse; font-size: 14px; }
-        table.history th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1.5px solid var(--border); }
-        table.history td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
-        table.history a { color: var(--brand-blue); font-weight: 600; text-decoration: none; }
-        table.history a:hover { text-decoration: underline; }
-        .empty { color: var(--muted); font-size: 14px; padding: 12px 0; }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="topbar">
-        <div>
-            <h1 class="brand-title">Бланк планирования</h1>
-            <p class="brand-subtitle">Формирование PDF-бланка по магазину (по образцу БП-007) и скачивание.</p>
-        </div>
-        <div class="toolbar">
-            <a href="/admin">← Назад</a>
-        </div>
-    </div>
+{% extends "base.html" %}
 
-    {% if message %}<div class="banner success">{{ message }}</div>{% endif %}
-    {% if error %}<div class="banner error">{{ error }}</div>{% endif %}
+{% block title %}Бланк планирования{% endblock %}
+{% block brand_title %}Бланк планирования{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Формирование PDF-бланка по магазину (по образцу БП-007) и скачивание.</p>{% endblock %}
 
-    <div class="card">
+{% block topbar_actions %}
+<a href="/admin" class="back-link">← Назад</a>
+{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: две колонки «магазины / сотрудники выбранного магазина» */
+    .bp-cols { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+    .bp-stores { flex: 0 0 300px; max-width: 100%; }
+    .bp-detail { flex: 1 1 420px; min-width: 0; }
+
+    .bp-stores-list {
+        max-height: 440px;
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+    }
+    .bp-store {
+        display: block;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--border);
+        text-decoration: none;
+        color: var(--text);
+    }
+    .bp-store:hover { background: var(--surface-muted); color: var(--text); }
+    .bp-store.is-active { background: var(--brand-blue-soft); font-weight: 700; }
+    .bp-dot { color: var(--error-text); }
+
+    .bp-rec { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 8px; }
+    .bp-rec-remove { border-color: var(--error-border); background: var(--error-bg); }
+    .bp-rec-add { border-color: var(--success-border); background: var(--success-bg); }
+
+    .bp-list { margin: 0; padding-left: 18px; }
+    .bp-name { min-width: 220px; }
+
+    /* кнопка «оставить как есть» — нейтральное действие рядом с решением */
+    .btn-neutral { background: var(--muted); color: #fff; }
+    .btn-neutral:hover { background: var(--text-soft); color: #fff; }
+    .btn-success { background: var(--success-text); color: #fff; }
+    .btn-success:hover { background: #05603a; color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-narrow">
+    {% if message %}<div class="alert alert-success">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+    <div class="card mt-20">
         <h2>Магазины и планирование</h2>
-        <p class="hint">Слева — магазины с привязками/рекомендациями (красная точка = есть рекомендации).
+        <p class="field-hint mb-14">Слева — магазины с привязками/рекомендациями (красная точка = есть рекомендации).
             Справа — сотрудники выбранного магазина. Добавить/убрать — только по вашему клику.</p>
 
-        <form method="post" action="/admin/planning-bp/monitoring/settings"
-              style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border);">
+        <form method="post" action="/admin/planning-bp/monitoring/settings" class="mb-20">
             <input type="hidden" name="store" value="{{ selected_store }}">
-            <div><label>Нет смен, дней →&nbsp;убрать</label><input type="number" min="1" name="inactive_days" value="{{ settings.inactive_days }}" style="width:90px;"></div>
-            <div><label>Мин. смен →&nbsp;добавить</label><input type="number" min="1" name="minimum_shifts" value="{{ settings.minimum_shifts }}" style="width:90px;"></div>
-            <div><label>Период анализа, дней</label><input type="number" min="1" name="analysis_days" value="{{ settings.analysis_days }}" style="width:90px;"></div>
-            <button type="submit" class="btn">Сохранить пороги</button>
-            <button type="submit" class="btn" formaction="/admin/planning-bp/monitoring/recompute" style="background:var(--muted);">Обновить рекомендации</button>
+            <div class="form-grid align-end">
+                <div class="field"><label>Нет смен, дней →&nbsp;убрать</label><input type="number" min="1" name="inactive_days" value="{{ settings.inactive_days }}"></div>
+                <div class="field"><label>Мин. смен →&nbsp;добавить</label><input type="number" min="1" name="minimum_shifts" value="{{ settings.minimum_shifts }}"></div>
+                <div class="field"><label>Период анализа, дней</label><input type="number" min="1" name="analysis_days" value="{{ settings.analysis_days }}"></div>
+                <div class="field row">
+                    <button type="submit" class="btn btn-primary">Сохранить пороги</button>
+                    <button type="submit" class="btn btn-secondary" formaction="/admin/planning-bp/monitoring/recompute">Обновить рекомендации</button>
+                </div>
+            </div>
         </form>
 
-        <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
-            <div style="flex:0 0 300px; max-width:100%;">
-                <div style="max-height:440px; overflow:auto; border:1px solid var(--border); border-radius:12px;">
+        <div class="bp-cols">
+            <div class="bp-stores">
+                <div class="bp-stores-list">
                     {% for s in monitoring_stores %}
                     <a href="/admin/planning-bp?store={{ s|urlencode }}"
-                       style="display:block; padding:9px 12px; border-bottom:1px solid var(--border); text-decoration:none; color:var(--text); {% if s == selected_store %}background:#eef2ff; font-weight:700;{% endif %}">
-                        {% if s in attention_stores %}<span style="color:#b42318;">●</span> {% endif %}{{ s }}
+                       class="bp-store{% if s == selected_store %} is-active{% endif %}">
+                        {% if s in attention_stores %}<span class="bp-dot">●</span> {% endif %}{{ s }}
                     </a>
                     {% else %}
-                    <p class="empty" style="padding:12px;">Нет привязок и рекомендаций.</p>
+                    <p class="empty mb-14">Нет привязок и рекомендаций.</p>
                     {% endfor %}
                 </div>
             </div>
 
-            <div style="flex:1 1 420px; min-width:0;">
+            <div class="bp-detail">
                 {% if store_block %}
-                    <h3 style="margin-top:0;">{{ store_block.store }}</h3>
+                    <h3 class="mt-0">{{ store_block.store }}</h3>
 
                     {% for rec in store_block.remove_recs %}
-                    <div style="border:1px solid #fecdca; background:#fff6f4; border-radius:10px; padding:10px; margin-bottom:8px;">
+                    <div class="bp-rec bp-rec-remove">
                         <b>{{ rec.employee_name }}</b> — {{ rec.recommendation_text }}
-                        <div style="margin-top:6px; display:flex; gap:8px;">
+                        <div class="row mt-8">
                             <form method="post" action="/admin/planning-bp/monitoring/accept" onsubmit="return confirm('Убрать {{ rec.employee_name }} из БП?');">
                                 <input type="hidden" name="recommendation_id" value="{{ rec.id }}"><input type="hidden" name="store" value="{{ store_block.store }}">
-                                <button class="btn" style="background:#b42318;">Убрать</button>
+                                <button class="btn btn-danger btn-sm">Убрать</button>
                             </form>
                             <form method="post" action="/admin/planning-bp/monitoring/dismiss">
                                 <input type="hidden" name="recommendation_id" value="{{ rec.id }}"><input type="hidden" name="store" value="{{ store_block.store }}">
-                                <button class="btn" style="background:var(--muted);">Оставить</button>
+                                <button class="btn btn-neutral btn-sm">Оставить</button>
                             </form>
                         </div>
                     </div>
                     {% endfor %}
 
                     {% for rec in store_block.add_recs %}
-                    <div style="border:1px solid #b7ebc6; background:#eefbf3; border-radius:10px; padding:10px; margin-bottom:8px;">
+                    <div class="bp-rec bp-rec-add">
                         <b>{{ rec.employee_name }}</b> — {{ rec.recommendation_text }}
-                        <div style="margin-top:6px; display:flex; gap:8px;">
+                        <div class="row mt-8">
                             <form method="post" action="/admin/planning-bp/monitoring/accept" onsubmit="return confirm('Добавить {{ rec.employee_name }} в БП?');">
                                 <input type="hidden" name="recommendation_id" value="{{ rec.id }}"><input type="hidden" name="store" value="{{ store_block.store }}">
-                                <button class="btn" style="background:var(--success-text, #067647);">Добавить</button>
+                                <button class="btn btn-success btn-sm">Добавить</button>
                             </form>
                             <form method="post" action="/admin/planning-bp/monitoring/dismiss">
                                 <input type="hidden" name="recommendation_id" value="{{ rec.id }}"><input type="hidden" name="store" value="{{ store_block.store }}">
-                                <button class="btn" style="background:var(--muted);">Не добавлять</button>
+                                <button class="btn btn-neutral btn-sm">Не добавлять</button>
                             </form>
                         </div>
                     </div>
                     {% endfor %}
 
-                    <h4 style="margin:14px 0 6px;">В бланке ({{ store_block.assignments|length }})</h4>
+                    <h4 class="mt-14 mb-8">В бланке ({{ store_block.assignments|length }})</h4>
                     {% if store_block.assignments %}
-                    <ul style="margin:0; padding-left:18px;">
+                    <ul class="bp-list">
                         {% for a in store_block.assignments %}<li>{{ a.employee_name }}</li>{% endfor %}
                     </ul>
                     {% else %}
                     <p class="empty">Нет закреплённых сотрудников.</p>
                     {% endif %}
 
-                    <form method="post" action="/admin/planning-bp/assignment/add" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;">
+                    <form method="post" action="/admin/planning-bp/assignment/add" class="row mt-14">
                         <input type="hidden" name="store" value="{{ store_block.store }}">
-                        <div><label>Добавить вручную (ФИО)</label><input type="text" name="employee_name" placeholder="Фамилия Имя" style="min-width:220px;"></div>
-                        <button type="submit" class="btn">Добавить в БП</button>
+                        <div class="field bp-name"><label>Добавить вручную (ФИО)</label><input type="text" name="employee_name" placeholder="Фамилия Имя"></div>
+                        <button type="submit" class="btn btn-primary">Добавить в БП</button>
                     </form>
                 {% else %}
                     <p class="empty">Выберите магазин слева.</p>
@@ -184,61 +143,66 @@
 
     <div class="card">
         <h2>Сформировать БП</h2>
-        <form method="post" action="/admin/planning-bp/generate" class="form-row"
+        <form method="post" action="/admin/planning-bp/generate"
               onsubmit="return confirm('Сформировать бланк планирования по выбранному магазину?');">
-            <div>
-                <label>Магазин (ТК)</label>
-                <select name="tk_number" required style="min-width:320px;">
-                    <option value="" disabled selected>— выберите магазин —</option>
-                    {% for s in stores %}
-                    <option value="{{ s.tk_number }}">
-                        ТК-{{ '%03d'|format(s.tk_number) }}{% if s.display_name %} — {{ s.display_name }}{% endif %}{% if s.city %} ({{ s.city }}){% endif %}
-                    </option>
-                    {% endfor %}
-                </select>
+            <div class="form-grid align-end">
+                <div class="field">
+                    <label>Магазин (ТК)</label>
+                    <select name="tk_number" required>
+                        <option value="" disabled selected>— выберите магазин —</option>
+                        {% for s in stores %}
+                        <option value="{{ s.tk_number }}">
+                            ТК-{{ '%03d'|format(s.tk_number) }}{% if s.display_name %} — {{ s.display_name }}{% endif %}{% if s.city %} ({{ s.city }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Дата с</label>
+                    <input type="date" name="date_from" value="{{ form.date_from }}">
+                </div>
+                <div class="field">
+                    <label>Дата по</label>
+                    <input type="date" name="date_to" value="{{ form.date_to }}">
+                </div>
+                <div class="field">
+                    <button type="submit" class="btn btn-primary">Сформировать БП</button>
+                </div>
             </div>
-            <div>
-                <label>Дата с</label>
-                <input type="date" name="date_from" value="{{ form.date_from }}">
-            </div>
-            <div>
-                <label>Дата по</label>
-                <input type="date" name="date_to" value="{{ form.date_to }}">
-            </div>
-            <button type="submit" class="btn">Сформировать БП</button>
         </form>
-        <p class="hint">
+        <p class="field-hint">
             По умолчанию период — <b>сегодня … конец месяца</b> ({{ period.date_from.strftime('%d.%m.%Y') }} – {{ period.date_to.strftime('%d.%m.%Y') }});
             при необходимости измените даты выше. В таблицу попадают активные сотрудники, привязанные к выбранному ТК.
         </p>
         {% if download_url %}
-        <p style="margin-top:14px;"><a class="download-link" href="{{ download_url }}">⬇ Скачать сформированный БП</a></p>
+        <p class="mt-14"><a class="btn btn-primary" href="{{ download_url }}">⬇ Скачать сформированный БП</a></p>
         {% endif %}
     </div>
 
     <div class="card">
         <h2>История ({{ history|length }})</h2>
         {% if history %}
-        <table class="history">
-            <thead>
-                <tr><th>Магазин</th><th>Город</th><th>Период</th><th>Файл</th><th></th></tr>
-            </thead>
-            <tbody>
-                {% for f in history %}
-                <tr>
-                    <td>{{ f.store }}</td>
-                    <td>{{ f.city or '—' }}</td>
-                    <td>{% if f.date_from and f.date_to %}{{ f.date_from.strftime('%d.%m.%Y') }} – {{ f.date_to.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</td>
-                    <td>{{ f.file_name }}</td>
-                    <td><a href="/admin/planning-bp/{{ f.id }}/download">Скачать</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Магазин</th><th>Город</th><th>Период</th><th>Файл</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for f in history %}
+                    <tr>
+                        <td>{{ f.store }}</td>
+                        <td>{{ f.city or '—' }}</td>
+                        <td>{% if f.date_from and f.date_to %}{{ f.date_from.strftime('%d.%m.%Y') }} – {{ f.date_to.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</td>
+                        <td>{{ f.file_name }}</td>
+                        <td><a href="/admin/planning-bp/{{ f.id }}/download">Скачать</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
         <p class="empty">Пока ни одного бланка не сформировано.</p>
         {% endif %}
     </div>
 </div>
-</body>
-</html>
+{% endblock %}

@@ -1,176 +1,153 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    <style>
-        :root { --brand-blue:#0b1475; --bg:#f4f5f7; --card-bg:#fff; --muted:#6b7280; --border:#e5e7eb; --shadow:0 16px 40px rgba(11,20,117,.08); }
-        * { box-sizing:border-box; }
-        body { margin:0; font-family:Arial,sans-serif; background:var(--bg); color:#1f2937; padding:28px 18px 36px; }
-        .page { max-width:1700px; margin:0 auto; }
-        .topbar,.card { background:var(--card-bg); border-radius:22px; box-shadow:var(--shadow); padding:20px; margin-bottom:20px; }
-        .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; }
-        .brand { display:flex; align-items:center; gap:14px; }
-        .brand img { width:64px; height:64px; object-fit:contain; border-radius:16px; background:#fff; }
-        h1,h2 { color:var(--brand-blue); margin-top:0; }
-        .muted { color:var(--muted); line-height:1.5; }
-        .link,.btn { text-decoration:none; display:inline-flex; align-items:center; justify-content:center; min-height:38px; border-radius:12px; padding:9px 14px; border:0; font-weight:700; cursor:pointer; white-space:nowrap; }
-        .link { color:var(--brand-blue); background:#fff; border:1px solid rgba(11,20,117,.14); }
-        .btn { color:#fff; background:linear-gradient(135deg,var(--brand-blue),#18239a); }
-        .filters { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
-        label { display:flex; flex-direction:column; gap:6px; color:var(--muted); font-size:13px; font-weight:700; }
-        input,select { height:40px; border:1px solid var(--border); border-radius:12px; padding:0 11px; background:#fff; color:#1f2937; }
-        .table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:16px; }
-        table { width:100%; min-width:1100px; border-collapse:collapse; background:#fff; }
-        th,td { padding:12px; border-bottom:1px solid var(--border); text-align:left; font-size:14px; vertical-align:top; }
-        th { background:#fafbfc; color:var(--brand-blue); }
-        .num { text-align:right; white-space:nowrap; }
-        .pill { display:inline-block; padding:7px 10px; border-radius:999px; background:#eef4ff; color:var(--brand-blue); font-size:12px; font-weight:700; margin:2px; }
-        .totals { display:flex; gap:10px; flex-wrap:wrap; }
-        @media (max-width:800px) { .topbar { flex-direction:column; align-items:stretch; } }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1>{{ title }}</h1>
-                <div class="muted">Период: {{ filters.date_from.strftime('%d.%m.%Y') }} - {{ filters.date_to.strftime('%d.%m.%Y') }}</div>
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block brand_title %}{{ title }}{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Период: {{ filters.date_from.strftime('%d.%m.%Y') }} - {{ filters.date_to.strftime('%d.%m.%Y') }}</p>{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ back_url }}" class="back-link">Все отчеты</a>
+{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: ширина отчётной таблицы и числовые колонки */
+    .report-table table { min-width: 1100px; }
+    .report-table .num { text-align: right; white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-wide">
+    <div class="card mt-20">
+        <form method="get">
+            <div class="form-grid align-end">
+                <div class="field">
+                    <label>Дата начала</label>
+                    <input type="date" name="date_from" value="{{ filters.date_from }}">
+                </div>
+                <div class="field">
+                    <label>Дата окончания</label>
+                    <input type="date" name="date_to" value="{{ filters.date_to }}">
+                </div>
+                <div class="field">
+                    <label>Город</label>
+                    <select name="city">
+                        <option value="">Все</option>
+                        {% for city in cities %}
+                            <option value="{{ city }}" {% if city == filters.city %}selected{% endif %}>{{ city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Магазин</label>
+                    <select name="store">
+                        <option value="">Все</option>
+                        {% for store in stores %}
+                            <option value="{{ store }}" {% if store == filters.store %}selected{% endif %}>{{ store }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Статус</label>
+                    <select name="status">
+                        {% for item in statuses %}
+                            <option value="{{ item }}" {% if item == filters.status %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <button class="btn btn-primary" type="submit">Показать</button>
+                </div>
             </div>
-        </div>
-        <a href="{{ back_url }}" class="link">Все отчеты</a>
+        </form>
     </div>
 
-    <section class="card">
-        <form method="get" class="filters">
-            <label>Дата начала
-                <input type="date" name="date_from" value="{{ filters.date_from }}">
-            </label>
-            <label>Дата окончания
-                <input type="date" name="date_to" value="{{ filters.date_to }}">
-            </label>
-            <label>Город
-                <select name="city">
-                    <option value="">Все</option>
-                    {% for city in cities %}
-                        <option value="{{ city }}" {% if city == filters.city %}selected{% endif %}>{{ city }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label>Магазин
-                <select name="store">
-                    <option value="">Все</option>
-                    {% for store in stores %}
-                        <option value="{{ store }}" {% if store == filters.store %}selected{% endif %}>{{ store }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label>Статус
-                <select name="status">
-                    {% for item in statuses %}
-                        <option value="{{ item }}" {% if item == filters.status %}selected{% endif %}>{{ item }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <button class="btn" type="submit">Показать</button>
-        </form>
-    </section>
-
     {% if totals %}
-    <section class="card">
-        <div class="totals">
+    <div class="card card-tight">
+        <div class="row">
             {% for key, value in totals.items() %}
-                <span class="pill">{{ key }}: {{ value.amount if value.amount is defined else value }}</span>
+                <span class="pill pill-peach">{{ key }}: {{ value.amount if value.amount is defined else value }}</span>
             {% endfor %}
         </div>
-    </section>
+    </div>
     {% endif %}
 
-    <section class="card">
-        {% if report_kind == "table" %}
-        <div class="table-wrap">
-            <table>
-                <thead><tr>{% for key, label in columns %}<th>{{ label }}</th>{% endfor %}</tr></thead>
-                <tbody>
-                    {% for row in rows %}
-                    <tr>
-                        {% for key, label in columns %}
-                            <td class="{% if 'amount' in key or key in ['hours', 'total_amount'] %}num{% endif %}">{{ row[key] }}</td>
-                        {% endfor %}
-                    </tr>
+    {% if report_kind == "table" %}
+    <div class="table-wrap report-table">
+        <table>
+            <thead><tr>{% for key, label in columns %}<th>{{ label }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    {% for key, label in columns %}
+                        <td class="{% if 'amount' in key or key in ['hours', 'total_amount'] %}num{% endif %}">{{ row[key] }}</td>
                     {% endfor %}
-                    {% if rows|length == 0 %}<tr><td colspan="{{ columns|length }}" class="muted">Нет данных.</td></tr>{% endif %}
-                </tbody>
-            </table>
-        </div>
-        {% elif report_kind == "auto_adjustments" %}
-        <div class="table-wrap"><table>
-            <thead><tr><th>Сотрудник</th><th>Магазин</th><th>Дата</th><th>Часы</th><th>Сумма</th><th>Статус</th><th>Source</th><th>Target</th></tr></thead>
-            <tbody>
-            {% for row in rows %}
-                <tr><td>{{ row.employee_name }}</td><td>{{ row.store }}</td><td>{{ row.shift_date }}</td><td class="num">{{ row.diff_hours }}</td><td class="num">{{ row.diff_amount }}</td><td>{{ row.status }}</td><td>{{ row.source_run_id or '' }}</td><td>{{ row.target_run_id or '' }}</td></tr>
-            {% endfor %}
-            {% if rows|length == 0 %}<tr><td colspan="8" class="muted">Нет данных.</td></tr>{% endif %}
+                </tr>
+                {% endfor %}
+                {% if rows|length == 0 %}<tr><td colspan="{{ columns|length }}" class="muted">Нет данных.</td></tr>{% endif %}
             </tbody>
-        </table></div>
-        {% elif report_kind == "manual_adjustments" %}
-        <div class="table-wrap"><table>
-            <thead><tr><th>Сотрудник</th><th>Магазин</th><th>Период</th><th>Сумма</th><th>Статус</th><th>Создал</th><th>Applied run</th><th>Комментарий</th></tr></thead>
-            <tbody>
-            {% for row in rows %}
-                <tr><td>{{ row.employee_name }}</td><td>{{ row.store }}</td><td>{{ row.date_from }} - {{ row.date_to }}</td><td class="num">{{ row.amount }}</td><td>{{ row.status }}</td><td>{{ row.created_by or '' }}</td><td>{{ row.applied_run_id or '' }}</td><td>{{ row.comment or '' }}</td></tr>
-            {% endfor %}
-            {% if rows|length == 0 %}<tr><td colspan="8" class="muted">Нет данных.</td></tr>{% endif %}
-            </tbody>
-        </table></div>
-        {% elif report_kind == "lmk" %}
-        <div class="table-wrap"><table>
-            <thead><tr><th>Сотрудник</th><th>Всего</th><th>Остаток</th><th>В месяц</th><th>Статус</th><th>Начало</th><th>Комментарий</th></tr></thead>
-            <tbody>
-            {% for row in rows %}
-                <tr><td>{{ row.employee_name }}</td><td class="num">{{ row.total_amount }}</td><td class="num">{{ row.remaining_amount }}</td><td class="num">{{ row.monthly_amount }}</td><td>{{ row.status }}</td><td>{{ row.start_month }}</td><td>{{ row.comment or '' }}</td></tr>
-            {% endfor %}
-            {% if rows|length == 0 %}<tr><td colspan="7" class="muted">Нет данных.</td></tr>{% endif %}
-            </tbody>
-        </table></div>
-        {% elif report_kind == "documents" %}
-        <div class="table-wrap"><table>
-            <thead><tr><th>Сотрудник</th><th>Гражданство</th><th>Документ</th><th>Статус</th><th>Срок</th><th>Проверен</th></tr></thead>
-            <tbody>
-            {% for row in rows %}
-                <tr><td>{{ row.employee_name }}</td><td>{{ row.citizenship }}</td><td>{{ row.type.name }}</td><td>{{ row.status_label }}</td><td>{{ row.document.expiry_date if row.document else '' }}</td><td>{{ row.document.verified_at if row.document else '' }}</td></tr>
-            {% endfor %}
-            {% if rows|length == 0 %}<tr><td colspan="6" class="muted">Нет данных.</td></tr>{% endif %}
-            </tbody>
-        </table></div>
-        {% elif report_kind == "missing_documents" %}
-        <div class="table-wrap"><table>
-            <thead><tr><th>Сотрудник</th><th>Гражданство</th><th>Отсутствующие документы</th></tr></thead>
-            <tbody>
-            {% for row in rows %}
-                <tr><td>{{ row.employee_name }}</td><td>{{ row.citizenship }}</td><td>{{ row.missing_documents|join(', ') }}</td></tr>
-            {% endfor %}
-            {% if rows|length == 0 %}<tr><td colspan="3" class="muted">Нет данных.</td></tr>{% endif %}
-            </tbody>
-        </table></div>
-        {% elif report_kind == "expired_documents" %}
-        <div class="table-wrap"><table>
-            <thead><tr><th>Сотрудник</th><th>Документ</th><th>Срок</th><th>Дней осталось</th><th>Статус</th></tr></thead>
-            <tbody>
-            {% for row in rows %}
-                <tr><td>{{ row.employee_name }}</td><td>{{ row.document_name }}</td><td>{{ row.expiry_date }}</td><td class="num">{{ row.days_left }}</td><td>{{ row.status }}</td></tr>
-            {% endfor %}
-            {% if rows|length == 0 %}<tr><td colspan="5" class="muted">Нет данных.</td></tr>{% endif %}
-            </tbody>
-        </table></div>
-        {% endif %}
-    </section>
+        </table>
+    </div>
+    {% elif report_kind == "auto_adjustments" %}
+    <div class="table-wrap report-table"><table>
+        <thead><tr><th>Сотрудник</th><th>Магазин</th><th>Дата</th><th>Часы</th><th>Сумма</th><th>Статус</th><th>Source</th><th>Target</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr><td>{{ row.employee_name }}</td><td>{{ row.store }}</td><td>{{ row.shift_date }}</td><td class="num">{{ row.diff_hours }}</td><td class="num">{{ row.diff_amount }}</td><td>{{ row.status }}</td><td>{{ row.source_run_id or '' }}</td><td>{{ row.target_run_id or '' }}</td></tr>
+        {% endfor %}
+        {% if rows|length == 0 %}<tr><td colspan="8" class="muted">Нет данных.</td></tr>{% endif %}
+        </tbody>
+    </table></div>
+    {% elif report_kind == "manual_adjustments" %}
+    <div class="table-wrap report-table"><table>
+        <thead><tr><th>Сотрудник</th><th>Магазин</th><th>Период</th><th>Сумма</th><th>Статус</th><th>Создал</th><th>Applied run</th><th>Комментарий</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr><td>{{ row.employee_name }}</td><td>{{ row.store }}</td><td>{{ row.date_from }} - {{ row.date_to }}</td><td class="num">{{ row.amount }}</td><td>{{ row.status }}</td><td>{{ row.created_by or '' }}</td><td>{{ row.applied_run_id or '' }}</td><td>{{ row.comment or '' }}</td></tr>
+        {% endfor %}
+        {% if rows|length == 0 %}<tr><td colspan="8" class="muted">Нет данных.</td></tr>{% endif %}
+        </tbody>
+    </table></div>
+    {% elif report_kind == "lmk" %}
+    <div class="table-wrap report-table"><table>
+        <thead><tr><th>Сотрудник</th><th>Всего</th><th>Остаток</th><th>В месяц</th><th>Статус</th><th>Начало</th><th>Комментарий</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr><td>{{ row.employee_name }}</td><td class="num">{{ row.total_amount }}</td><td class="num">{{ row.remaining_amount }}</td><td class="num">{{ row.monthly_amount }}</td><td>{{ row.status }}</td><td>{{ row.start_month }}</td><td>{{ row.comment or '' }}</td></tr>
+        {% endfor %}
+        {% if rows|length == 0 %}<tr><td colspan="7" class="muted">Нет данных.</td></tr>{% endif %}
+        </tbody>
+    </table></div>
+    {% elif report_kind == "documents" %}
+    <div class="table-wrap report-table"><table>
+        <thead><tr><th>Сотрудник</th><th>Гражданство</th><th>Документ</th><th>Статус</th><th>Срок</th><th>Проверен</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr><td>{{ row.employee_name }}</td><td>{{ row.citizenship }}</td><td>{{ row.type.name }}</td><td>{{ row.status_label }}</td><td>{{ row.document.expiry_date if row.document else '' }}</td><td>{{ row.document.verified_at if row.document else '' }}</td></tr>
+        {% endfor %}
+        {% if rows|length == 0 %}<tr><td colspan="6" class="muted">Нет данных.</td></tr>{% endif %}
+        </tbody>
+    </table></div>
+    {% elif report_kind == "missing_documents" %}
+    <div class="table-wrap report-table"><table>
+        <thead><tr><th>Сотрудник</th><th>Гражданство</th><th>Отсутствующие документы</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr><td>{{ row.employee_name }}</td><td>{{ row.citizenship }}</td><td>{{ row.missing_documents|join(', ') }}</td></tr>
+        {% endfor %}
+        {% if rows|length == 0 %}<tr><td colspan="3" class="muted">Нет данных.</td></tr>{% endif %}
+        </tbody>
+    </table></div>
+    {% elif report_kind == "expired_documents" %}
+    <div class="table-wrap report-table"><table>
+        <thead><tr><th>Сотрудник</th><th>Документ</th><th>Срок</th><th>Дней осталось</th><th>Статус</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr><td>{{ row.employee_name }}</td><td>{{ row.document_name }}</td><td>{{ row.expiry_date }}</td><td class="num">{{ row.days_left }}</td><td>{{ row.status }}</td></tr>
+        {% endfor %}
+        {% if rows|length == 0 %}<tr><td colspan="5" class="muted">Нет данных.</td></tr>{% endif %}
+        </tbody>
+    </table></div>
+    {% endif %}
 </div>
-</body>
-</html>
+{% endblock %}

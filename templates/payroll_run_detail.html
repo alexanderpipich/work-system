@@ -1,284 +1,114 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <title>Табель #{{ run.id }}</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-        }
+{% extends "base.html" %}
 
-        * { box-sizing: border-box; }
+{% block title %}Табель #{{ run.id }}{% endblock %}
+{% block brand_title %}Табель #{{ run.id }}{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
-                var(--bg);
-            color: var(--text);
-            padding: 28px 18px 36px;
-        }
+{% block brand_subtitle %}
+<p class="brand-subtitle">
+    {{ run.date_from.strftime('%d.%m.%Y') }}
+    —
+    {{ run.date_to.strftime('%d.%m.%Y') }}
+    · {{ run.legal_entity or 'Без юрлица' }}
+</p>
+{% endblock %}
 
-        .page {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
+{% block topbar_class %}no-print{% endblock %}
 
-        .topbar,
-        .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+{% block topbar_actions %}
+{% if request.url.path.startswith('/hr') %}
+    <a href="/hr/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
+    <a href="/hr/payroll/runs" class="back-link">Все фиксации</a>
+    <a href="/hr/payroll" class="back-link">Выплатный табель</a>
+    <a href="/hr" class="back-link">Кабинет HR</a>
+{% elif is_economist_view %}
+    <a href="/economist/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
+    <a href="/economist/payroll/runs" class="back-link">Все фиксации</a>
+    <a href="/economist/payroll" class="back-link">Выплатный табель</a>
+    <a href="/economist" class="back-link">Кабинет экономиста</a>
+{% else %}
+    <a href="/admin/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
+    <a href="/admin/payroll/runs" class="back-link">Все фиксации</a>
+    <a href="/admin/payroll" class="back-link">Выплатный табель</a>
+    <a href="/admin" class="back-link">Назад в админку</a>
+{% endif %}
+{% endblock %}
 
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-        }
+{% block head %}
+<style>
+    /* ── Специфика страницы: широкая таблица «дни × услуги» ──────────────── */
+    .run-table table { min-width: 1300px; }
+    .run-table th,
+    .run-table td {
+        padding: 10px;
+        border-right: 1px solid var(--border);
+        font-size: 13px;
+    }
+    .run-table th { z-index: 2; }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
+    /* Липкая первая колонка (ФИО) — только у этой таблицы. */
+    .run-table .left {
+        min-width: 200px;
+        position: sticky;
+        left: 0;
+        background: #fff;
+        z-index: 1;
+    }
+    .run-table th.left { background: var(--surface-muted); z-index: 3; }
+    .run-table .service { min-width: 230px; }
+    .run-table .day-cell { min-width: 46px; text-align: center; }
 
-        .brand img {
-            width: 64px;
-            height: 64px;
-            object-fit: contain;
-            border-radius: 16px;
-            background: #fff;
-        }
+    .run-table .has-hours {
+        font-weight: 700;
+        color: var(--brand-blue);
+        background: rgba(11, 20, 117, 0.04);
+    }
+    .run-table .total {
+        font-weight: 700;
+        background: rgba(245, 138, 101, 0.10);
+        color: #8f3e20;
+        text-align: center;
+    }
+    .run-table .num { text-align: right; white-space: nowrap; }
+    .run-table tbody tr:hover td.left { background: #f6f7ff; }
 
-        .brand-title {
-            margin: 0;
-            color: var(--brand-blue);
-            font-size: 28px;
-        }
+    .corr-lmk { color: var(--error-text); font-weight: 700; }
 
-        .brand-subtitle {
-            margin: 6px 0 0;
-            color: var(--muted);
-            font-size: 14px;
-        }
+    /* Сводка по фиксации. */
+    .summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .summary-item { border: 1px solid var(--border); background: #fbfcff; border-radius: var(--radius); padding: 16px; }
+    .summary-label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+    .summary-value { color: var(--brand-blue); font-size: 22px; font-weight: 700; }
 
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+    /* ── Экспорт (кнопки партиала _export_buttons.html) ─────────────────── */
+    .export-row { justify-content: flex-end; }
 
-        .export-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    /* Убрать sticky на время снимка html2canvas (иначе шапка/1-я колонка съезжают). */
 
-        .export-btn {
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            background: #fff;
-            color: var(--brand-blue);
-            font-weight: 700;
-            font-size: 14px;
-            padding: 10px 14px;
-            border-radius: 12px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
+    .print-heading { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin-bottom: 12px; }
 
-        .export-btn:hover { background: #f4f5ff; }
-        .export-btn:disabled { opacity: 0.6; cursor: default; }
+    @media (max-width: 900px) {
+        .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
 
-        .back-link {
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-            white-space: nowrap;
-        }
+    @media (max-width: 600px) {
+        .summary { grid-template-columns: 1fr; }
+    }
 
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 14px;
-        }
+    /* Уникальное для печати табеля: альбомный лист и снятие липкой колонки. */
+    @media print {
+        @page { size: landscape; margin: 8mm; }
+        .page { max-width: none; }
+        .run-table table { min-width: 0 !important; width: 100%; }
+        .run-table .left { position: static !important; }
+        tr { break-inside: avoid; }
+        th, td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+{% endblock %}
 
-        .summary-item {
-            border: 1px solid var(--border);
-            background: #fbfcff;
-            border-radius: 16px;
-            padding: 16px;
-        }
-
-        .summary-label {
-            color: var(--muted);
-            font-size: 13px;
-            margin-bottom: 8px;
-        }
-
-        .summary-value {
-            color: var(--brand-blue);
-            font-size: 22px;
-            font-weight: 700;
-        }
-
-        .table-wrap {
-            overflow-x: auto;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1300px;
-            background: #fff;
-        }
-
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid var(--border);
-            border-right: 1px solid var(--border);
-            font-size: 13px;
-            text-align: left;
-            vertical-align: middle;
-        }
-
-        th {
-            background: #fafbfc;
-            color: var(--brand-blue);
-            font-weight: 700;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-
-        .left {
-            min-width: 200px;
-            position: sticky;
-            left: 0;
-            background: #fff;
-            z-index: 1;
-        }
-
-        th.left { background: #fafbfc; z-index: 3; }
-        .service { min-width: 230px; }
-        .day-cell { min-width: 46px; text-align: center; }
-
-        .has-hours {
-            font-weight: 700;
-            color: var(--brand-blue);
-            background: rgba(11, 20, 117, 0.04);
-        }
-
-        .total {
-            font-weight: 700;
-            background: rgba(245, 138, 101, 0.10);
-            color: #8f3e20;
-            text-align: center;
-        }
-
-        .num {
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .corr-lmk { color: #b42318; font-weight: 700; }
-
-        tbody tr:hover td { background: rgba(11, 20, 117, 0.025); }
-        tbody tr:hover td.left { background: #f6f7ff; }
-
-        .capturing th, .capturing .left { position: static !important; }
-
-        .print-only { display: none; }
-        .print-heading { font-size: 16px; font-weight: 700; color: var(--brand-blue); margin-bottom: 12px; }
-
-        @media (max-width: 900px) {
-            .summary {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .topbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .summary {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media print {
-            @page { size: landscape; margin: 8mm; }
-            body { background: #fff !important; padding: 0; }
-            .page { max-width: none; }
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            .card { box-shadow: none; border-radius: 0; margin: 0 0 10px; padding: 0; }
-            .table-wrap { overflow: visible !important; border: none; border-radius: 0; }
-            table { min-width: 0 !important; width: 100%; }
-            th { position: static !important; }
-            .left { position: static !important; }
-            tr { break-inside: avoid; }
-            th, td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="topbar no-print">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1 class="brand-title">Табель #{{ run.id }}</h1>
-                <p class="brand-subtitle">
-                    {{ run.date_from.strftime('%d.%m.%Y') }}
-                    —
-                    {{ run.date_to.strftime('%d.%m.%Y') }}
-                    · {{ run.legal_entity or 'Без юрлица' }}
-                </p>
-            </div>
-        </div>
-
-        <div class="toolbar">
-            {% if request.url.path.startswith('/hr') %}
-                <a href="/hr/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
-                <a href="/hr/payroll/runs" class="back-link">Все фиксации</a>
-                <a href="/hr/payroll" class="back-link">Выплатный табель</a>
-                <a href="/hr" class="back-link">Кабинет HR</a>
-            {% elif is_economist_view %}
-                <a href="/economist/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
-                <a href="/economist/payroll/runs" class="back-link">Все фиксации</a>
-                <a href="/economist/payroll" class="back-link">Выплатный табель</a>
-                <a href="/economist" class="back-link">Кабинет экономиста</a>
-            {% else %}
-                <a href="/admin/payroll/runs/{{ run.id }}/export" class="back-link">Экспорт Excel</a>
-                <a href="/admin/payroll/runs" class="back-link">Все фиксации</a>
-                <a href="/admin/payroll" class="back-link">Выплатный табель</a>
-                <a href="/admin" class="back-link">Назад в админку</a>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="card">
+{% block content %}
+<div class="page page-wide">
+    <div class="card mt-20">
         <div class="summary">
             <div class="summary-item">
                 <div class="summary-label">Статус</div>
@@ -327,13 +157,13 @@
     <div class="card">
         <div class="print-heading print-only">Табель #{{ run.id }} · {{ run.date_from.strftime('%d.%m.%Y') }} — {{ run.date_to.strftime('%d.%m.%Y') }}</div>
         {% if rows and rows|length > 0 %}
-        <div class="no-print" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+        <div class="no-print row export-row mb-8">
             {% set export_target = "#run-table" %}
             {% set export_filename = "табель_" ~ run.id ~ "_" ~ run.date_from.strftime('%Y-%m-%d') ~ "_" ~ run.date_to.strftime('%Y-%m-%d') %}
             {% include "_export_buttons.html" %}
         </div>
         {% endif %}
-        <div class="table-wrap">
+        <div class="table-wrap run-table">
             <table id="run-table">
                 <thead>
                     <tr>
@@ -382,5 +212,4 @@
         </div>
     </div>
 </div>
-</body>
-</html>
+{% endblock %}
