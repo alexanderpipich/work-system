@@ -1,64 +1,14 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f5f7;
-            color: #1f2937;
-            padding: 28px 18px;
-        }
+{% extends "base.html" %}
 
-        .page {
-            max-width: 860px;
-            margin: 0 auto;
-        }
+{% block title %}{{ title }}{% endblock %}
+{% block brand_title %}{{ title }}{% endblock %}
 
-        .card {
-            background: #fff;
-            border-radius: 22px;
-            box-shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            padding: 22px 20px;
-        }
-
-        h1 {
-            margin: 0 0 10px;
-            color: #0b1475;
-        }
-
-        p {
-            color: #6b7280;
-            line-height: 1.5;
-        }
-
-        a {
-            display: inline-block;
-            margin-top: 12px;
-            text-decoration: none;
-            color: #0b1475;
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.16);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-        }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="card">
-        <h1>{{ title }}</h1>
+{% block content %}
+<div class="page page-narrow">
+    <div class="card mt-20">
         <p>{{ user.employee_name }}</p>
-        <p>Раздел готовится к подключению.</p>
-        <a href="/cabinet">Вернуться в кабинет</a>
+        <p class="muted">Раздел готовится к подключению.</p>
+        <a href="/cabinet" class="back-link">Вернуться в кабинет</a>
     </div>
 </div>
-</body>
-</html>
+{% endblock %}

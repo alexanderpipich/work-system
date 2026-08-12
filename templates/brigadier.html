@@ -1,332 +1,55 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Кабинет бригадира</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            --error-bg: #fff1ed;
-            --error-text: #b42318;
-        }
+{% extends "base.html" %}
 
-        * { box-sizing: border-box; }
+{% block title %}Кабинет бригадира{% endblock %}
+{% block brand_title %}Кабинет бригадира{% endblock %}
+{% block topbar_class %}topbar-sticky{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-        }
+{% block brand_subtitle %}
+<p class="brand-subtitle">
+    {{ user.employee_name }}{% if store %} · магазин: {{ store }}{% endif %}
+</p>
+{% endblock %}
 
-        .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 30;
-            background: rgba(255, 255, 255, 0.96);
-            border-bottom: 1px solid var(--border);
-            box-shadow: 0 10px 26px rgba(11, 20, 117, 0.08);
-        }
+{% block head %}
+<style>
+    /* специфика страницы: узкие фильтры, плитки итогов и ширины колонок табеля */
+    .filters { grid-template-columns: 180px 180px 180px; }
 
-        .topbar-inner {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 12px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-        }
+    .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .summary-item { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; background: var(--surface-muted); }
+    .summary-label { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+    .summary-value { color: var(--brand-blue); font-size: 22px; font-weight: 700; }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
+    .shifts-table table { min-width: 1320px; }
+    .shifts-table th, .shifts-table td { text-align: center; border-right: 1px solid var(--border); font-size: 13px; }
+    .shifts-table th { z-index: 4; }
+    .shifts-table .left { text-align: left; min-width: 230px; position: sticky; left: 0; z-index: 3; background: #fff; }
+    .shifts-table th.left { background: var(--surface-muted); z-index: 6; }
+    .shifts-table .service { min-width: 280px; text-align: left; }
+    .shifts-table .day-cell { min-width: 42px; }
+    .shifts-table .has-hours { font-weight: 700; color: var(--brand-blue); background: rgba(11, 20, 117, 0.04); }
+    .shifts-table .total { font-weight: 700; background: rgba(245, 138, 101, 0.12); color: #8f3e20; }
 
-        .brand img {
-            width: 54px;
-            height: 54px;
-            object-fit: contain;
-            border-radius: 14px;
-            background: #fff;
-            flex-shrink: 0;
-        }
+    @media (max-width: 820px) {
+        .filters, .summary { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
 
-        .brand-title {
-            margin: 0;
-            font-size: 24px;
-            color: var(--brand-blue);
-            line-height: 1.1;
-        }
-
-        .brand-subtitle {
-            margin: 5px 0 0;
-            color: var(--muted);
-            font-size: 14px;
-        }
-
-        .logout {
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.16);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-            white-space: nowrap;
-        }
-
-        .page {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 20px 18px 36px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 18px;
-        }
-
-        .filters {
-            display: grid;
-            grid-template-columns: 180px 180px 180px;
-            gap: 12px;
-            align-items: end;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--brand-blue);
-            margin-bottom: 8px;
-        }
-
-        input, select {
-            width: 100%;
-            height: 44px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0 12px;
-            font-size: 14px;
-            background: #fff;
-        }
-
-        .btn {
-            width: 100%;
-            height: 44px;
-            border: none;
-            border-radius: 12px;
-            padding: 0 16px;
-            font-weight: 700;
-            cursor: pointer;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            color: #fff;
-        }
-
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .summary-item {
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 14px;
-            background: #fbfcff;
-        }
-
-        .summary-label {
-            color: var(--muted);
-            font-size: 13px;
-            margin-bottom: 6px;
-        }
-
-        .summary-value {
-            color: var(--brand-blue);
-            font-size: 22px;
-            font-weight: 700;
-        }
-
-        .err {
-            background: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid rgba(180, 35, 24, 0.14);
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
-        }
-
-        .table-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 14px;
-        }
-
-        .table-title {
-            margin: 0;
-            color: var(--brand-blue);
-            font-size: 22px;
-        }
-
-        .table-period {
-            color: var(--muted);
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .table-wrap {
-            overflow: auto;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            max-height: calc(100vh - 270px);
-            background: #fff;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            min-width: 1320px;
-            background: #fff;
-        }
-
-        th, td {
-            padding: 10px;
-            text-align: center;
-            border-bottom: 1px solid var(--border);
-            border-right: 1px solid var(--border);
-            font-size: 13px;
-            vertical-align: middle;
-            background: #fff;
-        }
-
-        th {
-            color: var(--brand-blue);
-            background: #fafbfc;
-            font-weight: 700;
-            position: sticky;
-            top: 0;
-            z-index: 4;
-        }
-
-        .left {
-            text-align: left;
-            min-width: 230px;
-            position: sticky;
-            left: 0;
-            z-index: 3;
-            background: #fff;
-        }
-
-        th.left {
-            background: #fafbfc;
-            z-index: 6;
-        }
-
-        .service {
-            min-width: 280px;
-            text-align: left;
-        }
-
-        .day-cell {
-            min-width: 42px;
-        }
-
-        .has-hours {
-            font-weight: 700;
-            color: var(--brand-blue);
-            background: rgba(11, 20, 117, 0.04);
-        }
-
-        .total {
-            font-weight: 700;
-            background: rgba(245, 138, 101, 0.12);
-            color: #8f3e20;
-        }
-
-        .empty {
-            color: var(--muted);
-            padding: 18px;
-            text-align: center;
-        }
-
-        @media (max-width: 820px) {
-            .filters,
-            .summary {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 620px) {
-            .topbar-inner {
-                align-items: stretch;
-                flex-direction: column;
-                padding: 10px 12px;
-            }
-
-            .page {
-                padding: 14px 12px 28px;
-            }
-
-            .card {
-                border-radius: 18px;
-                padding: 16px;
-            }
-        }
-    </style>
-</head>
-<body>
-<header class="topbar">
-    <div class="topbar-inner">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1 class="brand-title">Кабинет бригадира</h1>
-                <p class="brand-subtitle">
-                    {{ user.employee_name }}{% if store %} · магазин: {{ store }}{% endif %}
-                </p>
-            </div>
-        </div>
-        <a href="/logout" class="logout">Выйти</a>
-    </div>
-</header>
-
-<main class="page">
+{% block content %}
+<main class="page page-wide">
     {% if error %}
-        <div class="card">
-            <div class="err">{{ error }}</div>
-        </div>
+        <div class="alert alert-error mt-20">{{ error }}</div>
     {% else %}
-        <section class="card">
+        <section class="card mt-20">
             <form method="get" action="/brigadier">
-                <div class="filters">
-                    <div>
+                <div class="form-grid align-end filters">
+                    <div class="field">
                         <label for="year">Год</label>
                         <input id="year" type="number" name="year" value="{{ year }}">
                     </div>
 
-                    <div>
+                    <div class="field">
                         <label for="month">Месяц</label>
                         <select id="month" name="month">
                             {% for m in range(1, 13) %}
@@ -336,7 +59,7 @@
                     </div>
 
                     <div>
-                        <button type="submit" class="btn">Показать</button>
+                        <button type="submit" class="btn btn-primary btn-block">Показать</button>
                     </div>
                 </div>
             </form>
@@ -360,13 +83,13 @@
         </section>
 
         <section class="card">
-            <div class="table-head">
-                <h2 class="table-title">Смены сотрудников</h2>
-                <div class="table-period">{{ month }}.{{ year }}</div>
+            <div class="row row-between mb-14">
+                <h2 class="mb-0">Смены сотрудников</h2>
+                <div class="muted">{{ month }}.{{ year }}</div>
             </div>
 
             {% if rows %}
-                <div class="table-wrap">
+                <div class="table-wrap is-tall shifts-table">
                     <table>
                         <thead>
                             <tr>
@@ -409,5 +132,4 @@
         </section>
     {% endif %}
 </main>
-</body>
-</html>
+{% endblock %}

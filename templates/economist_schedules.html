@@ -1,348 +1,63 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <title>Графики выходов экономиста</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-            --error-bg: #fff1ed;
-            --error-text: #b42318;
-        }
+{% extends "base.html" %}
 
-        * { box-sizing: border-box; }
+{% block title %}Графики выходов экономиста{% endblock %}
+{% block brand_title %}Графики выходов{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(245, 138, 101, 0.10), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(11, 20, 117, 0.06), transparent 32%),
-                var(--bg);
-            color: var(--text);
-            padding: 28px 18px 36px;
-        }
+{% block brand_subtitle %}
+<p class="brand-subtitle">Кабинет экономиста</p>
+<div class="city-list">
+    {% for city in allowed_cities %}
+        <span class="chip">{{ city }}</span>
+    {% endfor %}
+</div>
+{% endblock %}
 
-        .page {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
+{% block topbar_actions %}
+<a href="{{ back_url | default('/economist') }}" class="back-link">{{ back_label | default('Кабинет экономиста') }}</a>
+<a href="/logout" class="logout">Выйти</a>
+{% endblock %}
 
-        .topbar,
-        .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+{% block head %}
+<style>
+    /* специфика страницы: города доступа, выбор магазинов и ширины колонок графика */
+    .city-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-        }
+    .stores-box { margin-top: 18px; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; background: var(--surface-muted); }
+    .stores-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .stores-title { margin: 0; color: var(--brand-blue); font-size: 16px; }
+    .stores-toggle { display: inline-flex; align-items: center; gap: 8px; color: var(--brand-blue); font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+    .stores-grid { column-count: 3; column-gap: 16px; }
+    .store-item { display: flex; align-items: center; gap: 8px; font-size: 14px; break-inside: avoid; -webkit-column-break-inside: avoid; margin-bottom: 10px; }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
+    .schedule-table table { min-width: 1450px; }
+    .schedule-table th, .schedule-table td { text-align: center; border-right: 1px solid var(--border); font-size: 13px; }
+    .schedule-table .left { text-align: left; min-width: 220px; }
+    .schedule-table .service { min-width: 260px; }
+    .schedule-table .day-cell { min-width: 48px; }
+    .schedule-table .has-hours { font-weight: 700; color: var(--brand-blue); background: rgba(11, 20, 117, 0.04); }
+    .schedule-table .no-plan-hours { font-weight: 700; color: var(--error-text); background: var(--error-bg); }
+    .schedule-table .total { font-weight: 700; background: rgba(245, 138, 101, 0.10); color: #8f3e20; }
 
-        .brand img {
-            width: 64px;
-            height: 64px;
-            object-fit: contain;
-            border-radius: 16px;
-            background: #fff;
-        }
+    @media (max-width: 980px) {
+        .stores-grid { column-count: 2; }
+    }
 
-        .brand-title {
-            margin: 0;
-            color: var(--brand-blue);
-            font-size: 28px;
-        }
+    @media (max-width: 700px) {
+        .stores-grid { column-count: 1; }
+    }
+</style>
+{% endblock %}
 
-        .brand-subtitle {
-            margin: 6px 0 0;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.45;
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .back-link {
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.12);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-            white-space: nowrap;
-        }
-
-        .city-list {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-
-        .city-pill {
-            background: #eef4ff;
-            color: var(--brand-blue);
-            padding: 7px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 14px;
-            align-items: end;
-        }
-
-        .field label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--brand-blue);
-            margin-bottom: 8px;
-        }
-
-        .field input {
-            width: 100%;
-            height: 46px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0 12px;
-            font-size: 14px;
-            background: #fff;
-        }
-
-        .stores-box {
-            margin-top: 18px;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px;
-            background: #fbfcff;
-        }
-
-        .stores-title {
-            margin: 0 0 12px;
-            color: var(--brand-blue);
-            font-size: 16px;
-        }
-
-        .stores-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .stores-header .stores-title {
-            margin: 0;
-        }
-
-        .stores-toggle {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--brand-blue);
-            font-size: 14px;
-            font-weight: 700;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-
-        .stores-grid {
-            column-count: 3;
-            column-gap: 16px;
-        }
-
-        .store-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            break-inside: avoid;
-            -webkit-column-break-inside: avoid;
-            margin-bottom: 10px;
-        }
-
-        .btn {
-            margin-top: 18px;
-            height: 48px;
-            border: none;
-            border-radius: 14px;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            color: #fff;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            padding: 0 18px;
-        }
-
-        .hint {
-            color: var(--muted);
-            line-height: 1.6;
-            margin: 0;
-        }
-
-        .err {
-            background: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid rgba(180, 35, 24, 0.14);
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 14px;
-        }
-
-        .table-wrap {
-            overflow-x: auto;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1450px;
-            background: #fff;
-        }
-
-        th, td {
-            padding: 10px 10px;
-            text-align: center;
-            border-bottom: 1px solid var(--border);
-            border-right: 1px solid var(--border);
-            font-size: 13px;
-            vertical-align: middle;
-        }
-
-        th {
-            background: #fafbfc;
-            color: var(--brand-blue);
-            font-weight: 700;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-
-        .left {
-            text-align: left;
-            min-width: 220px;
-        }
-
-        .service {
-            min-width: 260px;
-        }
-
-        .day-cell {
-            min-width: 48px;
-        }
-
-        .has-hours {
-            font-weight: 700;
-            color: var(--brand-blue);
-            background: rgba(11, 20, 117, 0.04);
-        }
-
-        .no-plan-hours {
-            font-weight: 700;
-            color: #b42318;
-            background: #fff1ed;
-        }
-
-        .total {
-            font-weight: 700;
-            background: rgba(245, 138, 101, 0.10);
-            color: #8f3e20;
-        }
-
-        @media (max-width: 980px) {
-            .form-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .stores-grid {
-                column-count: 2;
-            }
-        }
-
-        @media (max-width: 700px) {
-            .topbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .stores-grid {
-                column-count: 1;
-            }
-        }
-    </style>
-</head>
-
-<body>
-<div class="page">
-
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1 class="brand-title">Графики выходов</h1>
-                <p class="brand-subtitle">
-                    Кабинет экономиста
-                </p>
-
-                <div class="city-list">
-                    {% for city in allowed_cities %}
-                        <span class="city-pill">{{ city }}</span>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <div class="toolbar">
-            <a href="{{ back_url | default('/economist') }}" class="back-link">{{ back_label | default('Кабинет экономиста') }}</a>
-            <a href="/logout" class="back-link">Выйти</a>
-        </div>
-    </div>
+{% block content %}
+<div class="page page-wide">
 
     {% if error %}
-        <div class="card">
-            <div class="err">{{ error }}</div>
-        </div>
+        <div class="alert alert-error mt-20">{{ error }}</div>
     {% endif %}
 
-    <div class="card">
+    <div class="card mt-20">
         <form method="get" action="{{ form_action | default('/economist/schedules') }}">
-            <div class="form-grid">
+            <div class="form-grid cols-3 align-end">
                 <div class="field">
                     <label>Дата начала</label>
                     <input type="date" name="date_from" value="{{ date_from }}">
@@ -382,13 +97,13 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn">Сформировать</button>
+            <button type="submit" class="btn btn-primary btn-lg mt-20">Сформировать</button>
         </form>
     </div>
 
     {% if not show_table %}
         <div class="card">
-            <p class="hint">
+            <p class="muted mb-0">
                 Выберите один или несколько магазинов и нажмите «Сформировать».
                 Экономист увидит только данные по назначенным городам.
             </p>
@@ -397,7 +112,7 @@
 
     {% if show_table %}
         <div class="card">
-            <div class="table-wrap">
+            <div class="table-wrap schedule-table">
                 <table>
                     <thead>
                         <tr>
@@ -447,6 +162,9 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block scripts %}
 <script>
     const selectAllStores = document.getElementById("select-all-stores");
     const storeCheckboxes = Array.from(document.querySelectorAll(".store-checkbox"));
@@ -476,5 +194,4 @@
 
     syncSelectAllStores();
 </script>
-</body>
-</html>
+{% endblock %}

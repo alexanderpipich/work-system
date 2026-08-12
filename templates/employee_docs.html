@@ -1,91 +1,33 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои документы</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-        }
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); padding: 28px 18px; }
-        .page { max-width: 1180px; margin: 0 auto; }
-        .topbar, .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 20px;
-            margin-bottom: 18px;
-        }
-        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-        .brand { display: flex; align-items: center; gap: 12px; }
-        .brand img { width: 54px; height: 54px; object-fit: contain; border-radius: 14px; background: #fff; }
-        h1, h2, h3 { margin-top: 0; color: var(--brand-blue); }
-        .muted { color: var(--muted); line-height: 1.5; }
-        .back-link, .btn {
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 38px;
-            border: 0;
-            color: #fff;
-            font-weight: 700;
-            border-radius: 12px;
-            padding: 9px 14px;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .back-link.secondary { background: #fff; color: var(--brand-blue); border: 1px solid rgba(11, 20, 117, 0.16); }
-        .doc-card { border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; background: #fbfcff; }
-        .doc-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-        .pill { display: inline-block; padding: 7px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
-        .pill.ok { background: #eefbf3; color: #067647; }
-        .pill.warn { background: #fff7ed; color: #9a3412; }
-        .pill.bad { background: #fff1ed; color: #b42318; }
-        .pill.muted { background: #eef2ff; color: #344054; }
-        .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
-        .field { display: flex; flex-direction: column; gap: 6px; }
-        label { color: var(--muted); font-size: 13px; font-weight: 700; }
-        input { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: #fff; }
-        .help { border-left: 4px solid var(--brand-blue); padding-left: 12px; margin: 12px 0; color: var(--muted); line-height: 1.5; }
-        .message { color: #067647; font-weight: 700; }
-        .error { color: #b42318; font-weight: 700; }
-        @media (max-width: 760px) {
-            body { padding: 16px 12px; }
-            .topbar { align-items: stretch; flex-direction: column; }
-            .grid { grid-template-columns: 1fr; }
-        }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Мои документы{% endblock %}
+{% block brand_title %}Мои документы{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">{{ user.employee_name }} · гражданство: {{ citizenship }}</p>{% endblock %}
+
+{% block topbar_actions %}<a href="/cabinet" class="back-link">В кабинет</a>{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: карточка документа и подсказка по загрузке */
+    .pill.ok { background: var(--success-bg); color: var(--success-text); }
+    .pill.warn { background: var(--warn-bg); color: var(--warn-text); }
+    .pill.bad { background: var(--error-bg); color: var(--error-text); }
+    .pill.muted { background: #eef2ff; color: #344054; font-size: 12px; }
+
+    .doc-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; background: var(--surface-muted); }
+    .doc-card h3 { margin: 0 0 4px; color: var(--brand-blue); font-size: 17px; }
+    .doc-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .help { border-left: 4px solid var(--brand-blue); padding-left: 12px; margin: 12px 0; color: var(--muted); line-height: 1.5; }
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="page">
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1>Мои документы</h1>
-                <div class="muted">{{ user.employee_name }} · гражданство: {{ citizenship }}</div>
-            </div>
-        </div>
-        <a href="/cabinet" class="back-link secondary">В кабинет</a>
-    </div>
 
-    {% if message %}<div class="card message">{{ message }}</div>{% endif %}
-    {% if error %}<div class="card error">{{ error }}</div>{% endif %}
+    {% if message %}<div class="alert alert-success mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mb-20">{{ error }}</div>{% endif %}
 
-    <section class="card">
+    <section class="card mt-20">
         <h2>Документы сотрудника</h2>
         {% for row in document_rows %}
         <div class="doc-card">
@@ -110,7 +52,7 @@
                     {% endif %}
                 </div>
                 {% if row.document.file_path %}
-                    <p><a href="/documents/files/{{ row.document.id }}" target="_blank" class="back-link secondary">Открыть файл</a></p>
+                    <p><a href="/documents/files/{{ row.document.id }}" target="_blank" class="back-link">Открыть файл</a></p>
                 {% endif %}
             {% elif row.status == 'pending_verification' %}
                 <p class="muted">Документ загружен и ожидает проверки.</p>
@@ -119,14 +61,14 @@
             {% if row.status in ['missing', 'rejected', 'expired', 'archived'] %}
                 {% if row.type.help_text %}<div class="help">{{ row.type.help_text }}</div>{% endif %}
                 {% if row.type.sample_image_path %}
-                    <p><a href="/documents/samples/{{ row.type.id }}" target="_blank" class="back-link secondary">Посмотреть образец</a></p>
+                    <p><a href="/documents/samples/{{ row.type.id }}" target="_blank" class="back-link">Посмотреть образец</a></p>
                 {% endif %}
                 <form method="post" action="/cabinet/documents/upload" enctype="multipart/form-data">
                     <input type="hidden" name="document_type_id" value="{{ row.type.id }}">
-                    <div class="grid">
+                    <div class="form-grid cols-3">
                         <div class="field"><label>Фото или скан</label><input type="file" name="file" accept="image/*,.pdf,.heic" capture="environment" required></div>
                     </div>
-                    <button type="submit" class="btn">Загрузить</button>
+                    <button type="submit" class="btn btn-primary mt-14">Загрузить</button>
                 </form>
             {% endif %}
         </div>
@@ -137,5 +79,4 @@
         {% endif %}
     </section>
 </div>
-</body>
-</html>
+{% endblock %}

@@ -1,212 +1,46 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Кабинет подборщика</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --brand-peach: #f58a65;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-        }
+{% extends "base.html" %}
 
-        * { box-sizing: border-box; }
+{% block title %}Кабинет подборщика{% endblock %}
+{% block brand_title %}Кабинет подборщика{% endblock %}
+{% block topbar_class %}topbar-sticky{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-        }
+{% block head %}
+<style>
+    /* специфика страницы: приветствие и карточки-заглушки будущих разделов */
+    .welcome-title { margin: 0 0 10px; color: var(--brand-blue); font-size: 24px; letter-spacing: -.3px; }
+    .employee-name { margin: 0 0 14px; font-size: 20px; font-weight: 700; }
 
-        .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            background: rgba(255, 255, 255, 0.96);
-            border-bottom: 1px solid var(--border);
-            box-shadow: 0 10px 26px rgba(11, 20, 117, 0.08);
-        }
+    .stub-card { margin-bottom: 0; text-align: center; padding: 26px 22px; }
+    .stub-card .icon { margin: 0 auto 14px; }
+    .stub-title { margin: 0 0 8px; color: var(--brand-blue); font-size: 18px; }
+    .stub-note { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+</style>
+{% endblock %}
 
-        .topbar-inner {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 12px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-        }
+{% block content %}
+<main class="page page-narrow">
+    <section class="card mt-20">
+        <h2 class="welcome-title">Добро пожаловать!</h2>
+        <p class="employee-name">{{ user.employee_name or "Подборщик" }}</p>
+        <a href="/stores" class="back-link">Справочник магазинов →</a>
+    </section>
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
-
-        .brand img {
-            width: 54px;
-            height: 54px;
-            object-fit: contain;
-            border-radius: 14px;
-            background: #fff;
-            flex-shrink: 0;
-        }
-
-        .brand-title {
-            margin: 0;
-            font-size: 24px;
-            line-height: 1.1;
-            color: var(--brand-blue);
-        }
-
-        .logout {
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.16);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-            white-space: nowrap;
-        }
-
-        .page {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 20px 18px 36px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 22px 20px;
-            margin-bottom: 18px;
-        }
-
-        .welcome-title {
-            margin: 0 0 10px;
-            color: var(--brand-blue);
-            font-size: 28px;
-        }
-
-        .employee-name {
-            margin: 0;
-            font-size: 22px;
-            font-weight: 700;
-        }
-
-        .dir-link {
-            display: inline-block;
-            margin-top: 14px;
-            text-decoration: none;
-            color: var(--brand-blue);
-            font-weight: 700;
-            border: 1px solid rgba(11, 20, 117, 0.16);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: #fff;
-        }
-
-        .blocks {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 18px;
-        }
-
-        .stub-card {
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow);
-            padding: 26px 22px;
-            text-align: center;
-        }
-
-        .stub-icon {
-            width: 56px;
-            height: 56px;
-            margin: 0 auto 14px;
-            border-radius: 16px;
-            background: rgba(11, 20, 117, 0.06);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--brand-blue);
-        }
-
-        .stub-icon svg {
-            width: 28px;
-            height: 28px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-        }
-
-        .stub-title {
-            margin: 0 0 8px;
-            color: var(--brand-blue);
-            font-size: 20px;
-        }
-
-        .stub-note {
-            margin: 0;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        @media (max-width: 640px) {
-            .blocks { grid-template-columns: 1fr; }
-            .brand-title { font-size: 20px; }
-        }
-    </style>
-</head>
-<body>
-    <header class="topbar">
-        <div class="topbar-inner">
-            <div class="brand">
-                <img src="/static/logo-alex.jpg" alt="Логотип">
-                <h1 class="brand-title">Кабинет подборщика</h1>
+    <div class="grid grid-2">
+        <section class="card stub-card">
+            <div class="icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"></path><path d="M8 9h8"></path><path d="M8 12h5"></path></svg>
             </div>
-            <a href="/logout" class="logout">Выйти</a>
-        </div>
-    </header>
-
-    <main class="page">
-        <section class="card">
-            <h2 class="welcome-title">Добро пожаловать!</h2>
-            <p class="employee-name">{{ user.employee_name or "Подборщик" }}</p>
-            <a href="/stores" class="dir-link">Справочник магазинов →</a>
+            <h3 class="stub-title">Сообщения</h3>
+            <p class="stub-note">Раздел в разработке</p>
         </section>
 
-        <div class="blocks">
-            <section class="stub-card">
-                <div class="stub-icon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"></path><path d="M8 9h8"></path><path d="M8 12h5"></path></svg>
-                </div>
-                <h3 class="stub-title">Сообщения</h3>
-                <p class="stub-note">Раздел в разработке</p>
-            </section>
-
-            <section class="stub-card">
-                <div class="stub-icon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V5h6v2"></path><path d="M5 7h14v12H5z"></path><path d="M5 12h14"></path></svg>
-                </div>
-                <h3 class="stub-title">Вакансии</h3>
-                <p class="stub-note">Раздел в разработке</p>
-            </section>
-        </div>
-    </main>
-</body>
-</html>
+        <section class="card stub-card">
+            <div class="icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V5h6v2"></path><path d="M5 7h14v12H5z"></path><path d="M5 12h14"></path></svg>
+            </div>
+            <h3 class="stub-title">Вакансии</h3>
+            <p class="stub-note">Раздел в разработке</p>
+        </section>
+    </div>
+</main>
+{% endblock %}

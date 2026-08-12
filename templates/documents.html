@@ -1,148 +1,83 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Документы сотрудников</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-        }
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); padding: 28px 18px 36px; }
-        .page { max-width: 1700px; margin: 0 auto; }
-        .topbar, .card { background: var(--card-bg); border-radius: 22px; box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
-        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-        .brand { display: flex; align-items: center; gap: 14px; }
-        .brand img { width: 64px; height: 64px; object-fit: contain; border-radius: 16px; background: #fff; }
-        h1, h2 { margin-top: 0; color: var(--brand-blue); }
-        .toolbar, .filters, .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        .link, .btn {
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 38px;
-            border-radius: 12px;
-            border: 0;
-            padding: 9px 14px;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-            color: #fff;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .link.secondary { background: #fff; color: var(--brand-blue); border: 1px solid rgba(11, 20, 117, 0.14); }
-        .btn.bad { background: linear-gradient(135deg, #c23327, #9f1f16); }
-        .btn.gray { background: linear-gradient(135deg, #667085, #475467); }
-        label { color: var(--muted); font-size: 13px; font-weight: 700; }
-        input, select, textarea {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 10px 12px;
-            font-size: 14px;
-            background: #fff;
-        }
-        textarea { min-height: 70px; resize: vertical; }
-        .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-        .field { display: flex; flex-direction: column; gap: 6px; }
-        .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 16px; }
-        table { width: 100%; min-width: 1450px; border-collapse: collapse; background: #fff; }
-        th, td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; text-align: left; vertical-align: top; }
-        th { background: #fafbfc; color: var(--brand-blue); }
-        .pill { display: inline-block; padding: 7px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
-        .pill.ok { background: #eefbf3; color: #067647; }
-        .pill.warn { background: #fff7ed; color: #9a3412; }
-        .pill.bad { background: #fff1ed; color: #b42318; }
-        .pill.muted { background: #eef2ff; color: #344054; }
-        .muted { color: var(--muted); line-height: 1.5; }
-        .message { color: #067647; font-weight: 700; }
-        .error { color: #b42318; font-weight: 700; }
-        @media (max-width: 1000px) {
-            .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .topbar { flex-direction: column; align-items: stretch; }
-        }
-        @media (max-width: 650px) { .grid { grid-template-columns: 1fr; } }
-        .view-toggle { display: flex; gap: 6px; }
-        .view-toggle a { text-decoration: none; padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; border: 1px solid rgba(11,20,117,0.14); color: var(--brand-blue); background: #fff; }
-        .view-toggle a.active { background: var(--brand-blue); color: #fff; border-color: var(--brand-blue); }
-        .matrix-group { margin-bottom: 20px; }
-        .matrix-group h3 { color: var(--brand-blue); margin: 0 0 10px; font-size: 15px; }
-        .matrix-group .address { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
-        .matrix-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .matrix-table th { background: #fafbfc; color: var(--brand-blue); padding: 8px 6px; border-bottom: 1px solid var(--border); white-space: nowrap; text-align: center; font-size: 11px; }
-        .matrix-table th.name-col { text-align: left; min-width: 160px; }
-        .matrix-table td { padding: 6px 4px; border-bottom: 1px solid var(--border); text-align: center; vertical-align: middle; }
-        .matrix-table td.name-col { text-align: left; padding-left: 10px; font-weight: 600; }
+{% extends "base.html" %}
 
-        .mcell { display: inline-block; width: 32px; height: 32px; border-radius: 6px; line-height: 32px; font-size: 10px; font-weight: 700; }
-        .mcell.ok { background: #dcfce7; color: #166534; }
-        .mcell.expiring_soon { background: #ffedd5; color: #9a3412; }
-        .mcell.pending { background: #fef9c3; color: #713f12; }
-        .mcell.expired { background: #fee2e2; color: #991b1b; }
-        .mcell.missing { background: #f1f5f9; color: #94a3b8; }
-        .mcell.na { background: #f8fafc; color: #cbd5e1; }
-        .mcell.clickable { cursor: pointer; }
-        .mcell.clickable:hover { box-shadow: 0 0 0 2px var(--brand-blue); }
-        .mcell.manual { font-size: 14px; }
-        .matrix-filter { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
-        .mark-popover { position: absolute; z-index: 50; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(16,24,40,0.14); padding: 12px; width: 230px; font-size: 13px; }
-        .mark-popover .title { font-weight: 700; color: var(--brand-blue); margin-bottom: 8px; }
-        .mark-popover input[type=date] { width: 100%; margin-bottom: 8px; }
-        .mark-popover .actions { display: flex; gap: 6px; }
-        .mark-popover button { flex: 1; padding: 7px 8px; border-radius: 8px; border: 1px solid var(--brand-blue); background: var(--brand-blue); color: #fff; font-weight: 700; font-size: 12px; cursor: pointer; }
-        .mark-popover button.secondary { background: #fff; color: #b42318; border-color: #f0c1b8; }
-        .mark-popover .err { color: #b42318; font-weight: 700; margin-top: 8px; }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1>Документы сотрудников</h1>
-                <div class="muted">Проверка, загрузка и архив документов</div>
-            </div>
-        </div>
-        <div class="toolbar">
-            {% if not request.url.path.startswith('/hr') %}<a href="{{ base_path.replace('/documents', '/document-types') }}" class="link secondary">Типы документов</a>{% endif %}
-            {% if base_path == '/admin/documents' %}
-            <div class="view-toggle">
-                <a href="{{ base_path }}?view=registry" class="{{ 'active' if view == 'registry' else '' }}">Реестр</a>
-                <a href="{{ base_path }}?view=matrix" class="{{ 'active' if view == 'matrix' else '' }}">Матрица</a>
-            </div>
-            {% endif %}
-            <a href="{{ back_url }}" class="link secondary">{{ back_label }}</a>
-        </div>
-    </div>
+{% block title %}Документы сотрудников{% endblock %}
+{% block brand_title %}Документы сотрудников{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Проверка, загрузка и архив документов</p>{% endblock %}
 
-    {% if message %}<div class="card message">{{ message }}</div>{% endif %}
-    {% if error %}<div class="card error">{{ error }}</div>{% endif %}
+{% block topbar_actions %}
+{% if not request.url.path.startswith('/hr') %}<a href="{{ base_path.replace('/documents', '/document-types') }}" class="back-link">Типы документов</a>{% endif %}
+{% if base_path == '/admin/documents' %}
+<div class="tabs">
+    <a href="{{ base_path }}?view=registry" class="tab {{ 'active' if view == 'registry' else '' }}">Реестр</a>
+    <a href="{{ base_path }}?view=matrix" class="tab {{ 'active' if view == 'matrix' else '' }}">Матрица</a>
+</div>
+{% endif %}
+<a href="{{ back_url }}" class="back-link">{{ back_label }}</a>
+{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: ширина реестра, матрица комплектности и поповер отметки */
+    .tab.active { background: var(--brand-blue); color: #fff; border-color: var(--brand-blue); }
+
+    .pill.ok { background: var(--success-bg); color: var(--success-text); }
+    .pill.warn { background: var(--warn-bg); color: var(--warn-text); }
+    .pill.bad { background: var(--error-bg); color: var(--error-text); }
+    .pill.muted { background: #eef2ff; color: #344054; font-size: 12px; }
+
+    .registry-table table { min-width: 1450px; }
+
+    .matrix-group h3 { color: var(--brand-blue); margin: 0 0 10px; font-size: 15px; }
+    .matrix-group .address { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+
+    .matrix-table { font-size: 13px; }
+    .matrix-table th { padding: 8px 6px; text-align: center; font-size: 11px; }
+    .matrix-table th.name-col { text-align: left; min-width: 160px; }
+    .matrix-table td { padding: 6px 4px; text-align: center; vertical-align: middle; }
+    .matrix-table td.name-col { text-align: left; padding-left: 10px; font-weight: 600; }
+
+    .mcell { display: inline-block; width: 32px; height: 32px; border-radius: 6px; line-height: 32px; font-size: 10px; font-weight: 700; }
+    .mcell.ok { background: #dcfce7; color: #166534; }
+    .mcell.expiring_soon { background: #ffedd5; color: #9a3412; }
+    .mcell.pending { background: #fef9c3; color: #713f12; }
+    .mcell.expired { background: #fee2e2; color: #991b1b; }
+    .mcell.missing { background: #f1f5f9; color: #94a3b8; }
+    .mcell.na { background: #f8fafc; color: #cbd5e1; }
+    .mcell.clickable { cursor: pointer; }
+    .mcell.clickable:hover { box-shadow: 0 0 0 2px var(--brand-blue); }
+    .mcell.manual { font-size: 14px; }
+
+    .mark-popover { position: absolute; z-index: 50; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(16,24,40,0.14); padding: 12px; width: 230px; font-size: 13px; }
+    .mark-popover .title { font-weight: 700; color: var(--brand-blue); margin-bottom: 8px; }
+    .mark-popover input[type=date] { width: 100%; margin-bottom: 8px; border: 1px solid var(--border-strong); border-radius: 8px; padding: 7px 8px; font-family: inherit; font-size: 13px; }
+    .mark-popover .actions { display: flex; gap: 6px; }
+    .mark-popover button { flex: 1; padding: 7px 8px; border-radius: 8px; border: 1px solid var(--brand-blue); background: var(--brand-blue); color: #fff; font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit; }
+    .mark-popover button.secondary { background: #fff; color: #b42318; border-color: #f0c1b8; }
+    .mark-popover .err { color: #b42318; font-weight: 700; margin-top: 8px; background: none; border: none; padding: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-wide">
+
+    {% if message %}<div class="alert alert-success mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mb-20">{{ error }}</div>{% endif %}
 
 {% if view == 'matrix' %}
     {% if false_green_count %}
-    <section class="card" style="border:1px solid #f0c1b8;background:#fef3f0">
-        <a href="/admin/documents/diagnostics" style="font-weight:700;color:#b42318;text-decoration:none">
+    <div class="alert alert-error mb-20">
+        <a href="/admin/documents/diagnostics">
             ⚠ Требуют срок: {{ false_green_count }} — помечены бессрочными, но тип требует дату. Открыть диагностику →
         </a>
-    </section>
+    </div>
     {% endif %}
     <section class="card">
         <h2>Фильтры матрицы</h2>
-        <form method="get" action="{{ base_path }}" class="matrix-filter">
+        <form method="get" action="{{ base_path }}" class="form-grid cols-3 align-end">
             <input type="hidden" name="view" value="matrix">
-            <label>ТК
-                <select name="tk_filter" style="margin-top:4px">
+            <div class="field">
+                <label>ТК</label>
+                <select name="tk_filter">
                     <option value="">Все ТК</option>
                     {% for s in stores %}
                         <option value="{{ s.tk_number }}" {% if tk_filter == s.tk_number|string %}selected{% endif %}>
@@ -150,11 +85,14 @@
                         </option>
                     {% endfor %}
                 </select>
-            </label>
-            <label>ФИО
-                <input type="text" name="name_filter" value="{{ name_filter }}" placeholder="Поиск по ФИО" style="margin-top:4px">
-            </label>
-            <button class="btn" type="submit">Найти</button>
+            </div>
+            <div class="field">
+                <label>ФИО</label>
+                <input type="text" name="name_filter" value="{{ name_filter }}" placeholder="Поиск по ФИО">
+            </div>
+            <div>
+                <button class="btn btn-primary" type="submit">Найти</button>
+            </div>
         </form>
     </section>
 
@@ -164,7 +102,7 @@
         <h3>ТК {{ group.tk_number }}{% if group.store and group.store.display_name %} — {{ group.store.display_name }}{% endif %}</h3>
         {% if group.store and group.store.object_address %}<div class="address">{{ group.store.object_address }}</div>{% endif %}
         {% else %}
-        <h3>Без ТК <span style="font-size:13px;font-weight:400;color:var(--muted)">({{ group.employees|length }})</span></h3>
+        <h3>Без ТК <span class="muted">({{ group.employees|length }})</span></h3>
         {% endif %}
         <div class="table-wrap">
         <table class="matrix-table">
@@ -213,45 +151,50 @@
         </div>
     </section>
     {% else %}
-    <div class="card"><p class="muted">По выбранному фильтру сотрудников не найдено.</p></div>
+    <div class="card"><p class="muted mb-0">По выбранному фильтру сотрудников не найдено.</p></div>
     {% endfor %}
 
 {% else %}
     <section class="card">
         <h2>Фильтры</h2>
-        <form method="get" action="{{ base_path }}" class="filters">
-            <label>ФИО
+        <form method="get" action="{{ base_path }}" class="form-grid cols-3 align-end">
+            <div class="field">
+                <label>ФИО</label>
                 <select name="employee_name">
                     <option value="">Все сотрудники</option>
                     {% for employee in employees %}
                         <option value="{{ employee }}" {% if employee == employee_name %}selected{% endif %}>{{ employee }}</option>
                     {% endfor %}
                 </select>
-            </label>
-            <label>Тип
+            </div>
+            <div class="field">
+                <label>Тип</label>
                 <select name="document_type_id">
                     <option value="0">Все типы</option>
                     {% for type in document_types %}
                         <option value="{{ type.id }}" {% if type.id == document_type_id %}selected{% endif %}>{{ type.name }}</option>
                     {% endfor %}
                 </select>
-            </label>
-            <label>Статус
+            </div>
+            <div class="field">
+                <label>Статус</label>
                 <select name="status">
                     <option value="all" {% if status == 'all' %}selected{% endif %}>Все</option>
                     {% for key, label in status_labels.items() %}
                         <option value="{{ key }}" {% if key == status %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
-            </label>
-            <button class="btn" type="submit">Показать</button>
+            </div>
+            <div>
+                <button class="btn btn-primary" type="submit">Показать</button>
+            </div>
         </form>
     </section>
 
     <section class="card">
         <h2>Добавить документ вручную</h2>
         <form method="post" action="{{ base_path }}/upload" enctype="multipart/form-data">
-            <div class="grid">
+            <div class="form-grid">
                 <div class="field">
                     <label>Сотрудник</label>
                     <select name="employee_name" required>
@@ -273,17 +216,17 @@
                 <div class="field"><label>Срок действия</label><input type="date" name="expiry_date"></div>
                 <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_value"></div>
                 <div class="field"><label>Доп. поле 2</label><input name="extra_field_2_value"></div>
-                <div class="field"><label>Файл <span style="color:var(--muted);font-weight:400">(необязательно)</span></label><input type="file" name="file" accept="image/*,.pdf,.heic"></div>
+                <div class="field"><label>Файл <span class="muted">(необязательно)</span></label><input type="file" name="file" accept="image/*,.pdf,.heic"></div>
                 <div class="field"><label>Комментарий</label><textarea name="comment"></textarea></div>
             </div>
             <p><label><input type="checkbox" name="is_permanent" value="1"> Бессрочно</label></p>
-            <button class="btn" type="submit">Загрузить</button>
+            <button class="btn btn-primary" type="submit">Загрузить</button>
         </form>
     </section>
 
     <section class="card">
         <h2>Реестр</h2>
-        <div class="table-wrap">
+        <div class="table-wrap registry-table">
             <table>
                 <thead>
                     <tr>
@@ -325,7 +268,7 @@
                         </td>
                         <td>
                             {% if row.document and row.document.file_path %}
-                                <a href="/documents/files/{{ row.document.id }}" target="_blank" class="link secondary">Открыть</a>
+                                <a href="/documents/files/{{ row.document.id }}" target="_blank" class="back-link">Открыть</a>
                             {% else %}
                                 <span class="muted">Нет файла</span>
                             {% endif %}
@@ -339,13 +282,13 @@
                                     <input type="hidden" name="document_id" value="{{ row.document.id }}">
                                     <input type="hidden" name="status" value="{{ status }}">
                                     <input type="hidden" name="employee_name" value="{{ employee_name }}">
-                                    <button class="btn" type="submit">Проверен</button>
+                                    <button class="btn btn-primary btn-sm" type="submit">Проверен</button>
                                 </form>
                                 <form method="post" action="{{ base_path }}/reject">
                                     <input type="hidden" name="document_id" value="{{ row.document.id }}">
                                     <input type="hidden" name="status" value="{{ status }}">
                                     <input type="hidden" name="employee_name" value="{{ employee_name }}">
-                                    <button class="btn bad" type="submit">Отклонить</button>
+                                    <button class="btn btn-danger btn-sm" type="submit">Отклонить</button>
                                 </form>
                                 {% endif %}
                                 {% if row.status != 'archived' %}
@@ -353,7 +296,7 @@
                                     <input type="hidden" name="document_id" value="{{ row.document.id }}">
                                     <input type="hidden" name="status" value="{{ status }}">
                                     <input type="hidden" name="employee_name" value="{{ employee_name }}">
-                                    <button class="btn gray" type="submit">Архив</button>
+                                    <button class="btn btn-secondary btn-sm" type="submit">Архив</button>
                                 </form>
                                 {% endif %}
                             </div>
@@ -372,6 +315,9 @@
     </section>
 {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
 {% if view == 'matrix' %}
 <script>
 (function () {
@@ -528,5 +474,4 @@
 })();
 </script>
 {% endif %}
-</body>
-</html>
+{% endblock %}

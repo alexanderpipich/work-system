@@ -1,269 +1,50 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <link rel="shortcut icon" href="/static/favicon.ico?v=2">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
-    <meta charset="UTF-8">
-    <title>ЛМК</title>
-    <style>
-        :root {
-            --brand-blue: #1f2bb5;
-            --brand-peach: #ff8a65;
-            --bg: #f4f6fb;
-            --card-bg: #ffffff;
-            --border: #e3e7f0;
-            --text: #172033;
-            --muted: #6b7280;
-            --success-bg: #ecfdf3;
-            --success-text: #027a48;
-            --error-bg: #fff1f3;
-            --error-text: #b42318;
-            --shadow: 0 18px 45px rgba(31, 43, 181, 0.08);
-        }
+{% extends "base.html" %}
 
-        * { box-sizing: border-box; }
+{% block title %}ЛМК{% endblock %}
+{% block brand_title %}ЛМК{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Удержания за личную медицинскую книжку</p>{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            color: var(--text);
-            background: var(--bg);
-        }
+{% block topbar_actions %}
+<a href="{{ payroll_url }}" class="back-link">Выплатный табель</a>
+<a href="{{ back_url }}" class="back-link">{{ back_label }}</a>
+{% endblock %}
 
-        .page {
-            width: min(1280px, calc(100% - 32px));
-            margin: 0 auto;
-            padding: 28px 0 44px;
-        }
+{% block head %}
+<style>
+    /* специфика страницы: широкое поле формы, числовые колонки и поля редактирования в таблице */
+    .field-wide { grid-column: span 2; }
 
-        .topbar,
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            box-shadow: var(--shadow);
-        }
+    .lmk-table table { min-width: 980px; }
+    .lmk-table th.num, .lmk-table td.num { text-align: right; white-space: nowrap; }
 
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            padding: 18px 22px;
-            margin-bottom: 18px;
-        }
+    .table-input {
+        width: 110px;
+        height: 34px;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        padding: 0 8px;
+        font-family: inherit;
+        font-size: 13px;
+        background: #fff;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
+    @media (max-width: 640px) {
+        .field-wide { grid-column: span 1; }
+    }
+</style>
+{% endblock %}
 
-        .brand img {
-            width: 56px;
-            height: 56px;
-            object-fit: contain;
-        }
-
-        h1,
-        h2 {
-            margin: 0;
-            color: var(--brand-blue);
-        }
-
-        h1 { font-size: 28px; }
-        h2 { font-size: 20px; margin-bottom: 16px; }
-
-        .subtitle {
-            margin: 4px 0 0;
-            color: var(--muted);
-            font-size: 14px;
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .back-link,
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 42px;
-            border: none;
-            border-radius: 12px;
-            padding: 0 16px;
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .back-link {
-            color: var(--brand-blue);
-            background: #eef1ff;
-        }
-
-        .btn-primary {
-            color: #fff;
-            background: linear-gradient(135deg, var(--brand-blue), #18239a);
-        }
-
-        .btn-danger {
-            color: var(--error-text);
-            background: var(--error-bg);
-        }
-
-        .card {
-            padding: 20px;
-            margin-bottom: 18px;
-        }
-
-        .msg,
-        .err {
-            border-radius: 14px;
-            padding: 12px 14px;
-            margin-bottom: 18px;
-            font-size: 14px;
-        }
-
-        .msg {
-            background: var(--success-bg);
-            color: var(--success-text);
-        }
-
-        .err {
-            background: var(--error-bg);
-            color: var(--error-text);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 14px;
-            align-items: end;
-        }
-
-        .field label {
-            display: block;
-            color: var(--brand-blue);
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .field input,
-        .field select {
-            width: 100%;
-            height: 44px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0 12px;
-            font-size: 14px;
-            background: #fff;
-        }
-
-        .field-wide {
-            grid-column: span 2;
-        }
-
-        .table-wrap {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 980px;
-        }
-
-        th,
-        td {
-            padding: 11px 10px;
-            border-bottom: 1px solid var(--border);
-            text-align: left;
-            vertical-align: middle;
-            font-size: 14px;
-        }
-
-        th {
-            color: var(--brand-blue);
-            background: #fafbfc;
-            font-size: 13px;
-        }
-
-        .num {
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .inline-form {
-            display: contents;
-        }
-
-        .table-input {
-            width: 110px;
-            height: 34px;
-            border: 1px solid var(--border);
-            border-radius: 9px;
-            padding: 0 8px;
-        }
-
-        .status {
-            display: inline-flex;
-            border-radius: 999px;
-            padding: 6px 9px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .status-active {
-            color: var(--success-text);
-            background: var(--success-bg);
-        }
-
-        .status-archived {
-            color: var(--muted);
-            background: #f3f4f6;
-        }
-
-        @media (max-width: 900px) {
-            .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .topbar { align-items: stretch; flex-direction: column; }
-        }
-
-        @media (max-width: 640px) {
-            .page { width: min(100% - 20px, 1280px); }
-            .form-grid { grid-template-columns: 1fr; }
-            .field-wide { grid-column: span 1; }
-        }
-    </style>
-</head>
-<body>{% if read_only %}<div style="max-width:1500px;margin:0 auto 12px;padding:12px;background:#eef4ff;color:#0b1475;font-weight:700;border-radius:12px">Режим просмотра: изменения недоступны</div>{% endif %}
+{% block content %}
 <div class="page">
-    <div class="topbar">
-        <div class="brand">
-            <img src="/static/logo-alex.jpg" alt="Логотип">
-            <div>
-                <h1>ЛМК</h1>
-                <p class="subtitle">Удержания за личную медицинскую книжку</p>
-            </div>
-        </div>
-        <div class="toolbar">
-            <a href="{{ payroll_url }}" class="back-link">Выплатный табель</a>
-            <a href="{{ back_url }}" class="back-link">{{ back_label }}</a>
-        </div>
-    </div>
+    {% if read_only %}<div class="alert alert-warn mt-20">Режим просмотра: изменения недоступны</div>{% endif %}
 
-    {% if message %}<div class="msg">{{ message }}</div>{% endif %}
-    {% if error %}<div class="err">{{ error }}</div>{% endif %}
+    {% if message %}<div class="alert alert-success">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
 
-    <div class="card">
+    <div class="card mt-20">
         <h2>Добавить удержание</h2>
         <form method="post" action="{{ base_path }}/add">
-            <div class="form-grid">
+            <div class="form-grid align-end">
                 <div class="field field-wide">
                     <label>Сотрудник</label>
                     <select name="employee_name" required>
@@ -306,7 +87,7 @@
 
     <div class="card">
         <h2>Активные ЛМК</h2>
-        <div class="table-wrap">
+        <div class="table-wrap lmk-table">
             <table>
                 <thead>
                     <tr>
@@ -338,18 +119,18 @@
                         <td class="num"><input {% if read_only %}disabled{% endif %} form="update-lmk-{{ charge.id }}" class="table-input" type="number" step="0.01" name="remaining_amount" value="{{ charge.remaining_amount or 0 }}"></td>
                         <td><input {% if read_only %}disabled{% endif %} form="update-lmk-{{ charge.id }}" class="table-input" type="text" name="comment" value="{{ charge.comment or '' }}"></td>
                         <td>
-                            <button {% if read_only %}disabled{% endif %} form="update-lmk-{{ charge.id }}" type="submit" class="btn btn-primary">Сохранить</button>
+                            <button {% if read_only %}disabled{% endif %} form="update-lmk-{{ charge.id }}" type="submit" class="btn btn-primary btn-sm">Сохранить</button>
                         </td>
                         <td>
                             <form method="post" action="{{ base_path }}/cancel">
                                 <input {% if read_only %}disabled{% endif %} type="hidden" name="charge_id" value="{{ charge.id }}">
-                                <button {% if read_only %}disabled{% endif %} type="submit" class="btn btn-danger">Отменить</button>
+                                <button {% if read_only %}disabled{% endif %} type="submit" class="btn btn-danger btn-sm">Отменить</button>
                             </form>
                         </td>
                     </tr>
                     {% endfor %}
                     {% if active_charges|length == 0 %}
-                    <tr><td colspan="10">Активных удержаний нет</td></tr>
+                    <tr><td colspan="10" class="muted">Активных удержаний нет</td></tr>
                     {% endif %}
                 </tbody>
             </table>
@@ -358,7 +139,7 @@
 
     <div class="card">
         <h2>Завершённые и отменённые</h2>
-        <div class="table-wrap">
+        <div class="table-wrap lmk-table">
             <table>
                 <thead>
                     <tr>
@@ -379,17 +160,16 @@
                         <td class="num">{{ "%.2f"|format(charge.total_amount or 0) }} ₽</td>
                         <td class="num">{{ "%.2f"|format(charge.monthly_amount or 0) }} ₽</td>
                         <td class="num">{{ "%.2f"|format(charge.remaining_amount or 0) }} ₽</td>
-                        <td><span class="status status-archived">{{ charge.status }}</span></td>
+                        <td><span class="pill pill-neutral">{{ charge.status }}</span></td>
                         <td>{{ charge.comment or '' }}</td>
                     </tr>
                     {% endfor %}
                     {% if archived_charges|length == 0 %}
-                    <tr><td colspan="7">Архив пока пуст</td></tr>
+                    <tr><td colspan="7" class="muted">Архив пока пуст</td></tr>
                     {% endif %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
-</body>
-</html>
+{% endblock %}

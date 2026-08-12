@@ -1,51 +1,23 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <link rel="icon" href="/static/favicon.ico?v=2" sizes="any">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Диагностика документов</title>
-    <style>
-        :root {
-            --brand-blue: #0b1475;
-            --bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 16px 40px rgba(11, 20, 117, 0.08);
-        }
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); padding: 28px 18px 36px; }
-        .page { max-width: 1200px; margin: 0 auto; }
-        .topbar, .card { background: var(--card-bg); border-radius: 22px; box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
-        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-        h1, h2, h3 { margin-top: 0; color: var(--brand-blue); }
-        .link { text-decoration: none; display: inline-flex; align-items: center; min-height: 38px; border-radius: 12px; padding: 9px 14px; background: #fff; color: var(--brand-blue); border: 1px solid rgba(11,20,117,0.14); font-weight: 700; }
-        .muted { color: var(--muted); line-height: 1.5; }
-        table { width: 100%; border-collapse: collapse; background: #fff; }
-        .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 16px; }
-        th, td { padding: 11px 12px; border-bottom: 1px solid var(--border); font-size: 14px; text-align: left; }
-        th { background: #fafbfc; color: var(--brand-blue); }
-        .chips { display: flex; gap: 8px; flex-wrap: wrap; }
-        .chip { text-decoration: none; padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; border: 1px solid rgba(11,20,117,0.14); color: var(--brand-blue); background: #fff; }
-        .chip.active { background: var(--brand-blue); color: #fff; border-color: var(--brand-blue); }
-        .note { color: #b42318; font-weight: 600; }
-        .big { font-size: 28px; font-weight: 800; color: #b42318; }
-        select { border: 1px solid var(--border); border-radius: 12px; padding: 9px 12px; font-size: 14px; background: #fff; }
-    </style>
-</head>
-<body>
-<div class="page">
-    <div class="topbar">
-        <div>
-            <h1>Диагностика документов</h1>
-            <div class="muted">Ложно-зелёные: помечены бессрочными, но тип требует срок</div>
-        </div>
-        <a href="{{ back_url }}" class="link">← В матрицу</a>
-    </div>
+{% extends "base.html" %}
 
-    <section class="card">
+{% block title %}Диагностика документов{% endblock %}
+{% block brand_title %}Диагностика документов{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Ложно-зелёные: помечены бессрочными, но тип требует срок</p>{% endblock %}
+
+{% block topbar_actions %}<a href="{{ back_url }}" class="back-link">← В матрицу</a>{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: счётчик проблемных записей и пометка в таблице */
+    .tab.active { background: var(--brand-blue); color: #fff; border-color: var(--brand-blue); }
+    .big { font-size: 28px; font-weight: 800; color: var(--error-text); }
+    .note { color: var(--error-text); font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+    <section class="card mt-20">
         <div class="big">{{ total }}</div>
         <div class="muted">
             записей помечены бессрочными (<code>is_permanent</code>, без даты, «проверен»), но тип
@@ -54,7 +26,7 @@
             сотрудника). <strong>Эта страница ничего не меняет</strong> — только показывает.
         </div>
         {% if no_file_count %}
-        <div class="muted" style="margin-top:10px">
+        <div class="muted mt-8">
             Справочно: всего отметок без загруженного файла — <strong>{{ no_file_count }}</strong>
             (кандидаты на загрузку реальных сканов; не ошибка).
         </div>
@@ -64,14 +36,14 @@
     {% if total or type_id %}
     <section class="card">
         <h2>По типам</h2>
-        <div class="chips">
-            <a href="/admin/documents/diagnostics" class="chip {{ 'active' if not type_id else '' }}">Все</a>
+        <div class="tabs">
+            <a href="/admin/documents/diagnostics" class="tab {{ 'active' if not type_id else '' }}">Все</a>
             {% for tid, tname in filter_types %}
-            <a href="/admin/documents/diagnostics?type_id={{ tid }}" class="chip {{ 'active' if type_id == tid else '' }}">{{ tname }}</a>
+            <a href="/admin/documents/diagnostics?type_id={{ tid }}" class="tab {{ 'active' if type_id == tid else '' }}">{{ tname }}</a>
             {% endfor %}
         </div>
         {% if groups %}
-        <div class="muted" style="margin-top:12px">
+        <div class="muted mt-14">
             {% for g in groups %}{{ g.name }} — {{ g.count }}{% if not loop.last %} · {% endif %}{% endfor %}
         </div>
         {% endif %}
@@ -94,7 +66,7 @@
                 <td class="note">помечен бессрочным, но тип требует срок</td>
                 <td>
                     {% if r.user_id %}
-                    <a href="/admin/documents/employee/{{ r.user_id }}" class="link">Карточка →</a>
+                    <a href="/admin/documents/employee/{{ r.user_id }}" class="btn btn-secondary btn-sm">Карточка →</a>
                     {% else %}
                     <span class="muted">нет учётки</span>
                     {% endif %}
@@ -109,5 +81,4 @@
         {% endif %}
     </section>
 </div>
-</body>
-</html>
+{% endblock %}
