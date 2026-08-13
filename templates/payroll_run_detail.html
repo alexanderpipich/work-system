@@ -71,6 +71,18 @@
     .run-table .num { text-align: right; white-space: nowrap; }
     .run-table tbody tr:hover td.left { background: #f6f7ff; }
 
+    /* Итог по деньгам под таблицей: при длинном табеле плитку сводки наверху
+       уже не видно, а сверять сумму приходится именно по низу. */
+    .run-table tfoot td {
+        background: #eef1ff;
+        border-top: 2px solid var(--brand-blue);
+        border-bottom: none;
+        font-weight: 700;
+        color: var(--brand-blue);
+        font-size: 15px;
+    }
+    .run-table tfoot td.left { text-align: right; padding-right: 16px; }
+
     .corr-lmk { color: var(--error-text); font-weight: 700; }
 
     /* Сводка по фиксации. */
@@ -208,6 +220,20 @@
                     </tr>
                     {% endif %}
                 </tbody>
+                {% if rows|length > 0 %}
+                {# Итог по деньгам под таблицей: та же сумма, что в плитке наверху —
+                   при длинном табеле её не видно, а сверять приходится по низу. #}
+                <tfoot>
+                    <tr class="run-total-row">
+                        <td class="left" colspan="{{ days|length + 5 }}">ИТОГО</td>
+                        <td class="num">{{ "%.2f"|format(total_amount or 0) }} ₽</td>
+                        <td class="num">
+                            {% set corrections_total = rows|sum(attribute='corrections') %}
+                            {% if corrections_total %}{{ "%.2f"|format(corrections_total) }} ₽{% else %}—{% endif %}
+                        </td>
+                    </tr>
+                </tfoot>
+                {% endif %}
             </table>
         </div>
     </div>
