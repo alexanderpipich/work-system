@@ -9,4 +9,4 @@ temp_*.xlsx
 p-word list.xlsx
 generated_files/
 create_admin.py
-spravochniki.sql
+*.sql
