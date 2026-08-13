@@ -69,6 +69,14 @@
             <div class="counter"><b>{{ data.total_shifts }}</b> смен без плана</div>
             <div class="counter"><b>{{ data.stores_without_contacts }}</b> магазинов без контактов</div>
         </div>
+        {% if data.period_start %}
+        <p class="field-hint mt-14">
+            Рассматриваются смены с <b>{{ data.period_start.strftime('%d.%m.%Y') }}</b>
+            по <b>{{ data.cutoff.strftime('%d.%m.%Y') }}</b> — тот же редактируемый период,
+            что и у загрузчика смен: текущий месяц, а прошлый только до 7 числа.
+            Более старые смены загрузчик уже не примет, поэтому и писать по ним незачем.
+        </p>
+        {% endif %}
     </div>
 
     <div class="card">

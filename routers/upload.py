@@ -13,7 +13,7 @@ from models import Shift, TimebookEmployee, UploadLog
 from payroll_adjustments import reconcile_sent_payroll_runs
 from rbac import require_permission
 from service_catalog import diagnose_uploaded_services
-from time_helpers import business_today, now_utc
+from time_helpers import business_today, is_editable_month, now_utc, previous_month
 from utils import normalize_format, normalize_phone, normalize_text
 
 _require_upload = require_permission("shifts.upload")
@@ -55,22 +55,11 @@ def recent_upload_logs(session):
     ).limit(20).all()
 
 
-def _previous_month(today_date):
-    if today_date.month == 1:
-        return 12, today_date.year - 1
-    return today_date.month - 1, today_date.year
-
-
-def _is_editable_month(shift_date, today_date):
-    if shift_date.year == today_date.year and shift_date.month == today_date.month:
-        return True
-
-    prev_month, prev_year = _previous_month(today_date)
-    return (
-        shift_date.year == prev_year
-        and shift_date.month == prev_month
-        and today_date.day <= 7
-    )
+# Правило редактируемого месяца переехало в time_helpers: его же использует
+# рассылка «смена без плана», а два экземпляра одного правила разошлись бы.
+# Имена оставлены прежними — на них ссылается остальной модуль.
+_previous_month = previous_month
+_is_editable_month = is_editable_month
 
 
 def _choose_last_text(values, default=""):

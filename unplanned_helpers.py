@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from models import Shift, Store, StoreContact, UnplannedNotification
 from shift_helpers import is_no_plan_shift
 from store_helpers import extract_tk_number
-from time_helpers import business_today
+from time_helpers import business_today, editable_period_start
 
 # Порог: уведомлять о сменах без плана старше N дней после даты смены.
 UNPLANNED_NOTIFY_DELAY_DAYS = 3
@@ -126,9 +126,17 @@ def collect_unplanned(session: Session, date_from=None, date_to=None, tk_filter=
     cutoff = cutoff_date()
     effective_to = cutoff if date_to is None else min(date_to, cutoff)
 
-    query = session.query(Shift).filter(Shift.shift_date <= effective_to)
-    if date_from is not None:
-        query = query.filter(Shift.shift_date >= date_from)
+    # Нижняя граница — то же правило редактируемого месяца, что у загрузчика смен:
+    # текущий месяц плюс прошлый до 7 числа. Без неё рассылка тянула старьё за все
+    # месяцы и звала писать директору о смене, которую загрузчик уже не примет.
+    # Заданный вручную date_from может только СУЗИТЬ период, но не расширить.
+    period_start = editable_period_start(business_today())
+    effective_from = period_start if date_from is None else max(date_from, period_start)
+
+    query = session.query(Shift).filter(
+        Shift.shift_date <= effective_to,
+        Shift.shift_date >= effective_from,
+    )
 
     # Только смены с реальными часами (hours > 0). Нулевые/None/отрицательные
     # смены без плана — вероятный баг timebook, директору слать про них нечего.
@@ -208,4 +216,7 @@ def collect_unplanned(session: Session, date_from=None, date_to=None, tk_filter=
         "total_shifts": total_shifts,
         "stores_without_contacts": len(no_contacts),
         "cutoff": cutoff,
+        # Начало редактируемого периода — чтобы страница могла честно сказать,
+        # с какой даты она вообще смотрит, а не выглядела «потерявшей» смены.
+        "period_start": effective_from,
     }
