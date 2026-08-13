@@ -1,4 +1,4 @@
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 import pandas as pd
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
@@ -528,6 +528,7 @@ def admin_users(
 def update_user(
     request: Request,
     user_id: int = Form(...),
+    phone: str = Form(default=""),
     role: str = Form(default="employee"),
     brigadier_store: str = Form(default=""),
     economist_stores: str = Form(default=""),
@@ -557,11 +558,48 @@ def update_user(
     if not user:
         return RedirectResponse(url=redirect_base, status_code=302)
 
+    # Телефон — это ЛОГИН: сменить его значит сменить учётные данные входа.
+    # Пустое поле не затирает текущий номер (форма не всегда предзаполнена),
+    # занятый чужим — отказ, иначе сотрудник просто потеряет доступ.
+    phone_clean = normalize_phone(phone)
+    phone_changed = bool(phone_clean) and phone_clean != user.phone
+    if phone_changed:
+        separator = "&" if query else "?"
+
+        def refuse(reason):
+            return RedirectResponse(
+                url="%s%serror=%s" % (redirect_base, separator, quote(reason)),
+                status_code=302,
+            )
+
+        # normalize_phone убирает пробелы и «+», но не скобки и дефисы: для неё
+        # «7(999)000-00-01» и «79990000001» — разные логины. Чинить её нельзя,
+        # по ней же работает вход, и владельцы «грязных» номеров потеряют доступ.
+        # Поэтому новую дверь закрываем здесь: принимаем только чистые цифры.
+        if not phone_clean.isdigit():
+            return refuse(
+                "Телефон «%s» должен состоять только из цифр — без скобок и дефисов. "
+                "Например: 79990000001." % phone_clean
+            )
+
+        taken = session.query(User).filter(
+            User.phone == phone_clean, User.id != user.id
+        ).first()
+        if taken:
+            return refuse(
+                "Телефон %s уже занят: %s. Смена не выполнена."
+                % (phone_clean, taken.employee_name or ("ID %s" % taken.id))
+            )
+
     role_clean = normalize_role(role)
     scope_value = _default_city_scope(session, role_clean, scope_cities or economist_stores)
 
+    # Снимок ДО правок — иначе в аудите старый телефон окажется уже новым,
+    # и смена логина не будет видна в журнале.
     old_value = _user_payload(user)
     old_role = user.role
+    if phone_changed:
+        user.phone = phone_clean
     user.role = role_clean
     user.is_admin = role_clean in {"admin", "superadmin"}
     user.brigadier_store = normalize_text(brigadier_store) or None

@@ -174,7 +174,7 @@
                     </div>
 
                     <div class="form-block">
-                        <h4>Роль · магазины · гражданство · юрлицо</h4>
+                        <h4>Телефон · роль · магазины · гражданство · юрлицо</h4>
                         <form method="post" action="/admin/update-user">
                             <input type="hidden" name="user_id" value="{{ user.id }}">
                             <input type="hidden" name="f_user_id" value="{{ f_user_id }}">
@@ -183,6 +183,17 @@
                             <input type="hidden" name="f_role" value="{{ f_role }}">
 
                             <div class="form-grid cols-2 align-end">
+                                <div class="field">
+                                    <label>Телефон (логин для входа)</label>
+                                    <input type="text" name="phone" value="{{ user.phone or '' }}"
+                                           placeholder="Телефон">
+                                    <span class="field-hint">
+                                        ⚠ По этому номеру сотрудник входит в систему. После смены
+                                        старый номер перестанет работать — предупредите сотрудника.
+                                        Пустое поле оставит номер прежним.
+                                    </span>
+                                </div>
+
                                 <div class="field">
                                     <label>Роль</label>
                                     <select name="role">
