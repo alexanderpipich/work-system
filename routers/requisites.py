@@ -12,6 +12,7 @@ from dependencies import get_db
 from inn_sync import set_employee_inn
 from models import Requisite, Shift, User
 from rbac import canonical_role, require_permission
+from requisite_validation import BLOCKS_PAYROLL, requisite_problems, split_by_validity
 from time_helpers import now_utc
 from utils import is_scientific_notation, normalize_digits, normalize_text, safe_return_to
 
@@ -117,16 +118,42 @@ def economist_requisites(
 @router.get("/admin/requisites", response_class=HTMLResponse)
 def admin_requisites(
     request: Request,
+    q: str = "",
+    status: str = "",
+    only_problems: bool = False,
     session: Session = Depends(get_db),
     user=Depends(_req_manage),
 ):
-    requisites = session.query(Requisite).order_by(Requisite.employee_name).all()
+    """Реестр реквизитов: поиск по ФИО, фильтр по статусу, проблемные сверху."""
+    query = session.query(Requisite)
+
+    if normalize_text(q):
+        query = query.filter(Requisite.employee_name.ilike("%%%s%%" % normalize_text(q)))
+    if status == "unverified":
+        query = query.filter(Requisite.is_verified == False)  # noqa: E712
+    elif status == "verified":
+        query = query.filter(Requisite.is_verified == True)  # noqa: E712
+    elif status == "third_party":
+        query = query.filter(Requisite.is_third_party == True)  # noqa: E712
+    elif status == "archived":
+        query = query.filter(Requisite.is_active == False)  # noqa: E712
+
+    problematic, clean = split_by_validity(query.all())
+    if only_problems:
+        clean = []
 
     return templates.TemplateResponse(
         request,
         "requisites.html",
         {
-            "requisites": requisites,
+            # Проблемные наверх: их чинят, а не листают до них через весь реестр.
+            "problematic": problematic,
+            "clean": clean,
+            "problems_by_id": {
+                row.id: requisite_problems(row) for row in problematic
+            },
+            "blocks_payroll_kind": BLOCKS_PAYROLL,
+            "filters": {"q": q, "status": status, "only_problems": only_problems},
             "message": request.query_params.get("message"),
             # Отказ сохранения приезжает сюда редиректом — иначе он теряется молча.
             "error": request.query_params.get("error"),

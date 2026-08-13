@@ -488,6 +488,12 @@ body:has(.page-wide)   { --page-max: 1600px; }
     padding: 5px 11px;
 }
 
+/* ── Проблемный реквизит ──────────────────────────────────────────────── */
+/* Подсветка красным «в 10% яркости»: карточка видна как проблемная, но текст
+   на ней читается — сплошная заливка сделала бы список нечитаемым. */
+.req-card-bad { background: rgba(255, 0, 0, .07); border-color: var(--error-border); }
+.req-problems { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px 0; }
+
 /* ── Попап смены без плана (_no_plan_popup.html) ──────────────────────── */
 .np-modal { max-width: 440px; }
 .np-body { padding: 0 20px 4px; }

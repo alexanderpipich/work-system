@@ -1,0 +1,157 @@
+{# Карточка реквизита. Ожидает в контексте `r` и (необязательно) `problems` —
+   список [(вид, текст)] из requisite_validation.requisite_problems. #}
+    <div class="req-card{% if problems %} req-card-bad{% endif %}">
+        {% if problems %}
+        <div class="req-problems">
+            {% for kind, text in problems %}
+                <span class="pill {% if kind == blocks_payroll_kind %}pill-danger{% else %}pill-warn{% endif %}">{{ text }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <details>
+            <summary>
+                <div class="summary-row">
+                    <div class="summary-id">#{{ r.id }}</div>
+
+                    <div class="tags">
+                        {% if r.is_third_party %}
+                            <span class="pill pill-warn">3-е лицо</span>
+                        {% else %}
+                            <span class="pill pill-success">Собственные</span>
+                        {% endif %}
+
+                        {% if r.is_active %}
+                            <span class="pill pill-info">Активные</span>
+                        {% else %}
+                            <span class="pill pill-neutral">Архив</span>
+                        {% endif %}
+
+                        {% if r.is_verified %}
+                            <span class="pill pill-success">Проверено</span>
+                        {% else %}
+                            <span class="pill pill-danger">Не проверено</span>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <div class="main-name">{{ r.employee_name or 'Без ФИО' }}</div>
+                        <div class="small-muted">
+                            {% if r.comment %}
+                                {{ r.comment }}
+                            {% else %}
+                                Без комментария
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="small-muted">Банк</div>
+                        <div>{{ r.bank_name or '—' }}</div>
+                    </div>
+
+                    <div>
+                        <div class="small-muted">Счёт</div>
+                        <div>{{ r.account_number or '—' }}</div>
+                    </div>
+
+                    <div class="open-hint">Открыть / редактировать</div>
+                </div>
+            </summary>
+
+            <div class="details-body">
+                <div class="meta">
+                    Создано:
+                    {% if r.created_at %}
+                        {{ r.created_at.strftime('%d.%m.%Y %H:%M') }}
+                    {% else %}
+                        —
+                    {% endif %}
+                    · Обновлено:
+                    {% if r.updated_at %}
+                        {{ r.updated_at.strftime('%d.%m.%Y %H:%M') }}
+                    {% else %}
+                        —
+                    {% endif %}
+                    · Проверено:
+                    {% if r.verified_at %}
+                        {{ r.verified_at.strftime('%d.%m.%Y %H:%M') }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+
+                <form method="post" action="/admin/requisites/update">
+                    <input type="hidden" name="requisite_id" value="{{ r.id }}">
+
+                    <div class="form-grid">
+                        <div class="field">
+                            <label>ФИО сотрудника</label>
+                            <input type="text" name="employee_name" value="{{ r.employee_name or '' }}" required>
+                        </div>
+
+                        <div class="field">
+                            <label>ИНН</label>
+                            <input type="text" name="inn" value="{{ r.inn or '' }}">
+                        </div>
+
+                        <div class="field">
+                            <label>Номер счёта</label>
+                            <input type="text" name="account_number" value="{{ r.account_number or '' }}">
+                        </div>
+
+                        <div class="field">
+                            <label>БИК</label>
+                            <input type="text" name="bik" value="{{ r.bik or '' }}">
+                        </div>
+
+                        <div class="field">
+                            <label>Банк</label>
+                            <input type="text" name="bank_name" value="{{ r.bank_name or '' }}">
+                        </div>
+
+                        <div class="field">
+                            <label>Гражданство</label>
+                            <input type="text" value="— в профиле сотрудника —" readonly disabled
+                                   title="Гражданство теперь хранится в профиле сотрудника (справочник гражданств)">
+                        </div>
+
+                        <div class="field">
+                            <label>Получатель</label>
+                            <input type="text" name="recipient_name" value="{{ r.recipient_name or '' }}">
+                        </div>
+
+                        <div class="field">
+                            <label>Комментарий</label>
+                            <input type="text" name="comment" value="{{ r.comment or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="edit-checks">
+                        <label>
+                            <input type="checkbox" name="is_third_party" {% if r.is_third_party %}checked{% endif %}>
+                            3-е лицо
+                        </label>
+
+                        <label>
+                            <input type="checkbox" name="is_active" {% if r.is_active %}checked{% endif %}>
+                            Активно
+                        </label>
+
+                        <label>
+                            <input type="checkbox" name="is_verified" {% if r.is_verified %}checked{% endif %}>
+                            Проверено
+                        </label>
+                    </div>
+
+                    <div class="row mt-20">
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                    </div>
+                </form>
+
+                <form method="post" action="/admin/requisites/delete" class="mt-14" onsubmit="return confirm('Удалить реквизиты?');">
+                    <input type="hidden" name="requisite_id" value="{{ r.id }}">
+                    <button type="submit" class="btn btn-danger">Удалить реквизиты</button>
+                </form>
+            </div>
+        </details>
+    </div>

@@ -236,160 +236,61 @@
     <div class="card">
         <h2>Список реквизитов</h2>
 
-        {% if requisites|length == 0 %}
-            <div class="empty">Реквизитов пока нет</div>
+        {% set f = filters|default({}) %}
+        <form method="get" action="/admin/requisites" class="row search-row mb-14">
+            <input type="text" name="q" value="{{ f.q or '' }}"
+                   placeholder="Поиск по ФИО" aria-label="Поиск реквизитов по ФИО">
+            <select name="status" aria-label="Фильтр по статусу">
+                <option value="" {% if not f.status %}selected{% endif %}>Все</option>
+                <option value="unverified" {% if f.status == 'unverified' %}selected{% endif %}>Только непроверенные</option>
+                <option value="verified" {% if f.status == 'verified' %}selected{% endif %}>Только проверенные</option>
+                <option value="third_party" {% if f.status == 'third_party' %}selected{% endif %}>Только третьи лица</option>
+                <option value="archived" {% if f.status == 'archived' %}selected{% endif %}>Только архив</option>
+            </select>
+            <label class="checkbox-row">
+                <input type="checkbox" name="only_problems" value="true"
+                       {% if f.only_problems %}checked{% endif %}>
+                <span>Только с проблемами</span>
+            </label>
+            <button type="submit" class="btn btn-primary">Найти</button>
+            {% if f.q or f.status or f.only_problems %}
+                <a href="/admin/requisites" class="btn btn-secondary">Сбросить</a>
+            {% endif %}
+        </form>
+
+        {% if problematic|length == 0 and clean|length == 0 %}
+            <div class="empty">Ничего не найдено</div>
+        {% else %}
+            <p class="muted mb-0">
+                Требуют внимания: <b>{{ problematic|length }}</b> ·
+                готовы к выплате: <b>{{ clean|length }}</b>
+            </p>
         {% endif %}
     </div>
 
-    {% for r in requisites %}
-        <div class="req-card">
-            <details>
-                <summary>
-                    <div class="summary-row">
-                        <div class="summary-id">#{{ r.id }}</div>
-
-                        <div class="tags">
-                            {% if r.is_third_party %}
-                                <span class="pill pill-warn">3-е лицо</span>
-                            {% else %}
-                                <span class="pill pill-success">Собственные</span>
-                            {% endif %}
-
-                            {% if r.is_active %}
-                                <span class="pill pill-info">Активные</span>
-                            {% else %}
-                                <span class="pill pill-neutral">Архив</span>
-                            {% endif %}
-
-                            {% if r.is_verified %}
-                                <span class="pill pill-success">Проверено</span>
-                            {% else %}
-                                <span class="pill pill-danger">Не проверено</span>
-                            {% endif %}
-                        </div>
-
-                        <div>
-                            <div class="main-name">{{ r.employee_name or 'Без ФИО' }}</div>
-                            <div class="small-muted">
-                                {% if r.comment %}
-                                    {{ r.comment }}
-                                {% else %}
-                                    Без комментария
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="small-muted">Банк</div>
-                            <div>{{ r.bank_name or '—' }}</div>
-                        </div>
-
-                        <div>
-                            <div class="small-muted">Счёт</div>
-                            <div>{{ r.account_number or '—' }}</div>
-                        </div>
-
-                        <div class="open-hint">Открыть / редактировать</div>
-                    </div>
-                </summary>
-
-                <div class="details-body">
-                    <div class="meta">
-                        Создано:
-                        {% if r.created_at %}
-                            {{ r.created_at.strftime('%d.%m.%Y %H:%M') }}
-                        {% else %}
-                            —
-                        {% endif %}
-                        · Обновлено:
-                        {% if r.updated_at %}
-                            {{ r.updated_at.strftime('%d.%m.%Y %H:%M') }}
-                        {% else %}
-                            —
-                        {% endif %}
-                        · Проверено:
-                        {% if r.verified_at %}
-                            {{ r.verified_at.strftime('%d.%m.%Y %H:%M') }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </div>
-
-                    <form method="post" action="/admin/requisites/update">
-                        <input type="hidden" name="requisite_id" value="{{ r.id }}">
-
-                        <div class="form-grid">
-                            <div class="field">
-                                <label>ФИО сотрудника</label>
-                                <input type="text" name="employee_name" value="{{ r.employee_name or '' }}" required>
-                            </div>
-
-                            <div class="field">
-                                <label>ИНН</label>
-                                <input type="text" name="inn" value="{{ r.inn or '' }}">
-                            </div>
-
-                            <div class="field">
-                                <label>Номер счёта</label>
-                                <input type="text" name="account_number" value="{{ r.account_number or '' }}">
-                            </div>
-
-                            <div class="field">
-                                <label>БИК</label>
-                                <input type="text" name="bik" value="{{ r.bik or '' }}">
-                            </div>
-
-                            <div class="field">
-                                <label>Банк</label>
-                                <input type="text" name="bank_name" value="{{ r.bank_name or '' }}">
-                            </div>
-
-                            <div class="field">
-                                <label>Гражданство</label>
-                                <input type="text" value="— в профиле сотрудника —" readonly disabled
-                                       title="Гражданство теперь хранится в профиле сотрудника (справочник гражданств)">
-                            </div>
-
-                            <div class="field">
-                                <label>Получатель</label>
-                                <input type="text" name="recipient_name" value="{{ r.recipient_name or '' }}">
-                            </div>
-
-                            <div class="field">
-                                <label>Комментарий</label>
-                                <input type="text" name="comment" value="{{ r.comment or '' }}">
-                            </div>
-                        </div>
-
-                        <div class="edit-checks">
-                            <label>
-                                <input type="checkbox" name="is_third_party" {% if r.is_third_party %}checked{% endif %}>
-                                3-е лицо
-                            </label>
-
-                            <label>
-                                <input type="checkbox" name="is_active" {% if r.is_active %}checked{% endif %}>
-                                Активно
-                            </label>
-
-                            <label>
-                                <input type="checkbox" name="is_verified" {% if r.is_verified %}checked{% endif %}>
-                                Проверено
-                            </label>
-                        </div>
-
-                        <div class="row mt-20">
-                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                        </div>
-                    </form>
-
-                    <form method="post" action="/admin/requisites/delete" class="mt-14" onsubmit="return confirm('Удалить реквизиты?');">
-                        <input type="hidden" name="requisite_id" value="{{ r.id }}">
-                        <button type="submit" class="btn btn-danger">Удалить реквизиты</button>
-                    </form>
-                </div>
-            </details>
-        </div>
+    {% if problematic %}
+    <div class="card card-tight mt-20">
+        <h3 class="mt-0 mb-0">Требуют внимания — {{ problematic|length }}</h3>
+        <p class="field-hint mb-0">
+            Красным — то, что остановит фиксацию табеля. Жёлтым — то, что фиксацию
+            пропустит, но уйдёт в платёжку пустым или битым.
+        </p>
+    </div>
+    {% for r in problematic %}
+        {% set problems = problems_by_id.get(r.id) %}
+        {% include "_requisite_card.html" %}
     {% endfor %}
+    {% endif %}
+
+    {% if clean %}
+    <div class="card card-tight mt-20">
+        <h3 class="mt-0 mb-0">Готовы к выплате — {{ clean|length }}</h3>
+    </div>
+    {% for r in clean %}
+        {% set problems = None %}
+        {% include "_requisite_card.html" %}
+    {% endfor %}
+    {% endif %}
+
 </div>
 {% endblock %}
