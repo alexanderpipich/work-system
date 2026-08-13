@@ -74,6 +74,49 @@ def normalize_digits(value) -> str:
     return text
 
 
+# Длины числовых идентификаторов. ИНН физлица — 12 цифр, юрлица — 10.
+INN_LENGTHS = (10, 12)
+ACCOUNT_LENGTH = (20,)
+BIK_LENGTH = (9,)
+
+
+def _identifier_issue(label, value, lengths):
+    """Что не так с одним идентификатором. None — годен."""
+    text = normalize_digits(value)
+    if not text:
+        return "%s не заполнен" % label
+    if is_scientific_notation(text):
+        # Цифры уже схлопнулись во float — восстановить нечего, только вводить заново.
+        return "%s в научной нотации, цифры утеряны: %s" % (label, text)
+    if not text.isdigit():
+        return "%s должен быть только из цифр: %s" % (label, text)
+    if len(text) not in lengths:
+        return "%s: %d цифр, ожидалось %s" % (
+            label, len(text), " или ".join(str(n) for n in lengths))
+    return None
+
+
+def requisite_issues(inn, account_number, bik) -> list:
+    """Что мешает выплате по этим реквизитам. Пустой список — годны.
+
+    Единый критерий для генератора реестра, экрана невалидных реквизитов и
+    диагностики базы: чтобы «невалидный» везде означало одно и то же.
+    """
+    checks = (
+        ("ИНН", inn, INN_LENGTHS),
+        ("Номер счёта", account_number, ACCOUNT_LENGTH),
+        ("БИК", bik, BIK_LENGTH),
+    )
+    return [issue for issue in
+            (_identifier_issue(label, value, lengths) for label, value, lengths in checks)
+            if issue]
+
+
+def is_valid_requisite(inn, account_number, bik) -> bool:
+    """Годны ли реквизиты для выплаты."""
+    return not requisite_issues(inn, account_number, bik)
+
+
 def normalize_format(value) -> str:
     if value is None:
         return ""

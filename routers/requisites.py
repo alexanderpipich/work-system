@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 import pandas as pd
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -18,6 +20,35 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 require_requisites_view = require_permission("requisites.view", audit_denied=True)
 _req_manage = require_permission("requisites.manage")
+
+
+def _clean_identifiers(inn, account_number, bik):
+    """Привести ИНН/счёт/БИК к хранимому виду.
+
+    Возвращает (значения, отказ). Хвост «.0» от Excel отрезается, ведущие нули
+    целы. Научную нотацию НЕ сохраняем: в «4.08e+19» младшие цифры уже утеряны,
+    и записать её — значит завести в базе мусор, который потом уйдёт в платёжку.
+    Длину здесь не проверяем: реквизит бывает заполнен частично, блокировать
+    сохранение из-за этого нельзя — недостающее покажет экран невалидных.
+    """
+    values = (normalize_digits(inn), normalize_digits(account_number), normalize_digits(bik))
+    broken = [
+        label
+        for label, value in zip(("ИНН", "номер счёта", "БИК"), values)
+        if is_scientific_notation(value)
+    ]
+    if broken:
+        return values, (
+            "Не сохранено: %s в научной нотации — цифры уже утеряны. "
+            "Так бывает, когда значение скопировано из Excel, где ячейка была "
+            "числовой. Откройте исходник, переведите ячейку в текстовый формат "
+            "и скопируйте заново." % ", ".join(broken)
+        )
+    return values, None
+
+
+def _redirect_with_error(target, message):
+    return RedirectResponse("%s?error=%s" % (target, quote(message)), status_code=302)
 
 
 def _requisite_payload(req):
@@ -77,8 +108,8 @@ def economist_requisites(
             "user": user,
             "allowed_cities": allowed_cities,
             "requisites": requisites,
-            "message": None,
-            "error": None
+            "message": request.query_params.get("message"),
+            "error": request.query_params.get("error"),
         }
     )
 
@@ -96,8 +127,9 @@ def admin_requisites(
         "requisites.html",
         {
             "requisites": requisites,
-            "message": None,
-            "error": None
+            "message": request.query_params.get("message"),
+            # Отказ сохранения приезжает сюда редиректом — иначе он теряется молча.
+            "error": request.query_params.get("error"),
         }
     )
 
@@ -122,6 +154,10 @@ def add_requisite(
 ):
     employee_name_clean = normalize_text(employee_name)
 
+    (inn_clean, account_clean, bik_clean), refusal = _clean_identifiers(inn, account_number, bik)
+    if refusal:
+        return _redirect_with_error(safe_return_to(return_to, "/admin/requisites"), refusal)
+
     user = session.query(User).filter(
         User.employee_name == employee_name_clean
     ).first()
@@ -129,9 +165,9 @@ def add_requisite(
     req = Requisite(
         user_id=user.id if user else None,
         employee_name=employee_name_clean,
-        inn=normalize_text(inn),
-        account_number=normalize_text(account_number),
-        bik=normalize_text(bik),
+        inn=inn_clean,
+        account_number=account_clean,
+        bik=bik_clean,
         bank_name=normalize_text(bank_name),
         # Гражданство больше НЕ хранится в реквизитах (Блок 1 нормализации) —
         # источник истины: User.citizenship_country_id.
@@ -199,6 +235,10 @@ def update_requisite(
     if not req:
         return RedirectResponse("/admin/requisites", status_code=302)
 
+    (inn_clean, account_clean, bik_clean), refusal = _clean_identifiers(inn, account_number, bik)
+    if refusal:
+        return _redirect_with_error("/admin/requisites", refusal)
+
     employee_name_clean = normalize_text(employee_name)
     user = session.query(User).filter(User.employee_name == employee_name_clean).first()
 
@@ -207,9 +247,9 @@ def update_requisite(
 
     req.user_id = user.id if user else None
     req.employee_name = employee_name_clean
-    req.inn = normalize_text(inn)
-    req.account_number = normalize_text(account_number)
-    req.bik = normalize_text(bik)
+    req.inn = inn_clean
+    req.account_number = account_clean
+    req.bik = bik_clean
     req.bank_name = normalize_text(bank_name)
     # Гражданство больше НЕ пишется в реквизиты (Блок 1 нормализации).
     req.is_third_party = (is_third_party == "on" or is_third_party == "true")
