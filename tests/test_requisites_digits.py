@@ -16,7 +16,8 @@ from database import Base
 from models import PayrollRunItem, Requisite, User
 from routers.payroll_runs import _build_payroll_run_workbook
 from routers.requisites import _clean_identifiers
-from utils import is_valid_requisite, requisite_issues
+from utils import (ACCOUNT_LENGTH, BIK_LENGTH, INN_LENGTHS, is_valid_requisite,
+                   repair_digits, repair_requisite, requisite_issues)
 
 # Реальные значения из разбора порчи реестра: у Ивановой в базе всё целое,
 # у тестового Хисрова — уже испорчено ручным вводом.
@@ -86,6 +87,60 @@ class InputCleaningTests(unittest.TestCase):
         # Реквизит бывает заполнен частично — блокировать сохранение нельзя.
         _, refusal = _clean_identifiers("", "", "")
         self.assertIsNone(refusal)
+
+
+class RepairTests(unittest.TestCase):
+    """Починка того, что уже испорчено в базе проходом через float."""
+
+    # Ровно то, что лежало в проде у Ивановой (реестр от 13.08.2026).
+    PROD_BROKEN = ("471605460681.0", "4.0817810055192445e+19", "44030653.0")
+
+    def test_prod_case_inn_and_bik_repaired_account_not(self):
+        inn, account, bik = repair_requisite(*self.PROD_BROKEN)
+        self.assertEqual(inn, "471605460681", "хвост .0 не отрезан")
+        self.assertEqual(bik, "044030653", "ведущий ноль БИК не восстановлен")
+        self.assertIsNone(account, "счёт с утерянными цифрами нельзя объявлять починенным")
+
+    def test_account_is_never_padded_with_zeros(self):
+        """Счёт начинается с балансового счёта (40817…), ведущего нуля там не бывает.
+
+        Дописать ноль — выдумать номер, который пройдёт проверку длины и уйдёт
+        в банк неверным. Такой реквизит обязан попасть в переввод, а не «починиться».
+        """
+        self.assertIsNone(repair_digits("4081781005519244413", ACCOUNT_LENGTH,
+                                        pad_leading_zeros=False))
+        _, account, _ = repair_requisite(IVANOVA[0], "4081781005519244413", IVANOVA[2])
+        self.assertIsNone(account)
+
+    def test_inn_and_bik_leading_zeros_restored(self):
+        # Длины ИНН (10/12) и БИК (9) известны заранее — ноль восстанавливается однозначно.
+        self.assertEqual(repair_digits("71605460681", INN_LENGTHS), "071605460681")
+        self.assertEqual(repair_digits("44030653", BIK_LENGTH), "044030653")
+
+    def test_intact_values_untouched(self):
+        self.assertEqual(repair_requisite(*IVANOVA), IVANOVA)
+
+    def test_scientific_notation_never_repaired(self):
+        self.assertIsNone(repair_digits("4.08e+19", ACCOUNT_LENGTH, pad_leading_zeros=False))
+        self.assertIsNone(repair_digits("7.8e+11", INN_LENGTHS))
+
+    def test_garbage_not_repaired(self):
+        self.assertIsNone(repair_digits("47160546068X", INN_LENGTHS))
+        self.assertIsNone(repair_digits("", INN_LENGTHS))
+        self.assertIsNone(repair_digits(None, INN_LENGTHS))
+
+    def test_too_long_left_alone(self):
+        # Длиннее максимума — это не потеря нуля, а что-то другое; не наше дело.
+        self.assertIsNone(repair_digits("4718123456789012", INN_LENGTHS))
+
+    def test_repair_is_idempotent(self):
+        once = repair_requisite(*self.PROD_BROKEN)
+        twice = repair_requisite(once[0], once[1] or self.PROD_BROKEN[1], once[2])
+        self.assertEqual(once, twice)
+
+    def test_repaired_values_pass_the_validator(self):
+        inn, _, bik = repair_requisite(*self.PROD_BROKEN)
+        self.assertEqual(requisite_issues(inn, IVANOVA[1], bik), [])
 
 
 class OpenpyxlRoundTripTests(unittest.TestCase):

@@ -117,6 +117,44 @@ def is_valid_requisite(inn, account_number, bik) -> bool:
     return not requisite_issues(inn, account_number, bik)
 
 
+def repair_digits(value, lengths, pad_leading_zeros=True):
+    """Починить идентификатор, испорченный проходом через float. None — не чинится.
+
+    Float портит цифровые идентификаторы двумя способами, и только один обратим:
+    - «471605460681.0» — приписан хвост, цифры целы → отрезать;
+    - «044030653» → «44030653.0» — съеден ведущий ноль, но длина известна заранее
+      (БИК 9, ИНН 10/12), поэтому ноль восстанавливается однозначно → дописать;
+    - «4.08e+19» — во float поместилось 17 значащих цифр из 20, младшие УТЕРЯНЫ.
+      Восстановить нечем, догадки в платёжке недопустимы → None.
+
+    pad_leading_zeros=False для номера счёта: счёт начинается с номера балансового
+    счёта (40817 у физлиц), ведущего нуля там не бывает. Дописать ноль значит
+    выдумать номер, который пройдёт проверку длины и уйдёт в банк неверным.
+    """
+    text = normalize_digits(value)
+    if not text or is_scientific_notation(text) or not text.isdigit():
+        return None
+    if len(text) in lengths:
+        return text
+    if not pad_leading_zeros:
+        return None
+    # Дописываем ведущие нули до ближайшей допустимой длины. Длиннее максимума —
+    # это уже не потеря нуля, а что-то другое: не трогаем.
+    longer = sorted(n for n in lengths if n > len(text))
+    if not longer:
+        return None
+    return text.zfill(longer[0])
+
+
+def repair_requisite(inn, account_number, bik):
+    """Починенные (инн, счёт, бик); None вместо значения — восстановлению не подлежит."""
+    return (
+        repair_digits(inn, INN_LENGTHS),
+        repair_digits(account_number, ACCOUNT_LENGTH, pad_leading_zeros=False),
+        repair_digits(bik, BIK_LENGTH),
+    )
+
+
 def normalize_format(value) -> str:
     if value is None:
         return ""
