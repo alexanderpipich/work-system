@@ -488,7 +488,17 @@
 
                         {% for day in days %}
                             {% set value = row.days[day] %}
-                            <td class="day-cell {% if row.no_plan_days[day] %}no-plan-hours{% elif value %}has-hours{% endif %}">
+                            {# Кликабельны только смены без плана С часами: нулевые в рассылку
+                               не попадают (unplanned_helpers фильтрует hours > 0). #}
+                            <td class="day-cell {% if row.no_plan_days[day] %}no-plan-hours{% elif value %}has-hours{% endif %}"
+                                {%- if row.no_plan_days[day] and value %}
+                                data-np-cell="1"
+                                data-np-employee="{{ row.employee_name }}"
+                                data-np-store="{{ row.store }}"
+                                data-np-date="{{ day.strftime('%d.%m.%Y') }}"
+                                data-np-hours="{{ value }}"
+                                title="Смена без плана — нажмите, чтобы написать в магазин"
+                                {%- endif %}>
                                 {% if value %}{{ value }}{% else %}—{% endif %}
                             </td>
                         {% endfor %}
@@ -674,6 +684,8 @@
         </div>
     </form>
 </div>
+
+{% include "_no_plan_popup.html" %}
 {% endblock %}
 
 {% block scripts %}

@@ -1,0 +1,33 @@
+{# Попап по клику на смену без плана. Подключается на /admin/payroll и
+   /admin/schedules — обе страницы ДО фиксации табеля.
+   Заполняется из data-атрибутов ячейки, логика в static/ui.js. #}
+<div class="overlay" id="no-plan-popup" role="dialog" aria-modal="true"
+     aria-labelledby="np-title">
+    <div class="modal np-modal">
+        <div class="m-hdr">
+            <div>
+                <div class="m-kicker">Смена без плана</div>
+                <div class="m-title" id="np-title">Смена без плана</div>
+            </div>
+            <button type="button" class="m-x" data-np-close aria-label="Закрыть">×</button>
+        </div>
+
+        <div class="np-body">
+            <div class="np-row"><span class="k">Сотрудник</span><span class="v" id="np-employee">—</span></div>
+            <div class="np-row"><span class="k">Магазин</span><span class="v" id="np-store">—</span></div>
+            <div class="np-row"><span class="k">Дата</span><span class="v" id="np-date">—</span></div>
+            <div class="np-row"><span class="k">Часы</span><span class="v" id="np-hours">—</span></div>
+            <p class="field-hint mt-14">
+                Смена не внесена в план и в оплату не попадает. Можно написать в магазин —
+                откроется предпросмотр рассылки по этому ТК, письмо уйдёт только по вашей команде.
+            </p>
+        </div>
+
+        <div class="np-actions">
+            <button type="button" class="btn btn-secondary" data-np-close>Отмена</button>
+            <a class="btn btn-primary" id="np-mail" href="/admin/email/unplanned">
+                Рассылка по магазину
+            </a>
+        </div>
+    </div>
+</div>

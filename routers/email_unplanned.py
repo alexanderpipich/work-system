@@ -10,6 +10,7 @@ from dependencies import get_db
 from email_engine import send_email
 from models import EmailLog, UnplannedNotification
 from rbac import require_permission
+from store_helpers import extract_tk_number
 from time_helpers import now_utc
 from unplanned_helpers import collect_unplanned
 
@@ -34,6 +35,20 @@ def _parse_tk(value: str):
     return int(value) if value.isdigit() else None
 
 
+def _resolve_tk(tk: str, store: str):
+    """Номер ТК из явного параметра, иначе из названия магазина.
+
+    `store` приходит по клику на смену без плана в табеле: там под рукой строка
+    магазина («ТК-7 Мурино»), а не её номер. Явный `tk` имеет приоритет —
+    он остаётся тем же контрактом, что и был у формы на странице.
+    """
+    parsed = _parse_tk(tk)
+    if parsed is not None:
+        return parsed, tk
+    from_store = extract_tk_number(store) if store else None
+    return from_store, ("%s" % from_store if from_store is not None else "")
+
+
 @router.get("/admin/email/unplanned", response_class=HTMLResponse)
 def unplanned_preview(
     request: Request,
@@ -42,20 +57,27 @@ def unplanned_preview(
     date_from: str = "",
     date_to: str = "",
     tk: str = "",
+    store: str = "",
     message: str = "",
     error: str = "",
 ):
+    tk_filter, tk_display = _resolve_tk(tk, store)
+    # Магазин не распознан по названию — честно говорим, а не показываем молча
+    # рассылку по всем магазинам, будто так и было задумано.
+    if store and tk_filter is None and not error:
+        error = "Не удалось определить номер ТК из «%s» — показаны все магазины." % store
+
     data = collect_unplanned(
         session,
         date_from=_parse_date(date_from),
         date_to=_parse_date(date_to),
-        tk_filter=_parse_tk(tk),
+        tk_filter=tk_filter,
     )
     return templates.TemplateResponse("admin_email_unplanned.html", {
         "request": request,
         "user": user,
         "data": data,
-        "filters": {"date_from": date_from, "date_to": date_to, "tk": tk},
+        "filters": {"date_from": date_from, "date_to": date_to, "tk": tk_display},
         "results": None,
         "message": message,
         "error": error,

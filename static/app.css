@@ -488,6 +488,25 @@ body:has(.page-wide)   { --page-max: 1600px; }
     padding: 5px 11px;
 }
 
+/* ── Попап смены без плана (_no_plan_popup.html) ──────────────────────── */
+.np-modal { max-width: 440px; }
+.np-body { padding: 0 20px 4px; }
+.np-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+}
+.np-row .k { color: var(--muted); }
+.np-row .v { font-weight: 700; color: var(--text); text-align: right; }
+.np-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 20px 20px; }
+
+/* Кликабельная ячейка смены без плана: подсказываем, что по ней можно нажать. */
+.no-plan-hours[data-np-cell] { cursor: pointer; text-decoration: underline dotted; }
+.no-plan-hours[data-np-cell]:hover { filter: brightness(.94); }
+
 /* ── Скрытие строк «смена без плана» ──────────────────────────────────── */
 /* Класс вешает ui.js по кнопке [data-toggle-rows]. Чисто визуально: суммы под
    таблицей считаются на сервере и остаются прежними — поэтому кнопка

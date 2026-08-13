@@ -86,7 +86,52 @@
         });
     }
 
-    function init() { initLogoSpin(); initRipple(); initRowToggle(); }
+    /* ── Попап смены без плана (табель и графики, до фиксации) ───────── */
+    function initNoPlanPopup() {
+        var popup = document.getElementById('no-plan-popup');
+        if (!popup) { return; }
+
+        function close() { popup.classList.remove('open'); }
+
+        function fill(id, value) {
+            var node = document.getElementById(id);
+            if (node) { node.textContent = value || '—'; }
+        }
+
+        /* Делегирование: ячеек в табеле сотни, вешать обработчик на каждую
+           незачем, да и таблица может перерисовываться. */
+        document.addEventListener('click', function (e) {
+            var cell = e.target.closest ? e.target.closest('[data-np-cell]') : null;
+            if (!cell) { return; }
+            e.preventDefault();
+
+            var store = cell.getAttribute('data-np-store') || '';
+            fill('np-employee', cell.getAttribute('data-np-employee'));
+            fill('np-store', store);
+            fill('np-date', cell.getAttribute('data-np-date'));
+            fill('np-hours', cell.getAttribute('data-np-hours'));
+
+            var mail = document.getElementById('np-mail');
+            if (mail) {
+                /* Роут сам вытащит номер ТК из названия магазина. */
+                mail.href = '/admin/email/unplanned?store=' + encodeURIComponent(store);
+            }
+            popup.classList.add('open');
+        });
+
+        popup.addEventListener('click', function (e) {
+            /* Клик по подложке или по кнопкам «Отмена»/«×». */
+            if (e.target === popup || (e.target.closest && e.target.closest('[data-np-close]'))) {
+                close();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { close(); }
+        });
+    }
+
+    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
