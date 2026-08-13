@@ -189,6 +189,30 @@ def _resolve_service_link(session, service_text):
     return (service.id if service else None), level
 
 
+def _apply_search(query, term):
+    """Поиск ЧТС по НАЧАЛУ строки. Пустой запрос — фильтра нет.
+
+    Начало, а не вхождение: услуги называются «1ур_Выкладка», «2ур_Выкладка» и
+    так далее, и поиск по вхождению на «выкладка» вернул бы все уровни разом,
+    ради чего фильтр и не нужен. Ищем по услуге, магазину, городу и сотруднику —
+    любое совпадение с началом подходит.
+    """
+    text = normalize_text(term)
+    if not text:
+        return query
+    # % и _ — служебные символы LIKE: без экранирования запрос «%» вернул бы всё.
+    pattern = "%s%%" % text.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_")
+    # ILIKE регистронезависим по коллации БД: на PostgreSQL (прод и локальная
+    # разработка) это работает и для кириллицы, на SQLite — только для латиницы,
+    # поэтому в тестах регистр кириллицы не проверяем.
+    return query.filter(or_(
+        Rate.service.ilike(pattern, escape="\\"),
+        Rate.store.ilike(pattern, escape="\\"),
+        Rate.city.ilike(pattern, escape="\\"),
+        Rate.employee_name.ilike(pattern, escape="\\"),
+    ))
+
+
 def _apply_layer(query, layer):
     """Фильтр списка ЧТС по слою. layer: all|individual|store|employee|base."""
     if layer == "individual":
@@ -207,6 +231,7 @@ def _apply_layer(query, layer):
 def economist_rates(
     request: Request,
     layer: str = "all",
+    q: str = "",
     session: Session = Depends(get_db),
     user=Depends(require_rate_view),
 ):
@@ -216,7 +241,7 @@ def economist_rates(
     if request.url.path.startswith("/economist") and role not in {"economist", "superadmin"}:
         return RedirectResponse("/", status_code=302)
     layer = layer if layer in _ALLOWED_LAYERS else "all"
-    scoped = rates_query(session)
+    scoped = _apply_search(rates_query(session), q)
     if role == "hr_manager":
         scoped_stores = [
             row[0]
@@ -241,6 +266,7 @@ def economist_rates(
         {
             "rates": rates,
             "layer": layer,
+            "q": q,
             "rates_base": rates_base,
             "individual_count": scoped.filter(_INDIVIDUAL).count(),
             "base_count": scoped.filter(_BASE).count(),
@@ -399,13 +425,17 @@ _ALLOWED_LAYERS = {"all", "individual", "store", "employee", "base"}
 def admin_rates(
     request: Request,
     layer: str = "all",
+    q: str = "",
     session: Session = Depends(get_db),
     user=Depends(_rates_manage),
 ):
-    """Список ЧТС с фильтром по слою. `layer`: all | individual | store | employee | base.
+    """Список ЧТС с фильтром по слою и поиском по началу строки.
+    `layer`: all | individual | store | employee | base. `q`: начало услуги/ТК/города/ФИО.
     «individual» = неканонические (store или employee заполнены). Подбор/загрузчик не трогаем."""
     layer = layer if layer in _ALLOWED_LAYERS else "all"
-    scoped = rates_query(session)
+    # Поиск сужает и счётчики тоже — иначе «показано 3 из 1200 индивидуальных»
+    # читается как поломка фильтра.
+    scoped = _apply_search(rates_query(session), q)
     rates = _apply_layer(scoped, layer).all()
 
     return templates.TemplateResponse(
@@ -414,6 +444,7 @@ def admin_rates(
         {
             "rates": rates,
             "layer": layer,
+            "q": q,
             "rates_base": "/admin/rates",
             "individual_count": scoped.filter(_INDIVIDUAL).count(),
             "base_count": scoped.filter(_BASE).count(),

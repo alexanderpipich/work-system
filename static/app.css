@@ -488,6 +488,11 @@ body:has(.page-wide)   { --page-max: 1600px; }
     padding: 5px 11px;
 }
 
+/* ── Строка поиска над списком ────────────────────────────────────────── */
+/* Поле тянется, кнопки прижаты справа. Нужна и на /admin/rates,
+   и на /economist/rates — поэтому здесь, а не в block head каждой. */
+.search-row input[type="text"] { flex: 1 1 360px; min-width: 220px; }
+
 /* ── Вкладки-фильтры ──────────────────────────────────────────────────── */
 .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 

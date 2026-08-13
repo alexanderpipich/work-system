@@ -183,10 +183,15 @@
         {% set current_layer = layer|default('all') %}
         {% set rates_base_path = rates_base|default('/admin/rates') %}
 
+        {% set search_term = q|default('') %}
+        {# Поиск переезжает между вкладками: без этого клик по слою сбрасывал бы
+           набранный запрос, и фильтры работали бы «через один». #}
+        {% set search_suffix = '&q=' ~ (search_term|urlencode) if search_term else '' %}
+
         <div class="toolbar">
             <div class="tabs">
                 {% for key, label in [('all','Все'), ('individual','Только индивидуальные'), ('store','По ТК'), ('employee','По сотруднику'), ('base','Только базовые')] %}
-                <a href="{{ rates_base_path }}?layer={{ key }}"
+                <a href="{{ rates_base_path }}?layer={{ key }}{{ search_suffix }}"
                    class="tab{% if current_layer == key %} is-active{% endif %}">{{ label }}</a>
                 {% endfor %}
             </div>
@@ -196,6 +201,18 @@
                 показано: <b>{{ rates|length }}</b>
             </div>
         </div>
+
+        <form method="get" action="{{ rates_base_path }}" class="row search-row mb-14">
+            <input type="hidden" name="layer" value="{{ current_layer }}">
+            <input type="text" name="q" value="{{ search_term }}"
+                   placeholder="Начало услуги, ТК, города или ФИО — например «2ур» или «ТК-7»"
+                   aria-label="Поиск ставок по началу строки">
+            <button type="submit" class="btn btn-primary">Найти</button>
+            {% if search_term %}
+                <a href="{{ rates_base_path }}?layer={{ current_layer }}" class="btn btn-secondary">Сбросить</a>
+                <span class="muted">ищем по началу строки</span>
+            {% endif %}
+        </form>
 
         {% if current_layer == 'individual' %}
         <div class="alert alert-warn mt-0 mb-14">

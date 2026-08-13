@@ -82,6 +82,20 @@
     <div class="card mt-20">
         <h2>Список ставок</h2>
 
+        {% set search_term = q|default('') %}
+        <form method="get" action="{{ rates_base|default('/economist/rates') }}" class="row search-row mb-14">
+            <input type="hidden" name="layer" value="{{ layer|default('all') }}">
+            <input type="text" name="q" value="{{ search_term }}"
+                   placeholder="Начало услуги, ТК, города или ФИО — например «2ур» или «ТК-7»"
+                   aria-label="Поиск ставок по началу строки">
+            <button type="submit" class="btn btn-primary">Найти</button>
+            {% if search_term %}
+                <a href="{{ rates_base|default('/economist/rates') }}?layer={{ layer|default('all') }}"
+                   class="btn btn-secondary">Сбросить</a>
+                <span class="muted">показано: <b>{{ rates|length }}</b></span>
+            {% endif %}
+        </form>
+
         <div class="table-wrap rates-table">
             <table>
                 <thead>
