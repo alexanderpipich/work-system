@@ -118,6 +118,10 @@
         <div class="card">
             <div class="print-heading print-only">Графики выходов · {{ date_from }} — {{ date_to }}</div>
             <div class="no-print export-row">
+                <button type="button" class="btn btn-secondary" aria-pressed="false"
+                        data-toggle-rows="#schedule-table"
+                        data-label-hide="СКРЫТЬ СМЕНЫ БЕЗ ПЛАНА"
+                        data-label-show="ПОКАЗАТЬ СМЕНЫ БЕЗ ПЛАНА">СКРЫТЬ СМЕНЫ БЕЗ ПЛАНА</button>
                 {% set export_target = "#schedule-table" %}
                 {% set export_filename = "график_" ~ date_from ~ "_" ~ date_to %}
                 {% include "_export_buttons.html" %}
@@ -137,7 +141,7 @@
                     </thead>
                     <tbody>
                         {% for row in rows %}
-                        <tr>
+                        <tr{% if row.is_no_plan %} data-no-plan="1"{% endif %}>
                             <td class="left">{{ row.employee }}</td>
                             <td>{{ row.store }}</td>
                             <td class="service">{{ row.service }}</td>

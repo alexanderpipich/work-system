@@ -450,9 +450,15 @@
         <div class="no-print row row-between mb-14">
             <h2 class="mt-0 mb-0">Результат расчёта</h2>
             {% if rows|length > 0 %}
-                {% set export_target = "#payroll-table" %}
-                {% set export_filename = "табель_" ~ date_from ~ "_" ~ date_to %}
-                {% include "_export_buttons.html" %}
+                <div class="row">
+                    <button type="button" class="btn btn-secondary" aria-pressed="false"
+                            data-toggle-rows="#payroll-table"
+                            data-label-hide="СКРЫТЬ СМЕНЫ БЕЗ ПЛАНА"
+                            data-label-show="ПОКАЗАТЬ СМЕНЫ БЕЗ ПЛАНА">СКРЫТЬ СМЕНЫ БЕЗ ПЛАНА</button>
+                    {% set export_target = "#payroll-table" %}
+                    {% set export_filename = "табель_" ~ date_from ~ "_" ~ date_to %}
+                    {% include "_export_buttons.html" %}
+                </div>
             {% endif %}
         </div>
 
@@ -475,7 +481,7 @@
                 </thead>
                 <tbody>
                     {% for row in rows %}
-                    <tr class="{% if row.has_no_plan or (row.hours or 0) == 0 %}row-attention{% endif %}">
+                    <tr class="{% if row.has_no_plan or (row.hours or 0) == 0 %}row-attention{% endif %}"{% if row.has_no_plan %} data-no-plan="1"{% endif %}>
                         <td class="left">{{ row.employee_name }}</td>
                         <td>{{ row.store }}</td>
                         <td class="service">{{ row.service }}</td>
