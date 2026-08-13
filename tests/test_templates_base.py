@@ -108,5 +108,39 @@ class PageWidthAlignmentTests(unittest.TestCase):
                                       % (name, mod))
 
 
+class UiClassesExistInCssTests(unittest.TestCase):
+    """Класс, который навешивает ui.js, обязан быть объявлен в app.css.
+
+    Ловит целый класс молчаливых поломок: скрипт исправно добавляет класс,
+    ошибок в консоли нет, а на экране ничего не происходит, потому что правила
+    для этого класса не существует. Ровно так попап смены без плана не
+    открывался — ui.js ставил .open, а .overlay.open в системе не было.
+    """
+
+    UI_JS = os.path.join(ROOT, "static", "ui.js")
+
+    # Классы, которыми скрипт не управляет оформлением (служебные хуки).
+    IGNORED = {"ripple", "ripple-layer"}
+
+    def test_every_toggled_class_is_styled(self):
+        with open(self.UI_JS, encoding="utf-8") as f:
+            js = f.read()
+        with open(APP_CSS, encoding="utf-8") as f:
+            css = f.read()
+
+        used = set(re.findall(r"classList\.(?:add|toggle|remove)\(\s*'([a-z0-9-]+)'", js))
+        used |= set(re.findall(r'classList\.(?:add|toggle|remove)\(\s*"([a-z0-9-]+)"', js))
+        used -= self.IGNORED
+        self.assertTrue(used, "в ui.js не нашлось переключаемых классов — тест устарел")
+
+        for name in sorted(used):
+            with self.subTest(css_class=name):
+                self.assertRegex(
+                    css, r"\.%s\b" % re.escape(name),
+                    "ui.js переключает .%s, но в app.css такого правила нет — "
+                    "класс навесится, а на экране ничего не изменится" % name,
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
