@@ -86,7 +86,7 @@
         <form method="get" action="{{ rates_base|default('/economist/rates') }}" class="row search-row mb-14">
             <input type="hidden" name="layer" value="{{ layer|default('all') }}">
             <input type="text" name="q" value="{{ search_term }}"
-                   placeholder="Начало услуги, ТК, города или ФИО — например «2ур» или «ТК-7»"
+                   placeholder="Начало слова: «Квалифицированные», «2ур», «ТК-7», «Иванова»"
                    aria-label="Поиск ставок по началу строки">
             <button type="submit" class="btn btn-primary">Найти</button>
             {% if search_term %}

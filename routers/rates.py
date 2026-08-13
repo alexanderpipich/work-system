@@ -189,28 +189,48 @@ def _resolve_service_link(session, service_text):
     return (service.id if service else None), level
 
 
-def _apply_search(query, term):
-    """Поиск ЧТС по НАЧАЛУ строки. Пустой запрос — фильтра нет.
+# Разделители слов в названиях: «2ур_Квалифицированные», «2ур Квалифицированные»,
+# «ТК-7». Префикс уровня — не часть названия, поэтому «Квалифицированные» обязано
+# находить «2ур_Квалифицированные».
+_WORD_SEPARATORS = ("_", " ", "-", "/", ".", ",")
 
-    Начало, а не вхождение: услуги называются «1ур_Выкладка», «2ур_Выкладка» и
-    так далее, и поиск по вхождению на «выкладка» вернул бы все уровни разом,
-    ради чего фильтр и не нужен. Ищем по услуге, магазину, городу и сотруднику —
-    любое совпадение с началом подходит.
+_SEARCH_FIELDS = (Rate.service, Rate.store, Rate.city, Rate.employee_name)
+
+
+def _search_patterns(text):
+    """LIKE-шаблоны «начало любого слова» для уже экранированного текста."""
+    # Начало строки — плюс начало каждого слова после разделителя.
+    patterns = ["%s%%" % text]
+    for separator in _WORD_SEPARATORS:
+        # Разделитель тоже экранируем: «_» в LIKE значит «любой одиночный символ».
+        safe = "\\%s" % separator if separator in "%_" else separator
+        patterns.append("%%%s%s%%" % (safe, text))
+    return patterns
+
+
+def _apply_search(query, term):
+    """Поиск ЧТС по началу СЛОВА. Пустой запрос — фильтра нет.
+
+    Не по вхождению: услуги называются «1ур_Выкладка», «2ур_Выкладка» и так
+    далее, и поиск по вхождению на «клад» вернул бы мусор. Но и не по началу
+    строки: «2ур_» — это префикс уровня, а не часть названия, поэтому запрос
+    «Квалифицированные» обязан находить «2ур_Квалифицированные», а «2ур» —
+    все услуги второго уровня. Ищем по услуге, магазину, городу и ФИО.
     """
     text = normalize_text(term)
     if not text:
         return query
     # % и _ — служебные символы LIKE: без экранирования запрос «%» вернул бы всё.
-    pattern = "%s%%" % text.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_")
+    escaped = text.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_")
     # ILIKE регистронезависим по коллации БД: на PostgreSQL (прод и локальная
     # разработка) это работает и для кириллицы, на SQLite — только для латиницы,
     # поэтому в тестах регистр кириллицы не проверяем.
-    return query.filter(or_(
-        Rate.service.ilike(pattern, escape="\\"),
-        Rate.store.ilike(pattern, escape="\\"),
-        Rate.city.ilike(pattern, escape="\\"),
-        Rate.employee_name.ilike(pattern, escape="\\"),
-    ))
+    conditions = [
+        field.ilike(pattern, escape="\\")
+        for field in _SEARCH_FIELDS
+        for pattern in _search_patterns(escaped)
+    ]
+    return query.filter(or_(*conditions))
 
 
 def _apply_layer(query, layer):
