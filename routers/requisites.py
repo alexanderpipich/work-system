@@ -14,7 +14,8 @@ from models import Requisite, Shift, User
 from rbac import canonical_role, require_permission
 from requisite_validation import BLOCKS_PAYROLL, requisite_problems, split_by_validity
 from time_helpers import now_utc
-from utils import is_scientific_notation, normalize_digits, normalize_text, safe_return_to
+from utils import (is_scientific_notation, normalize_digits, normalize_text, repair_requisite,
+                   safe_return_to)
 
 
 router = APIRouter()
@@ -23,16 +24,34 @@ require_requisites_view = require_permission("requisites.view", audit_denied=Tru
 _req_manage = require_permission("requisites.manage")
 
 
+def _repaired_identifiers(inn, account_number, bik):
+    """(ИНН, счёт, БИК) с восстановленным ведущим нулём там, где он однозначен.
+
+    Хвост «.0» от Excel отрезается всегда. Ведущий ноль, съеденный float'ом
+    («044030653» → «44030653.0»), восстанавливается по известной длине: БИК 9,
+    ИНН 10/12. Счёту ноль НЕ дописывается — он начинается с балансового счёта
+    (40817…), ведущего нуля там не бывает, и дописать его значит выдумать номер,
+    который пройдёт проверку длины и уйдёт в банк неверным.
+
+    Что не чинится (пусто, мусор, научная нотация, счёт не той длины) —
+    возвращаем как ввели: частичный реквизит обязан сохраниться, а утерянные
+    данные — попасть в отказ и на экран невалидных, а не «починиться» догадкой.
+    """
+    plain = (normalize_digits(inn), normalize_digits(account_number), normalize_digits(bik))
+    return tuple(repaired or as_entered
+                 for repaired, as_entered in zip(repair_requisite(*plain), plain))
+
+
 def _clean_identifiers(inn, account_number, bik):
     """Привести ИНН/счёт/БИК к хранимому виду.
 
-    Возвращает (значения, отказ). Хвост «.0» от Excel отрезается, ведущие нули
-    целы. Научную нотацию НЕ сохраняем: в «4.08e+19» младшие цифры уже утеряны,
-    и записать её — значит завести в базе мусор, который потом уйдёт в платёжку.
-    Длину здесь не проверяем: реквизит бывает заполнен частично, блокировать
-    сохранение из-за этого нельзя — недостающее покажет экран невалидных.
+    Возвращает (значения, отказ). Научную нотацию НЕ сохраняем: в «4.08e+19»
+    младшие цифры уже утеряны, и записать её — значит завести в базе мусор,
+    который потом уйдёт в платёжку. Длину здесь не проверяем: реквизит бывает
+    заполнен частично, блокировать сохранение из-за этого нельзя — недостающее
+    покажет экран невалидных.
     """
-    values = (normalize_digits(inn), normalize_digits(account_number), normalize_digits(bik))
+    values = _repaired_identifiers(inn, account_number, bik)
     broken = [
         label
         for label, value in zip(("ИНН", "номер счёта", "БИК"), values)
@@ -426,9 +445,9 @@ def upload_requisites(
             if sci_fields:
                 scientific_report.append({"name": name, "fields": ", ".join(sci_fields)})
 
-            inn = normalize_digits(raw_inn)
-            account_number = normalize_digits(raw_account)
-            bik = normalize_digits(raw_bik)
+            # Тот же ремонт, что и в ручной форме: у Excel ведущий ноль БИК съедает
+            # особенно охотно — числовая ячейка «044030653» приезжает как «44030653.0».
+            inn, account_number, bik = _repaired_identifiers(raw_inn, raw_account, raw_bik)
             bank_name = get_value(row, "bank_name")
             # Гражданство больше НЕ пишется в реквизиты (Блок 1 нормализации) —
             # источник истины: User.citizenship_country_id.

@@ -78,6 +78,43 @@ class InputCleaningTests(unittest.TestCase):
         values, _ = _clean_identifiers(IVANOVA[0], IVANOVA[1], "044030653")
         self.assertEqual(values[2], "044030653")
 
+    def test_bik_leading_zero_restored_after_float_damage(self):
+        """Ввод «44030653.0» обязан сохраниться как «044030653».
+
+        Регрессия 004: на входе стоял голый normalize_digits — он отрезал «.0»,
+        но съеденный float'ом ведущий ноль не возвращал, и в базу ложился БИК
+        из 8 цифр. БИК часто начинается с нуля, так что это боевые данные.
+        """
+        values, refusal = _clean_identifiers(IVANOVA[0], IVANOVA[1], "44030653.0")
+        self.assertIsNone(refusal)
+        self.assertEqual(values[2], "044030653")
+        self.assertEqual(len(values[2]), 9)
+
+    def test_inn_leading_zero_restored(self):
+        values, _ = _clean_identifiers("71605460681", IVANOVA[1], IVANOVA[2])
+        self.assertEqual(values[0], "071605460681")
+
+    def test_account_keeps_all_twenty_digits(self):
+        values, _ = _clean_identifiers(IVANOVA[0], IVANOVA[1], IVANOVA[2])
+        self.assertEqual(values[1], IVANOVA[1])
+        self.assertEqual(len(values[1]), 20)
+
+    def test_short_account_is_never_padded(self):
+        """Счёт короче 20 остаётся как есть — ноль дописать значит выдумать номер.
+
+        Такой реквизит обязан уйти на экран невалидных, а не притвориться годным.
+        """
+        short = "4081781005519244413"
+        values, refusal = _clean_identifiers(IVANOVA[0], short, IVANOVA[2])
+        self.assertIsNone(refusal)
+        self.assertEqual(values[1], short)
+        self.assertFalse(values[1].startswith("0"))
+        self.assertFalse(is_valid_requisite(*values))
+
+    def test_repaired_values_are_valid(self):
+        values, _ = _clean_identifiers("471605460681.0", IVANOVA[1], "44030653.0")
+        self.assertTrue(is_valid_requisite(*values), requisite_issues(*values))
+
     def test_scientific_notation_refused(self):
         _, refusal = _clean_identifiers(IVANOVA[0], "4.08e+19", IVANOVA[2])
         self.assertIsNotNone(refusal)
@@ -183,15 +220,15 @@ class RegistryExportTests(unittest.TestCase):
                                        bik=bik, bank_name="Банк", is_active=True))
         self.session.commit()
 
-    def _export(self):
+    def _export(self, names=("Иванова Т.М.", "Хисров Х.")):
         class Run:
             id = 1
             legal_entity = "ООО"
             period_start = period_end = None
             status = "draft"
 
-        items = [PayrollRunItem(employee_name="Иванова Т.М.", total_amount=1000),
-                 PayrollRunItem(employee_name="Хисров Х.", total_amount=2000)]
+        items = [PayrollRunItem(employee_name=name, total_amount=1000 * (index + 1))
+                 for index, name in enumerate(names)]
         return load_workbook(_build_payroll_run_workbook(self.session, Run(), items)).active
 
     def test_intact_requisites_export_intact(self):
@@ -211,6 +248,27 @@ class RegistryExportTests(unittest.TestCase):
         sheet = self._export()
         self.assertNotIn("e+", str(sheet.cell(3, 5).value))
         self.assertFalse(str(sheet.cell(3, 4).value).endswith(".0"))
+
+    def test_float_damaged_input_reaches_registry_whole(self):
+        """Сквозной путь порченого ввода: форма → база → реестр, ноль БИК на месте.
+
+        Порознь и ввод, и выгрузка были зелёными, а ноль всё равно терялся —
+        ловит только проверка всей цепочки целиком.
+        """
+        values, refusal = _clean_identifiers("471605460681.0", IVANOVA[1], "44030653.0")
+        self.assertIsNone(refusal)
+        self.session.add(User(employee_name="Петров П.П.", phone="79990000001",
+                              password_hash="x"))
+        self.session.add(Requisite(employee_name="Петров П.П.", inn=values[0],
+                                   account_number=values[1], bik=values[2],
+                                   bank_name="Банк", is_active=True))
+        self.session.commit()
+
+        sheet = self._export(names=("Петров П.П.",))
+        self.assertEqual(sheet.cell(3, 4).value, "471605460681")
+        self.assertEqual(sheet.cell(3, 5).value, IVANOVA[1])
+        self.assertEqual(sheet.cell(3, 6).value, "044030653")
+        self.assertEqual(sheet.cell(3, 6).data_type, "s")
 
 
 if __name__ == "__main__":
