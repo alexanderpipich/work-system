@@ -21,7 +21,17 @@ FastAPI app with Jinja2 HTML templates, SQLAlchemy ORM (PostgreSQL), and session
 
 **Models**: `models.py` — all SQLAlchemy ORM models in one file. Key ones: `User`, `Shift`, `Rate`, `Requisite`, `PayrollRun`, `PayrollRunItem`, `ManualPayrollAdjustment`, `PayrollAdjustment`, `MedicalBookCharge`, `EmployeeDocument`, `LegalEntity`, `AuditLog`, `UserAccessScope`.
 
-**Helpers**: Standalone modules in the root (not a `helpers/` package) — `utils.py`, `access.py`, `audit_helpers.py`, `shift_helpers.py`, `payroll_run_helpers.py`, `payroll_adjustments.py`, `payroll_closing.py`, `manual_adjustments.py`, `lmk_charges.py`, `document_helpers.py`, `legal_entity_helpers.py`.
+**Helpers**: Standalone modules in the root (not a `helpers/` package) — `utils.py`, `access.py`, `audit_helpers.py`, `shift_helpers.py`, `payroll_run_helpers.py`, `payroll_adjustments.py`, `payroll_closing.py`, `manual_adjustments.py`, `lmk_charges.py`, `document_helpers.py`, `legal_entity_helpers.py`, `file_storage.py`.
+
+## File Storage
+
+Production runs on Timeweb App Platform, which has **no persistent disk** — the container is rebuilt from GitHub on every commit to `main`, wiping local files. All file I/O therefore goes through `file_storage.py`: `storage_save()`, `storage_exists()`, `storage_delete()`, `storage_stream()`, and `storage_response()` (a ready `StreamingResponse` with RFC 5987 `Content-Disposition` — filenames are Cyrillic).
+
+The backend is chosen by environment: `S3_BUCKET` + `S3_ACCESS_KEY` + `S3_SECRET_KEY` set → S3 (Timeweb Object Storage via boto3, `S3_ENDPOINT`/`S3_REGION`); otherwise local disk under `DOCUMENT_UPLOAD_ROOT` / `GENERATED_FILES_ROOT` for dev and tests. `boto3` is imported lazily, so local mode needs no S3 packages.
+
+Object keys mirror the old on-disk layout and are stored verbatim in the existing `file_path` / `image_path` / `sample_image_path` columns — no schema change: `uploaded_documents/<folder>/<file>` (QR included), `generated_files/planning_forms/...`, `generated_files/reconciliations/...`. Pre-migration absolute paths (`/data/...`, `/app/...`) are reported as missing in S3 mode; those files were lost in the move.
+
+Never write generated files to disk — build them in a `BytesIO` and hand the bytes to `storage_save()`. Do not reintroduce `FileResponse`, `Path(...).write_bytes()`, `.unlink()`, or `mkdir()` for user or generated files.
 
 ## Role System
 

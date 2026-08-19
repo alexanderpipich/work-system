@@ -10,12 +10,13 @@ EmailLog и идемпотентность (BPNotification) — в роутер�
 """
 
 from html import escape
+from io import BytesIO
 
 from sqlalchemy.orm import Session
 
 from models import BPNotification, EmployeeStoreAssignment, Store, StoreContact
 from planning_pdf import COMPANY_NAME_PLAIN, build_filename, build_planning_pdf
-from routers.planning_bp import PLANNING_DIR, _employees_for_tk, _parse_date, _period
+from routers.planning_bp import _employees_for_tk, _parse_date, _period
 from store_helpers import extract_tk_number
 from unplanned_helpers import MONTHS_NOM
 from utils import normalize_format
@@ -195,10 +196,10 @@ def build_bp_attachment(session: Session, tk: int, date_from, date_to):
     store = session.query(Store).filter(Store.tk_number == tk).first()
     employees = _employees_for_tk(session, tk)
 
-    PLANNING_DIR.mkdir(parents=True, exist_ok=True)
-    path = PLANNING_DIR / f"bp_mail_{tk}_{date_from}_{date_to}.pdf"
+    # Вложение письма нигде не хранится — собираем в памяти.
+    buffer = BytesIO()
     build_planning_pdf(
-        path,
+        buffer,
         tk_number=tk,
         object_address=store.object_address if store is not None else None,
         city=store.city if store is not None else None,
@@ -206,4 +207,4 @@ def build_bp_attachment(session: Session, tk: int, date_from, date_to):
         date_to=date_to,
         employees=employees,
     )
-    return build_filename(tk, date_from), path.read_bytes()
+    return build_filename(tk, date_from), buffer.getvalue()

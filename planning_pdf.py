@@ -160,9 +160,12 @@ def build_planning_pdf(path, *, tk_number, object_address, city, date_from, date
 
     employees — список сотрудников (уже отсортированный). Каждый элемент — либо
     строка ФИО, либо пара (ФИО, должность). ТК и адрес одинаковы во всех строках.
+
+    path — путь на диске либо файловый объект (BytesIO) для отдачи в хранилище.
     """
     _register_fonts()
-    path = str(path)
+    if not hasattr(path, "write"):
+        path = str(path)
 
     tk_label = f"{int(tk_number):03d}"   # 007 — в обращении и имени файла
     tk_cell = str(int(tk_number))        # 7 — в колонке таблицы (как образец)

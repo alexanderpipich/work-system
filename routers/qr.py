@@ -1,13 +1,14 @@
 from pathlib import Path
-from urllib.parse import quote, urlencode
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
 from dependencies import current_user, get_db
-from document_helpers import document_file_exists, save_upload_file
+from document_helpers import save_upload_file
+from file_storage import storage_delete, storage_response
 from models import EmployeeQr, User
 from rbac import has_permission, require_permission
 from utils import normalize_text
@@ -50,17 +51,13 @@ def _qr_access_allowed(viewer, owner_id):
 
 def _serve_image(path, download_name):
     """Общая отдача изображения inline с nosniff."""
-    if not document_file_exists(path):
-        return RedirectResponse(url="/", status_code=302)
-    ext = Path(path).suffix.lower()
-    return FileResponse(
-        Path(path),
+    ext = Path(path or "").suffix.lower()
+    return storage_response(
+        path,
+        filename=f"{download_name}{ext}",
         media_type=_QR_MEDIA_TYPES.get(ext, "application/octet-stream"),
-        headers={
-            "Content-Disposition": f"inline; filename*=UTF-8''{quote(f'{download_name}{ext}')}",
-            "X-Content-Type-Options": "nosniff",
-        },
-    )
+        disposition="inline",
+    ) or RedirectResponse(url="/", status_code=302)
 
 
 @router.post("/admin/users/{user_id}/qr")
@@ -166,11 +163,7 @@ def delete_qr_by_id(
         return _users_redirect(user_id, filters)
 
     old_path = qr.image_path
-    if document_file_exists(old_path):
-        try:
-            Path(old_path).unlink()
-        except OSError:
-            pass
+    storage_delete(old_path)
     session.delete(qr)
     create_audit_log(
         session, request, admin, "user_qr_deleted", "user", user_id, f_employee_name or str(user_id),
@@ -217,11 +210,7 @@ def delete_qr_legacy(
         return _users_redirect(user_id, filters)
 
     old_path = user.qr_image_path
-    if document_file_exists(old_path):
-        try:
-            Path(old_path).unlink()
-        except OSError:
-            pass
+    storage_delete(old_path)
     user.qr_image_path = None
     create_audit_log(
         session, request, admin, "user_qr_deleted", "user", user.id, user.employee_name,

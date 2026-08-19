@@ -1,9 +1,9 @@
 from pathlib import Path
 from typing import Optional
-from urllib.parse import quote, urlencode
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from access import accessible_employee_names
@@ -23,7 +23,6 @@ from document_helpers import (
     build_document_registry_rows,
     classify_document,
     computed_document_status,
-    document_file_exists,
     economist_employee_names,
     employee_names,
     false_green_count,
@@ -34,6 +33,7 @@ from document_helpers import (
     parse_date,
     save_upload_file,
 )
+from file_storage import storage_delete, storage_response
 from inn_sync import INN_DOCUMENT_SORT_ORDER, set_employee_inn
 from models import CitizenshipRegime, Country, DocumentType, DocumentTypeSample, EmployeeDocument, EmployeeStoreAssignment, RegimeDocumentRule, Store, User
 from store_helpers import extract_tk_number
@@ -58,11 +58,6 @@ SAFE_MEDIA_TYPES = {
 
 def _safe_media_type(path):
     return SAFE_MEDIA_TYPES.get(Path(path).suffix.lower(), "application/octet-stream")
-
-
-def _content_disposition(disposition_type, filename):
-    safe_name = Path(filename or "document").name.replace('"', "")
-    return f"{disposition_type}; filename*=UTF-8''{quote(safe_name)}"
 
 
 def _redirect(base_path, **params):
@@ -837,7 +832,7 @@ def delete_document_type_sample(
     if not document_type:
         return _redirect(base_path, error="Тип документа не найден")
     if document_type.sample_image_path:
-        Path(document_type.sample_image_path).unlink(missing_ok=True)
+        storage_delete(document_type.sample_image_path)
         document_type.sample_image_path = None
         document_type.updated_at = now_utc()
         create_audit_log(
@@ -1159,19 +1154,12 @@ def document_file(
     document = session.query(EmployeeDocument).filter(EmployeeDocument.id == document_id).first()
     if not _document_allowed_for_user(session, document, user):
         return RedirectResponse(url="/", status_code=302)
-    if not document_file_exists(document.file_path):
-        return RedirectResponse(url="/", status_code=302)
-    return FileResponse(
-        Path(document.file_path),
+    return storage_response(
+        document.file_path,
+        filename=document.original_filename or Path(document.file_path or "").name,
         media_type=_safe_media_type(document.file_path),
-        headers={
-            "Content-Disposition": _content_disposition(
-                "attachment",
-                document.original_filename or Path(document.file_path).name,
-            ),
-            "X-Content-Type-Options": "nosniff",
-        },
-    )
+        disposition="attachment",
+    ) or RedirectResponse(url="/", status_code=302)
 
 
 @router.get("/documents/preview/{document_id}")
@@ -1185,22 +1173,15 @@ def document_preview(
     document = session.query(EmployeeDocument).filter(EmployeeDocument.id == document_id).first()
     if not _document_allowed_for_user(session, document, user):
         return RedirectResponse(url="/", status_code=302)
-    if not document_file_exists(document.file_path):
-        return RedirectResponse(url="/", status_code=302)
-    ext = Path(document.file_path).suffix.lower()
+    ext = Path(document.file_path or "").suffix.lower()
     if ext not in SAFE_MEDIA_TYPES or ext == ".heic":
         return RedirectResponse(url="/", status_code=302)
-    return FileResponse(
-        Path(document.file_path),
+    return storage_response(
+        document.file_path,
+        filename=document.original_filename or Path(document.file_path or "").name,
         media_type=_safe_media_type(document.file_path),
-        headers={
-            "Content-Disposition": _content_disposition(
-                "inline",
-                document.original_filename or Path(document.file_path).name,
-            ),
-            "X-Content-Type-Options": "nosniff",
-        },
-    )
+        disposition="inline",
+    ) or RedirectResponse(url="/", status_code=302)
 
 
 @router.get("/documents/samples/file/{sample_id}")
@@ -1210,16 +1191,14 @@ def document_sample_file(
     user=Depends(current_user),
 ):
     sample = session.query(DocumentTypeSample).filter(DocumentTypeSample.id == sample_id).first()
-    if not sample or not document_file_exists(sample.file_path):
+    if not sample:
         return RedirectResponse(url="/", status_code=302)
-    return FileResponse(
-        Path(sample.file_path),
+    return storage_response(
+        sample.file_path,
+        filename=sample.original_filename or Path(sample.file_path or "").name,
         media_type=_safe_media_type(sample.file_path),
-        headers={
-            "Content-Disposition": _content_disposition("inline", sample.original_filename or Path(sample.file_path).name),
-            "X-Content-Type-Options": "nosniff",
-        },
-    )
+        disposition="inline",
+    ) or RedirectResponse(url="/", status_code=302)
 
 
 @router.post("/admin/document-types/delete-sample-file")
@@ -1233,7 +1212,7 @@ def delete_document_type_sample_file(
     sample = session.query(DocumentTypeSample).filter(DocumentTypeSample.id == sample_id).first()
     if not sample:
         return _redirect(base_path, error="Образец не найден")
-    Path(sample.file_path).unlink(missing_ok=True)
+    storage_delete(sample.file_path)
     type_name = session.query(DocumentType.name).filter(DocumentType.id == sample.document_type_id).scalar() or ""
     session.delete(sample)
     create_audit_log(
@@ -1256,24 +1235,22 @@ def document_type_sample(
     first_new = session.query(DocumentTypeSample).filter(
         DocumentTypeSample.document_type_id == type_id
     ).order_by(DocumentTypeSample.sort_order, DocumentTypeSample.uploaded_at).first()
-    if first_new and document_file_exists(first_new.file_path):
-        return FileResponse(
-            Path(first_new.file_path),
+    if first_new:
+        response = storage_response(
+            first_new.file_path,
+            filename=first_new.original_filename or Path(first_new.file_path or "").name,
             media_type=_safe_media_type(first_new.file_path),
-            headers={
-                "Content-Disposition": _content_disposition("inline", first_new.original_filename or Path(first_new.file_path).name),
-                "X-Content-Type-Options": "nosniff",
-            },
+            disposition="inline",
         )
+        if response is not None:
+            return response
     document_type = session.query(DocumentType).filter(DocumentType.id == type_id).first()
-    if not document_type or not document_file_exists(document_type.sample_image_path):
+    if not document_type or not document_type.sample_image_path:
         return RedirectResponse(url="/", status_code=302)
-    return FileResponse(
-        Path(document_type.sample_image_path),
+    return storage_response(
+        document_type.sample_image_path,
+        filename=Path(document_type.sample_image_path).name,
         media_type=_safe_media_type(document_type.sample_image_path),
-        headers={
-            "Content-Disposition": _content_disposition("inline", Path(document_type.sample_image_path).name),
-            "X-Content-Type-Options": "nosniff",
-        },
-    )
+        disposition="inline",
+    ) or RedirectResponse(url="/", status_code=302)
 

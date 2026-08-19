@@ -7,12 +7,12 @@
 """
 
 import calendar
-import os
 from datetime import date
+from io import BytesIO
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
@@ -20,6 +20,7 @@ from urllib.parse import urlencode
 
 from audit_helpers import create_audit_log
 from dependencies import get_db
+from file_storage import storage_response, storage_save
 from models import (
     EmployeeMonitoringRecommendation,
     EmployeeStoreAssignment,
@@ -39,8 +40,8 @@ templates = Jinja2Templates(directory="templates")
 
 _mgmt = require_permission("admin.settings")
 
-GENERATED_FILES_ROOT = Path(os.getenv("GENERATED_FILES_ROOT", "generated_files"))
-PLANNING_DIR = GENERATED_FILES_ROOT / "planning_forms"
+# Префикс ключей в хранилище (в локальном режиме — под GENERATED_FILES_ROOT).
+PLANNING_PREFIX = "generated_files/planning_forms"
 
 
 def _period():
@@ -337,12 +338,11 @@ def planning_bp_generate(
         comment=f"БП ТК-{tk_number:03d}; сотрудников: {len(employees)}",
     )
     session.add(row)
-    session.flush()  # нужен row.id для имени файла на диске
+    session.flush()  # нужен row.id для имени файла в хранилище
 
-    PLANNING_DIR.mkdir(parents=True, exist_ok=True)
-    disk_path = PLANNING_DIR / f"planning_bp_{row.id}.pdf"
+    buffer = BytesIO()
     build_planning_pdf(
-        disk_path,
+        buffer,
         tk_number=tk_number,
         object_address=store.object_address,
         city=store.city,
@@ -350,7 +350,11 @@ def planning_bp_generate(
         date_to=end,
         employees=employees,
     )
-    row.file_path = str(disk_path)
+    row.file_path = storage_save(
+        f"{PLANNING_PREFIX}/planning_bp_{row.id}.pdf",
+        buffer.getvalue(),
+        content_type="application/pdf",
+    )
     row.file_name = build_filename(tk_number, start)
 
     create_audit_log(
@@ -381,6 +385,10 @@ def planning_bp_download(
     user=Depends(_mgmt),
 ):
     row = session.query(PlanningForm).filter(PlanningForm.id == form_id).first()
-    if not row or not row.file_path or not Path(row.file_path).is_file():
+    if not row:
         return RedirectResponse("/admin/planning-bp", status_code=302)
-    return FileResponse(row.file_path, filename=row.file_name, media_type="application/pdf")
+    return storage_response(
+        row.file_path,
+        filename=row.file_name or Path(row.file_path or "").name,
+        media_type="application/pdf",
+    ) or RedirectResponse("/admin/planning-bp", status_code=302)

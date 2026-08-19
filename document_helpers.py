@@ -7,11 +7,13 @@ from uuid import uuid4
 from sqlalchemy import or_, text
 
 from database import engine
+from file_storage import storage_exists, storage_save
 from models import Country, DocumentType, EmployeeDocument, RegimeDocumentRule, Requisite, Shift, User
 from time_helpers import business_today, now_utc
 from utils import normalize_text
 
 
+# Корень локального бэкенда живёт в file_storage; здесь — только для совместимости импортов.
 DOCUMENT_UPLOAD_ROOT = Path(os.getenv("DOCUMENT_UPLOAD_ROOT", "uploaded_documents"))
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 EXPIRY_WARNING_DAYS = 30
@@ -598,17 +600,17 @@ async def save_upload_file(upload_file, folder, prefix):
     if len(content) > MAX_UPLOAD_BYTES:
         raise ValueError("Файл больше 15 MB")
 
-    target_dir = DOCUMENT_UPLOAD_ROOT / folder
-    target_dir.mkdir(parents=True, exist_ok=True)
-
     filename = f"{prefix}_{now_utc().strftime('%Y%m%d%H%M%S')}_{uuid4().hex[:8]}_{original}"
-    path = target_dir / filename
-    path.write_bytes(content)
-    return str(path), upload_file.filename
+    key = storage_save(
+        f"uploaded_documents/{folder}/{filename}",
+        content,
+        content_type=getattr(upload_file, "content_type", None),
+    )
+    return key, upload_file.filename
 
 
 def document_file_exists(path):
-    return bool(path) and Path(path).is_file()
+    return storage_exists(path)
 
 
 def normalize_employee_folder(employee_name):

@@ -1,12 +1,12 @@
 import calendar
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-import os
+from io import BytesIO
 from pathlib import Path
 from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from openpyxl import Workbook
 from openpyxl.styles import Font
@@ -17,6 +17,7 @@ from access import apply_shift_scope, get_user_cities, get_user_stores, scope_al
 from audit_helpers import create_audit_log
 from dependencies import RedirectException, current_user, get_db
 from document_helpers import citizenship_display
+from file_storage import storage_response, storage_save
 from models import (
     EmployeeDismissalDecision,
     EmployeeMonitoringRecommendation,
@@ -42,9 +43,10 @@ from utils import normalize_text
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 _admin_settings = require_permission("admin.settings")
-GENERATED_FILES_ROOT = Path(os.getenv("GENERATED_FILES_ROOT", "generated_files"))
-PLANNING_DIR = GENERATED_FILES_ROOT / "planning_forms"
-RECONCILIATION_DIR = GENERATED_FILES_ROOT / "reconciliations"
+# Префиксы ключей в хранилище (в локальном режиме ложатся под GENERATED_FILES_ROOT).
+PLANNING_PREFIX = "generated_files/planning_forms"
+RECONCILIATION_PREFIX = "generated_files/reconciliations"
+XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
 def _is_admin(user):
@@ -147,11 +149,9 @@ def _planning_tree(forms):
 
 
 def _build_planning_file(form, scenario_name):
-    PLANNING_DIR.mkdir(parents=True, exist_ok=True)
     safe_employee = _filename_part(form.employee_name, "employee")
     safe_store = _filename_part(form.store, "store")
     filename = f"planning_form_{form.id}_{safe_employee}_{safe_store}_{form.date_from}_{form.date_to}.xlsx"
-    path = PLANNING_DIR / filename
     wb = Workbook()
     ws = wb.active
     ws.title = "Бланк планирования"
@@ -173,16 +173,20 @@ def _build_planning_file(form, scenario_name):
     ws.freeze_panes = "A8"
     for column, width in {"A": 16, "B": 20, "C": 22, "D": 42}.items():
         ws.column_dimensions[column].width = width
-    wb.save(path)
-    form.file_path = str(path)
+    form.file_path = _save_workbook(wb, f"{PLANNING_PREFIX}/{filename}")
     form.file_name = filename
 
 
+def _save_workbook(workbook, key):
+    """Собрать книгу в памяти и положить в хранилище; вернуть ключ для БД."""
+    buffer = BytesIO()
+    workbook.save(buffer)
+    return storage_save(key, buffer.getvalue(), content_type=XLSX_CONTENT_TYPE)
+
+
 def _build_reconciliation_file(reconciliation, rows):
-    RECONCILIATION_DIR.mkdir(parents=True, exist_ok=True)
     safe_store = _filename_part(reconciliation.store, "store")
     filename = f"reconciliation_{safe_store}_{reconciliation.period_from}_{reconciliation.period_to}.xlsx"
-    path = RECONCILIATION_DIR / filename
     wb = Workbook()
     ws = wb.active
     ws.title = "Сверка"
@@ -207,8 +211,7 @@ def _build_reconciliation_file(reconciliation, rows):
     ws.column_dimensions["A"].width = 38
     ws.column_dimensions["B"].width = 48
     ws.column_dimensions["C"].width = 16
-    wb.save(path)
-    reconciliation.file_path = str(path)
+    reconciliation.file_path = _save_workbook(wb, f"{RECONCILIATION_PREFIX}/{filename}")
 
 
 _monitoring_settings = get_monitoring_settings
@@ -328,8 +331,8 @@ def _get_planning_form(session, user, form_id):
 @router.get("/hr/employees/planning/forms/{form_id}/download")
 def planning_form_download(form_id: int, session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     row = _get_planning_form(session, user, form_id)
-    if not row or not row.file_path or not Path(row.file_path).is_file(): return RedirectResponse("/", status_code=302)
-    return FileResponse(row.file_path, filename=row.file_name)
+    if not row: return RedirectResponse("/", status_code=302)
+    return storage_response(row.file_path, filename=row.file_name or Path(row.file_path or "").name) or RedirectResponse("/", status_code=302)
 
 
 @router.post("/admin/employees/planning/forms/{form_id}/{action}")
@@ -497,8 +500,8 @@ def _reconciliation(session,user,row_id):
 @router.get("/hr/employees/reconciliations/{row_id}/download")
 def reconciliation_download(row_id:int,session:Session=Depends(get_db),user=Depends(require_employee_manager)):
     row=_reconciliation(session,user,row_id)
-    if not row or not row.file_path or not Path(row.file_path).is_file():return RedirectResponse("/",status_code=302)
-    return FileResponse(row.file_path,filename=Path(row.file_path).name)
+    if not row:return RedirectResponse("/",status_code=302)
+    return storage_response(row.file_path,filename=Path(row.file_path or "").name) or RedirectResponse("/",status_code=302)
 
 
 @router.post("/admin/employees/reconciliations/{row_id}/{action}")
