@@ -7,7 +7,7 @@ from uuid import uuid4
 from sqlalchemy import or_, text
 
 from database import engine
-from file_storage import storage_exists, storage_save
+from file_storage import storage_save
 from models import Country, DocumentType, EmployeeDocument, RegimeDocumentRule, Requisite, Shift, User
 from time_helpers import business_today, now_utc
 from utils import normalize_text
@@ -550,20 +550,79 @@ def build_document_registry_rows(
     document_type_id=0,
     status="",
 ):
+    """Строки реестра документов: сотрудник × обязательный тип × последний документ.
+
+    Пакетная версия: 5 запросов на вызов независимо от числа сотрудников. Выбор
+    типов повторяет `required_document_types`, гражданство — `citizenship_display`,
+    документ — `latest_employee_document` — при правке логики менять синхронно.
+    """
     selected_employee = normalize_text(employee_name)
     if selected_employee:
         employees = [name for name in employees if name == selected_employee]
+    if not employees:
+        return []
+
+    keys = {normalize_text(name) for name in employees}
+
+    # Без ORDER BY, первая строка на ФИО — как `.first()` в `user_by_employee_name`:
+    # при дублях ФИО в users берётся та же запись, что и раньше.
+    users_by_name: dict = {}
+    for user in session.query(User).filter(User.employee_name.in_(keys)).all():
+        users_by_name.setdefault(normalize_text(user.employee_name), user)
+
+    all_countries = {c.id: c for c in session.query(Country).all()}
+
+    regime_to_type_ids: dict = {}
+    for rule in session.query(RegimeDocumentRule).filter(RegimeDocumentRule.is_required == True).all():
+        regime_to_type_ids.setdefault(rule.regime_id, set()).add(rule.document_type_id)
+
+    active_types = session.query(DocumentType).filter(
+        DocumentType.is_active == True
+    ).order_by(DocumentType.sort_order.asc()).all()
+
+    # Документы нужны только тем, у кого есть User: без него типов нет.
+    latest_docs: dict = {}
+    if users_by_name:
+        docs = session.query(EmployeeDocument).filter(
+            EmployeeDocument.employee_name.in_(users_by_name.keys())
+        ).order_by(
+            EmployeeDocument.uploaded_at.desc(),
+            EmployeeDocument.id.desc(),
+        ).all()
+        for doc in docs:
+            latest_docs.setdefault((doc.employee_name, doc.document_type_id), doc)
+
+    def _types_for(user):
+        if user is None:
+            return []
+        if getattr(user, "is_student", False):
+            base = [dt for dt in active_types if not dt.is_student_doc and 1 <= dt.sort_order <= 5]
+            return base + [dt for dt in active_types if dt.is_student_doc]
+        country = all_countries.get(user.citizenship_country_id) if user.citizenship_country_id else None
+        if not country:
+            return []
+        type_ids = regime_to_type_ids.get(country.regime_id, set())
+        return [dt for dt in active_types if dt.id in type_ids]
+
+    def _citizenship_for(user):
+        if user is None:
+            return ""
+        country = all_countries.get(user.citizenship_country_id) if user.citizenship_country_id else None
+        if country:
+            return normalize_text(country.name)
+        return normalize_text(user.citizenship_country)
 
     rows = []
     for name in employees:
-        user = user_by_employee_name(session, name)
-        citizenship = citizenship_display(session, user)
-        types = required_document_types(session, user)
+        key = normalize_text(name)
+        user = users_by_name.get(key)
+        citizenship = _citizenship_for(user)
+        types = _types_for(user)
         if document_type_id:
             types = [item for item in types if item.id == document_type_id]
 
         for document_type in types:
-            document = latest_employee_document(session, name, document_type.id)
+            document = latest_docs.get((key, document_type.id))
             current_status = computed_document_status(document)
             if status and status != "all" and current_status != status:
                 continue
@@ -607,10 +666,6 @@ async def save_upload_file(upload_file, folder, prefix):
         content_type=getattr(upload_file, "content_type", None),
     )
     return key, upload_file.filename
-
-
-def document_file_exists(path):
-    return storage_exists(path)
 
 
 def normalize_employee_folder(employee_name):
