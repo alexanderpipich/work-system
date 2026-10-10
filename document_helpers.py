@@ -7,7 +7,7 @@ from uuid import uuid4
 from sqlalchemy import or_, text
 
 from database import engine
-from file_storage import storage_exists, storage_save
+from file_storage import storage_save
 from models import Country, DocumentType, EmployeeDocument, RegimeDocumentRule, Requisite, Shift, User
 from time_helpers import business_today, now_utc
 from utils import normalize_text
@@ -666,10 +666,6 @@ async def save_upload_file(upload_file, folder, prefix):
         content_type=getattr(upload_file, "content_type", None),
     )
     return key, upload_file.filename
-
-
-def document_file_exists(path):
-    return storage_exists(path)
 
 
 def normalize_employee_folder(employee_name):
