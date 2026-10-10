@@ -8,7 +8,6 @@ os.environ.setdefault("SECRET_KEY", "test-secret")
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
-import document_helpers
 from database import Base
 from document_helpers import build_document_registry_rows
 from models import CitizenshipRegime, Country, DocumentType, EmployeeDocument, RegimeDocumentRule, User
@@ -168,28 +167,6 @@ class RegistryRowsTests(unittest.TestCase):
             event.remove(self.engine, "before_cursor_execute", count)
         self.assertLessEqual(small, 5)
         self.assertEqual(small, large)
-
-    def test_equivalent_to_legacy(self):
-        legacy = document_helpers._build_document_registry_rows_legacy
-        cases = [
-            {"status": ""},
-            {"status": "all"},
-            {"status": "pending_verification"},
-            {"status": "missing"},
-            {"status": "all", "document_type_id": 1},
-            {"status": "all", "document_type_id": 6},
-            {"status": "all", "employee_name": FOREIGN},
-            {"status": "all", "employee_name": SHIFT_ONLY},
-        ]
-        for kw in cases:
-            with self.subTest(**kw):
-                new = build_document_registry_rows(self.s, EMPLOYEES, **kw)
-                old = legacy(self.s, EMPLOYEES, **kw)
-                self.assertEqual(_shape(new), _shape(old))
-                # Те же ORM-объекты, а не только те же id.
-                for a, b in zip(new, old):
-                    self.assertIs(a["type"], b["type"])
-                    self.assertIs(a["document"], b["document"])
 
 
 if __name__ == "__main__":

@@ -554,7 +554,7 @@ def build_document_registry_rows(
 
     Пакетная версия: 5 запросов на вызов независимо от числа сотрудников. Выбор
     типов повторяет `required_document_types`, гражданство — `citizenship_display`,
-    документ — `latest_employee_document`; результат идентичен поштучной версии.
+    документ — `latest_employee_document` — при правке логики менять синхронно.
     """
     selected_employee = normalize_text(employee_name)
     if selected_employee:
@@ -623,43 +623,6 @@ def build_document_registry_rows(
 
         for document_type in types:
             document = latest_docs.get((key, document_type.id))
-            current_status = computed_document_status(document)
-            if status and status != "all" and current_status != status:
-                continue
-            rows.append({
-                "employee_name": name,
-                "citizenship": citizenship,
-                "type": document_type,
-                "document": document,
-                "status": current_status,
-                "status_label": STATUS_LABELS.get(current_status, current_status),
-                "status_class": document_status_class(current_status),
-            })
-    return rows
-
-
-def _build_document_registry_rows_legacy(
-    session,
-    employees,
-    *,
-    employee_name="",
-    document_type_id=0,
-    status="",
-):
-    selected_employee = normalize_text(employee_name)
-    if selected_employee:
-        employees = [name for name in employees if name == selected_employee]
-
-    rows = []
-    for name in employees:
-        user = user_by_employee_name(session, name)
-        citizenship = citizenship_display(session, user)
-        types = required_document_types(session, user)
-        if document_type_id:
-            types = [item for item in types if item.id == document_type_id]
-
-        for document_type in types:
-            document = latest_employee_document(session, name, document_type.id)
             current_status = computed_document_status(document)
             if status and status != "all" and current_status != status:
                 continue
