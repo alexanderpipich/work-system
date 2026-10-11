@@ -24,9 +24,6 @@ from models import (
     EmployeeDocument,
     EmployeeMonitoringRecommendation,
     EmployeeMonitoringSettings,
-    EmployeeStoreAssignment,
-    PlanningForm,
-    PlanningScenario,
     Shift,
     StoreReconciliation,
     StoreReconciliationSettings,
@@ -48,7 +45,6 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 _admin_settings = require_permission("admin.settings")
 # Префиксы ключей в хранилище (в локальном режиме ложатся под GENERATED_FILES_ROOT).
-PLANNING_PREFIX = "generated_files/planning_forms"
 RECONCILIATION_PREFIX = "generated_files/reconciliations"
 XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
@@ -125,60 +121,14 @@ def _stores(session, user):
     return sorted({(row.store, row.city or "") for row in query.all()})
 
 
-def _users(session, user):
-    employee_names = apply_shift_scope(session.query(Shift.employee).distinct(), session, user, Shift)
-    return session.query(User).filter(User.employee_name.in_(employee_names)).order_by(User.employee_name.asc()).all()
-
-
 def _store_city(session, store):
     row = session.query(Shift.city).filter(Shift.store == normalize_text(store), Shift.city != None).first()
     return normalize_text(row[0]) if row else ""
 
 
-def _scenario_name(session, scenario_id):
-    row = session.query(PlanningScenario).filter(PlanningScenario.id == scenario_id).first()
-    return row.name if row else "Стандартный"
-
-
 def _filename_part(value, fallback):
     encoded = quote(normalize_text(value), safe="")
     return encoded[:120] or fallback
-
-
-def _planning_tree(forms):
-    tree = defaultdict(lambda: defaultdict(list))
-    for form in forms:
-        tree[form.city or "Город не указан"][form.store].append(form)
-    return {city: dict(stores) for city, stores in tree.items()}
-
-
-def _build_planning_file(form, scenario_name):
-    safe_employee = _filename_part(form.employee_name, "employee")
-    safe_store = _filename_part(form.store, "store")
-    filename = f"planning_form_{form.id}_{safe_employee}_{safe_store}_{form.date_from}_{form.date_to}.xlsx"
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Бланк планирования"
-    details = [
-        ("Сотрудник", form.employee_name), ("Магазин", form.store), ("Город", form.city),
-        ("Период", f"{form.date_from:%d.%m.%Y} - {form.date_to:%d.%m.%Y}"), ("Сценарий", scenario_name),
-    ]
-    for row, values in enumerate(details, start=1):
-        ws.cell(row, 1, values[0]).font = Font(bold=True)
-        ws.cell(row, 2, values[1])
-    ws.append([])
-    ws.append(["Дата", "День недели", "Планируемые часы", "Комментарий"])
-    for cell in ws[7]:
-        cell.font = Font(bold=True)
-    current = form.date_from
-    while current <= form.date_to:
-        ws.append([current, current.strftime("%A"), None, None])
-        current += timedelta(days=1)
-    ws.freeze_panes = "A8"
-    for column, width in {"A": 16, "B": 20, "C": 22, "D": 42}.items():
-        ws.column_dimensions[column].width = width
-    form.file_path = _save_workbook(wb, f"{PLANNING_PREFIX}/{filename}")
-    form.file_name = filename
 
 
 def _save_workbook(workbook, key):
@@ -235,129 +185,9 @@ def employees_dashboard(request: Request, user=Depends(require_employee_manager)
 @router.get("/economist/employees/planning")
 @router.get("/hr/employees/planning")
 def planning_page_redirect():
-    """П2: старый XLSX-бланк выведен из меню — адреса ведут на новый БП.
-    planning_page ниже и POST-обработчики /planning/* оставлены до отдельной
-    задачи удаления старого БП после демо."""
+    """Старый XLSX-бланк снят (П4.2): адреса ведут на новый БП, чтобы старые
+    ссылки не давали 404."""
     return RedirectResponse("/admin/planning-bp", status_code=301)
-
-
-def planning_page(request: Request, view: str = "list", message: str = "", session: Session = Depends(get_db), user=Depends(require_employee_manager)):
-    forms = _scope(session.query(PlanningForm), PlanningForm, user).order_by(PlanningForm.id.desc()).all()
-    assignments = _scope(session.query(EmployeeStoreAssignment), EmployeeStoreAssignment, user).order_by(EmployeeStoreAssignment.city, EmployeeStoreAssignment.store, EmployeeStoreAssignment.employee_name).all()
-    scenarios = session.query(PlanningScenario).order_by(PlanningScenario.is_active.desc(), PlanningScenario.name).all()
-    return templates.TemplateResponse(request, "employees_planning.html", _context(request, user, "planning", forms=forms, assignments=assignments, scenarios=scenarios, users=_users(session, user), stores=_stores(session, user), tree=_planning_tree(forms), view=view, message=message))
-
-
-@router.post("/admin/employees/planning/assignments/add")
-@router.post("/economist/employees/planning/assignments/add")
-@router.post("/hr/employees/planning/assignments/add")
-def assignment_add(request: Request, employee_name: str = Form(...), store: str = Form(...), comment: str = Form(default=""), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
-    city = _store_city(session, store)
-    if not _scope_allowed(session, user, city, store):
-        return _redirect(request, "/planning", message="Нет доступа к городу")
-    existing = session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.employee_name == normalize_text(employee_name), EmployeeStoreAssignment.store == normalize_text(store)).first()
-    if existing:
-        existing.is_active = True
-        existing.comment = normalize_text(comment) or None
-        existing.city = city
-        action = "planning_assignment_updated"
-        row = existing
-    else:
-        person = session.query(User).filter(User.employee_name == normalize_text(employee_name)).first()
-        row = EmployeeStoreAssignment(user_id=person.id if person else None, employee_name=normalize_text(employee_name), store=normalize_text(store), city=city, is_active=True, created_by=user.id, created_at=now_utc(), comment=normalize_text(comment) or None)
-        session.add(row); session.flush(); action = "planning_assignment_created"
-    create_audit_log(session, request, user, action, "employee_store_assignment", row.id, f"{row.employee_name} / {row.store}")
-    session.commit()
-    return _redirect(request, "/planning", message="Назначение сохранено")
-
-
-@router.post("/admin/employees/planning/assignments/update")
-@router.post("/economist/employees/planning/assignments/update")
-@router.post("/hr/employees/planning/assignments/update")
-def assignment_update(request: Request, assignment_id: int = Form(...), is_active: str = Form(default=""), comment: str = Form(default=""), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
-    row = session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.id == assignment_id).first()
-    if not row or not _scope_allowed(session, user, row.city, row.store): return _redirect(request, "/planning", message="Назначение недоступно")
-    row.is_active = is_active == "1"; row.comment = normalize_text(comment) or None
-    create_audit_log(session, request, user, "planning_assignment_updated", "employee_store_assignment", row.id, f"{row.employee_name} / {row.store}")
-    session.commit(); return _redirect(request, "/planning", message="Назначение обновлено")
-
-
-@router.post("/admin/employees/planning/scenarios/add")
-def scenario_add(request: Request, name: str = Form(...), description: str = Form(default=""), template_type: str = Form(default="standard"), email_subject_template: str = Form(default=""), email_body_template: str = Form(default=""), session: Session = Depends(get_db), user=Depends(_admin_settings)):
-    row = PlanningScenario(name=normalize_text(name), description=normalize_text(description) or None, template_type=normalize_text(template_type) or "standard", email_subject_template=normalize_text(email_subject_template) or None, email_body_template=normalize_text(email_body_template) or None, is_active=True, created_at=now_utc())
-    session.add(row); session.flush(); create_audit_log(session, request, user, "planning_scenario_created", "planning_scenario", row.id, row.name); session.commit()
-    return _redirect(request, "/planning", message="Сценарий создан")
-
-
-@router.post("/admin/employees/planning/assignments/delete")
-@router.post("/economist/employees/planning/assignments/delete")
-@router.post("/hr/employees/planning/assignments/delete")
-def assignment_delete(request: Request, assignment_id: int = Form(...), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
-    row = session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.id == assignment_id).first()
-    if row and _scope_allowed(session, user, row.city, row.store):
-        row.is_active = False
-        create_audit_log(session, request, user, "planning_assignment_updated", "employee_store_assignment", row.id, f"{row.employee_name} / {row.store}")
-        session.commit()
-    return _redirect(request, "/planning", message="Назначение деактивировано")
-
-
-@router.post("/admin/employees/planning/scenarios/update")
-def scenario_update(request: Request, scenario_id: int = Form(...), name: str = Form(...), description: str = Form(default=""), template_type: str = Form(default="standard"), is_active: str = Form(default=""), session: Session = Depends(get_db), user=Depends(_admin_settings)):
-    row = session.query(PlanningScenario).filter(PlanningScenario.id == scenario_id).first()
-    if row:
-        row.name = normalize_text(name); row.description = normalize_text(description) or None; row.template_type = normalize_text(template_type) or "standard"; row.is_active = is_active == "1"; row.updated_at = now_utc()
-        create_audit_log(session, request, user, "planning_scenario_updated", "planning_scenario", row.id, row.name); session.commit()
-    return _redirect(request, "/planning", message="Сценарий обновлён")
-
-
-@router.post("/admin/employees/planning/scenarios/delete")
-def scenario_delete(request: Request, scenario_id: int = Form(...), session: Session = Depends(get_db), user=Depends(_admin_settings)):
-    row = session.query(PlanningScenario).filter(PlanningScenario.id == scenario_id).first()
-    if row:
-        row.is_active = False; row.updated_at = now_utc(); create_audit_log(session, request, user, "planning_scenario_updated", "planning_scenario", row.id, row.name); session.commit()
-    return _redirect(request, "/planning", message="Сценарий деактивирован")
-
-@router.post("/admin/employees/planning/forms/create")
-@router.post("/economist/employees/planning/forms/create")
-@router.post("/hr/employees/planning/forms/create")
-def planning_form_create(request: Request, scenario_id: int = Form(default=0), employee_name: str = Form(...), store: str = Form(...), date_from: str = Form(...), date_to: str = Form(...), email_to: str = Form(default=""), comment: str = Form(default=""), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
-    city = _store_city(session, store)
-    if not _scope_allowed(session, user, city, store): return _redirect(request, "/planning", message="Нет доступа к городу")
-    start, end = _parse_date(date_from), _parse_date(date_to)
-    if start > end:
-        return _redirect(request, "/planning", message="Дата начала позже даты окончания")
-    person = session.query(User).filter(User.employee_name == normalize_text(employee_name)).first()
-    scenario = session.query(PlanningScenario).filter(PlanningScenario.id == scenario_id, PlanningScenario.is_active == True).first() if scenario_id else None
-    row = PlanningForm(scenario_id=scenario.id if scenario else None, employee_name=normalize_text(employee_name), user_id=person.id if person else None, store=normalize_text(store), city=city, date_from=start, date_to=end, status="created", created_by=user.id, created_at=now_utc(), email_to=normalize_text(email_to) or None, email_subject=(scenario.email_subject_template if scenario else None), comment=normalize_text(comment) or None)
-    session.add(row); session.flush(); _build_planning_file(row, scenario.name if scenario else "Стандартный")
-    create_audit_log(session, request, user, "planning_form_created", "planning_form", row.id, f"{row.employee_name} / {row.store}"); session.commit()
-    return _redirect(request, "/planning", message="Бланк сформирован")
-
-
-def _get_planning_form(session, user, form_id):
-    row = session.query(PlanningForm).filter(PlanningForm.id == form_id).first()
-    return row if row and _scope_allowed(session, user, row.city, row.store) else None
-
-
-@router.get("/admin/employees/planning/forms/{form_id}/download")
-@router.get("/economist/employees/planning/forms/{form_id}/download")
-@router.get("/hr/employees/planning/forms/{form_id}/download")
-def planning_form_download(form_id: int, session: Session = Depends(get_db), user=Depends(require_employee_manager)):
-    row = _get_planning_form(session, user, form_id)
-    if not row: return RedirectResponse("/", status_code=302)
-    return storage_response(row.file_path, filename=row.file_name or Path(row.file_path or "").name) or RedirectResponse("/", status_code=302)
-
-
-@router.post("/admin/employees/planning/forms/{form_id}/{action}")
-@router.post("/economist/employees/planning/forms/{form_id}/{action}")
-@router.post("/hr/employees/planning/forms/{form_id}/{action}")
-def planning_form_action(request: Request, form_id: int, action: str, session: Session = Depends(get_db), user=Depends(require_employee_manager)):
-    row = _get_planning_form(session, user, form_id)
-    if not row or action not in {"send", "cancel"}: return _redirect(request, "/planning")
-    row.status = "sent" if action == "send" else "cancelled"
-    if action == "send": row.sent_by = user.id; row.sent_at = now_utc()
-    create_audit_log(session, request, user, f"planning_form_{'sent' if action == 'send' else 'cancelled'}", "planning_form", row.id, f"{row.employee_name} / {row.store}"); session.commit()
-    return _redirect(request, "/planning", message="Статус бланка обновлён")
 
 
 @router.get("/admin/employees/monitoring", response_class=HTMLResponse)
