@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from database import Base
-from models import Rate, Service, Shift, Store
+from models import AdvanceSelection, AuditLog, Rate, Service, Shift, Store, User
 from service_catalog import build_service_resolver
 from store_helpers import populate_stores_from_shifts
 from utils import pick_rate
@@ -86,6 +86,72 @@ class TariffPreviewTests(unittest.TestCase):
         new, spelling = _services_vs_catalog(s, rows)
         self.assertEqual(new, ["Табакошоп_Универсальные услуги", "Услуги по выкладке СОФ"])
         self.assertEqual(spelling, [("Табакошоп_Универсальные услуги", "Табакошоп Универсальные услуги")])
+
+
+class TmCabinetTests(unittest.TestCase):
+    def test_grant_service_logins(self):
+        from tools.grant_tm_cabinets import grant_tm_cabinets
+        from utils import verify_password
+
+        s = _session()
+        s.add_all([
+            User(id=1, employee_name="Пиунов Андрей", role="tm"),
+            User(id=2, employee_name="Амин", role="hr_manager"),
+            User(id=3, employee_name="Донёр", role="tm", phone="79001112233", password_hash="x"),
+            User(id=4, employee_name="Сотрудник", role="employee"),
+            User(id=5, employee_name="Занял номер", role="employee", phone="70000000001"),
+        ])
+        s.commit()
+        self.assertEqual([(u.id, p, pw) for u, p, pw in grant_tm_cabinets(s)],
+                         [(1, "70000000002", None), (2, "70000000003", None)])
+        self.assertIsNone(s.get(User, 1).phone)  # сухой прогон
+        result = grant_tm_cabinets(s, apply=True)
+        s.commit()
+        amin = s.get(User, 2)
+        self.assertEqual((amin.employee_name, amin.phone, amin.password_is_temporary), ("Амин", "70000000003", True))
+        password = result[1][2]
+        self.assertEqual(len(password), 8)
+        self.assertTrue(verify_password(password, amin.password_hash))
+        logs = s.query(AuditLog).filter_by(action="user.cabinet_granted").all()
+        self.assertEqual(len(logs), 2)
+        self.assertFalse(any(password in (log.new_value or "") for log in logs))
+        self.assertEqual(grant_tm_cabinets(s), [])
+
+
+class WeeklyFlagsTests(unittest.TestCase):
+    def test_import_from_statement(self):
+        import tempfile
+
+        import openpyxl
+
+        from tools.import_weekly_flags import import_weekly_flags, read_weekly_names
+
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = "Ведомость"
+        sheet.append(["ФИО сотрудника Исполнителя", "ИЧ", "Номер карты"])
+        sheet.append(["Абазов Жанторо", 11, "еженедельно"])
+        sheet.append(["Иванов  Иван", 8, "Еженедельно "])
+        sheet.append(["Петров Пётр", 8, "2200123412341234"])
+        sheet.append(["Итог", 27, None])
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "v.xlsx")
+            workbook.save(path)
+            names = read_weekly_names(path)
+        self.assertEqual(names, ["Абазов Жанторо", "Иванов  Иван"])
+
+        s = _session()
+        s.add_all([User(id=1, employee_name="Админ", role="superadmin"), User(id=2, employee_name="Иванов Иван")])
+        s.commit()
+        week = datetime.date(2026, 9, 28)
+        result = import_weekly_flags(s, names, week, apply=True)
+        s.commit()
+        self.assertEqual((result["added"], result["not_found"]), (["Абазов Жанторо", "Иванов Иван"], ["Абазов Жанторо"]))
+        rows = {r.employee_name: (r.user_id, r.selected_by) for r in s.query(AdvanceSelection).filter_by(week_start=week)}
+        self.assertEqual(rows, {"Абазов Жанторо": (None, 1), "Иванов Иван": (2, 1)})
+        self.assertEqual(s.query(AuditLog).filter_by(action="advance.selection.import").count(), 1)
+        again = import_weekly_flags(s, names, week, apply=True)
+        self.assertEqual((again["added"], len(again["existing"])), ([], 2))
 
 
 if __name__ == "__main__":
