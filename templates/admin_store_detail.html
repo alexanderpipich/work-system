@@ -58,6 +58,11 @@
                     <input type="text" name="city" value="{{ store.city or '' }}">
                 </div>
                 <div class="field">
+                    <label>Тарифный регион</label>
+                    <input type="text" name="rate_region" value="{{ store.rate_region or '' }}" placeholder="как город смены">
+                    <small class="muted">По нему подбирается ЧТС; пусто → берётся город смены</small>
+                </div>
+                <div class="field">
                     <label>Формат</label>
                     <select name="format">
                         <option value="">—</option>

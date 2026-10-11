@@ -165,17 +165,20 @@ def _service_spec():
 
 
 def _store_spec():
-    fields = ["tk_number", "display_name", "city", "format", "object_address", "is_active", "comment"]
+    fields = ["tk_number", "display_name", "city", "rate_region", "format", "object_address", "is_active",
+              "comment"]
     return dict(
         model=Store,
         key=lambda r: r["tk_number"],
         to_record=lambda o, refs: _plain(o, fields),
-        # Город — как в timebook после normalize_city: без «г.», пустой → NULL.
-        to_values=lambda r, refs: {**{f: r[f] for f in fields}, "city": normalize_city(r["city"]) or None},
+        # Город и тарифный регион — как в timebook после normalize_city: без «г.», пустой → NULL.
+        to_values=lambda r, refs: {**{f: r.get(f) for f in fields}, "city": normalize_city(r.get("city")) or None,
+                                   "rate_region": normalize_city(r.get("rate_region")) or None},
         # Город магазина должен совпадать с «Городом» timebook — по нему подбираются
         # ставки. JSON мог взять город из таблицы Ленты («МО, Королев» вместо «Москва»),
         # поэтому известный город базы не перезаписывается, расхождение — в отчёт.
-        keep_if_set=("city",),
+        # Тарифный регион (П4.4) — так же: его правят в карточке ТК.
+        keep_if_set=("city", "rate_region"),
     )
 
 

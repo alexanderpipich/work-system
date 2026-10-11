@@ -52,6 +52,10 @@
                     <input type="text" name="city" placeholder="Санкт-Петербург">
                 </div>
                 <div class="field">
+                    <label>Тарифный регион</label>
+                    <input type="text" name="rate_region" placeholder="пусто = как город">
+                </div>
+                <div class="field">
                     <label>Формат</label>
                     <select name="format">
                         <option value="">—</option>
@@ -88,6 +92,7 @@
                     <th>ТК №</th>
                     <th>Название</th>
                     <th>Город</th>
+                    <th>Тарифный регион</th>
                     <th>Формат</th>
                     <th>Адрес объекта</th>
                     <th>Контактов</th>
@@ -104,6 +109,7 @@
                     <td><strong>{{ store.tk_number }}</strong></td>
                     <td>{{ store.display_name or '—' }}</td>
                     <td>{{ store.city or '—' }}</td>
+                    <td>{% if store.rate_region %}{{ store.rate_region }}{% else %}<span class="muted">как город</span>{% endif %}</td>
                     <td>{{ store.format or '—' }}</td>
                     <td>{% if store.object_address %}{{ store.object_address }}{% else %}<span class="muted">не указан</span>{% endif %}</td>
                     <td>

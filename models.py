@@ -702,6 +702,9 @@ class Store(Base):
     tk_number = Column(Integer, unique=True, nullable=False)
     display_name = Column(String, nullable=True)
     city = Column(String, nullable=True)
+    # П4.4: тарифный регион — по нему подбирается ЧТС (Rate.city). У подмосковных
+    # ТК «Московская область», хотя «Город» timebook даёт «Москва». Пусто → город смены.
+    rate_region = Column(String, nullable=True)
     format = Column(String, nullable=True)
     object_address = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)

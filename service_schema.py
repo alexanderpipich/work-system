@@ -16,3 +16,7 @@ def ensure_service_columns():
         connection.execute(text(
             "ALTER TABLE rates ADD COLUMN IF NOT EXISTS level INTEGER"
         ))
+        # П4.4: тарифный регион магазина (подбор ставки).
+        connection.execute(text(
+            "ALTER TABLE stores ADD COLUMN IF NOT EXISTS rate_region VARCHAR"
+        ))

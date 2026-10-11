@@ -47,8 +47,8 @@
                 </div>
 
                 <div class="field">
-                    <label>Город</label>
-                    <input type="text" name="city" placeholder="как в отчёте, пусто = любой">
+                    <label>Регион</label>
+                    <input type="text" name="city" placeholder="тарифный регион ТК, пусто = любой">
                 </div>
 
                 <div class="field">
@@ -97,7 +97,7 @@
     <div class="card">
         <h2>Загрузка тарифной сетки из Excel</h2>
         <p class="field-hint mb-14">
-            Лист «ставки»: колонки РЕГИОН → Город, ТК → Формат, УСЛУГА + уровень → услуга вида
+            Лист «ставки»: колонки РЕГИОН → Регион, ТК → Формат, УСЛУГА + уровень → услуга вида
             «Nур_название», блок «Тариф исполнителя N уровня» → ЧТС.
         </p>
 
@@ -126,10 +126,10 @@
         {% if rates_preview %}
             <div class="alert alert-success">
                 Найдено ставок: <b>{{ rates_preview.count }}</b>.
-                Города: {{ rates_preview.cities | join(', ') }}.
+                Регионы: {{ rates_preview.cities | join(', ') }}.
                 Форматы: {{ rates_preview.formats | join(', ') }}.
                 {% if rates_preview.conflicts %}
-                    <br>Конфликтов ключа город+формат+услуга: {{ rates_preview.conflicts | length }}
+                    <br>Конфликтов ключа регион+формат+услуга: {{ rates_preview.conflicts | length }}
                     — загрузка в режиме записи будет заблокирована.
                 {% else %}
                     <br>Конфликтов нет — можно применять.
@@ -147,7 +147,7 @@
             {% if rates_preview.conflicts %}
                 <div class="table-wrap mt-14">
                     <table>
-                        <thead><tr><th>Город</th><th>Формат</th><th>Услуга</th><th>Ставки</th></tr></thead>
+                        <thead><tr><th>Регион</th><th>Формат</th><th>Услуга</th><th>Ставки</th></tr></thead>
                         <tbody>
                         {% for c in rates_preview.conflicts %}
                             <tr>
@@ -162,7 +162,7 @@
 
             <div class="table-wrap mt-14">
                 <table>
-                    <thead><tr><th>Город</th><th>Формат</th><th>Услуга</th><th>ЧТС</th></tr></thead>
+                    <thead><tr><th>Регион</th><th>Формат</th><th>Услуга</th><th>ЧТС</th></tr></thead>
                     <tbody>
                     {% for r in rates_preview.sample %}
                         <tr>
@@ -258,7 +258,7 @@
 
                                     <input type="text" name="service" value="{{ rate.service }}" placeholder="Услуга" required>
                                     <input type="text" name="format" value="{{ rate.format or '' }}" placeholder="Формат">
-                                    <input type="text" name="city" value="{{ rate.city or '' }}" placeholder="Город">
+                                    <input type="text" name="city" value="{{ rate.city or '' }}" placeholder="Регион">
                                     <input type="text" name="store" value="{{ rate.store or '' }}" placeholder="Магазин">
                                     <input type="text" name="employee_name" value="{{ rate.employee_name or '' }}" placeholder="Сотрудник">
                                     <input type="number" step="0.01" name="hourly_rate" value="{{ rate.hourly_rate }}" placeholder="ЧТС" required>
