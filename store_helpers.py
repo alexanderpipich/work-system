@@ -187,3 +187,24 @@ def migrate_legacy_store_settings(session: Session) -> dict:
         "skipped": skipped,
         "note": "StoreReconciliationSettings and StoreNotificationSettings left intact (deprecated, remove after prod verification)",
     }
+
+
+def timebook_cities(session) -> set:
+    """Города, которые встречаются в выгрузках смен («Город» timebook)."""
+    return {city for (city,) in session.query(Shift.city).filter(Shift.city != None).distinct()}  # noqa: E711
+
+
+def store_city_by_tk(session, known_cities) -> dict:
+    """{номер ТК: город} для подстановки в смены без города (П4.3).
+
+    Берётся только город, который встречается в выгрузках: ставки подбираются по
+    городу строка в строку, а в справочнике из таблицы Ленты бывают «Московская
+    область» или «КО, Обнинск» — такие в смены не пишутся."""
+    from utils import normalize_city
+
+    result = {}
+    for tk, city in session.query(Store.tk_number, Store.city).filter(Store.city != None):  # noqa: E711
+        city = normalize_city(city)
+        if city and city in known_cities:
+            result[tk] = city
+    return result
