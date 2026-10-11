@@ -99,15 +99,19 @@ app.include_router(upload_router)
 app.include_router(users_router)
 
 Base.metadata.create_all(bind=engine)
-ensure_shift_request_type_unique_key()
-ensure_user_profile_columns()
-ensure_requisite_profile_columns()
-ensure_document_tables()
-ensure_citizenship_columns()
-ensure_legal_entities_table()
-ensure_payroll_run_closing_columns()
-ensure_audit_log_table()
-ensure_service_columns()
+# Догоняющие миграции старых баз — Postgres-специфичный SQL (ADD COLUMN IF NOT
+# EXISTS, BTRIM, ALTER ... DROP NOT NULL). На свежей базе create_all уже создал
+# всё по моделям; на SQLite тестов этот SQL не выполняется.
+if engine.dialect.name == "postgresql":
+    ensure_shift_request_type_unique_key()
+    ensure_user_profile_columns()
+    ensure_requisite_profile_columns()
+    ensure_document_tables()
+    ensure_citizenship_columns()
+    ensure_legal_entities_table()
+    ensure_payroll_run_closing_columns()
+    ensure_audit_log_table()
+    ensure_service_columns()
 from referral_helpers import ensure_referral_settings
 ensure_referral_settings()
 
