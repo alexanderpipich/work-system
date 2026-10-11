@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_employee_input.html" import employee_input %}
 
 {% block title %}Проверка комплектности{% endblock %}
 {% block brand_title %}Проверка комплектности{% endblock %}
@@ -43,12 +44,7 @@
             <div class="form-grid cols-1">
                 <div class="field">
                     <label>Сотрудник</label>
-                    <select name="employee">
-                        <option value="">— выберите сотрудника —</option>
-                        {% for name in names %}
-                        <option value="{{ name }}" {{ 'selected' if name == selected_employee }}>{{ name }}</option>
-                        {% endfor %}
-                    </select>
+                    {{ employee_input('employee', names, selected_employee, list_id='citizenship-check-employees', placeholder='Начните вводить ФИО') }}
                 </div>
             </div>
             <button type="submit" class="btn btn-primary mt-14">Показать</button>

@@ -21,3 +21,11 @@ def ensure_citizenship_columns():
         connection.execute(text(
             "ALTER TABLE countries ADD COLUMN IF NOT EXISTS aliases VARCHAR"
         ))
+        # П4: родительный падеж страны для договора.
+        connection.execute(text(
+            "ALTER TABLE countries ADD COLUMN IF NOT EXISTS name_genitive VARCHAR"
+        ))
+        # П4: уровни напоминаний о сроке документа.
+        connection.execute(text(
+            "ALTER TABLE document_types ADD COLUMN IF NOT EXISTS alert_days VARCHAR"
+        ))

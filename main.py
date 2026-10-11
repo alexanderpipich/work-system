@@ -1,4 +1,5 @@
-﻿import os
+﻿import logging
+import os
 
 from env_loader import load_project_env
 
@@ -9,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from audit_helpers import ensure_audit_log_table
 from citizenship_schema import ensure_citizenship_columns
-from database import Base, engine
+from database import Base, SessionLocal, engine
 from dependencies import RedirectException, redirect_exception_response
 from document_helpers import ensure_document_tables
 from legal_entity_helpers import ensure_legal_entities_table
@@ -34,6 +35,9 @@ from routers.maintenance import router as maintenance_router
 from routers.payroll import router as payroll_router
 from routers.payroll_runs import router as payroll_runs_router
 from routers.payouts import router as payouts_router
+from routers.regions import router as regions_router
+from routers.contracts import router as contracts_router
+from routers.document_alerts import router as document_alerts_router
 from routers.rates import router as rates_router
 from routers.referral import router as referral_router
 from routers.requisites import router as requisites_router
@@ -58,6 +62,32 @@ if not SECRET_KEY:
 
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+
+
+# П4: счётчик непрочитанных напоминаний о сроках документов в шапке (кадровик, ТМ).
+# Регистрируется ДО SessionMiddleware: middleware, добавленный позже, оборачивает
+# ранние — так сессия к этому моменту уже разобрана.
+@app.middleware("http")
+async def document_expiry_counter(request: Request, call_next):
+    request.state.expiry_alerts = 0
+    user_id = request.session.get("user_id") if "session" in request.scope else None
+    if user_id and request.method == "GET":
+        from document_alerts import unread_count
+        from models import User
+        from rbac import ROLE_HR_CLERK, ROLE_TM, canonical_role
+
+        db = SessionLocal()
+        try:
+            user = db.get(User, user_id)
+            if user and canonical_role(user) in {ROLE_HR_CLERK, ROLE_TM}:
+                request.state.expiry_alerts = unread_count(db, user.id)
+        except Exception:  # счётчик не должен ронять страницу
+            logging.getLogger(__name__).exception("document expiry counter failed")
+        finally:
+            db.close()
+    return await call_next(request)
+
+
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -85,6 +115,9 @@ app.include_router(qr_router)
 app.include_router(payroll_router)
 app.include_router(payroll_runs_router)
 app.include_router(payouts_router)
+app.include_router(regions_router)
+app.include_router(contracts_router)
+app.include_router(document_alerts_router)
 app.include_router(rates_router)
 app.include_router(referral_router)
 app.include_router(requisites_router)
@@ -116,6 +149,18 @@ if engine.dialect.name == "postgresql":
     ensure_service_columns()
 from referral_helpers import ensure_referral_settings
 ensure_referral_settings()
+
+# П4: проверка сроков документов раз в сутки при старте (планировщик — П6).
+if engine.dialect.name == "postgresql":
+    from document_alerts import maybe_run_daily
+
+    _startup_session = SessionLocal()
+    try:
+        maybe_run_daily(_startup_session)
+    except Exception:
+        logging.getLogger(__name__).exception("daily document expiry check failed")
+    finally:
+        _startup_session.close()
 
 
 

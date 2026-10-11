@@ -70,6 +70,12 @@ PayrollRun lifecycle: `draft` → `fixed` → `sent` → `closed`.
 
 **Never change numerical results** (rates, LMK deductions, adjustment amounts) during refactoring. Calculation logic in `payroll_run_helpers.py`, `lmk_charges.py`, `payroll_adjustments.py` must produce identical outputs before and after any structural change.
 
+## Contracts and Petitions (P4)
+
+`contract_generator.py` fills `data/templates/contract_template.docx` / `petition_template.docx` by replacing template **sample text** inside the paragraph found by an **anchor** (spans across Word runs, formatting kept, substituted text highlighted yellow, missing → «НЕТ ДАННЫХ» only on explicit request). The map is `CONTRACT_SUBS` / `PETITION_SUBS`; `tests/test_documents_contracts.py -k real_templates` fails with `TemplateMismatch` if a template edit removed a sample. Field sources live in `contract_data.py`; see `docs/contracts.md`.
+
+**Rule: employee documents are the data source for contracts.** Passport, SNILS and patent come from `EmployeeDocument` (patent: `document_number` = «78 №… / ПР …», extra fields = issuing authority / profession), the rest from `User`, `LegalEntity`, `Region` (`employee_profile.py`). Missing data entered in the completeness form is saved back to that source, never only into the generated file.
+
 ## Normalization
 
 All text inputs pass through `normalize_text()`, `normalize_phone()`, `normalize_format()` in `utils.py` before DB writes or comparisons. These handle whitespace, Cyrillic е/ё variants, format name aliases (ГМ, СМ), and float-to-int phone conversions. Apply these when writing any new ingestion or lookup logic.

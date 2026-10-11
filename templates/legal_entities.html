@@ -87,6 +87,27 @@
                                 </select>
                                 <button form="legal-entity-{{ entity.id }}" type="submit" class="btn btn-primary btn-sm">Сохранить</button>
                             </div>
+                            {# П4: реквизиты для договора и ходатайства — отдельная форма. #}
+                            <details class="mt-8">
+                                <summary>Реквизиты для договора и ходатайства{% if not entity.full_name or not entity.ogrn %} <span class="pill pill-warn">не заполнены</span>{% endif %}</summary>
+                                <form method="post" action="{{ base_path or '/admin/legal-entities' }}/{{ entity.id }}/details" class="form-grid mt-8">
+                                    <div class="field"><label>Полное наименование</label><input type="text" name="full_name" value="{{ entity.full_name or '' }}" placeholder="Общество с ограниченной ответственностью «…»"></div>
+                                    <div class="field"><label>ОГРН</label><input type="text" name="ogrn" value="{{ entity.ogrn or '' }}"></div>
+                                    <div class="field"><label>КПП</label><input type="text" name="kpp" value="{{ entity.kpp or '' }}"></div>
+                                    <div class="field"><label>Юридический адрес</label><input type="text" name="legal_address" value="{{ entity.legal_address or '' }}"></div>
+                                    <div class="field"><label>Фактический адрес (шапка ходатайства)</label><input type="text" name="actual_address" value="{{ entity.actual_address or '' }}"></div>
+                                    <div class="field"><label>Адрес места работы (п. 1.3 договора)</label><input type="text" name="work_address" value="{{ entity.work_address or '' }}"></div>
+                                    <div class="field"><label>Банк</label><input type="text" name="bank_name" value="{{ entity.bank_name or '' }}"></div>
+                                    <div class="field"><label>Расчётный счёт</label><input type="text" name="bank_account" value="{{ entity.bank_account or '' }}"></div>
+                                    <div class="field"><label>БИК</label><input type="text" name="bik" value="{{ entity.bik or '' }}"></div>
+                                    <div class="field"><label>Корр. счёт</label><input type="text" name="corr_account" value="{{ entity.corr_account or '' }}"></div>
+                                    <div class="field"><label>Должность руководителя (род. падеж)</label><input type="text" name="director_title" value="{{ entity.director_title or '' }}" placeholder="генерального директора"></div>
+                                    <div class="field"><label>Руководитель (им. падеж)</label><input type="text" name="director_name" value="{{ entity.director_name or '' }}" placeholder="Хацкевич Виталий Сергеевич"></div>
+                                    <div class="field"><label>Руководитель (род. падеж)</label><input type="text" name="director_name_genitive" value="{{ entity.director_name_genitive or '' }}" placeholder="Хацкевича Виталия Сергеевича"></div>
+                                    <div class="field"><label>Подпись руководителя</label><input type="text" name="director_short" value="{{ entity.director_short or '' }}" placeholder="В.С. Хацкевич"></div>
+                                    <div class="field"><button type="submit" class="btn btn-primary btn-sm">Сохранить реквизиты</button></div>
+                                </form>
+                            </details>
                         </td>
                         <td>
                             {% if entity.is_active %}

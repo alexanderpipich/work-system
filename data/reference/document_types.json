@@ -13,7 +13,8 @@
     "extra_field_2_label": null,
     "is_required": true,
     "is_active": true,
-    "is_student_doc": false
+    "is_student_doc": false,
+    "alert_days": null
   },
   {
     "name": "ИНН",
@@ -29,7 +30,8 @@
     "extra_field_2_label": null,
     "is_required": true,
     "is_active": true,
-    "is_student_doc": false
+    "is_student_doc": false,
+    "alert_days": null
   },
   {
     "name": "ЛМК",
@@ -45,7 +47,8 @@
     "extra_field_2_label": null,
     "is_required": true,
     "is_active": true,
-    "is_student_doc": false
+    "is_student_doc": false,
+    "alert_days": null
   },
   {
     "name": "МИГРАЦИОННАЯ КАРТА",
@@ -61,7 +64,8 @@
     "extra_field_2_label": null,
     "is_required": true,
     "is_active": true,
-    "is_student_doc": false
+    "is_student_doc": false,
+    "alert_days": null
   },
   {
     "name": "ПАТЕНТ",
@@ -71,13 +75,14 @@
     "citizenship_filter": null,
     "requires_number": true,
     "requires_issue_date": true,
-    "requires_expiry_date": false,
-    "allow_permanent": true,
-    "extra_field_1_label": null,
-    "extra_field_2_label": null,
+    "requires_expiry_date": true,
+    "allow_permanent": false,
+    "extra_field_1_label": "Орган выдачи",
+    "extra_field_2_label": "Профессия по патенту",
     "is_required": true,
     "is_active": true,
-    "is_student_doc": false
+    "is_student_doc": false,
+    "alert_days": "30,14,7,0"
   },
   {
     "name": "ПЕРЕВОД ПАСПОРТА",
@@ -93,7 +98,8 @@
     "extra_field_2_label": null,
     "is_required": true,
     "is_active": true,
-    "is_student_doc": false
+    "is_student_doc": false,
+    "alert_days": null
   },
   {
     "name": "ПОЛИС ДМС",
@@ -109,7 +115,8 @@
     "extra_field_2_label": null,
     "is_required": true,
     "is_active": true,
-    "is_student_doc": false
+    "is_student_doc": false,
+    "alert_days": null
   },
   {
     "name": "Паспорт",
@@ -121,11 +128,12 @@
     "requires_issue_date": true,
     "requires_expiry_date": false,
     "allow_permanent": true,
-    "extra_field_1_label": null,
+    "extra_field_1_label": "Кем выдан",
     "extra_field_2_label": null,
     "is_required": true,
     "is_active": true,
-    "is_student_doc": false
+    "is_student_doc": false,
+    "alert_days": null
   },
   {
     "name": "РЕГИСТРАЦИЯ",
@@ -135,13 +143,14 @@
     "citizenship_filter": null,
     "requires_number": true,
     "requires_issue_date": true,
-    "requires_expiry_date": false,
-    "allow_permanent": true,
+    "requires_expiry_date": true,
+    "allow_permanent": false,
     "extra_field_1_label": null,
     "extra_field_2_label": null,
     "is_required": true,
     "is_active": true,
-    "is_student_doc": false
+    "is_student_doc": false,
+    "alert_days": "30,14,7,0"
   },
   {
     "name": "СНИЛС",
@@ -157,7 +166,8 @@
     "extra_field_2_label": null,
     "is_required": true,
     "is_active": true,
-    "is_student_doc": false
+    "is_student_doc": false,
+    "alert_days": null
   },
   {
     "name": "СПРАВКА С МЕСТА УЧЕБЫ",
@@ -173,7 +183,8 @@
     "extra_field_2_label": null,
     "is_required": false,
     "is_active": true,
-    "is_student_doc": true
+    "is_student_doc": true,
+    "alert_days": null
   },
   {
     "name": "СТУДЕНЧЕСКИЙ БИЛЕТ",
@@ -189,7 +200,42 @@
     "extra_field_2_label": null,
     "is_required": false,
     "is_active": true,
-    "is_student_doc": true
+    "is_student_doc": true,
+    "alert_days": null
+  },
+  {
+    "name": "ТРУДОВОЙ ДОГОВОР",
+    "sort_order": 15,
+    "description": "Трудовой договор с сотрудником: номер, дата, срок (бессрочный или до даты).",
+    "help_text": null,
+    "citizenship_filter": null,
+    "requires_number": true,
+    "requires_issue_date": true,
+    "requires_expiry_date": false,
+    "allow_permanent": true,
+    "extra_field_1_label": "Юрлицо",
+    "extra_field_2_label": "Должность",
+    "is_required": false,
+    "is_active": true,
+    "is_student_doc": false,
+    "alert_days": null
+  },
+  {
+    "name": "ХОДАТАЙСТВО",
+    "sort_order": 16,
+    "description": "Ходатайство работодателя в УВМ о переоформлении патента.",
+    "help_text": null,
+    "citizenship_filter": null,
+    "requires_number": false,
+    "requires_issue_date": true,
+    "requires_expiry_date": false,
+    "allow_permanent": true,
+    "extra_field_1_label": null,
+    "extra_field_2_label": null,
+    "is_required": false,
+    "is_active": true,
+    "is_student_doc": false,
+    "alert_days": null
   },
   {
     "name": "ЧЕКИ ПО ОПЛАТЕ ПАТЕНТА",
@@ -205,6 +251,7 @@
     "extra_field_2_label": null,
     "is_required": true,
     "is_active": true,
-    "is_student_doc": false
+    "is_student_doc": false,
+    "alert_days": null
   }
 ]

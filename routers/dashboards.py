@@ -13,7 +13,6 @@ require_hr_dashboard = require_permission("employees.view", audit_denied=True)
 _economist_dashboard = require_permission("economist.dashboard")
 _headhunter_dashboard = require_permission("headhunter.dashboard")
 _payroll_view = require_permission("payroll.view")
-_contracts_view = require_permission("contracts.view")
 
 
 def render_dashboard(request, user):
@@ -58,18 +57,6 @@ def payouts_dashboard(request: Request, user=Depends(_payroll_view)):
         "groups": build_navigation(user, PAYOUTS_GROUPS),
         "back_url": "/admin",
     })
-
-
-def _coming_soon(request, title, description, stage):
-    return templates.TemplateResponse(request, "coming_soon.html", {
-        "title": title, "description": description, "stage": stage, "back_url": "/admin",
-    })
-
-
-@router.get("/admin/contracts", response_class=HTMLResponse)
-def contracts_page(request: Request, user=Depends(_contracts_view)):
-    return _coming_soon(request, "Договоры",
-                        "Договоры с сотрудниками: шаблоны, формирование и подписание.", "П4")
 
 
 @router.get("/headhunter", response_class=HTMLResponse)

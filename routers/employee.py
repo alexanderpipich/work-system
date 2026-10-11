@@ -8,10 +8,12 @@ from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
 from dependencies import current_user, get_db
+from document_alerts import employee_banners
 from document_helpers import (
     employee_completeness,
     employee_document_rows,
     latest_employee_document,
+    preview_kind,
     user_citizenship,
 )
 from models import Requisite, Shift
@@ -22,6 +24,7 @@ from utils import format_card_number, get_password_hash, normalize_text, verify_
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+templates.env.globals["preview_kind"] = preview_kind  # П4: просмотр документа в модалке
 templates.env.filters["card_format"] = format_card_number
 
 _STATUS_STYLES = {
@@ -118,6 +121,8 @@ def cabinet(
             "all_ok": all_ok,
             "attention_count": attention_count,
             "status_styles": _STATUS_STYLES,
+            # П4: напоминания о сроках документов (DocumentExpiryAlert сотруднику).
+            "expiry_banners": employee_banners(session, user),
             "error": None,
         },
     )

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_employee_input.html" import employee_input %}
 
 {% block title %}Корректировки{% endblock %}
 {% block brand_title %}Корректировки{% endblock %}
@@ -53,12 +54,7 @@
         <form method="get" action="{{ base_path or '/admin/adjustments' }}" class="row mb-14">
             <input type="hidden" name="status" value="{{ status }}">
             <label class="muted" for="employee-filter">ФИО</label>
-            <select id="employee-filter" name="employee_name" class="filter-select">
-                <option value="">Все сотрудники</option>
-                {% for employee in employee_options or [] %}
-                    <option value="{{ employee }}" {% if employee == employee_name %}selected{% endif %}>{{ employee }}</option>
-                {% endfor %}
-            </select>
+            {{ employee_input('employee_name', employee_options, employee_name, list_id='adjustments-employees', placeholder='Все сотрудники', input_id='employee-filter', css_class='filter-select') }}
             <button type="submit" class="btn btn-primary">Показать</button>
             {% if employee_name %}
                 <a href="{{ base_path or '/admin/adjustments' }}?status={{ status }}" class="back-link">Сбросить ФИО</a>

@@ -19,7 +19,9 @@ from dependencies import RedirectException, current_user, get_db
 from document_helpers import citizenship_display
 from file_storage import storage_response, storage_save
 from models import (
+    DocumentType,
     EmployeeDismissalDecision,
+    EmployeeDocument,
     EmployeeMonitoringRecommendation,
     EmployeeMonitoringSettings,
     EmployeeStoreAssignment,
@@ -38,7 +40,7 @@ from monitoring_helpers import (
 from navigation import build_navigation, employees_groups
 from rbac import HR_CABINET_ROLES, canonical_role, has_permission, is_superadmin, require_permission
 from time_helpers import business_today, now_utc
-from utils import normalize_text
+from utils import normalize_person_name, normalize_text
 
 
 router = APIRouter()
@@ -422,6 +424,8 @@ def _dismissal_candidates(session, user):
     }
     decisions = {normalize_text(d.employee_name): d for d in session.query(EmployeeDismissalDecision).all()}
 
+    contracts = _active_contracts(session, today)
+
     rows = []
     for employee, day, store, city in disappeared:
         key = normalize_text(employee)
@@ -433,8 +437,51 @@ def _dismissal_candidates(session, user):
             "citizenship": citizenship_display(session, person) if person else "",
             "decision": decision.decision if decision else None,
             "decision_comment": decision.comment if decision else "",
+            "contract": contracts.get(normalize_person_name(employee)),
+        })
+
+    # П4: «есть действующий договор, нет смен inactive_days дней» — в том числе
+    # никогда не выходившие на смены после договора.
+    listed = {normalize_person_name(row["employee_name"]) for row in rows}
+    last_by_key = {normalize_person_name(emp): data for emp, data in last.items()}
+    for key, contract in contracts.items():
+        if key in listed:
+            continue
+        last_shift = last_by_key.get(key)
+        if last_shift and last_shift[0] > cutoff:
+            continue
+        person = session.get(User, contract.user_id) if contract.user_id else None
+        decision = decisions.get(normalize_text(contract.employee_name))
+        rows.append({
+            "employee_name": contract.employee_name,
+            "last_date": last_shift[0] if last_shift else None,
+            "store": last_shift[1] if last_shift else None,
+            "city": last_shift[2] if last_shift else None,
+            "days_ago": (today - last_shift[0]).days if last_shift else None,
+            "citizenship": citizenship_display(session, person) if person else "",
+            "decision": decision.decision if decision else None,
+            "decision_comment": decision.comment if decision else "",
+            "contract": contract,
         })
     return rows, settings
+
+
+def _active_contracts(session, today):
+    """{ФИО: последний действующий ТРУДОВОЙ ДОГОВОР} — не в архиве, не отклонён, не истёк."""
+    from employee_profile import DOC_CONTRACT
+
+    doc_type = session.query(DocumentType).filter(DocumentType.name == DOC_CONTRACT).first()
+    if doc_type is None:
+        return {}
+    result = {}
+    for doc in session.query(EmployeeDocument).filter(
+        EmployeeDocument.document_type_id == doc_type.id,
+        EmployeeDocument.status.notin_(["archived", "rejected"]),
+    ).order_by(EmployeeDocument.issue_date.asc(), EmployeeDocument.id.asc()).all():
+        if doc.expiry_date and not doc.is_permanent and doc.expiry_date < today:
+            continue
+        result[normalize_person_name(doc.employee_name)] = doc
+    return result
 
 
 @router.get("/admin/employees/dismissals", response_class=HTMLResponse)
@@ -463,7 +510,33 @@ def dismissals_decide(request: Request, employee_name: str = Form(...), decision
     session.flush()
     create_audit_log(session, request, user, "dismissal_decision", "employee_dismissal_decision", row.id, key, new_value={"decision": decision})
     session.commit()
-    return _redirect(request, "/dismissals", message="Решение сохранено")
+    message = "Решение сохранено"
+    if decision == "dismiss" and _active_contracts(session, business_today()).get(normalize_person_name(key)):
+        message += " — у сотрудника действующий договор: архивируйте его с датой увольнения"
+    return _redirect(request, "/dismissals", message=message)
+
+
+@router.post("/admin/employees/dismissals/archive-contract")
+@router.post("/economist/employees/dismissals/archive-contract")
+@router.post("/hr/employees/dismissals/archive-contract")
+def dismissals_archive_contract(request: Request, document_id: int = Form(...), dismissed_on: str = Form(default=""), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
+    """П4: при увольнении — договор в архив с датой."""
+    document = session.get(EmployeeDocument, document_id)
+    if document is None or document.status == "archived":
+        return _redirect(request, "/dismissals", message="Договор не найден или уже в архиве")
+    try:
+        day = _parse_date(dismissed_on)
+    except ValueError:
+        day = business_today()
+    old_value = {"status": document.status, "comment": document.comment}
+    document.status = "archived"
+    document.comment = f"Уволен {day:%d.%m.%Y}" + (f". {document.comment}" if document.comment else "")
+    document.updated_at = now_utc()
+    create_audit_log(session, request, user, "document_archived", "employee_document", document.id, document.employee_name,
+                     old_value=old_value, new_value={"status": "archived", "dismissed_on": day.isoformat()},
+                     comment="увольнение")
+    session.commit()
+    return _redirect(request, "/dismissals", message=f"Договор архивирован ({day:%d.%m.%Y})")
 
 
 @router.get("/admin/employees/reconciliations", response_class=HTMLResponse)

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{# Истекающие документы (П4): документ на уровне напоминания и кто уведомлён. #}
+{% block title %}Истекающие документы{% endblock %}
+{% block brand_title %}Истекающие документы{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Регистрация, патент и другие документы со сроком</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="/admin/contracts">Договоры</a><a class="back-link" href="/admin">Назад</a>{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top page-wide">
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if can_run %}
+    <form method="post" action="/admin/documents/expiring/run" class="mb-20">
+        <button type="submit" class="btn btn-primary">Проверить сроки</button>
+        <span class="muted">Автоматически — раз в сутки при старте приложения.</span>
+    </form>
+    {% endif %}
+    <div class="card">
+        <div class="table-wrap is-tall">
+            <table>
+                <thead><tr><th>Сотрудник</th><th>Документ</th><th>Срок</th><th>Осталось</th><th>Уровень</th><th>Уведомлены</th></tr></thead>
+                <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td><b>{{ row.doc.employee_name }}</b></td>
+                        <td>{{ row.type.name }}</td>
+                        <td>{{ row.doc.expiry_date.strftime('%d.%m.%Y') }}</td>
+                        <td>{% if row.days_left < 0 %}<span class="pill pill-danger">истёк {{ -row.days_left }} дн. назад</span>{% else %}<span class="pill {% if row.days_left <= 7 %}pill-danger{% else %}pill-warn{% endif %}">{{ row.days_left }} дн.</span>{% endif %}</td>
+                        <td>{{ row.level }}</td>
+                        <td>
+                            {% for name, role, email_status in row.notified %}<div>{{ name }} <span class="muted">· {{ role }}{% if email_status %} · email: {{ email_status }}{% endif %}</span></div>
+                            {% else %}<span class="muted">ещё нет — нажмите «Проверить сроки»</span>{% endfor %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="muted">Истекающих документов нет</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

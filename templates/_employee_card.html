@@ -1,0 +1,69 @@
+{# Карточка «Данные сотрудника» (П4) — над реестром документов сотрудника.
+   Поля User правятся здесь; паспорт, СНИЛС, патент — данные из документов
+   (их правят в самих документах). Контекст: card = employee_profile(...),
+   countries, tm_users, legal_entities, job_titles, base_path, can_edit. #}
+{% set u = card.user %}
+<section class="card">
+    <h2>Данные сотрудника — {{ card.fio }}</h2>
+    <form method="post" action="{{ base_path }}/employee/{{ u.id }}/profile" class="form-grid align-end">
+        <div class="field">
+            <label>Пол{% if card.gender_guessed %} <span class="pill pill-info">угадан по отчеству</span>{% endif %}</label>
+            <select name="gender" {% if not can_edit %}disabled{% endif %}>
+                <option value="">—</option>
+                <option value="m" {% if card.gender == 'm' %}selected{% endif %}>мужской</option>
+                <option value="f" {% if card.gender == 'f' %}selected{% endif %}>женский</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Дата рождения</label>
+            <input type="date" name="birth_date" value="{{ u.birth_date.isoformat() if u.birth_date else '' }}" {% if not can_edit %}disabled{% endif %}>
+        </div>
+        <div class="field">
+            <label>Гражданство</label>
+            <select name="citizenship_country_id" {% if not can_edit %}disabled{% endif %}>
+                <option value="0">— не выбрано —</option>
+                {% for c in countries %}<option value="{{ c.id }}" {% if c.id == u.citizenship_country_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label>ИНН</label>
+            <input type="text" name="inn" value="{{ card.inn }}" {% if not can_edit %}disabled{% endif %}>
+        </div>
+        <div class="field">
+            <label>Должность (справочник)</label>
+            <select name="job_title" {% if not can_edit %}disabled{% endif %}>
+                <option value="">— не выбрано —</option>
+                {% for jt in job_titles %}<option value="{{ jt }}" {% if card.job_title == jt %}selected{% endif %}>{{ jt }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label>Закреплённый ТМ</label>
+            <select name="tm_id" {% if not can_edit %}disabled{% endif %}>
+                <option value="0">— не закреплён —</option>
+                {% for tm in tm_users %}{% if tm.id != u.id %}<option value="{{ tm.id }}" {% if u.tm_id == tm.id %}selected{% endif %}>{{ tm.employee_name }}</option>{% endif %}{% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label>Юрлицо</label>
+            <select name="legal_entity" {% if not can_edit %}disabled{% endif %}>
+                <option value="">— не выбрано —</option>
+                {% for e in legal_entities %}<option value="{{ e.name }}" {% if card.legal_entity_name == e.name %}selected{% endif %}>{{ e.name }}</option>{% endfor %}
+            </select>
+        </div>
+        {% if can_edit %}<div class="field"><button type="submit" class="btn btn-primary">Сохранить</button></div>{% endif %}
+    </form>
+
+    <div class="summary-line mt-14">
+        <span>Регион (по последним сменам): <b>{{ card.region.name if card.region else '—' }}</b></span>
+        <span>СНИЛС: <b>{{ card.snils or '—' }}</b></span>
+        <span>Паспорт: <b>{{ card.passport_number or '—' }}</b>{% if card.passport_issue_date %} от {{ card.passport_issue_date.strftime('%d.%m.%Y') }}{% endif %}{% if card.passport_issuer %}, {{ card.passport_issuer }}{% endif %}</span>
+        {% if not card.is_russian %}
+        <span>Патент: <b>{{ card.patent_series }} №{{ card.patent_number or '—' }}</b>{% if card.patent_blank_number %}, бланк {{ card.patent_blank_series }} {{ card.patent_blank_number }}{% endif %}
+            {% if card.patent_issue_date %} с {{ card.patent_issue_date.strftime('%d.%m.%Y') }}{% endif %}
+            {% if card.patent_expiry %} по {{ card.patent_expiry.strftime('%d.%m.%Y') }}{% if card.patent_expiry_computed %} <span class="pill pill-info">вычислено: год от выдачи</span>{% endif %}{% endif %}
+            {% if card.patent_profession %}, {{ card.patent_profession }}{% endif %}</span>
+        {% endif %}
+        <span>Договор: <b>{% if card.contract_doc %}№{{ card.contract_doc.document_number or '—' }}{% if card.contract_doc.issue_date %} от {{ card.contract_doc.issue_date.strftime('%d.%m.%Y') }}{% endif %}{% else %}нет{% endif %}</b></span>
+    </div>
+    <p class="field-hint">Паспорт, СНИЛС и патент берутся из документов сотрудника (строки ниже) — правьте их там. Номер патента: «78 №2600131320 / ПР 8408114».</p>
+</section>

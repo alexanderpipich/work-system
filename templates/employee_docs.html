@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_doc_preview.html" import preview_link, preview_modal %}
 
 {% block title %}Мои документы{% endblock %}
 {% block brand_title %}Мои документы{% endblock %}
@@ -52,7 +53,7 @@
                     {% endif %}
                 </div>
                 {% if row.document.file_path %}
-                    <p><a href="/documents/files/{{ row.document.id }}" target="_blank" class="back-link">Открыть файл</a></p>
+                    <p>{{ preview_link('/documents/preview/%s' % row.document.id, '/documents/files/%s' % row.document.id, preview_kind(row.document.file_path), row.type.name, label='Открыть файл') }}</p>
                 {% endif %}
             {% elif row.status == 'pending_verification' %}
                 <p class="muted">Документ загружен и ожидает проверки.</p>
@@ -79,4 +80,5 @@
         {% endif %}
     </section>
 </div>
+{{ preview_modal() }}
 {% endblock %}

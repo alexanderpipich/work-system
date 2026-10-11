@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{# Справочник регионов (П4): адресат ходатайства в УВМ (дательный падеж),
+   орган выдачи и территория патента, города для автоподбора региона. #}
+{% block title %}Регионы{% endblock %}
+{% block brand_title %}Регионы{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Адресат ходатайства в УВМ и данные патента по региону работы</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="/admin">Назад</a>{% endblock %}
+
+{% macro region_form(region, missing) -%}
+<form method="post" action="/admin/regions/save" class="form-grid mt-8">
+    <input type="hidden" name="region_id" value="{{ region.id if region else '' }}">
+    <div class="field"><label>Название</label><input type="text" name="name" value="{{ region.name if region else '' }}" required placeholder="Санкт-Петербург и Ленинградская область"></div>
+    <div class="field field-full"><label>Города из смен (через запятую)</label><input type="text" name="cities" value="{{ (region.cities or '') if region else '' }}" placeholder="Санкт-Петербург, Ленинградская область"></div>
+    <div class="field field-full"><label>Адресат в УВМ (дат. падеж){% if 'uvm_addressee' in missing %} <span class="pill pill-warn">нет</span>{% endif %}</label><input type="text" name="uvm_addressee" value="{{ (region.uvm_addressee or '') if region else '' }}" placeholder="Начальнику УВМ ГУ МВД России по …"></div>
+    <div class="field"><label>Звание (дат. падеж){% if 'uvm_rank' in missing %} <span class="pill pill-warn">нет</span>{% endif %}</label><input type="text" name="uvm_rank" value="{{ (region.uvm_rank or '') if region else '' }}" placeholder="Полковнику полиции"></div>
+    <div class="field"><label>ФИО начальника (дат. падеж){% if 'uvm_person' in missing %} <span class="pill pill-warn">нет</span>{% endif %}</label><input type="text" name="uvm_person" value="{{ (region.uvm_person or '') if region else '' }}" placeholder="Иванову Ивану Ивановичу"></div>
+    <div class="field field-full"><label>Орган выдачи патента</label><input type="text" name="patent_authority" value="{{ (region.patent_authority or '') if region else '' }}" placeholder="ГУ МВД России по г. Санкт-Петербургу и Ленинградской области"></div>
+    <div class="field"><label>Территория действия патента</label><input type="text" name="patent_territory" value="{{ (region.patent_territory or '') if region else '' }}" placeholder="г. Санкт-Петербург"></div>
+    {% if region %}
+    <div class="field"><label>Статус</label>
+        <select name="is_active"><option value="1" {% if region.is_active %}selected{% endif %}>Активен</option><option value="0" {% if not region.is_active %}selected{% endif %}>Неактивен</option></select>
+    </div>
+    {% endif %}
+    <div class="field"><button type="submit" class="btn btn-primary btn-sm">{{ 'Сохранить' if region else 'Добавить регион' }}</button></div>
+</form>
+{%- endmacro %}
+
+{% block head %}
+<style>
+    /* специфика страницы: поле на всю ширину сетки */
+    .field-full { grid-column: 1 / -1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top">
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
+
+    {% for region in regions %}
+    <div class="card">
+        <h2>{{ region.name }}{% if not region.is_active %} <span class="pill pill-neutral">неактивен</span>{% endif %}
+            {% if missing[region.id] %}<span class="pill pill-warn">адресат УВМ заполнен не полностью</span>{% endif %}</h2>
+        {{ region_form(region, missing[region.id]) }}
+    </div>
+    {% endfor %}
+
+    <div class="card">
+        <h2>Новый регион</h2>
+        {{ region_form(none, []) }}
+    </div>
+</div>
+{% endblock %}

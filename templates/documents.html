@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% from "_doc_preview.html" import preview_link, preview_modal %}
+{% from "_employee_input.html" import employee_input %}
 
 {% block title %}Документы сотрудников{% endblock %}
 {% block brand_title %}Документы сотрудников{% endblock %}
@@ -17,6 +19,8 @@
 
 {% block head %}
 <style>
+    .bulk-check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--brand-blue); }
+    .bulk-check input { width: auto; height: auto; }
     /* специфика страницы: ширина реестра, матрица комплектности и поповер отметки */
     .tab.active { background: var(--brand-blue); color: #fff; border-color: var(--brand-blue); }
 
@@ -155,17 +159,14 @@
     {% endfor %}
 
 {% else %}
+    {% if card %}{% include "_employee_card.html" %}{% endif %}
+
     <section class="card">
         <h2>Фильтры</h2>
         <form method="get" action="{{ base_path }}" class="form-grid cols-3 align-end">
             <div class="field">
                 <label>ФИО</label>
-                <select name="employee_name">
-                    <option value="">Все сотрудники</option>
-                    {% for employee in employees %}
-                        <option value="{{ employee }}" {% if employee == employee_name %}selected{% endif %}>{{ employee }}</option>
-                    {% endfor %}
-                </select>
+                {{ employee_input('employee_name', employees, employee_name, list_id='documents-filter-employees', placeholder='Все сотрудники') }}
             </div>
             <div class="field">
                 <label>Тип</label>
@@ -197,11 +198,7 @@
             <div class="form-grid">
                 <div class="field">
                     <label>Сотрудник</label>
-                    <select name="employee_name" required>
-                        {% for employee in employees %}
-                            <option value="{{ employee }}" {% if employee == employee_name %}selected{% endif %}>{{ employee }}</option>
-                        {% endfor %}
-                    </select>
+                    {{ employee_input('employee_name', employees, list_id='documents-filter-employees', required=true, with_list=false) }}
                 </div>
                 <div class="field">
                     <label>Тип документа</label>
@@ -226,10 +223,20 @@
 
     <section class="card">
         <h2>Реестр</h2>
+        {# П4: массовая проверка. Галочки строк привязаны к этой форме атрибутом
+           form= — внутри строк уже есть свои формы, вложенные формы HTML не допускает. #}
+        <form method="post" action="{{ base_path }}/verify-bulk" id="bulk-verify-form" class="row mb-14"
+              onsubmit="return confirm('Отметить выбранные документы как проверенные?');">
+            <input type="hidden" name="status" value="{{ status }}">
+            <input type="hidden" name="employee_name" value="{{ employee_name }}">
+            <label class="bulk-check"><input type="checkbox" data-bulk-all="verify"> Выбрать всё на странице</label>
+            <button type="submit" class="btn btn-primary btn-sm" data-bulk-submit="verify" disabled>Проверено (<span data-bulk-count="verify">0</span>)</button>
+        </form>
         <div class="table-wrap registry-table">
             <table>
                 <thead>
                     <tr>
+                        <th></th>
                         <th>Сотрудник</th>
                         <th>Гражданство</th>
                         <th>Тип документа</th>
@@ -243,6 +250,12 @@
                 <tbody>
                     {% for row in rows %}
                     <tr>
+                        <td>
+                            {% if row.document and row.status in ['uploaded', 'pending_verification', 'rejected', 'expired'] %}
+                            <input type="checkbox" name="document_ids" value="{{ row.document.id }}"
+                                   form="bulk-verify-form" data-bulk-item="verify" aria-label="Выбрать документ">
+                            {% endif %}
+                        </td>
                         <td>{{ row.employee_name }}</td>
                         <td>{{ row.citizenship or 'Не указано' }}</td>
                         <td>
@@ -268,7 +281,7 @@
                         </td>
                         <td>
                             {% if row.document and row.document.file_path %}
-                                <a href="/documents/files/{{ row.document.id }}" target="_blank" class="back-link">Открыть</a>
+                                {{ preview_link('/documents/preview/%s' % row.document.id, '/documents/files/%s' % row.document.id, preview_kind(row.document.file_path), row.type.name ~ ' — ' ~ row.employee_name) }}
                             {% else %}
                                 <span class="muted">Нет файла</span>
                             {% endif %}
@@ -307,7 +320,7 @@
                     </tr>
                     {% endfor %}
                     {% if rows|length == 0 %}
-                    <tr><td colspan="8" class="muted">Нет строк по выбранным фильтрам.</td></tr>
+                    <tr><td colspan="9" class="muted">Нет строк по выбранным фильтрам.</td></tr>
                     {% endif %}
                 </tbody>
             </table>
@@ -315,6 +328,7 @@
     </section>
 {% endif %}
 </div>
+{{ preview_modal() }}
 {% endblock %}
 
 {% block scripts %}

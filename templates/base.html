@@ -9,7 +9,7 @@
     <link rel="shortcut icon" href="/static/favicon.ico?v=2">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
 
-    <link rel="stylesheet" href="/static/app.css?v=9">
+    <link rel="stylesheet" href="/static/app.css?v=10">
 
     {% block head %}{% endblock %}
 </head>
@@ -26,6 +26,9 @@
             </div>
         </div>
         <div class="topbar-actions">
+            {% if request and request.state and request.state.expiry_alerts %}
+            <a href="/admin/documents/expiring" class="back-link" title="Истекают сроки документов">Сроки документов: {{ request.state.expiry_alerts }}</a>
+            {% endif %}
             {% block topbar_actions %}<a href="/logout" class="logout">Выйти</a>{% endblock %}
         </div>
     </div>
@@ -36,7 +39,7 @@
 
 {% block content %}{% endblock %}
 
-<script src="/static/ui.js?v=4" defer></script>
+<script src="/static/ui.js?v=5" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

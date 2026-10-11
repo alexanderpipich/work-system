@@ -206,6 +206,44 @@ def economist_legal_entities_page(
     )
 
 
+# П4: реквизиты юрлица для договора и ходатайства (зелёные/голубые подстановки).
+DETAIL_FIELDS = (
+    "full_name", "ogrn", "kpp", "legal_address", "actual_address", "work_address",
+    "bank_name", "bank_account", "bik", "corr_account",
+    "director_title", "director_name", "director_name_genitive", "director_short",
+)
+
+
+async def _save_details(request, session, user, base_path, entity_id):
+    entity = session.query(LegalEntity).filter(LegalEntity.id == entity_id).first()
+    if not entity:
+        return _redirect(base_path, error="Юрлицо не найдено")
+    form = await request.form()
+    old_value = {field: getattr(entity, field) for field in DETAIL_FIELDS}
+    for field in DETAIL_FIELDS:
+        if field in form:
+            setattr(entity, field, normalize_text(form.get(field)) or None)
+    entity.updated_at = now_utc()
+    new_value = {field: getattr(entity, field) for field in DETAIL_FIELDS}
+    if new_value != old_value:
+        create_audit_log(session, request, user, "legal_entity_details_updated", "legal_entity",
+                         entity.id, entity.name, old_value=old_value, new_value=new_value)
+    session.commit()
+    return _redirect(base_path, message="Реквизиты юрлица сохранены")
+
+
+@router.post("/admin/legal-entities/{entity_id}/details")
+async def legal_entity_details(request: Request, entity_id: int, session: Session = Depends(get_db),
+                               admin=Depends(_le_manage)):
+    return await _save_details(request, session, admin, "/admin/legal-entities", entity_id)
+
+
+@router.post("/economist/legal-entities/{entity_id}/details")
+async def economist_legal_entity_details(request: Request, entity_id: int, session: Session = Depends(get_db),
+                                         user=Depends(_le_manage)):
+    return await _save_details(request, session, user, "/economist/legal-entities", entity_id)
+
+
 @router.post("/admin/legal-entities/add")
 def add_legal_entity(
     request: Request,

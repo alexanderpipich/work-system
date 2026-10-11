@@ -92,6 +92,20 @@ def ensure_document_tables():
         )
 
 
+PREVIEW_PDF = {".pdf"}
+PREVIEW_IMAGE = {".jpg", ".jpeg", ".png"}
+
+
+def preview_kind(path) -> str:
+    """Как показать файл в модалке: pdf | image | none (HEIC и прочее — только скачать)."""
+    suffix = Path(str(path or "")).suffix.lower()
+    if suffix in PREVIEW_PDF:
+        return "pdf"
+    if suffix in PREVIEW_IMAGE:
+        return "image"
+    return "none"
+
+
 def parse_bool(value) -> bool:
     return str(value or "").lower() in {"1", "true", "on", "yes"}
 
@@ -244,16 +258,34 @@ def employee_document_rows(session, user, required_only=True):
     return rows
 
 
-def classify_document(doc, today=None):
+def alert_levels(doc_type):
+    """Уровни напоминаний типа документа, по убыванию: [30, 14, 7, 0]."""
+    raw = (getattr(doc_type, "alert_days", None) or os.getenv("DOCUMENT_ALERT_DAYS") or "30,14,7,0")
+    levels = set()
+    for part in str(raw).split(","):
+        part = part.strip()
+        if part.lstrip("-").isdigit():
+            levels.add(int(part))
+    return sorted(levels or {EXPIRY_WARNING_DAYS, 14, 7, 0}, reverse=True)
+
+
+def alert_threshold(doc_type):
+    """Порог статуса «скоро истекает» — первый (наибольший) уровень напоминаний."""
+    return alert_levels(doc_type)[0] if doc_type is not None else EXPIRY_WARNING_DAYS
+
+
+def classify_document(doc, today=None, warning_days=None):
     """Статус документа для матрицы/карточки комплектности: ok / expiring_soon /
-    pending / expired / missing. Единственный источник этой классификации."""
+    pending / expired / missing. Единственный источник этой классификации.
+    warning_days — порог «скоро истекает» (П4: первый уровень alert_days типа)."""
     today = today or business_today()
+    warning_days = EXPIRY_WARNING_DAYS if warning_days is None else warning_days
     if not doc or doc.status in {"rejected", "archived"}:
         return "missing"
     if not doc.is_permanent and doc.expiry_date and doc.expiry_date < today:
         return "expired"
     if doc.status == "verified":
-        if not doc.is_permanent and doc.expiry_date and doc.expiry_date <= today + timedelta(days=EXPIRY_WARNING_DAYS):
+        if not doc.is_permanent and doc.expiry_date and doc.expiry_date <= today + timedelta(days=warning_days):
             return "expiring_soon"
         return "ok"
     if doc.status in {"uploaded", "pending_verification"}:
@@ -269,7 +301,8 @@ def employee_document_status(session, user) -> list[dict]:
             {
                 "document_type": dt,
                 "required": True,
-                "status": classify_document(latest_employee_document(session, user.employee_name, dt.id), today),
+                "status": classify_document(latest_employee_document(session, user.employee_name, dt.id), today,
+                                            alert_threshold(dt)),
             }
             for dt in doc_types
         ]
@@ -495,7 +528,7 @@ def batch_employee_completeness(session, users: list) -> dict:
                 "position": i,
                 "title": ICON_KEY_TITLES.get(ik, dt.name),
                 "icon_key": ik,
-                "status": classify_document(doc, today),
+                "status": classify_document(doc, today, alert_threshold(dt)),
                 "document_type": dt,
                 "document": doc,
                 "source": "document",

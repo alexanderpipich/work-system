@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "_employee_input.html" import employee_input %}
+{% from "_doc_preview.html" import preview_link, preview_modal %}
+
+{# Договоры (П4): сотрудники, договор, патент, последняя смена. Сначала — со
+   сменами и без договора, потом — истекающие. #}
+{% block title %}Договоры{% endblock %}
+{% block brand_title %}Договоры{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Трудовые договоры и ходатайства по патентам</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="/admin">Назад</a>{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: статусы договора */
+    .ct-table td { vertical-align: top; }
+    .ct-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top page-wide">
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
+
+    <div class="card">
+        <form method="get" class="form-grid align-end">
+            <div class="field"><label>ФИО</label>{{ employee_input('q', names, filters.q, list_id='contracts-employees', placeholder='Все сотрудники') }}</div>
+            <div class="field"><label>Договор</label>
+                <select name="has_contract">
+                    <option value="">Все</option>
+                    <option value="0" {% if filters.has_contract == '0' %}selected{% endif %}>Нет договора</option>
+                    <option value="1" {% if filters.has_contract == '1' %}selected{% endif %}>Есть договор</option>
+                </select>
+            </div>
+            <div class="field"><label>ТМ</label>
+                <select name="tm">
+                    <option value="0">Все ТМ</option>
+                    {% for tm in tm_options %}<option value="{{ tm.id }}" {% if filters.tm == tm.id %}selected{% endif %}>{{ tm.employee_name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field"><label class="bulk-check"><input type="checkbox" name="expiring" value="1" {% if filters.expiring %}checked{% endif %}> Истекают в 30 дней / истекли</label></div>
+            <div class="field"><button type="submit" class="btn btn-primary">Показать</button></div>
+        </form>
+        {% if can_check_expiry %}
+        <form method="post" action="/admin/documents/expiring/run" class="mt-14">
+            <input type="hidden" name="return_to" value="/admin/contracts">
+            <button type="submit" class="btn btn-secondary btn-sm">Проверить сроки документов</button>
+            <a class="back-link" href="/admin/documents/expiring">Истекающие документы</a>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="table-wrap is-tall ct-table">
+            <table>
+                <thead>
+                    <tr><th>Сотрудник</th><th>ТМ</th><th>Гражданство</th><th>Договор</th><th>Патент до</th><th>Последняя смена</th><th></th></tr>
+                </thead>
+                <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td><b>{{ row.user.employee_name }}</b></td>
+                        <td>{{ row.tm_name or '—' }}</td>
+                        <td>{{ row.country or '—' }}</td>
+                        <td>
+                            <span class="pill {{ {'none': 'pill-neutral', 'permanent': 'pill-success', 'active': 'pill-success', 'expiring': 'pill-warn', 'expired': 'pill-danger'}[row.state] }}">{{ row.state_label }}</span>
+                            {% if row.contract and row.contract.document_number %}<div class="muted">№{{ row.contract.document_number }}</div>{% endif %}
+                        </td>
+                        <td>{% if row.patent_expiry %}{{ row.patent_expiry.strftime('%d.%m.%Y') }}{% if row.patent_expiry_computed %} <span class="muted">(вычисл.)</span>{% endif %}{% else %}—{% endif %}</td>
+                        <td>{{ row.last_shift.strftime('%d.%m.%Y') if row.last_shift else '—' }}</td>
+                        <td>
+                            <div class="ct-actions">
+                                {% if can_manage %}
+                                <a class="btn btn-primary btn-sm" href="/admin/contracts/contract/{{ row.user.id }}">Создать договор</a>
+                                {% if row.patent %}<a class="btn btn-secondary btn-sm" href="/admin/contracts/petition/{{ row.user.id }}">Создать ходатайство</a>{% endif %}
+                                {% endif %}
+                                {% if row.contract and row.contract.file_path %}
+                                {{ preview_link('/documents/preview/%s' % row.contract.id, '/documents/files/%s' % row.contract.id, preview_kind(row.contract.file_path), 'Договор — ' ~ row.user.employee_name, css_class='btn btn-secondary btn-sm') }}
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="muted">Нет сотрудников по фильтрам</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{ preview_modal() }}
+{% endblock %}

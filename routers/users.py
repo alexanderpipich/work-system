@@ -51,6 +51,7 @@ def _user_payload(user):
         "job_title": getattr(user, "job_title", None),
         "birth_date": user.birth_date.isoformat() if getattr(user, "birth_date", None) else None,
         "tm_id": getattr(user, "tm_id", None),
+        "email": getattr(user, "email", None),
     }
 
 
@@ -611,6 +612,7 @@ def update_user(
     job_title: str = Form(default=""),
     birth_date: str = Form(default=""),
     tm_id: int = Form(0),
+    email: str | None = Form(default=None),
     f_user_id: str = Form(default=""),
     f_phone: str = Form(default=""),
     f_employee_name: str = Form(default=""),
@@ -696,6 +698,11 @@ def update_user(
             user.birth_date = date.fromisoformat(birth_date_clean)
         except ValueError:
             pass  # кривая дата из формы — не меняем
+
+    # П4: почта для уведомлений о сроках документов (None — поля не было в форме).
+    if email is not None:
+        email_clean = normalize_text(email).lower()
+        user.email = email_clean if "@" in email_clean else None
 
     # ТМ: только пользователь с ролью ТМ и не сам сотрудник; иначе — снять.
     tm_ids = {tm.id for tm in tm_users(session)}

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_doc_preview.html" import preview_link, preview_modal %}
 
 {% block title %}Типы документов{% endblock %}
 {% block brand_title %}Типы документов{% endblock %}
@@ -174,7 +175,9 @@
                         <div class="row mt-8">
                         {% for s in item_samples %}
                             <div class="sample-thumb">
-                                <a href="/documents/samples/file/{{ s.id }}" target="_blank">
+                                <a href="/documents/samples/file/{{ s.id }}" data-preview-url="/documents/samples/file/{{ s.id }}"
+                                   data-preview-kind="{{ preview_kind(s.file_path) }}" data-preview-title="Образец: {{ item.name }}"
+                                   data-download-url="/documents/samples/file/{{ s.id }}">
                                     <img src="/documents/samples/file/{{ s.id }}"
                                          alt="{{ s.original_filename or 'образец' }}">
                                 </a>
@@ -257,6 +260,7 @@
         {% endif %}
     </section>
 </div>
+{{ preview_modal() }}
 {% endblock %}
 
 {% block scripts %}

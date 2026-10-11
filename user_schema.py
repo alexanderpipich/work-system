@@ -42,6 +42,8 @@ def ensure_user_profile_columns():
         connection.execute(text(
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_name_norm VARCHAR(255)"
         ))
+        connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(1)"))
+        connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR"))
     _backfill_employee_name_norm()
 
 

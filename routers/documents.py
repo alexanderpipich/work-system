@@ -14,7 +14,6 @@ from dependencies import (
     get_db,
 )
 from document_helpers import (
-    DocumentDateParseError,
     INVALID_DATE_MESSAGE,
     MATRIX_COLUMNS,
     STATUS_LABELS,
@@ -23,6 +22,7 @@ from document_helpers import (
     build_document_registry_rows,
     classify_document,
     computed_document_status,
+    DocumentDateParseError,
     economist_employee_names,
     employee_names,
     false_green_count,
@@ -31,6 +31,7 @@ from document_helpers import (
     normalize_employee_folder,
     parse_bool,
     parse_date,
+    preview_kind,
     save_upload_file,
 )
 from file_storage import storage_delete, storage_response
@@ -45,6 +46,7 @@ from utils import normalize_text
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+templates.env.globals["preview_kind"] = preview_kind  # П4: просмотр документа в модалке
 
 
 SAFE_MEDIA_TYPES = {
@@ -222,6 +224,7 @@ def _render_documents(
     allowed_names=None,
     employee_name="",
     document_type_id=0,
+    employee_card=None,
     status="pending_verification",
     message="",
     error="",
@@ -257,8 +260,26 @@ def _render_documents(
             "back_label": back_label,
             "message": message or None,
             "error": error or None,
+            **(employee_card or {}),
         },
     )
+
+
+def _employee_card_context(session, current, user):
+    """П4: блок «Данные сотрудника» над реестром его документов."""
+    from employee_profile import employee_profile
+    from legal_entity_helpers import active_legal_entities
+    from models import JOB_TITLES
+    from rbac import TM_ROLE_VALUES
+
+    return {
+        "card": employee_profile(session, user),
+        "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),  # noqa: E712
+        "tm_users": session.query(User).filter(User.role.in_(TM_ROLE_VALUES)).order_by(User.employee_name).all(),
+        "legal_entities": active_legal_entities(session),
+        "job_titles": JOB_TITLES,
+        "can_edit": has_permission(current, "documents.manage"),
+    }
 
 
 def _render_matrix(request, session, user, *, tk_filter="", name_filter=""):
@@ -578,6 +599,19 @@ def _document_allowed_for_user(session, document, user):
     return normalize_text(document.employee_name) == normalize_text(user.employee_name)
 
 
+def _set_document_status(document, user, new_status, comment=""):
+    """Сменить статус документа (без аудита и commit). Возвращает (старый статус, старый комментарий)."""
+    old_status = document.status
+    old_comment = document.comment
+    document.status = new_status
+    document.comment = normalize_text(comment) or document.comment
+    document.updated_at = now_utc()
+    if new_status == "verified":
+        document.verified_by = user.id
+        document.verified_at = now_utc()
+    return old_status, old_comment
+
+
 def _change_document_status(
     request,
     session,
@@ -597,14 +631,7 @@ def _change_document_status(
     if not _document_allowed_for_user(session, document, user):
         return _redirect(base_path, status=status_filter, employee_name=employee_name, error="Нет доступа к документу")
 
-    old_status = document.status
-    old_comment = document.comment
-    document.status = new_status
-    document.comment = normalize_text(comment) or document.comment
-    document.updated_at = now_utc()
-    if new_status == "verified":
-        document.verified_by = user.id
-        document.verified_at = now_utc()
+    old_status, old_comment = _set_document_status(document, user, new_status, comment)
     action = {
         "verified": "document_verified",
         "rejected": "document_rejected",
@@ -936,22 +963,85 @@ def economist_documents(
 
 
 @router.get("/admin/documents/employee/{user_id}", response_class=HTMLResponse)
+@router.get("/hr/documents/employee/{user_id}", response_class=HTMLResponse)
 def admin_employee_documents(
     request: Request,
     user_id: int,
+    message: str = "",
+    error: str = "",
     session: Session = Depends(get_db),
     current=Depends(require_document_manager),
 ):
+    base_path, _, _ = _documents_base(request)
     user = session.query(User).filter(User.id == user_id).first()
     if not user:
-        return RedirectResponse(url="/admin/documents?error=Сотрудник не найден", status_code=302)
+        return RedirectResponse(url=f"{base_path}?error=Сотрудник не найден", status_code=302)
     return _render_documents(
         request,
         session,
         current,
         employee_name=user.employee_name,
         status="all",
+        message=message,
+        error=error,
+        employee_card=_employee_card_context(session, current, user),
     )
+
+
+@router.post("/admin/documents/employee/{user_id}/profile")
+@router.post("/hr/documents/employee/{user_id}/profile")
+def save_employee_profile(
+    request: Request,
+    user_id: int,
+    gender: str = Form(default=""),
+    birth_date: str = Form(default=""),
+    citizenship_country_id: int = Form(0),
+    inn: str = Form(default=""),
+    job_title: str = Form(default=""),
+    tm_id: int = Form(0),
+    legal_entity: str = Form(default=""),
+    session: Session = Depends(get_db),
+    current=Depends(require_document_manager),
+):
+    """П4: правка полей сотрудника из карточки документов (источник данных договора)."""
+    from datetime import date as date_type
+
+    from legal_entity_helpers import active_legal_entities
+    from models import JOB_TITLES
+    from rbac import TM_ROLE_VALUES
+
+    base_path, _, _ = _documents_base(request)
+    card_url = f"{base_path}/employee/{user_id}"
+    if not has_permission(current, "documents.manage"):
+        return _redirect(card_url, error="Нет права менять данные сотрудника")
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user:
+        return _redirect(base_path, error="Сотрудник не найден")
+
+    fields = ("gender", "birth_date", "citizenship_country_id", "job_title", "tm_id", "legal_entity")
+    old_value = {f: getattr(user, f) for f in fields}
+    user.gender = gender if gender in {"m", "f"} else None
+    try:
+        user.birth_date = date_type.fromisoformat(birth_date) if normalize_text(birth_date) else None
+    except ValueError:
+        return _redirect(card_url, error="Некорректная дата рождения")
+    if citizenship_country_id and session.get(Country, citizenship_country_id):
+        user.citizenship_country_id = citizenship_country_id
+    elif not citizenship_country_id:
+        user.citizenship_country_id = None
+    user.job_title = job_title if job_title in JOB_TITLES else None
+    tm_ids = {tm.id for tm in session.query(User).filter(User.role.in_(TM_ROLE_VALUES)).all()}
+    user.tm_id = tm_id if tm_id in tm_ids and tm_id != user.id else None
+    names = {e.name for e in active_legal_entities(session)}
+    user.legal_entity = legal_entity if legal_entity in names else (None if not legal_entity else user.legal_entity)
+    new_value = {f: getattr(user, f) for f in fields}
+    if new_value != old_value:
+        create_audit_log(session, request, current, "user_updated", "user", user.id, user.employee_name,
+                         old_value=old_value, new_value=new_value, comment="карточка документов сотрудника")
+    if normalize_text(inn) and normalize_text(inn) != normalize_text(user.inn):
+        set_employee_inn(session, user, normalize_text(inn), source="profile", actor=current, request=request)
+    session.commit()
+    return _redirect(card_url, message="Данные сотрудника сохранены")
 
 
 @router.get("/admin/documents/diagnostics", response_class=HTMLResponse)
@@ -1080,6 +1170,53 @@ async def cabinet_upload_document(
     except Exception as exc:
         session.rollback()
         return _redirect("/employee_docs", error=str(exc))
+
+
+BULK_SKIP_REASONS = {
+    "archived": "в архиве",
+    "verified": "уже проверен",
+}
+
+
+@router.post("/admin/documents/verify-bulk")
+@router.post("/economist/documents/verify-bulk")
+@router.post("/hr/documents/verify-bulk")
+def verify_documents_bulk(
+    request: Request,
+    document_ids: list[int] = Form(default=[]),
+    status: str = Form(default="pending_verification"),
+    employee_name: str = Form(default=""),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    """П4: «Проверено (N)» — несколько документов разом. Отказ по одному документу
+    (нет доступа, в архиве, уже проверен) не отменяет остальные; один аудит на пачку."""
+    base_path, _, _ = _documents_base(request)
+    verified, skipped = [], []
+    for document_id in dict.fromkeys(document_ids):
+        document = session.query(EmployeeDocument).filter(EmployeeDocument.id == document_id).first()
+        if not _document_allowed_for_user(session, document, user):
+            skipped.append((document_id, "нет доступа"))
+            continue
+        if document.status in BULK_SKIP_REASONS:
+            skipped.append((document_id, BULK_SKIP_REASONS[document.status]))
+            continue
+        _set_document_status(document, user, "verified")
+        verified.append(document_id)
+    if verified or skipped:
+        create_audit_log(
+            session, request, user, "documents.verify_bulk", "employee_document", None,
+            f"Проверено {len(verified)}",
+            new_value={"verified": verified, "skipped": [{"id": i, "reason": r} for i, r in skipped]},
+        )
+    session.commit()
+    message = f"Проверено {len(verified)}"
+    if skipped:
+        reasons = {}
+        for _, reason in skipped:
+            reasons[reason] = reasons.get(reason, 0) + 1
+        message += ", пропущено %d (%s)" % (len(skipped), ", ".join(f"{r}: {n}" for r, n in reasons.items()))
+    return _redirect(base_path, status=status, employee_name=employee_name, message=message)
 
 
 @router.post("/admin/documents/verify")
