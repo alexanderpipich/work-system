@@ -31,7 +31,11 @@
 
     .registry-table table { min-width: 1450px; }
 
-    .matrix-group h3 { color: var(--brand-blue); margin: 0 0 10px; font-size: 15px; }
+    .matrix-group h3 { color: var(--brand-blue); margin: 0 0 10px; font-size: 15px; display: inline; }
+    .matrix-group > summary { cursor: pointer; list-style: none; margin-bottom: 10px; }
+    .matrix-group > summary::-webkit-details-marker { display: none; }
+    .matrix-group > summary::before { content: "▸ "; color: var(--muted); }
+    .matrix-group[open] > summary::before { content: "▾ "; }
     .matrix-group .address { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
 
     .matrix-table { font-size: 13px; }
@@ -100,14 +104,19 @@
         </form>
     </section>
 
+    {# П4.2: группы ТК свёрнуты, пока не задан фильтр (или группа одна) — страница
+       короче; раскрывается кликом по заголовку. #}
+    {% set open_groups = tk_filter or name_filter or groups|length == 1 %}
     {% for group in groups %}
-    <section class="card matrix-group">
+    <details class="card matrix-group" {% if open_groups %}open{% endif %}>
+        <summary>
         {% if group.tk_number %}
-        <h3>ТК {{ group.tk_number }}{% if group.store and group.store.display_name %} — {{ group.store.display_name }}{% endif %}</h3>
+        <h3>ТК {{ group.tk_number }}{% if group.store and group.store.display_name %} — {{ group.store.display_name }}{% endif %} <span class="muted">({{ group.employees|length }})</span></h3>
         {% if group.store and group.store.object_address %}<div class="address">{{ group.store.object_address }}</div>{% endif %}
         {% else %}
         <h3>Без ТК <span class="muted">({{ group.employees|length }})</span></h3>
         {% endif %}
+        </summary>
         <div class="table-wrap">
         <table class="matrix-table">
             <thead>
@@ -153,7 +162,7 @@
             </tbody>
         </table>
         </div>
-    </section>
+    </details>
     {% else %}
     <div class="card"><p class="muted mb-0">По выбранному фильтру сотрудников не найдено.</p></div>
     {% endfor %}

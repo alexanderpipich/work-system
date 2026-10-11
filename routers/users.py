@@ -5,7 +5,7 @@ import pandas as pd
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -16,7 +16,7 @@ from dependencies import get_db
 from inn_sync import set_employee_inn
 from rbac import ROLE_CHOICES, ROLE_LABELS, TM_ROLE_VALUES, canonical_role, has_permission, require_permission
 from legal_entity_helpers import active_legal_entities
-from models import JOB_TITLES, Country, Shift, TimebookEmployee, User
+from models import JOB_TITLES, Country, Requisite, Shift, TimebookEmployee, User
 from utils import (
     find_user_by_name,
     normalize_person_name,
@@ -62,6 +62,9 @@ def _default_city_scope(session, role, raw_scope):
         return raw
     cities = [row[0] for row in session.query(Shift.city).filter(Shift.city != None).distinct().order_by(Shift.city).all() if row[0]]
     return ", ".join(cities)
+
+
+USERS_PAGE_SIZE = 100  # П4.2: /admin/users — по 100 на страницу
 
 
 def tm_users(session):
@@ -121,28 +124,12 @@ def pending_employees(session):
         })
     return result
 def render_users(request: Request, session, message=None, error=None, filters=None):
-    users = session.query(User).order_by(User.employee_name.asc()).all()
-    legal_entities = active_legal_entities(session)
-    countries = session.query(Country).filter(Country.is_active == True).order_by(Country.name).all()
-    return templates.TemplateResponse(
-        request,
-        "admin_users.html",
-        {
-            "users": users,
-            "legal_entities": legal_entities,
-            "countries": countries,
-            "job_titles": JOB_TITLES,
-            "message": message,
-            "error": error,
-            "filters": filters or {},
-            "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users},
-            "tm_users": tm_users(session),
-            "can_manage": True,  # сюда приходят только обработчики с users.manage
-        }
-    )
+    """После POST-действий (удаление, пароль…) — в постраничный список с сообщением
+    (П4.2: раньше здесь рисовался весь список целиком)."""
+    params = {key: value for key, value in (("message", message), ("error", error)) if value}
+    return RedirectResponse("/admin/users" + (f"?{urlencode(params)}" if params else ""), status_code=302)
 
 
-@router.get("/admin/create-user", response_class=HTMLResponse)
 def create_user_page(
     request: Request,
     session: Session = Depends(get_db),
@@ -544,6 +531,10 @@ def admin_users(
     phone: str = "",
     employee_name: str = "",
     role: str = "",
+    tm: int = 0,
+    no_cabinet: str = "",
+    no_requisites: str = "",
+    page: int = 1,
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
@@ -567,9 +558,37 @@ def admin_users(
         query = query.filter(User.employee_name.ilike(f"%{employee_name.strip()}%"))
 
     if role.strip():
-        query = query.filter(User.role == normalize_role(role))
+        role_clean = normalize_role(role)
+        roles = TM_ROLE_VALUES if role_clean == "tm" else (role_clean,)
+        query = query.filter(User.role.in_(roles))
 
-    users = query.order_by(User.employee_name.asc()).all()
+    # П4.2: фильтры для списка ~600 человек.
+    if tm:
+        query = query.filter(User.tm_id == tm)
+    if no_cabinet:
+        query = query.filter(User.password_hash == None)  # noqa: E711
+    if no_requisites:
+        has_requisite = session.query(Requisite.id).filter(
+            Requisite.is_active == True,  # noqa: E712
+            or_(Requisite.user_id == User.id, Requisite.employee_name == User.employee_name),
+        ).exists()
+        query = query.filter(~has_requisite)
+
+    total = query.count()
+    pages = max(1, -(-total // USERS_PAGE_SIZE))
+    page = min(max(page, 1), pages)
+    users = query.order_by(User.employee_name.asc(), User.id.asc()).offset(
+        (page - 1) * USERS_PAGE_SIZE).limit(USERS_PAGE_SIZE).all()
+    filters = {
+        "user_id": user_id,
+        "phone": phone,
+        "employee_name": employee_name,
+        "role": role,
+        "tm": tm or "",
+        "no_cabinet": no_cabinet,
+        "no_requisites": no_requisites,
+    }
+    page_query = urlencode({k: v for k, v in filters.items() if v})
 
     return templates.TemplateResponse(
         request,
@@ -586,12 +605,8 @@ def admin_users(
             "message": message or None,
             "error": error or None,
             "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users},
-            "filters": {
-                "user_id": user_id,
-                "phone": phone,
-                "employee_name": employee_name,
-                "role": role,
-            }
+            "filters": filters,
+            "pagination": {"page": page, "pages": pages, "total": total, "query": page_query},
         }
     )
 

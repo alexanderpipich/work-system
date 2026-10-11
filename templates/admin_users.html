@@ -118,6 +118,19 @@
                         {% endfor %}
                     </select>
                 </div>
+
+                <div class="field">
+                    <label>ТМ</label>
+                    <select name="tm">
+                        <option value="">Все ТМ</option>
+                        {% for tm in tm_users %}<option value="{{ tm.id }}" {% if filters and filters.tm == tm.id %}selected{% endif %}>{{ tm.employee_name }}</option>{% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="check"><input type="checkbox" name="no_cabinet" value="1" {% if filters and filters.no_cabinet %}checked{% endif %}> Без кабинета</label>
+                    <label class="check"><input type="checkbox" name="no_requisites" value="1" {% if filters and filters.no_requisites %}checked{% endif %}> Без реквизитов</label>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary mt-14">Фильтр</button>
         </form>
@@ -128,6 +141,16 @@
             <h2 class="table-title">Список пользователей</h2>
             <a href="/admin/users" class="btn btn-secondary">Сбросить фильтр</a>
         </div>
+        {% if pagination and pagination.pages > 1 %}
+        <div class="row mb-14">
+            {% set q = pagination.query ~ ('&' if pagination.query else '') %}
+            {% if pagination.page > 1 %}<a class="btn btn-secondary btn-sm" href="/admin/users?{{ q }}page={{ pagination.page - 1 }}">← Назад</a>{% endif %}
+            <span class="muted">Страница {{ pagination.page }} из {{ pagination.pages }} · всего {{ pagination.total }}</span>
+            {% if pagination.page < pagination.pages %}<a class="btn btn-secondary btn-sm" href="/admin/users?{{ q }}page={{ pagination.page + 1 }}">Вперёд →</a>{% endif %}
+        </div>
+        {% elif pagination %}
+        <p class="muted mb-14">Всего: {{ pagination.total }}</p>
+        {% endif %}
 
         {# Скрытые поля фильтра, повторяются в формах — чтобы после сохранения не терять фильтр. #}
         {% set f_user_id = filters.user_id if filters else '' %}
@@ -384,6 +407,18 @@
             {% if users|length == 0 %}
                 <p class="muted">Пользователи не найдены</p>
             {% endif %}
+        </div>
+        <div class="mt-14">
+        {% if pagination and pagination.pages > 1 %}
+        <div class="row mb-14">
+            {% set q = pagination.query ~ ('&' if pagination.query else '') %}
+            {% if pagination.page > 1 %}<a class="btn btn-secondary btn-sm" href="/admin/users?{{ q }}page={{ pagination.page - 1 }}">← Назад</a>{% endif %}
+            <span class="muted">Страница {{ pagination.page }} из {{ pagination.pages }} · всего {{ pagination.total }}</span>
+            {% if pagination.page < pagination.pages %}<a class="btn btn-secondary btn-sm" href="/admin/users?{{ q }}page={{ pagination.page + 1 }}">Вперёд →</a>{% endif %}
+        </div>
+        {% elif pagination %}
+        <p class="muted mb-14">Всего: {{ pagination.total }}</p>
+        {% endif %}
         </div>
     </div>
 </div>
