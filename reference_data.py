@@ -33,6 +33,8 @@ from models import (
     StoreContact,
 )
 
+from utils import normalize_city
+
 REFERENCE_DIR = Path(__file__).resolve().parent / "data" / "reference"
 
 DOCUMENT_TYPE_FIELDS = [
@@ -168,7 +170,8 @@ def _store_spec():
         model=Store,
         key=lambda r: r["tk_number"],
         to_record=lambda o, refs: _plain(o, fields),
-        to_values=lambda r, refs: {f: r[f] for f in fields},
+        # Город — как в timebook после normalize_city: без «г.», пустой → NULL.
+        to_values=lambda r, refs: {**{f: r[f] for f in fields}, "city": normalize_city(r["city"]) or None},
         # Город магазина должен совпадать с «Городом» timebook — по нему подбираются
         # ставки. JSON мог взять город из таблицы Ленты («МО, Королев» вместо «Москва»),
         # поэтому известный город базы не перезаписывается, расхождение — в отчёт.

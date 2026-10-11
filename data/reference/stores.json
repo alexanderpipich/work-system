@@ -2549,7 +2549,7 @@
   {
     "tk_number": 2820,
     "display_name": "Лента-2820 (г. Видное)",
-    "city": "г. Видное",
+    "city": "Видное",
     "format": "ТШ",
     "object_address": null,
     "is_active": true,
@@ -2558,7 +2558,7 @@
   {
     "tk_number": 2830,
     "display_name": "Лента-2830 (г. Домодедово)",
-    "city": "г. Домодедово",
+    "city": "Домодедово",
     "format": "ТШ",
     "object_address": null,
     "is_active": true,
@@ -2594,7 +2594,7 @@
   {
     "tk_number": 2869,
     "display_name": "Лента-2869 (г. Москва)",
-    "city": "г. Москва",
+    "city": "Москва",
     "format": "ТШ",
     "object_address": null,
     "is_active": true,
@@ -2603,7 +2603,7 @@
   {
     "tk_number": 2871,
     "display_name": "Лента-2871 (г. Домодедово)",
-    "city": "г. Домодедово",
+    "city": "Домодедово",
     "format": "ЗМ",
     "object_address": null,
     "is_active": true,

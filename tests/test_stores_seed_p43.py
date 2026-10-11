@@ -89,6 +89,11 @@ class SeedModesTests(unittest.TestCase):
         exported = export_reference_data(self.s)["store_contacts"]
         self.assertEqual(exported, [_contact(1, "hr1@lenta.com"), _contact(3, "hr3@lenta.com")])
 
+    def test_store_city_normalized(self):
+        seed_reference_data(self.s, {"stores": [_store(4, city="г. Видное"), _store(5, city="")]})
+        cities = {s.tk_number: s.city for s in self.s.query(Store).filter(Store.tk_number.in_([4, 5]))}
+        self.assertEqual(cities, {4: "Видное", 5: None})
+
     def test_only_limits_tables(self):
         stats = seed_reference_data(self.s, self.data, only=["store_contacts"])
         self.assertEqual(set(stats), {"store_contacts"})
