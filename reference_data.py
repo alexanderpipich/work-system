@@ -155,12 +155,13 @@ def _rule_spec():
 
 
 def _service_spec():
-    fields = ["name", "aliases", "is_active"]
+    fields = ["name", "aliases", "is_active", "excluded_from_payroll"]
     return dict(
         model=Service,
         key=lambda r: r["name"],
         to_record=lambda o, refs: _plain(o, fields),
-        to_values=lambda r, refs: {f: r[f] for f in fields},
+        to_values=lambda r, refs: {**{f: r.get(f) for f in fields},
+                                   "excluded_from_payroll": bool(r.get("excluded_from_payroll"))},
     )
 
 

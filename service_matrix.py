@@ -140,6 +140,7 @@ def build_service_matrix(services, rate_rows, shift_services, rated_service_ids=
             "aliases": normalize_text(_field(service, "aliases")),
             "alias_list": _service_alias_list(service),
             "is_active": bool(_field(service, "is_active", True)),
+            "excluded_from_payroll": bool(_field(service, "excluded_from_payroll", False)),
             "base_key": normalize_service_base(name),
             "cells": {bucket: _empty_cell() for bucket in _LEVEL_BUCKETS},
             "individual_count": 0,

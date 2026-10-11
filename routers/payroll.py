@@ -18,7 +18,7 @@ from manual_adjustments import (
 from models import PayrollRun, Requisite, Shift
 from payouts_helpers import period_runs_for
 from payroll_run_helpers import (bonus_per_hour, build_run_items, half_month_bounds, is_half_month,
-                                 load_hourly_bonuses)
+                                 load_hourly_bonuses, payable_shifts)
 from payroll_adjustments import apply_auto_adjustments_to_rows
 from referral_helpers import apply_confirmed_payouts_to_run, pending_payouts
 from schedule_grid import build_payroll_rows, days_between
@@ -251,6 +251,7 @@ def economist_payroll(
 
     rates = load_rates(session)
     resolve = build_service_resolver(session)
+    shifts = payable_shifts(shifts, resolve)  # комплектация и др. — не из timebook
     bonuses = load_hourly_bonuses(session)
     payroll_map = {}
 
@@ -446,6 +447,7 @@ def economist_fix_payroll(
 
     rates = load_rates(session)
     resolve = build_service_resolver(session)
+    shifts = payable_shifts(shifts, resolve)  # комплектация и др. — не из timebook
     validation_errors = []
     checked_employees = set()
 
@@ -670,6 +672,7 @@ def admin_payroll(
 
     rates = load_rates(session)
     resolve = build_service_resolver(session)
+    shifts = payable_shifts(shifts, resolve)  # комплектация и др. — не из timebook
 
     # Табель «по дням» (вид_табелей): строка = ФИО+Магазин+Услуга, часы по дням
     # периода. Расчёт сумм 1:1 как раньше — меняется только гранулярность строк,
@@ -813,6 +816,7 @@ def fix_payroll(
 
     rates = load_rates(session)
     resolve = build_service_resolver(session)
+    shifts = payable_shifts(shifts, resolve)  # комплектация и др. — не из timebook
     validation_errors = []
 
     # АПД: pending-премии блокируют формирование табеля, пока не подтвердишь/отменишь.

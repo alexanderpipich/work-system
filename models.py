@@ -170,6 +170,9 @@ class Service(Base):
     name = Column(String, nullable=False, unique=True)  # каноничное имя услуги
     aliases = Column(String, nullable=True)  # CSV вариантов написания (как Country.aliases)
     is_active = Column(Boolean, default=True)
+    # Не оплачивается из timebook (комплектация считается по другому отчёту): смены
+    # с этой услугой не входят в аванс и табель и не блокируют фиксацию «нет ЧТС».
+    excluded_from_payroll = Column(Boolean, default=False, server_default="false", nullable=False)
     created_at = Column(DateTime, nullable=True, default=now_utc)
 
 
