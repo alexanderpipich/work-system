@@ -89,7 +89,8 @@
 | Мониторинг увольнений | `V/A@ALL` | `V/A@HR_ALL` | `V/A@CITIES` | `V/A@ALL` | `V/A@CITIES` | `NONE` | `NONE` | Документы, Кадры и комплаенс › Мониторинг увольнений |
 | Бланк планирования | `V/C/X/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | Планирование и рассылки › Бланк планирования |
 | Договоры (заглушка до П4) | `V@ALL` | `V@ALL` | `NONE` | `V@ALL` | `NONE` | `NONE` | `NONE` | Документы, Кадры и комплаенс › Договоры |
-| Еженедельные авансы (заглушка до П3) | `V@ALL` | `V@HR_ALL` | `V@CITIES` | `NONE` | `V@CITIES` | `NONE` | `NONE` | Время, ставки и выплаты › Выплаты › Еженедельные авансы |
+| Еженедельные авансы | `V/C/U/A/X/F@ALL` | `V/U/A/X@HR_ALL` | `V/U@OWN` (свои по `tm_id`) | `NONE` | `V/U/A/X@ALL` | `NONE` | `NONE` | Время, ставки и выплаты › Выплаты › Еженедельные авансы |
+| Табель за период (черновик, фиксация) | `V/C/U/A/X/F@ALL` | `X@HR_ALL` (реестр) | `NONE` | `NONE` | `V/C/U/A/X@ALL` | `NONE` | `NONE` | Время, ставки и выплаты › Выплаты › Выплатной табель › «Табель за период» |
 | Настройка автозагрузки (`upload.auto`) | `V/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | Загрузка смен › Настройка автозагрузки |
 | Системные настройки | `V/C/U/D/HD/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | — (настройки внутри разделов) |
 | `/docs`, `/redoc`, `/openapi.json` | `V@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | — |
@@ -337,3 +338,9 @@ is_active
 - Новые права: `contracts.view` (`hr_lead`, `hr_clerk`), `upload.auto` (только суперадмин), `users.view` (`hr_lead`, `tm`, `hr_clerk`, `economist`).
 - `users.view` открывает `/admin/users` (карточки «Пользователи» и «Список сотрудников») только на чтение: формы правки, пароля, удаления, QR, создания и импорта видны лишь с `users.manage` (суперадмин), и все POST-обработчики по-прежнему требуют `users.manage`. Бригадиру, рекрутеру и сотруднику список закрыт — в нём телефоны, ИНН и гражданство всех людей.
 
+### Реализовано в П3 (выплаты)
+
+- Права: `payouts.advances.select_own` — `tm` (отмечает только своих по `User.tm_id`); `payouts.advances.select_any`, `payouts.advances.fix`, `payouts.export` — `economist`, `hr_lead`; суперадмин — всё. `hr_clerk` — ничего из выплат (`/admin/payouts/*` закрыт).
+- Экран авансов `/admin/payouts/advances` открыт тем, у кого есть хотя бы одно из `select_own`, `select_any`, `fix`. Вычеты аванса правят только с `payouts.advances.fix`.
+- Табель за период (`/admin/payouts/period/*`) — `payroll.manage`; реестр xlsx любого прогона — `payouts.export`; отправка — `payroll.send`, как раньше.
+- Правило «одна смена оплачивается один раз»: смена, уже оплаченная прогоном `fixed`/`sent`/`closed`, в аванс не входит, а в табеле за период вычитается (`advanced_amount`).

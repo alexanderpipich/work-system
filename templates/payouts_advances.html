@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{# Еженедельные авансы (П3). Галочки — AdvanceSelection, вычеты — ручная
+   корректировка по (сотрудник, «*», неделя). Фиксация — через общий
+   build_run_items; смены, оплаченные другим прогоном, в аванс не входят. #}
+{% set can_fix = 'payouts.advances.fix' in perms %}
+{% set can_export = 'payouts.export' in perms %}
+{% set can_send = 'payroll.send' in perms %}
+
+{% block title %}Еженедельные авансы{% endblock %}
+{% block brand_title %}Еженедельные авансы{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Неделя {{ week_start.strftime('%d.%m.%Y') }} — {{ week_end.strftime('%d.%m.%Y') }}</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="/admin/payouts">Выплаты</a>{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: неделя, строки сотрудников, раскрытие смен */
+    .week-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .week-nav .week-title { font-size: 17px; font-weight: 800; color: var(--brand-blue); }
+    .adv-table td.num, .adv-table th.num { text-align: right; white-space: nowrap; }
+    .adv-table input[type="text"] { height: 34px; }
+    .adv-table .ded-amount { width: 110px; text-align: right; }
+    .adv-table .ded-comment { min-width: 140px; }
+    .adv-table details summary { cursor: pointer; font-weight: 700; color: var(--brand-blue); }
+    .adv-shifts { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+    .adv-shifts li { margin: 2px 0; }
+    .adv-shifts .is-paid { color: #9ca3af; text-decoration: line-through; }
+    .adv-total { font-weight: 800; color: var(--brand-blue); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top page-wide">
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
+
+    <div class="card">
+        <div class="week-nav">
+            <a class="btn btn-secondary btn-sm" href="?week={{ prev_week.isoformat() }}">← Пред. неделя</a>
+            <span class="week-title">{{ week_start.strftime('%d.%m.%Y') }} — {{ week_end.strftime('%d.%m.%Y') }}</span>
+            <a class="btn btn-secondary btn-sm" href="?week={{ next_week.isoformat() }}">След. неделя →</a>
+            <span class="pill {% if frozen %}pill-success{% else %}pill-neutral{% endif %}">
+                {% if run and run.status in ('fixed', 'sent', 'closed') %}
+                    {{ run_status }}{% if run.fixed_at %} {{ run.fixed_at.strftime('%d.%m.%Y %H:%M') }}{% endif %}{% if fixed_by_name %}, {{ fixed_by_name }}{% endif %} · табель №{{ run.id }}
+                {% else %}не зафиксирован{% endif %}
+            </span>
+        </div>
+
+        <form method="get" class="form-grid align-end mt-14">
+            <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
+            <div class="field">
+                <label>Поиск по ФИО</label>
+                <input type="text" name="q" value="{{ filters.q }}" placeholder="Фамилия">
+            </div>
+            <div class="field">
+                <label>ТМ</label>
+                <select name="tm">
+                    <option value="0">Все ТМ</option>
+                    {% for tm_id, tm_name in tm_options %}
+                    <option value="{{ tm_id }}" {% if filters.tm == tm_id %}selected{% endif %}>{{ tm_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label>Сотрудники</label>
+                <select name="mine">
+                    <option value="1" {% if filters.mine %}selected{% endif %}>Только мои</option>
+                    <option value="0" {% if not filters.mine %}selected{% endif %}>Все</option>
+                </select>
+            </div>
+            <div class="field"><button type="submit" class="btn btn-primary">Показать</button></div>
+        </form>
+    </div>
+
+    <form method="post" action="/admin/payouts/advances/save" id="advances-form">
+        <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
+        <input type="hidden" name="mine" value="{{ '1' if filters.mine else '0' }}">
+        <input type="hidden" name="tm" value="{{ filters.tm or '' }}">
+        <input type="hidden" name="q" value="{{ filters.q }}">
+
+        <div class="card">
+            <div class="table-wrap is-tall adv-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Аванс</th>
+                            <th>Сотрудник</th>
+                            <th>ТМ</th>
+                            <th class="num">Часы</th>
+                            <th class="num">Расчёт</th>
+                            <th>Вычеты</th>
+                            <th class="num">К выплате</th>
+                            <th>Реквизиты</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            <td>
+                                <input type="hidden" name="names" value="{{ row.employee_name }}">
+                                <input type="checkbox" name="selected" value="{{ row.employee_name }}"
+                                       data-adv-select="{{ row.employee_name }}"
+                                       {% if row.selected %}checked{% endif %}
+                                       {% if frozen or not row.can_select %}disabled{% endif %}>
+                            </td>
+                            <td>
+                                {% if row.shifts %}
+                                <details>
+                                    <summary>{{ row.employee_name }}</summary>
+                                    <ul class="adv-shifts">
+                                    {% for s in row.shifts %}
+                                        <li class="{% if s.paid %}is-paid{% endif %}" {% if s.status %}title="{{ s.status }}"{% endif %}>
+                                            {{ s.shift.shift_date.strftime('%d.%m') }} · {{ s.shift.store }} · {{ s.shift.service }} ·
+                                            {{ '%g' % s.shift.hours }} ч × {{ '%g' % s.rate }} = {{ '%.2f' % s.amount }}
+                                            {% if s.status %}— {{ s.status }}{% endif %}
+                                        </li>
+                                    {% endfor %}
+                                    </ul>
+                                </details>
+                                {% else %}
+                                <b>{{ row.employee_name }}</b>
+                                {% endif %}
+                                {% if row.no_shifts %}<span class="pill pill-neutral">нет смен</span>{% endif %}
+                                {% if row.paid_hours %}<span class="pill pill-info" title="Оплачено другим табелем">оплачено {{ '%g' % row.paid_hours }} ч</span>{% endif %}
+                                {% if row.no_rate %}<span class="pill pill-danger">нет ЧТС</span>{% endif %}
+                            </td>
+                            <td>{{ row.tm_name or '—' }}</td>
+                            <td class="num">{{ '%g' % row.hours }}</td>
+                            <td class="num">{{ '%.2f' % row.calc }}</td>
+                            <td>
+                                {% if can_fix and not frozen %}
+                                <input type="text" class="ded-amount" name="deduction" value="{{ ('%g' % row.deduction) if row.deduction else '' }}" placeholder="−0">
+                                <input type="text" class="ded-comment" name="deduction_comment" value="{{ row.deduction_comment }}" placeholder="ЛМК, штраф…">
+                                {% else %}
+                                <input type="hidden" name="deduction" value="{{ row.deduction }}">
+                                <input type="hidden" name="deduction_comment" value="{{ row.deduction_comment }}">
+                                {% if row.deduction %}{{ '%.2f' % row.deduction }} <span class="muted">{{ row.deduction_comment }}</span>{% else %}—{% endif %}
+                                {% endif %}
+                            </td>
+                            <td class="num adv-total">{{ '%.2f' % row.to_pay }}</td>
+                            <td>
+                                {% if row.has_card %}<span class="pill pill-success">ок</span>
+                                {% else %}<span class="pill pill-danger">нет карты</span>{% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="8" class="muted">Нет сотрудников со сменами за неделю</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="block-actions mt-14">
+                <span class="muted">Отмечено: <b>{{ selected_count }}</b> · к выплате по отмеченным: <b>{{ '%.2f' % selected_total }}</b></span>
+            </div>
+
+            <div class="row mt-14">
+                {% if not frozen %}
+                <button type="submit" class="btn btn-secondary">Сохранить</button>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="row">
+            {% if not frozen and can_fix %}
+            <form method="post" action="/admin/payouts/advances/fix"
+                  onsubmit="return confirm('Зафиксировать аванс за неделю? Отметки будут заморожены.');">
+                <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
+                <button type="submit" class="btn btn-primary">Зафиксировать аванс</button>
+            </form>
+            {% endif %}
+            {% if run and run.status == 'fixed' and can_fix %}
+            <form method="post" action="/admin/payouts/runs/{{ run.id }}/unfix"
+                  onsubmit="return confirm('Расфиксировать аванс? Строки табеля будут удалены.');">
+                <button type="submit" class="btn btn-danger">Расфиксировать</button>
+            </form>
+            {% endif %}
+            {% if run and run.status == 'fixed' and can_send %}
+            <form method="post" action="/admin/payroll/runs/send">
+                <input type="hidden" name="run_id" value="{{ run.id }}">
+                <input type="hidden" name="return_to" value="/admin/payouts/advances?week={{ week_start.isoformat() }}">
+                <button type="submit" class="btn btn-secondary">Отправить в оплату</button>
+            </form>
+            {% endif %}
+            {% if run and run.status == 'sent' and can_fix %}
+            <form method="post" action="/admin/payouts/runs/{{ run.id }}/unsend">
+                <button type="submit" class="btn btn-secondary">Вернуть в «зафиксирован»</button>
+            </form>
+            {% endif %}
+            {% if frozen and can_export %}
+            <a class="btn btn-secondary" href="/admin/payouts/runs/{{ run.id }}/registry">Реестр xlsx</a>
+            {% endif %}
+            {% if frozen %}
+            <a class="btn btn-secondary" href="/admin/payroll/runs/{{ run.id }}">Строки табеля №{{ run.id }}</a>
+            {% endif %}
+        </div>
+        {% if frozen %}<p class="field-hint">Аванс зафиксирован — отметки и вычеты заморожены. Для правки расфиксируйте.</p>{% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    /* Автосохранение галочки: POST одной отметки; при отказе — вернуть как было. */
+    var form = document.getElementById('advances-form');
+    if (!form) { return; }
+    var week = form.querySelector('input[name="week"]').value;
+    form.addEventListener('change', function (e) {
+        var box = e.target;
+        if (!box.hasAttribute || !box.hasAttribute('data-adv-select')) { return; }
+        var data = new FormData();
+        data.append('week', week);
+        data.append('employee_name', box.getAttribute('data-adv-select'));
+        data.append('checked', box.checked ? '1' : '');
+        fetch('/admin/payouts/advances/select', { method: 'POST', body: data, credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (!res.ok) { box.checked = !box.checked; alert(res.error || 'Не сохранено'); }
+            })
+            .catch(function () { box.checked = !box.checked; alert('Нет связи — отметка не сохранена'); });
+    });
+})();
+</script>
+{% endblock %}

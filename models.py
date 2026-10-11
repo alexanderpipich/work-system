@@ -217,6 +217,9 @@ class PayrollRun(Base):
     legal_entity = Column(String, nullable=True)
 
     status = Column(String, default="draft")
+    # П3: advance — еженедельный аванс (Пн–Вс, только отмеченные сотрудники);
+    # period — выплатной табель за полмесяца (1–15 / 16–конец). Старые прогоны — period.
+    kind = Column(String, nullable=False, default="period", server_default="period")
 
     created_by = Column(Integer, nullable=True)
     fixed_by = Column(Integer, nullable=True)
@@ -250,9 +253,30 @@ class PayrollRunItem(Base):
     auto_adjustments_amount = Column(Float, default=0)
     manual_adjustments_amount = Column(Float, default=0)
     lmk_amount = Column(Float, default=0)
+    # П3: смена уже оплачена другим зафиксированным прогоном (обычно авансом) —
+    # его id и сколько по ней выплачено (amount + manual_adjustments_amount двойника).
+    # total_amount = amount + other_amount + auto_adjustments_amount − lmk_amount − advanced_amount.
+    paid_by_run_id = Column(Integer, nullable=True)
+    advanced_amount = Column(Float, default=0, server_default="0")
     total_amount = Column(Float, default=0)
 
     comment = Column(Text, nullable=True)
+
+
+class AdvanceSelection(Base):
+    """Отметка «платить аванс» на неделю (П3). Живёт отдельно от прогона: ТМ
+    отмечает своих до того, как экономист зафиксирует аванс."""
+    __tablename__ = "advance_selections"
+    __table_args__ = (
+        UniqueConstraint("week_start", "employee_name", name="uq_advance_selection_week_employee"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    week_start = Column(Date, nullable=False, index=True)  # понедельник
+    employee_name = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    selected_by = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=now_utc)
 
 
 class MedicalBookCharge(Base):

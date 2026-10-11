@@ -17,7 +17,7 @@ from payroll_closing import close_payroll_run as close_payroll_run_financials
 from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, has_permission, is_superadmin, require_permission
 from schedule_grid import days_between
 from time_helpers import now_utc
-from utils import normalize_text
+from utils import normalize_text, safe_return_to
 
 
 router = APIRouter()
@@ -610,10 +610,13 @@ def delete_payroll_run(
 def send_payroll_run(
     request: Request,
     run_id: int = Form(...),
+    return_to: str = Form(default=""),
     session: Session = Depends(get_db),
     user=Depends(current_user),
 ):
     return_url = "/admin/payroll/runs" if is_superadmin(user) else "/economist/payroll/runs"
+    # П3: экран выплат отправляет прогон сюда же и просит вернуть его обратно.
+    return_url = safe_return_to(return_to, return_url)
 
     if not has_permission(user, "payroll.send"):
         return RedirectResponse(url="/", status_code=302)

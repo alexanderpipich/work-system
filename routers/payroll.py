@@ -10,20 +10,21 @@ from access import apply_shift_scope, get_economist_cities, get_user_cities, get
 from audit_helpers import create_audit_log
 from dependencies import get_db
 from legal_entity_helpers import active_legal_entities
-from lmk_charges import apply_lmk_charges_to_rows, get_lmk_charge_for_employee
+from lmk_charges import apply_lmk_charges_to_rows
 from manual_adjustments import (
     apply_manual_adjustments_to_rows,
-    get_manual_adjustments_map,
     save_manual_adjustments,
 )
-from models import PayrollRun, PayrollRunItem, Requisite, Shift
-from payroll_adjustments import apply_auto_adjustments_to_rows, get_payroll_auto_adjustments
+from models import PayrollRun, Requisite, Shift
+from payouts_helpers import period_runs_for
+from payroll_run_helpers import build_run_items, half_month_bounds, is_half_month
+from payroll_adjustments import apply_auto_adjustments_to_rows
 from referral_helpers import apply_confirmed_payouts_to_run, pending_payouts
 from schedule_grid import build_payroll_rows, days_between
 from service_catalog import build_service_resolver
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today, now_utc
-from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, require_permission
+from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, is_superadmin, require_permission
 from utils import load_rates, normalize_text, pick_rate
 
 
@@ -37,6 +38,34 @@ _payroll_manage = require_permission("payroll.manage")
 # «выбраны все» (не раздуваем cookie полным списком ТК).
 PAYROLL_STORES_SESSION_KEY = "admin_payroll_selected_stores"
 PAYROLL_STORES_ALL = "__all__"
+
+
+PERIOD_REFUSAL = (
+    "Табель фиксируется за 1–15 или 16–конец месяца. "
+    "Недельные выплаты — в разделе «Выплаты → Еженедельные авансы»."
+)
+
+
+def period_comment_or_refusal(user, start_date, end_date, comment):
+    """П3: табель — только полмесяца. (комментарий, отказ). Суперадмину произвольный
+    период разрешён, в комментарии остаётся пометка."""
+    comment = normalize_text(comment)
+    if is_half_month(start_date, end_date):
+        return comment, None
+    if is_superadmin(user):
+        return ("[произвольный период] " + comment).strip(), None
+    return comment, PERIOD_REFUSAL
+
+
+def half_month_links(day):
+    """Кнопки «01–15 / 16–конец»: прошлый и текущий месяц относительно `day`."""
+    previous_month_last = day.replace(day=1) - timedelta(days=1)
+    anchors = (previous_month_last.replace(day=1), previous_month_last, day.replace(day=1), day.replace(day=16))
+    links = []
+    for anchor in anchors:
+        start, end = half_month_bounds(anchor)
+        links.append((f"{start:%d}–{end:%d.%m}", start, end))
+    return links
 
 
 def payroll_redirect_url(base_path, date_from, date_to, employee_name="", stores=None, message=""):
@@ -365,6 +394,13 @@ def economist_fix_payroll(
     start_date = datetime.strptime(date_from, "%Y-%m-%d").date()
     end_date = datetime.strptime(date_to, "%Y-%m-%d").date()
 
+    comment, refusal = period_comment_or_refusal(user, start_date, end_date, comment)
+    if refusal:
+        return RedirectResponse(
+            url=payroll_redirect_url("/economist/payroll", date_from, date_to, employee_name, stores, refusal),
+            status_code=302,
+        )
+
     save_manual_adjustments(
         session,
         user_id=user.id,
@@ -383,7 +419,7 @@ def economist_fix_payroll(
         Shift.shift_date <= end_date
     )
 
-    if not user.is_admin:
+    if not user.is_admin and allowed_cities is not None:
         shifts_query = shifts_query.filter(
             Shift.city.in_(allowed_cities)
         )
@@ -476,50 +512,13 @@ def economist_fix_payroll(
     session.commit()
     session.refresh(run)
 
-    manual_map = get_manual_adjustments_map(session, start_date, end_date)
-    used_manual_keys = set()
-    used_auto_keys = set()
-
-    for shift in shifts:
-        shift_is_no_plan = is_no_plan_shift(shift)
-        rate = pick_rate(rates, shift, resolve=resolve)
-        rate_value = rate.hourly_rate if rate else 0
-        amount = 0 if shift_is_no_plan else shift.hours * rate_value
-        manual_key = (normalize_text(shift.employee), normalize_text(shift.store))
-        other_amount = 0
-        auto_amount = 0
-
-        if manual_key not in used_manual_keys:
-            manual_adjustment = manual_map.get(manual_key)
-            other_amount = manual_adjustment.amount if manual_adjustment else 0
-            used_manual_keys.add(manual_key)
-
-        if manual_key not in used_auto_keys:
-            auto_amount = get_payroll_auto_adjustments(
-                session,
-                shift.employee,
-                shift.store,
-            )["approved_amount"]
-            used_auto_keys.add(manual_key)
-
-        item = PayrollRunItem(
-            run_id=run.id,
-            employee_name=shift.employee,
-            store=shift.store,
-            service=shift.service,
-            shift_date=shift.shift_date,
-            hours=shift.hours,
-            rate=0 if is_no_plan_shift(shift) else rate_value,
-            amount=amount,
-            other_amount=other_amount,
-            auto_adjustments_amount=auto_amount,
-            manual_adjustments_amount=other_amount,
-            lmk_amount=0,
-            total_amount=amount + other_amount + auto_amount,
-            comment=None if (rate or is_no_plan_shift(shift)) else "Не найдена ЧТС"
-        )
-
-        session.add(item)
+    # Расчёт строк — общий с фиксацией админа и выплатами (П3); у экономиста
+    # исторически без ЛМК. Уже оплаченные смены (аванс) вычитаются.
+    build_run_items(
+        session, run, shifts,
+        date_from=start_date, date_to=end_date, rates=rates, resolve=resolve,
+        apply_lmk=False, apply_auto=True, manual="store", link_paid=True,
+    )
 
     # АПД: подтверждённые премии (ещё не привязанные) → строкой в этот табель.
     apply_confirmed_payouts_to_run(session, request, user, run.id)
@@ -688,6 +687,10 @@ def admin_payroll(
         request,
         "payroll.html",
         {
+            # П3: кнопки полумесяцев и табели за выбранный период.
+            "period_links": half_month_links(start_date),
+            "is_half_month_period": is_half_month(start_date, end_date),
+            "period_runs": period_runs_for(session, start_date, end_date),
             "rows": rows,
             "days": days,
             "date_from": date_from,
@@ -770,6 +773,13 @@ def fix_payroll(
 ):
     start_date = datetime.strptime(date_from, "%Y-%m-%d").date()
     end_date = datetime.strptime(date_to, "%Y-%m-%d").date()
+
+    comment, refusal = period_comment_or_refusal(user, start_date, end_date, comment)
+    if refusal:
+        return RedirectResponse(
+            url=payroll_redirect_url("/admin/payroll", date_from, date_to, employee_name, stores, refusal),
+            status_code=302,
+        )
 
     save_manual_adjustments(
         session,
@@ -922,67 +932,11 @@ def fix_payroll(
         Shift.shift_date.asc()
     ).all()
 
-    manual_map = get_manual_adjustments_map(session, start_date, end_date)
-
-    used_manual_keys = set()
-    used_auto_keys = set()
-    used_lmk_employees = set()
-
-    for shift in shifts:
-
-        rate = pick_rate(rates, shift, resolve=resolve)
-
-        rate_value = rate.hourly_rate if rate else 0
-
-        amount = 0 if is_no_plan_shift(shift) else shift.hours * rate_value
-        manual_key = (normalize_text(shift.employee), normalize_text(shift.store))
-        other_amount = 0
-        auto_amount = 0
-        lmk_amount = 0
-        lmk_charge = None
-
-        if manual_key not in used_manual_keys:
-            manual_adjustment = manual_map.get(manual_key)
-            other_amount = manual_adjustment.amount if manual_adjustment else 0
-            used_manual_keys.add(manual_key)
-
-        if manual_key not in used_auto_keys:
-            auto_amount = get_payroll_auto_adjustments(
-                session,
-                shift.employee,
-                shift.store,
-            )["approved_amount"]
-            used_auto_keys.add(manual_key)
-
-        employee_lmk_key = normalize_text(shift.employee)
-        if employee_lmk_key not in used_lmk_employees:
-            lmk_charge, lmk_amount = get_lmk_charge_for_employee(
-                session,
-                shift.employee,
-                start_date,
-                end_date,
-            )
-            if lmk_amount:
-                used_lmk_employees.add(employee_lmk_key)
-
-        item = PayrollRunItem(
-            run_id=run.id,
-            employee_name=shift.employee,
-            store=shift.store,
-            service=shift.service,
-            shift_date=shift.shift_date,
-            hours=shift.hours,
-            rate=0 if is_no_plan_shift(shift) else rate_value,
-            amount=amount,
-            other_amount=other_amount,
-            auto_adjustments_amount=auto_amount,
-            manual_adjustments_amount=other_amount,
-            lmk_amount=lmk_amount,
-            total_amount=amount + other_amount + auto_amount - lmk_amount,
-            comment=None if (rate or is_no_plan_shift(shift)) else "Не найдена ЧТС"
-        )
-
-        session.add(item)
+    build_run_items(
+        session, run, shifts,
+        date_from=start_date, date_to=end_date, rates=rates, resolve=resolve,
+        apply_lmk=True, apply_auto=True, manual="store", link_paid=True,
+    )
 
     # АПД: подтверждённые премии (ещё не привязанные) → строкой в этот табель.
     apply_confirmed_payouts_to_run(session, request, user, run.id)
