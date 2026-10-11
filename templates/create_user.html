@@ -65,14 +65,9 @@
                 <label>Роль</label>
 
                 <select name="role" id="role-select">
-                    <option value="employee" selected>Сотрудник</option>
-                    <option value="brigadier">Бригадир</option>
-                    <option value="economist">Экономист</option>
-                    <option value="tm">ТМ (территориальный менеджер)</option>
-                    <option value="hr_clerk">Кадровик</option>
-                    <option value="hr_lead">Руководитель HR-проекта</option>
-                    <option value="headhunter">Подборщик</option>
-                    <option value="superadmin">Суперадминистратор</option>
+                    {% for code, label in ROLE_CHOICES %}
+                    <option value="{{ code }}" {% if code == 'employee' %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
                 </select>
             </div>
 

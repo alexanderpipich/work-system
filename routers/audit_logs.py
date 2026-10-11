@@ -8,12 +8,13 @@ from sqlalchemy.orm import Session
 
 from dependencies import get_db
 from models import AuditLog, User
-from rbac import require_permission
+from rbac import require_permission, role_label
 from utils import normalize_text
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+templates.env.globals["role_label"] = role_label
 
 
 def _parse_date(value):

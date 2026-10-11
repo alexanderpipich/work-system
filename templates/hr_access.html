@@ -31,7 +31,7 @@
                     <tr>
                         <td>{{ row.employee_name }}</td>
                         <td>{{ row.phone }}</td>
-                        <td>{{ 'Бригадир' if row.role == 'brigadier' else 'Сотрудник' }}</td>
+                        <td>{{ role_label(row.role) }}</td>
                         <td>
                             <form method="post" action="/hr/access/reset-password" class="inline-form reset-form">
                                 <input type="hidden" name="user_id" value="{{ row.id }}">

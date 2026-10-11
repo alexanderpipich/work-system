@@ -14,7 +14,7 @@ from access_scope_helpers import active_scope_values, sync_access_scopes
 from country_helpers import build_country_matcher
 from dependencies import get_db
 from inn_sync import set_employee_inn
-from rbac import TM_ROLE_VALUES, require_permission
+from rbac import ROLE_CHOICES, ROLE_LABELS, TM_ROLE_VALUES, canonical_role, require_permission
 from legal_entity_helpers import active_legal_entities
 from models import JOB_TITLES, Country, Shift, TimebookEmployee, User
 from utils import (
@@ -29,6 +29,8 @@ from utils import (
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+# Подписи ролей — только из rbac.ROLE_LABELS (П2).
+templates.env.globals.update(ROLE_LABELS=ROLE_LABELS, ROLE_CHOICES=ROLE_CHOICES, canonical_role=canonical_role)
 require_user_management = require_permission("users.manage", audit_denied=True)
 require_user_hard_delete = require_permission("users.hard_delete", audit_denied=True)
 
