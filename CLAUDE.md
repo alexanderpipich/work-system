@@ -57,7 +57,7 @@ Do **not** remove `request_type` from the uniqueness key or treat these two type
 ## Payroll Pipeline
 
 1. Shifts uploaded as Excel → parsed → stored in `shifts` table.
-2. `get_rate_for_shift()` in `utils.py` applies priority-scored rate lookup: employee-specific (+100) > store-specific (+10) > format-specific (+1) > service-only (base).
+2. `get_rate_for_shift()` in `utils.py` applies priority-scored rate lookup: employee-specific (+100) > store-specific (+10) > format-specific (+1) > service-only (base). The region filter compares `Rate.city` (labelled «Регион» in the UI) with the shift's **tariff region**: `Store.rate_region` of the shift's store (by ТК number from `Shift.store`), falling back to `Shift.city` when the store is unknown or the field is empty (П4.4). The region map rides on the resolver from `service_catalog.build_service_resolver` (`resolve.rate_region`), so every `pick_rate(..., resolve=resolve)` call gets it; without a resolver `pick_rate` uses `Shift.city` as before. Suburban stores are «Московская область» / «Ленинградская область» even though the timebook «Город» says «Москва» / «Санкт-Петербург»; `Shift.city` itself stays the timebook value.
 3. `ManualPayrollAdjustment` records tweak amounts per (employee, store, date range).
 4. `PayrollAdjustment` records handle auto-corrections with `pending → approved → applied` workflow.
 5. `MedicalBookCharge` deductions (LMK) spread across months.
@@ -66,13 +66,15 @@ Do **not** remove `request_type` from the uniqueness key or treat these two type
 
 PayrollRun lifecycle: `draft` → `fixed` → `sent` → `closed`.
 
+**Hourly bonus (П4.4).** `HourlyBonus` rows («Акция», ₽ per hour, `active_from`/`active_to`) add `PayrollRunItem.bonus_amount = hours × Σ bonuses active on the shift date` to shifts with a non-zero rate; `total_amount = amount + bonus_amount + other + auto − lmk − advanced`, and a twin's `advanced_amount` includes its bonus. With no active bonus the rows are identical to before (`tests/test_payroll_snapshot.py`). Managed on `/admin/payouts/bonuses`.
+
 **One payroll run = one legal entity.** `PayrollRun.legal_entity` ties a run to a specific `LegalEntity`. Do not mix multiple legal entities within one run.
 
 **Never change numerical results** (rates, LMK deductions, adjustment amounts) during refactoring. Calculation logic in `payroll_run_helpers.py`, `lmk_charges.py`, `payroll_adjustments.py` must produce identical outputs before and after any structural change.
 
 ## Store Assignments and Where a Shift Counts
 
-An employee↔store assignment (`EmployeeStoreAssignment`, managed on `/admin/planning-bp`) is **only an input for the planning blank (БП)** — it does not restrict where the employee may work. A shift counts where the timebook export caught it, for the service stated in the export: the store, city and service of `Shift` come from the upload, never from the assignment. Monitoring therefore says «убрать из БП» / «добавить в БП», not «не работает». БП and reconciliations are for the ГМ format only (`store_helpers.allows_bp`). City from the export is normalized (`utils.normalize_city`: no «г.», empty → NULL) because `Rate.city` matches `Shift.city` string-for-string.
+An employee↔store assignment (`EmployeeStoreAssignment`, managed on `/admin/planning-bp`) is **only an input for the planning blank (БП)** — it does not restrict where the employee may work. A shift counts where the timebook export caught it, for the service stated in the export: the store, city and service of `Shift` come from the upload, never from the assignment. Monitoring therefore says «убрать из БП» / «добавить в БП», not «не работает». БП and reconciliations are for the ГМ format only (`store_helpers.allows_bp`). City from the export is normalized (`utils.normalize_city`: no «г.», empty → NULL) because rate lookup matches the region string-for-string (`Store.rate_region`, else `Shift.city`).
 
 ## Contracts and Petitions (P4)
 
