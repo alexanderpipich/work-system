@@ -29,11 +29,14 @@ def populate_stores_from_shifts(session: Session) -> dict:
             continue
         city = normalize_city(city) or None
         fmt = normalize_format(fmt) or None
-        # prefer longest display name as most descriptive; keep a known city/format
-        if tk not in seen_tk or len(store_str) > len(seen_tk[tk][0]):
-            previous = seen_tk.get(tk)
-            seen_tk[tk] = (store_str, city or (previous[1] if previous else None),
-                           fmt or (previous[2] if previous else None))
+        # prefer longest display name as most descriptive; any known city/format wins
+        # over an empty one regardless of row order (one ТК can come with «nan» city)
+        previous = seen_tk.get(tk)
+        if previous is None:
+            seen_tk[tk] = (store_str, city, fmt)
+        else:
+            name = store_str if len(store_str) > len(previous[0]) else previous[0]
+            seen_tk[tk] = (name, previous[1] or city, previous[2] or fmt)
 
     created = 0
     updated = 0

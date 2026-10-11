@@ -169,7 +169,7 @@ def _page(request, user, session, selected_store="", **extra):
         "download_url": None,
     }
     context.update(extra)
-    return templates.TemplateResponse("planning_bp.html", context)
+    return templates.TemplateResponse(request, "planning_bp.html", context)
 
 
 def _bp_redirect(store="", message="", error=""):
