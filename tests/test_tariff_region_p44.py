@@ -74,5 +74,19 @@ class RateRegionTests(unittest.TestCase):
         self.assertEqual(self.s.query(Store).filter_by(tk_number=777).one().rate_region, "Санкт-Петербург")
 
 
+class TariffPreviewTests(unittest.TestCase):
+    def test_new_services_and_catalog_spelling(self):
+        from routers.rates import _services_vs_catalog
+
+        s = _session()
+        s.add_all([Service(name="Табакошоп Универсальные услуги"), Service(name="Услуги кассового сервиса")])
+        s.commit()
+        rows = [{"service_name": "Табакошоп_Универсальные услуги"}, {"service_name": "Услуги кассового сервиса"},
+                {"service_name": "Услуги по выкладке СОФ"}]
+        new, spelling = _services_vs_catalog(s, rows)
+        self.assertEqual(new, ["Табакошоп_Универсальные услуги", "Услуги по выкладке СОФ"])
+        self.assertEqual(spelling, [("Табакошоп_Универсальные услуги", "Табакошоп Универсальные услуги")])
+
+
 if __name__ == "__main__":
     unittest.main()

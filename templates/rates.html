@@ -136,6 +136,19 @@
                 {% endif %}
             </div>
 
+            {% if rates_preview.new_services %}
+                <div class="alert {{ 'alert-warn' if rates_preview.catalog_spelling else 'alert-success' }}">
+                    Будут заведены новые услуги ({{ rates_preview.new_services | length }}):
+                    {{ rates_preview.new_services | join(', ') }}.
+                    {% if rates_preview.catalog_spelling %}
+                        <br>⚠ Из них другое написание уже существующих:
+                        {% for new, old in rates_preview.catalog_spelling %}«{{ new }}» при «{{ old }}»{% if not loop.last %}; {% endif %}{% endfor %}
+                        — заведутся отдельными услугами; если это одна услуга, поправьте написание в файле
+                        или объедините услуги в справочнике после загрузки.
+                    {% endif %}
+                </div>
+            {% endif %}
+
             {% if rates_preview.duplicate_spelling %}
                 <div class="alert alert-warn">
                     Дубли написания услуг ({{ rates_preview.duplicate_spelling | length }}):
