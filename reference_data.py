@@ -19,6 +19,7 @@ from datetime import date
 from pathlib import Path
 
 from models import (
+    STORE_CONTACT_ROLES,
     CitizenshipRegime,
     Country,
     DocumentType,
@@ -42,6 +43,7 @@ DOCUMENT_TYPE_FIELDS = [
 ]
 STORE_CONTACT_FIELDS = ["email", "role", "name", "for_planning", "for_reconciliation", "for_unplanned",
                         "is_active"]
+ROLE_BY_LABEL = {label: code for code, label in STORE_CONTACT_ROLES.items()}
 RATE_KEY = ["service", "level", "format", "city", "store", "employee_name", "active_from", "active_to"]
 DATE_FIELDS = {"active_from", "active_to"}
 
@@ -182,7 +184,11 @@ def _store_contact_spec():
         store_id = refs.store_id.get(r["tk_number"])
         if store_id is None:
             raise Unresolved(f"нет ТК {r['tk_number']}")
-        return {"store_id": store_id, **{f: r[f] for f in STORE_CONTACT_FIELDS}}
+        values = {f: r[f] for f in STORE_CONTACT_FIELDS}
+        # В базе — код роли (hr_dept); файл из таблицы Ленты может нести подпись «Отдел персонала».
+        role = ROLE_BY_LABEL.get(values["role"], values["role"])
+        values["role"] = role if role in STORE_CONTACT_ROLES else "other"
+        return {"store_id": store_id, **values}
 
     return dict(
         model=StoreContact,
