@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{# Надбавки к часу (П4.4): «Акция» сверх ЧТС Ленты. Действующие на дату смены
+   суммируются и входят в аванс и табель (PayrollRunItem.bonus_amount).
+   Закрытие датой не пересчитывает уже зафиксированные прогоны. #}
+
+{% block title %}Надбавки к часу{% endblock %}
+{% block brand_title %}Надбавки к часу{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Сверх ЧТС, на каждый оплачиваемый час</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="/admin/payouts">Выплаты</a>{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top">
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
+
+    <div class="card">
+        <h2>Действуют и были</h2>
+        <p class="muted">Надбавка начисляется на часы смен со ставкой (смены без плана и без ЧТС — нет) и входит в аванс
+            и табель за период как «Акция». Несколько действующих надбавок складываются.
+            Закрытая надбавка к новым сменам не применяется; уже зафиксированные прогоны не пересчитываются.</p>
+        <div class="table-wrap mt-14">
+            <table>
+                <thead><tr><th>Название</th><th class="num">₽ за час</th><th>С</th><th>По</th><th>Статус</th><th>Комментарий</th><th></th></tr></thead>
+                <tbody>
+                {% for bonus in bonuses %}
+                    <tr>
+                        <td><strong>{{ bonus.name }}</strong></td>
+                        <td class="num">{{ '%.2f' % bonus.amount_per_hour }}</td>
+                        <td>{{ bonus.active_from.strftime('%d.%m.%Y') }}</td>
+                        <td>{{ bonus.active_to.strftime('%d.%m.%Y') if bonus.active_to else 'без срока' }}</td>
+                        <td>
+                            {% if not bonus.is_active %}<span class="pill">выключена</span>
+                            {% elif bonus.active_to and bonus.active_to < today %}<span class="pill">закрыта</span>
+                            {% elif bonus.active_from > today %}<span class="pill pill-info">с {{ bonus.active_from.strftime('%d.%m') }}</span>
+                            {% else %}<span class="pill pill-peach">действует</span>{% endif %}
+                        </td>
+                        <td>{{ bonus.comment or '' }}</td>
+                        <td>
+                            {% if bonus.is_active and not bonus.active_to %}
+                            <form method="post" action="/admin/payouts/bonuses/{{ bonus.id }}/close" class="row">
+                                <input type="date" name="active_to" value="{{ today.isoformat() }}" required>
+                                <button type="submit" class="btn btn-secondary">Закрыть датой</button>
+                            </form>
+                            {% endif %}
+                            <form method="post" action="/admin/payouts/bonuses/{{ bonus.id }}/toggle">
+                                <button type="submit" class="btn btn-secondary">{{ 'Выключить' if bonus.is_active else 'Включить' }}</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="muted">Надбавок нет — выплаты считаются по ЧТС.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mt-14">
+        <h2>Новая надбавка</h2>
+        <form method="post" action="/admin/payouts/bonuses/add">
+            <div class="form-grid cols-3">
+                <div class="field"><label>Название</label><input type="text" name="name" value="Акция" required></div>
+                <div class="field"><label>₽ за час</label><input type="text" name="amount_per_hour" placeholder="5" required></div>
+                <div class="field"><label>Действует с</label><input type="date" name="active_from" required></div>
+                <div class="field"><label>По (пусто — бессрочно)</label><input type="date" name="active_to"></div>
+                <div class="field"><label>Комментарий</label><input type="text" name="comment"></div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-14">Добавить</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

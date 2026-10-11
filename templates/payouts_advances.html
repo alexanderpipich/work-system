@@ -127,7 +127,7 @@
                             </td>
                             <td>{{ row.tm_name or '—' }}</td>
                             <td class="num">{{ '%g' % row.hours }}</td>
-                            <td class="num">{{ '%.2f' % row.calc }}</td>
+                            <td class="num">{{ '%.2f' % row.calc }}{% if row.bonus %}<br><small class="muted" title="Надбавка к часу">в т.ч. акция {{ '%.2f' % row.bonus }}</small>{% endif %}</td>
                             <td>
                                 {% if can_fix and not frozen %}
                                 <input type="text" class="ded-amount" name="deduction" value="{{ ('%g' % row.deduction) if row.deduction else '' }}" placeholder="−0">

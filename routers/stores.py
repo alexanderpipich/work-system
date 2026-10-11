@@ -130,6 +130,7 @@ def admin_stores_add(
     tk_number: int = Form(...),
     display_name: str = Form(""),
     city: str = Form(""),
+    rate_region: str = Form(""),
     format: str = Form(""),
     object_address: str = Form(""),
     comment: str = Form(""),
@@ -142,6 +143,7 @@ def admin_stores_add(
         tk_number=tk_number,
         display_name=display_name.strip() or None,
         city=city.strip() or None,
+        rate_region=rate_region.strip() or city.strip() or None,
         format=format.strip() or None,
         object_address=object_address.strip() or None,
         comment=comment.strip() or None,
@@ -168,6 +170,7 @@ def admin_store_update(
     user=Depends(_manage),
     display_name: str = Form(""),
     city: str = Form(""),
+    rate_region: str = Form(""),
     format: str = Form(""),
     object_address: str = Form(""),
     comment: str = Form(""),
@@ -176,7 +179,7 @@ def admin_store_update(
     store = session.query(Store).filter(Store.id == store_id).first()
     if not store:
         return RedirectResponse("/admin/stores", status_code=302)
-    old = {"display_name": store.display_name, "city": store.city,
+    old = {"display_name": store.display_name, "city": store.city, "rate_region": store.rate_region,
            "format": store.format, "object_address": store.object_address,
            "is_active": store.is_active}
     if display_name.strip():
@@ -185,11 +188,12 @@ def admin_store_update(
         store.city = city.strip()
     if format.strip():
         store.format = format.strip()
+    store.rate_region = rate_region.strip() or None  # пусто → подбор по городу смены
     store.object_address = object_address.strip() or None
     store.comment = comment.strip() or None
     store.is_active = is_active == "1"
     store.updated_at = now_utc()
-    new = {"display_name": store.display_name, "city": store.city,
+    new = {"display_name": store.display_name, "city": store.city, "rate_region": store.rate_region,
            "format": store.format, "object_address": store.object_address,
            "is_active": store.is_active}
     create_audit_log(

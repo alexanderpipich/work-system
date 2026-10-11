@@ -13,7 +13,7 @@ def extract_tk_number(store_str: str):
 
 def populate_stores_from_shifts(session: Session) -> dict:
     """Создать недостающие ТК из выгрузки смен (П4.2): номер ТК, название, город,
-    формат. Адреса и контакты — пустые, их заполняет ТМ по мере надобности.
+    формат; тарифный регион нового ТК = город (П4.4). Адреса и контакты — пустые, их заполняет ТМ по мере надобности.
     У существующих ТК заполняются только пустые название/город/формат."""
     from utils import normalize_city, normalize_format
 
@@ -48,6 +48,7 @@ def populate_stores_from_shifts(session: Session) -> dict:
                 tk_number=tk,
                 display_name=store_str,
                 city=city,
+                rate_region=city,  # П4.4: по умолчанию тарифный регион = город timebook
                 format=fmt,
                 created_at=now_utc(),
             ))

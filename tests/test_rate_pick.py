@@ -67,7 +67,7 @@ class PickRateTests(unittest.TestCase):
         self.assertIsNone(pick_rate([make_rate(100)], make_shift(service="other")))
 
     def test_get_rate_wrapper_loads_rates_once(self):
-        from models import Rate as RateModel, Service
+        from models import Rate as RateModel, Service, Store
 
         class Query:
             def __init__(self, rows):
@@ -76,14 +76,18 @@ class PickRateTests(unittest.TestCase):
             def all(self):
                 return self.rows
 
+            def __iter__(self):
+                return iter(self.rows)
+
         class Session:
             def __init__(self, rates):
                 self.rates = rates
                 self.rate_query_count = 0
 
-            def query(self, model):
-                # Этап 2: get_rate_for_shift строит резолвер (запрос Service).
-                if model is Service:
+            def query(self, model, *columns):
+                # Этап 2: get_rate_for_shift строит резолвер (запрос Service);
+                # П4.4: и карту тарифных регионов ТК (запрос Store).
+                if model is Service or getattr(model, "class_", None) is Store:
                     return Query([])
                 self.rate_query_count += 1
                 return Query(self.rates)

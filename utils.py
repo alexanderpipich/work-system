@@ -404,6 +404,8 @@ def pick_rate(rates, shift, resolve=None):
 
     candidates = [rate for rate in rates if _service_matches(rate)]
     valid_candidates = []
+    region_of = getattr(resolve, "rate_region", None)
+    shift_region = normalize_text(region_of(shift) if region_of else getattr(shift, "city", None))
 
     for rate in candidates:
         if rate.active_from and shift.shift_date < rate.active_from:
@@ -422,9 +424,10 @@ def pick_rate(rates, shift, resolve=None):
         if rate_format and rate_format != normalize_text(shift.format):
             continue
 
-        # Город берётся из столбца "Город" отчёта (Shift.city) и тарифов (Rate.city).
-        # Совпадение строки в строку; пустой город = "любой".
-        if rate_city and rate_city != normalize_text(getattr(shift, "city", None)):
+        # Rate.city — тарифный регион. Регион смены — Store.rate_region её магазина
+        # (П4.4, через резолвер), иначе столбец "Город" отчёта (Shift.city).
+        # Совпадение строки в строку; пустой регион ставки = "любой".
+        if rate_city and rate_city != shift_region:
             continue
 
         if rate_store and rate_store != normalize_text(shift.store):

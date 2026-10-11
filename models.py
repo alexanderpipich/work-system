@@ -275,12 +275,31 @@ class PayrollRunItem(Base):
     lmk_amount = Column(Float, default=0)
     # П3: смена уже оплачена другим зафиксированным прогоном (обычно авансом) —
     # его id и сколько по ней выплачено (amount + manual_adjustments_amount двойника).
-    # total_amount = amount + other_amount + auto_adjustments_amount − lmk_amount − advanced_amount.
+    # total_amount = amount + bonus_amount + other_amount + auto_adjustments_amount − lmk_amount − advanced_amount.
     paid_by_run_id = Column(Integer, nullable=True)
     advanced_amount = Column(Float, default=0, server_default="0")
+    # П4.4: надбавка к часу («Акция») — часы × Σ надбавок HourlyBonus на дату смены.
+    bonus_amount = Column(Float, default=0, server_default="0")
     total_amount = Column(Float, default=0)
 
     comment = Column(Text, nullable=True)
+
+
+class HourlyBonus(Base):
+    """Надбавка к часу (П4.4): «Акция» 5 ₽/ч сверх ЧТС Ленты. Действует на смены
+    с ненулевой ставкой с active_from по active_to (пусто — бессрочно); несколько
+    действующих суммируются. Закрытие датой не пересчитывает старые прогоны."""
+    __tablename__ = "hourly_bonuses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    amount_per_hour = Column(Float, nullable=False)
+    active_from = Column(Date, nullable=False)
+    active_to = Column(Date, nullable=True)
+    is_active = Column(Boolean, default=True)
+    comment = Column(Text, nullable=True)
+    created_by = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=now_utc)
 
 
 class AdvanceSelection(Base):
@@ -702,6 +721,9 @@ class Store(Base):
     tk_number = Column(Integer, unique=True, nullable=False)
     display_name = Column(String, nullable=True)
     city = Column(String, nullable=True)
+    # П4.4: тарифный регион — по нему подбирается ЧТС (Rate.city). У подмосковных
+    # ТК «Московская область», хотя «Город» timebook даёт «Москва». Пусто → город смены.
+    rate_region = Column(String, nullable=True)
     format = Column(String, nullable=True)
     object_address = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)

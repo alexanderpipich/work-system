@@ -10,7 +10,7 @@
 
 from types import SimpleNamespace
 
-from models import Rate, Service, Shift
+from models import Rate, Service, Shift, Store
 from service_matrix import normalize_service_base, parse_service_name
 from time_helpers import now_utc
 from utils import normalize_text
@@ -57,6 +57,27 @@ def get_or_create_service(session, name):
     return service
 
 
+def build_rate_region_resolver(session):
+    """Регион смены для подбора ставки (П4.4): Store.rate_region магазина смены
+    (по номеру ТК из Shift.store), иначе Shift.city — как до П4.4.
+
+    Один запрос Store на расчёт; кэш по строке магазина.
+    """
+    from store_helpers import extract_tk_number
+
+    regions = {tk: normalize_text(region) for tk, region in session.query(Store.tk_number, Store.rate_region)
+               if normalize_text(region)}
+    cache = {}
+
+    def rate_region(shift):
+        store = getattr(shift, "store", None)
+        if store not in cache:
+            cache[store] = regions.get(extract_tk_number(store)) if regions else None
+        return cache[store] or getattr(shift, "city", None)
+
+    return rate_region
+
+
 def build_service_resolver(session):
     """Фабрика резолвера услуги смены → (service_id, level) с кэшем.
 
@@ -87,6 +108,9 @@ def build_service_resolver(session):
         cache[key] = result
         return result
 
+    # Резолвер строится один раз на расчёт и передаётся во все pick_rate — через
+    # него же pick_rate узнаёт тарифный регион смены (П4.4), без правки вызовов.
+    resolve.rate_region = build_rate_region_resolver(session)
     return resolve
 
 

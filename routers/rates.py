@@ -56,6 +56,23 @@ def _duplicate_spelling(rows):
     return sorted([sorted(variants) for variants in groups.values() if len(variants) > 1])
 
 
+def _services_vs_catalog(session, rows):
+    """(новые услуги, [(имя в файле, имя в справочнике)]) — П4.4: какие услуги файла
+    заведутся новыми и какие из них — другое написание уже существующей
+    («Табакошоп_…» при «Табакошоп …»). Не склеивает, только показать."""
+    existing = {}
+    for (name,) in session.query(Service.name):
+        existing.setdefault(normalize_service_base(name), set()).add(name)
+    new_services, spelling = [], []
+    for name in sorted({row["service_name"] for row in rows if row.get("service_name")}):
+        variants = existing.get(normalize_service_base(name), set())
+        if name in variants:
+            continue
+        new_services.append(name)
+        spelling.extend((name, other) for other in sorted(variants))
+    return new_services, spelling
+
+
 def parse_tariff_grid(file_obj, sheet=TARIFF_SHEET, header_row=TARIFF_HEADER_ROW):
     """Развернуть тарифный Excel в плоский список строк ставок.
 
@@ -685,6 +702,7 @@ async def upload_rates(
             "duplicate_spelling": _duplicate_spelling(rows),
             "sample": rows[:20],
         }
+        preview["new_services"], preview["catalog_spelling"] = _services_vs_catalog(session, rows)
         return _render({"rates_preview": preview, "message": None})
 
     # Применение: конфликты блокируют запись (детерминизм подбора)
@@ -728,6 +746,7 @@ async def upload_rates(
         deleted = 0
 
     created = 0
+    _new_services, catalog_spelling = _services_vs_catalog(session, rows)
     services_before = session.query(Service).count()
     for row in rows:
         # Услуга из колонки УСЛУГА заводится в справочник (тариф = источник услуг);
@@ -775,4 +794,7 @@ async def upload_rates(
     if duplicate_spelling:
         variants = "; ".join(" / ".join(pair) for pair in duplicate_spelling)
         message += f". ⚠ Дубли написания ({len(duplicate_spelling)}): {variants}"
+    if catalog_spelling:
+        variants = "; ".join(f"«{new}» при «{old}»" for new, old in catalog_spelling)
+        message += f". ⚠ Новые услуги — другое написание существующих ({len(catalog_spelling)}): {variants}"
     return _render({"message": message})
