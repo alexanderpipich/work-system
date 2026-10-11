@@ -76,6 +76,7 @@ ICONS.update({
     "advances": ("amber", '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3.5v3M16 3.5v3"/><path d="M9 14.5h6"/></svg>'),
     "reconciliations": ("teal", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l3 3 6-7"/><path d="M14 18h6M15 13h5"/></svg>'),
     "employee_list": ("indigo", ICONS["users"][1]),
+    "regions": ("teal", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'),
     "upload_auto": ("sky", ICONS["upload"][1]),
 })
 
@@ -187,6 +188,9 @@ NAV_GROUPS = [
         card("stores_directory", "Справочник магазинов",
              "Адреса и контакты магазинов.",
              [("/stores", "stores.directory.view", None)]),
+        card("regions", "Регионы",
+             "Адресат ходатайства в УВМ, орган выдачи и территория патента по региону работы.",
+             [("/admin/regions", "regions.manage", None)]),
         card("services", "Услуги",
              "Справочник услуг и уровней: матрица по городам и форматам.",
              [("/admin/services", "services.view", None)]),

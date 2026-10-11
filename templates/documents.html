@@ -159,6 +159,8 @@
     {% endfor %}
 
 {% else %}
+    {% if card %}{% include "_employee_card.html" %}{% endif %}
+
     <section class="card">
         <h2>Фильтры</h2>
         <form method="get" action="{{ base_path }}" class="form-grid cols-3 align-end">

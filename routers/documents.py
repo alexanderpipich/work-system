@@ -224,6 +224,7 @@ def _render_documents(
     allowed_names=None,
     employee_name="",
     document_type_id=0,
+    employee_card=None,
     status="pending_verification",
     message="",
     error="",
@@ -259,8 +260,26 @@ def _render_documents(
             "back_label": back_label,
             "message": message or None,
             "error": error or None,
+            **(employee_card or {}),
         },
     )
+
+
+def _employee_card_context(session, current, user):
+    """П4: блок «Данные сотрудника» над реестром его документов."""
+    from employee_profile import employee_profile
+    from legal_entity_helpers import active_legal_entities
+    from models import JOB_TITLES
+    from rbac import TM_ROLE_VALUES
+
+    return {
+        "card": employee_profile(session, user),
+        "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),  # noqa: E712
+        "tm_users": session.query(User).filter(User.role.in_(TM_ROLE_VALUES)).order_by(User.employee_name).all(),
+        "legal_entities": active_legal_entities(session),
+        "job_titles": JOB_TITLES,
+        "can_edit": has_permission(current, "documents.manage"),
+    }
 
 
 def _render_matrix(request, session, user, *, tk_filter="", name_filter=""):
@@ -944,22 +963,85 @@ def economist_documents(
 
 
 @router.get("/admin/documents/employee/{user_id}", response_class=HTMLResponse)
+@router.get("/hr/documents/employee/{user_id}", response_class=HTMLResponse)
 def admin_employee_documents(
     request: Request,
     user_id: int,
+    message: str = "",
+    error: str = "",
     session: Session = Depends(get_db),
     current=Depends(require_document_manager),
 ):
+    base_path, _, _ = _documents_base(request)
     user = session.query(User).filter(User.id == user_id).first()
     if not user:
-        return RedirectResponse(url="/admin/documents?error=Сотрудник не найден", status_code=302)
+        return RedirectResponse(url=f"{base_path}?error=Сотрудник не найден", status_code=302)
     return _render_documents(
         request,
         session,
         current,
         employee_name=user.employee_name,
         status="all",
+        message=message,
+        error=error,
+        employee_card=_employee_card_context(session, current, user),
     )
+
+
+@router.post("/admin/documents/employee/{user_id}/profile")
+@router.post("/hr/documents/employee/{user_id}/profile")
+def save_employee_profile(
+    request: Request,
+    user_id: int,
+    gender: str = Form(default=""),
+    birth_date: str = Form(default=""),
+    citizenship_country_id: int = Form(0),
+    inn: str = Form(default=""),
+    job_title: str = Form(default=""),
+    tm_id: int = Form(0),
+    legal_entity: str = Form(default=""),
+    session: Session = Depends(get_db),
+    current=Depends(require_document_manager),
+):
+    """П4: правка полей сотрудника из карточки документов (источник данных договора)."""
+    from datetime import date as date_type
+
+    from legal_entity_helpers import active_legal_entities
+    from models import JOB_TITLES
+    from rbac import TM_ROLE_VALUES
+
+    base_path, _, _ = _documents_base(request)
+    card_url = f"{base_path}/employee/{user_id}"
+    if not has_permission(current, "documents.manage"):
+        return _redirect(card_url, error="Нет права менять данные сотрудника")
+    user = session.query(User).filter(User.id == user_id).first()
+    if not user:
+        return _redirect(base_path, error="Сотрудник не найден")
+
+    fields = ("gender", "birth_date", "citizenship_country_id", "job_title", "tm_id", "legal_entity")
+    old_value = {f: getattr(user, f) for f in fields}
+    user.gender = gender if gender in {"m", "f"} else None
+    try:
+        user.birth_date = date_type.fromisoformat(birth_date) if normalize_text(birth_date) else None
+    except ValueError:
+        return _redirect(card_url, error="Некорректная дата рождения")
+    if citizenship_country_id and session.get(Country, citizenship_country_id):
+        user.citizenship_country_id = citizenship_country_id
+    elif not citizenship_country_id:
+        user.citizenship_country_id = None
+    user.job_title = job_title if job_title in JOB_TITLES else None
+    tm_ids = {tm.id for tm in session.query(User).filter(User.role.in_(TM_ROLE_VALUES)).all()}
+    user.tm_id = tm_id if tm_id in tm_ids and tm_id != user.id else None
+    names = {e.name for e in active_legal_entities(session)}
+    user.legal_entity = legal_entity if legal_entity in names else (None if not legal_entity else user.legal_entity)
+    new_value = {f: getattr(user, f) for f in fields}
+    if new_value != old_value:
+        create_audit_log(session, request, current, "user_updated", "user", user.id, user.employee_name,
+                         old_value=old_value, new_value=new_value, comment="карточка документов сотрудника")
+    if normalize_text(inn) and normalize_text(inn) != normalize_text(user.inn):
+        set_employee_inn(session, user, normalize_text(inn), source="profile", actor=current, request=request)
+    session.commit()
+    return _redirect(card_url, message="Данные сотрудника сохранены")
 
 
 @router.get("/admin/documents/diagnostics", response_class=HTMLResponse)

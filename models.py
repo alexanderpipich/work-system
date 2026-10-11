@@ -92,6 +92,9 @@ class User(Base):
     # Снимается в False, когда сотрудник сменил пароль сам.
     password_is_temporary = Column(Boolean, default=False)
     birth_date = Column(Date, nullable=True)
+    # П4: m | f | NULL — для «гражданин/гражданка» и «получил/получила»; если пусто,
+    # генератор угадывает по отчеству и предлагает сохранить.
+    gender = Column(String(1), nullable=True)
     # Закреплённый ТМ (User с ролью tm); может быть пустым.
     tm_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     # Загруженные QR-пропуска (до 3, с подписью специальности). qr_image_path выше — legacy,
@@ -135,6 +138,21 @@ class LegalEntity(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=now_utc)
     updated_at = Column(DateTime, nullable=True)
+    # П4: реквизиты для договора и ходатайства (зелёные/голубые подстановки шаблонов).
+    full_name = Column(String, nullable=True)  # «Общество с ограниченной ответственностью «…»»
+    ogrn = Column(String, nullable=True)
+    kpp = Column(String, nullable=True)
+    legal_address = Column(Text, nullable=True)
+    actual_address = Column(Text, nullable=True)  # шапка ходатайства
+    work_address = Column(Text, nullable=True)  # п. 1.3 договора — место работы
+    bank_name = Column(String, nullable=True)
+    bank_account = Column(String, nullable=True)
+    bik = Column(String, nullable=True)
+    corr_account = Column(String, nullable=True)
+    director_name = Column(String, nullable=True)  # им. падеж: Хацкевич Виталий Сергеевич
+    director_name_genitive = Column(String, nullable=True)  # род. падеж: Хацкевича Виталия Сергеевича
+    director_short = Column(String, nullable=True)  # В.С. Хацкевич
+    director_title = Column(String, nullable=True, default="генерального директора")
 
 
 class Service(Base):
@@ -720,6 +738,27 @@ class Country(Base):
     regime_id = Column(Integer, ForeignKey("citizenship_regimes.id"), nullable=False)
     is_active = Column(Boolean, default=True)
     aliases = Column(String, nullable=True)  # CSV сокращений для матчинга («РФ»→«Россия»)
+    # П4: «гражданин(ка) Республики Узбекистан» в договоре.
+    name_genitive = Column(String, nullable=True)
+
+
+class Region(Base):
+    """Регион работы (П4): адресат ходатайства в УВМ и орган выдачи патента.
+
+    Регион сотрудника подбирается по городу его последних смен (cities — CSV
+    городов из выгрузки смен), в форме документа его можно выбрать вручную.
+    """
+    __tablename__ = "regions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)
+    cities = Column(Text, nullable=True)
+    uvm_addressee = Column(Text, nullable=True)  # дат. падеж: «Начальнику УВМ ГУ МВД России по …»
+    uvm_rank = Column(String, nullable=True)  # «Полковнику полиции»
+    uvm_person = Column(String, nullable=True)  # ФИО в дат. падеже
+    patent_authority = Column(Text, nullable=True)  # «ГУ МВД России по г. Санкт-Петербургу и …»
+    patent_territory = Column(String, nullable=True)  # «г. Санкт-Петербург»
+    is_active = Column(Boolean, default=True)
 
 
 class RegimeDocumentRule(Base):

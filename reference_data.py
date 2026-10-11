@@ -25,6 +25,7 @@ from models import (
     Rate,
     ReferralSettings,
     RegimeDocumentRule,
+    Region,
     Service,
     Store,
 )
@@ -89,13 +90,14 @@ def _regime_spec():
 
 def _country_spec():
     def to_record(o, refs):
-        record = _plain(o, ["name", "is_active", "aliases"])
+        record = _plain(o, ["name", "is_active", "aliases", "name_genitive"])
         record["regime_code"] = refs.regime_code.get(o.regime_id)
         return record
 
     def to_values(r, refs):
         return {
             "name": r["name"], "is_active": r["is_active"], "aliases": r["aliases"],
+            "name_genitive": r.get("name_genitive"),
             "regime_id": refs.regime_id[r["regime_code"]],
         }
 
@@ -177,6 +179,17 @@ def _rate_spec():
     )
 
 
+def _region_spec():
+    fields = ["name", "cities", "uvm_addressee", "uvm_rank", "uvm_person",
+              "patent_authority", "patent_territory", "is_active"]
+    return dict(
+        model=Region,
+        key=lambda r: r["name"],
+        to_record=lambda o, refs: _plain(o, fields),
+        to_values=lambda r, refs: {f: r.get(f) for f in fields},
+    )
+
+
 def _singleton_spec(model, fields):
     # Одна строка настроек на базу: ключ один и тот же у любой записи.
     return dict(
@@ -200,6 +213,7 @@ TABLES = [
     ("employee_monitoring_settings", _singleton_spec(
         EmployeeMonitoringSettings, ["inactive_days", "minimum_shifts", "analysis_days"])),
     ("referral_settings", _singleton_spec(ReferralSettings, ["hours_threshold", "bonus_amount"])),
+    ("regions", _region_spec()),
 ]
 
 

@@ -64,6 +64,7 @@ PERMISSIONS = {
         "audit.hr_view", "hr_team.manage", "schedules.view",
         "stores.directory.view", "stores.contacts.view", "contracts.view", "users.view",
         "payouts.advances.select_any", "payouts.advances.fix", "payouts.export",
+        "regions.manage",
     },
     ROLE_TM: {
         "employees.view", "employees.manage", "documents.view", "documents.manage",
@@ -76,7 +77,7 @@ PERMISSIONS = {
     # справочники. Без выплат, ставок, реквизитов и рассылок.
     ROLE_HR_CLERK: {
         "employees.view", "documents.view", "documents.manage",
-        "citizenship.manage", "services.view", "contracts.view", "users.view",
+        "citizenship.manage", "services.view", "contracts.view", "users.view", "regions.manage",
         "stores.directory.view", "stores.contacts.view",
     },
     ROLE_ECONOMIST: {

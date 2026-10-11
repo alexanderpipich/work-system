@@ -3,36 +3,42 @@
     "name": "Армения",
     "is_active": true,
     "aliases": "Республика Армения",
-    "regime_code": "eaeu"
+    "regime_code": "eaeu",
+    "name_genitive": "Республики Армения"
   },
   {
     "name": "Белорусь",
     "is_active": true,
     "aliases": "РБ, Беларусь, Республика Беларусь, Белоруссия",
-    "regime_code": "union"
+    "regime_code": "union",
+    "name_genitive": "Республики Беларусь"
   },
   {
     "name": "Кыргызстан",
     "is_active": true,
     "aliases": "Киргизия, Кыргызская Республика, КР",
-    "regime_code": "eaeu"
+    "regime_code": "eaeu",
+    "name_genitive": "Кыргызской Республики"
   },
   {
     "name": "Россия",
     "is_active": true,
     "aliases": "РФ, Российская Федерация",
-    "regime_code": "resident"
+    "regime_code": "resident",
+    "name_genitive": "Российской Федерации"
   },
   {
     "name": "Таджикистан",
     "is_active": true,
     "aliases": "Республика Таджикистан",
-    "regime_code": "patent"
+    "regime_code": "patent",
+    "name_genitive": "Республики Таджикистан"
   },
   {
     "name": "Узбекистан",
     "is_active": true,
     "aliases": "Республика Узбекистан",
-    "regime_code": "patent"
+    "regime_code": "patent",
+    "name_genitive": "Республики Узбекистан"
   }
 ]
