@@ -32,8 +32,9 @@
 
         <form method="post" action="/admin/create-user" class="stack">
             <div class="field">
-                <label for="phone">Телефон</label>
-                <input id="phone" type="text" name="phone" placeholder="Введите телефон" required>
+                <label for="phone">Телефон (логин)</label>
+                <input id="phone" type="text" name="phone" placeholder="Введите телефон">
+                <span class="field-hint">Телефон и пароль — вход в кабинет. Оставьте оба пустыми, чтобы завести сотрудника без кабинета.</span>
             </div>
 
             <div class="field">
@@ -43,7 +44,7 @@
 
             <div class="field">
                 <label for="password">Пароль</label>
-                <input id="password" type="password" name="password" placeholder="Введите пароль" required>
+                <input id="password" type="password" name="password" placeholder="Введите пароль">
             </div>
 
             <div class="field">
@@ -67,7 +68,8 @@
                     <option value="employee" selected>Сотрудник</option>
                     <option value="brigadier">Бригадир</option>
                     <option value="economist">Экономист</option>
-                    <option value="hr_manager">HR-менеджер региона</option>
+                    <option value="tm">ТМ (территориальный менеджер)</option>
+                    <option value="hr_clerk">Кадровик</option>
                     <option value="hr_lead">Руководитель HR-проекта</option>
                     <option value="headhunter">Подборщик</option>
                     <option value="superadmin">Суперадминистратор</option>
@@ -126,7 +128,7 @@ function updateRoleFields() {
         brigadierField.style.display = "block";
     }
 
-    if (["economist", "hr_manager"].includes(roleSelect.value)) {
+    if (["economist", "tm"].includes(roleSelect.value)) {
         economistField.style.display = "block";
     }
 }

@@ -203,8 +203,13 @@
                         </div>
 
                         <div>
+                            {% if r.card_number or not r.account_number %}
+                            <div class="small-muted">Карта</div>
+                            <div class="nowrap">{{ r.card_number | card_format if r.card_number else (r.card_phone or '—') }}</div>
+                            {% else %}
                             <div class="small-muted">Счёт</div>
-                            <div>{{ r.account_number or '—' }}</div>
+                            <div>{{ r.account_number }}</div>
+                            {% endif %}
                         </div>
 
                         <div class="open-hint">Открыть / редактировать</div>

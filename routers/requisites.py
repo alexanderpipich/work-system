@@ -12,14 +12,16 @@ from dependencies import get_db
 from inn_sync import set_employee_inn
 from models import Requisite, Shift, User
 from rbac import canonical_role, require_permission
-from requisite_validation import BLOCKS_PAYROLL, requisite_problems, split_by_validity
+from requisite_validation import BLOCKS_PAYROLL, WARNING, requisite_problems, split_by_validity
 from time_helpers import now_utc
-from utils import (is_scientific_notation, normalize_digits, normalize_text, repair_requisite,
-                   safe_return_to)
+from utils import (PAYOUT_CARD_PHONE, PAYOUT_METHODS, format_card_number, is_scientific_notation,
+                   normalize_card_expiry, normalize_card_number, normalize_card_phone,
+                   normalize_digits, normalize_text, repair_requisite, safe_return_to)
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+templates.env.filters["card_format"] = format_card_number
 require_requisites_view = require_permission("requisites.view", audit_denied=True)
 _req_manage = require_permission("requisites.manage")
 
@@ -71,6 +73,28 @@ def _redirect_with_error(target, message):
     return RedirectResponse("%s?error=%s" % (target, quote(message)), status_code=302)
 
 
+def _clean_card_fields(payout_method, card_number, card_phone, card_expiry):
+    """(способ, карта, телефон, срок) к хранимому виду, или отказ текстом.
+
+    Карту храним сплошными цифрами (ввод с пробелами/дефисами), телефон — 11 цифр.
+    Неполную карту сохраняем (покажет реестр проблем), а нераспознанный срок —
+    отказ: молча выбросить введённое хуже, чем попросить поправить.
+    """
+    method = normalize_text(payout_method) or PAYOUT_CARD_PHONE
+    if method not in PAYOUT_METHODS:
+        return None, "Неизвестный способ выплаты"
+    expiry_raw = normalize_text(card_expiry)
+    expiry = normalize_card_expiry(expiry_raw) if expiry_raw else ""
+    if expiry_raw and not expiry:
+        return None, "Срок карты «%s» — нужен формат ММ/ГГ, например 03/27" % expiry_raw
+    return (
+        method,
+        normalize_card_number(normalize_text(card_number)) or None,
+        normalize_card_phone(card_phone) or None,
+        expiry or None,
+    ), None
+
+
 def _requisite_payload(req):
     return {
         "employee_name": req.employee_name,
@@ -80,6 +104,10 @@ def _requisite_payload(req):
         "bank_name": req.bank_name,
         "is_third_party": req.is_third_party,
         "recipient_name": req.recipient_name,
+        "payout_method": req.payout_method,
+        "card_number": req.card_number,
+        "card_phone": req.card_phone,
+        "card_expiry": req.card_expiry,
         "is_active": req.is_active,
         "is_verified": req.is_verified,
         "comment": req.comment,
@@ -169,9 +197,11 @@ def admin_requisites(
             "problematic": problematic,
             "clean": clean,
             "problems_by_id": {
-                row.id: requisite_problems(row) for row in problematic
+                row.id: requisite_problems(row) for row in problematic + clean
             },
             "blocks_payroll_kind": BLOCKS_PAYROLL,
+            "warning_kind": WARNING,
+            "payout_methods": PAYOUT_METHODS,
             "filters": {"q": q, "status": status, "only_problems": only_problems},
             "message": request.query_params.get("message"),
             # Отказ сохранения приезжает сюда редиректом — иначе он теряется молча.
@@ -189,6 +219,10 @@ def add_requisite(
     bik: str = Form(""),
     bank_name: str = Form(""),
     citizenship: str = Form(""),
+    payout_method: str = Form(PAYOUT_CARD_PHONE),
+    card_number: str = Form(""),
+    card_phone: str = Form(""),
+    card_expiry: str = Form(""),
     is_third_party: str = Form(default=""),
     recipient_name: str = Form(default=""),
     is_active: str = Form(default="on"),
@@ -203,6 +237,10 @@ def add_requisite(
     (inn_clean, account_clean, bik_clean), refusal = _clean_identifiers(inn, account_number, bik)
     if refusal:
         return _redirect_with_error(safe_return_to(return_to, "/admin/requisites"), refusal)
+    card_fields, refusal = _clean_card_fields(payout_method, card_number, card_phone, card_expiry)
+    if refusal:
+        return _redirect_with_error(safe_return_to(return_to, "/admin/requisites"), refusal)
+    method_clean, card_clean, card_phone_clean, expiry_clean = card_fields
 
     user = session.query(User).filter(
         User.employee_name == employee_name_clean
@@ -215,6 +253,10 @@ def add_requisite(
         account_number=account_clean,
         bik=bik_clean,
         bank_name=normalize_text(bank_name),
+        payout_method=method_clean,
+        card_number=card_clean,
+        card_phone=card_phone_clean,
+        card_expiry=expiry_clean,
         # Гражданство больше НЕ хранится в реквизитах (Блок 1 нормализации) —
         # источник истины: User.citizenship_country_id.
         is_third_party=(is_third_party == "on" or is_third_party == "true"),
@@ -268,6 +310,11 @@ def update_requisite(
     bik: str = Form(""),
     bank_name: str = Form(""),
     citizenship: str = Form(""),
+    # None — поля нет в форме (страница /hr/requisites): карту не трогаем, а не стираем.
+    payout_method: str | None = Form(None),
+    card_number: str | None = Form(None),
+    card_phone: str | None = Form(None),
+    card_expiry: str | None = Form(None),
     is_third_party: str = Form(default=""),
     recipient_name: str = Form(default=""),
     is_active: str = Form(default=""),
@@ -284,6 +331,11 @@ def update_requisite(
     (inn_clean, account_clean, bik_clean), refusal = _clean_identifiers(inn, account_number, bik)
     if refusal:
         return _redirect_with_error("/admin/requisites", refusal)
+    card_form_sent = payout_method is not None
+    if card_form_sent:
+        card_fields, refusal = _clean_card_fields(payout_method, card_number, card_phone, card_expiry)
+        if refusal:
+            return _redirect_with_error("/admin/requisites", refusal)
 
     employee_name_clean = normalize_text(employee_name)
     user = session.query(User).filter(User.employee_name == employee_name_clean).first()
@@ -297,6 +349,8 @@ def update_requisite(
     req.account_number = account_clean
     req.bik = bik_clean
     req.bank_name = normalize_text(bank_name)
+    if card_form_sent:
+        req.payout_method, req.card_number, req.card_phone, req.card_expiry = card_fields
     # Гражданство больше НЕ пишется в реквизиты (Блок 1 нормализации).
     req.is_third_party = (is_third_party == "on" or is_third_party == "true")
     req.recipient_name = normalize_text(recipient_name) or None

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Армения",
+    "is_active": true,
+    "aliases": "Республика Армения",
+    "regime_code": "eaeu"
+  },
+  {
+    "name": "Белорусь",
+    "is_active": true,
+    "aliases": "РБ, Беларусь, Республика Беларусь, Белоруссия",
+    "regime_code": "union"
+  },
+  {
+    "name": "Кыргызстан",
+    "is_active": true,
+    "aliases": "Киргизия, Кыргызская Республика, КР",
+    "regime_code": "eaeu"
+  },
+  {
+    "name": "Россия",
+    "is_active": true,
+    "aliases": "РФ, Российская Федерация",
+    "regime_code": "resident"
+  },
+  {
+    "name": "Таджикистан",
+    "is_active": true,
+    "aliases": "Республика Таджикистан",
+    "regime_code": "patent"
+  },
+  {
+    "name": "Узбекистан",
+    "is_active": true,
+    "aliases": "Республика Узбекистан",
+    "regime_code": "patent"
+  }
+]

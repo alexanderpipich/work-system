@@ -6,7 +6,7 @@
 {% block brand_subtitle %}
 <p class="brand-subtitle">Кабинет экономиста</p>
 <div class="city-list">
-    {% for city in allowed_cities %}
+    {% for city in allowed_cities or [] %}
         <span class="chip">{{ city }}</span>
     {% endfor %}
 </div>

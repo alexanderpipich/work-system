@@ -1,9 +1,10 @@
-"""Диагностика дублей ФИО в users: несколько User на одно employee_name.
+"""Диагностика дублей ФИО в users: несколько User на одно нормализованное ФИО.
 
-Только чтение — ничего не меняет. Колонка users.employee_name не уникальна, а
-поиск по ФИО (user_by_employee_name, реестр документов) берёт первую строку без
-ORDER BY — какую именно, решает Postgres. Скрипт показывает, чем дубли
-отличаются, чтобы решить, какую запись оставить.
+Только чтение — ничего не меняет. ФИО сравнивается по ключу uniqueness
+(utils.normalize_person_name: регистр, ё/е, пробелы). Пока дубли есть, уникальный
+индекс uq_users_employee_name_norm на старой базе не ставится (user_schema.py),
+а поиск по ФИО берёт первую строку без ORDER BY. Скрипт показывает, чем дубли
+отличаются, чтобы решить, какую запись оставить. На чистой базе — 0 дублей.
 
     python tools/check_duplicate_users.py                  # все дубли
     python tools/check_duplicate_users.py --name Рахимбаев # поиск по ФИО
@@ -25,7 +26,7 @@ from sqlalchemy import func                                        # noqa: E402
 from database import SessionLocal                                  # noqa: E402
 from document_helpers import citizenship_display, user_by_employee_name  # noqa: E402
 from models import AuditLog, EmployeeDocument, Shift, User         # noqa: E402
-from utils import normalize_text                                   # noqa: E402
+from utils import normalize_person_name                            # noqa: E402
 
 CREATE_ACTIONS = ("user_created", "user_created_from_shifts")
 
@@ -37,7 +38,7 @@ def duplicate_groups(session, name_filter=""):
         query = query.filter(User.employee_name.ilike("%%%s%%" % name_filter))
     groups = defaultdict(list)
     for user in query.order_by(User.id).all():
-        groups[normalize_text(user.employee_name)].append(user)
+        groups[normalize_person_name(user.employee_name)].append(user)
     return {name: users for name, users in sorted(groups.items()) if len(users) > 1}
 
 

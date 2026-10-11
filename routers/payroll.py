@@ -23,7 +23,7 @@ from schedule_grid import build_payroll_rows, days_between
 from service_catalog import build_service_resolver
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today, now_utc
-from rbac import canonical_role, require_permission
+from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, require_permission
 from utils import load_rates, normalize_text, pick_rate
 
 
@@ -72,7 +72,7 @@ def economist_payroll(
     role = canonical_role(user)
     if request.url.path.startswith("/economist") and role not in {"economist", "superadmin"}:
         return RedirectResponse("/", status_code=302)
-    if request.url.path.startswith("/hr") and role not in {"hr_lead", "hr_manager"}:
+    if request.url.path.startswith("/hr") and role not in {ROLE_HR_LEAD, ROLE_TM}:
         return RedirectResponse("/", status_code=302)
 
     # Роут общий для /economist/payroll и /hr/payroll (разные роли и наборы

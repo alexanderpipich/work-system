@@ -5,7 +5,7 @@ Idempotent — safe to run multiple times.
 
 Reads:
   User.economist_stores  (comma-separated city names)  → scope_type="city"
-      for roles: economist, hr_manager
+      for roles: economist, tm (ex hr_manager)
   User.brigadier_store   (single store name)            → scope_type="store"
       for role: brigadier
 
@@ -29,7 +29,7 @@ from rbac import canonical_role
 from time_helpers import now_utc
 from utils import normalize_text
 
-CITY_ROLES = {"economist", "hr_manager"}
+CITY_ROLES = {"economist", "tm"}  # canonical_role: hr_manager → tm
 STORE_ROLES = {"brigadier"}
 
 

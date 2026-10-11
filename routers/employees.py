@@ -35,7 +35,7 @@ from monitoring_helpers import (
     get_monitoring_settings,
     recompute_recommendations,
 )
-from rbac import canonical_role, has_permission, is_superadmin, require_permission
+from rbac import HR_CABINET_ROLES, canonical_role, has_permission, is_superadmin, require_permission
 from time_helpers import business_today, now_utc
 from utils import normalize_text
 
@@ -58,7 +58,7 @@ def require_employee_manager(request: Request, user=Depends(current_user)):
         raise RedirectException("/")
     if request.url.path.startswith("/admin") and not _is_admin(user):
         raise RedirectException("/")
-    if request.url.path.startswith("/hr") and canonical_role(user) not in {"hr_lead", "hr_manager"}:
+    if request.url.path.startswith("/hr") and canonical_role(user) not in HR_CABINET_ROLES:
         raise RedirectException("/")
     return user
 

@@ -72,9 +72,31 @@
                             <td>Некорректных строк</td>
                             <td class="text-right hours">{{ bad_rows }}</td>
                         </tr>
+                        <tr>
+                            <td>Конфликтов (не изменено)</td>
+                            <td class="text-right hours">{{ conflicts|length if conflicts else 0 }}</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
+
+            {% if conflicts %}
+                <div class="table-wrap mt-20">
+                    <table>
+                        <thead>
+                            <tr><th colspan="2">Конфликты — строки не применены ({{ conflicts|length }}):</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for item in conflicts %}
+                            <tr>
+                                <td class="nowrap"><b>{{ item.name }}</b></td>
+                                <td class="text-right">{{ item.reason }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
 
             {% if changes_report %}
                 <div class="table-wrap mt-20">

@@ -35,13 +35,13 @@ Never write generated files to disk — build them in a `BytesIO` and hand the b
 
 ## Role System
 
-Six roles: `superadmin`, `hr_lead`, `hr_manager`, `economist`, `brigadier`, `employee`. The legacy `is_admin = True` flag maps to `superadmin` via `canonical_role()` in `rbac.py`.
+Roles: `superadmin`, `hr_lead`, `tm` (территориальный менеджер; legacy DB value `hr_manager` is an alias until `scripts/migrate_role_tm.py`), `hr_clerk` (кадровик), `economist`, `brigadier`, `headhunter`, `employee`. The legacy `is_admin = True` flag maps to `superadmin` via `canonical_role()` in `rbac.py`. UI labels: `rbac.ROLE_LABELS`. Roles allowed into the `/hr` cabinet: `rbac.HR_CABINET_ROLES`.
 
 **Three-layer access model:**
 
 1. **`current_user`** (`dependencies.py`) — resolves the logged-in user from the session. Redirects to `/login` if unauthenticated.
 2. **`require_permission(perm)`** (`rbac.py`) — checks whether the user's role grants a given permission string (e.g. `"rates.view"`, `"payroll.manage"`). Full permission matrix is the `PERMISSIONS` dict in `rbac.py`. Use this for all new routes.
-3. **`UserAccessScope`** (model + `rbac.get_scope_values()`) — restricts which cities/stores a user can see. `superadmin` and `hr_lead` are unrestricted (scope returns `None`). For `economist` and `hr_manager`, scope is read from `UserAccessScope` rows first; falls back to `User.economist_stores` (comma-separated) via `_legacy_scope_values()`. `access.py` wraps these lookups: `get_user_cities()`, `get_user_stores()`, `apply_shift_scope()`, `accessible_employee_names()`.
+3. **`UserAccessScope`** (model + `rbac.get_scope_values()`) — restricts which cities/stores a user can see. **Disabled since П1**: with `SCOPES_ENABLED` unset/false, `get_scope_values()` and `access.get_economist_cities()` return `None` (unrestricted) for every role; `None` must always be treated as "no restriction". With `SCOPES_ENABLED=true` the old logic applies: `superadmin` and `hr_lead` are unrestricted; for `economist` and `tm`, scope is read from `UserAccessScope` rows first; falls back to `User.economist_stores` (comma-separated) via `_legacy_scope_values()`. `access.py` wraps these lookups: `get_user_cities()`, `get_user_stores()`, `apply_shift_scope()`, `accessible_employee_names()`.
 
 **Transitional helpers** in `dependencies.py` — `require_admin_user`, `require_economist_user`, `require_brigadier_user` — do a coarse role check only and are still used in older routes. New routes must use `require_permission`. These helpers will be phased out.
 

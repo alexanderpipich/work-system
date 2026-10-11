@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from access import get_economist_cities, get_user_cities
 from dependencies import get_db
 from models import Shift
-from rbac import canonical_role, require_permission
+from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, require_permission
 from schedule_grid import build_schedule_rows as _build_schedule_rows
 from schedule_grid import days_between as _days_between
 from store_helpers import extract_tk_number
@@ -55,7 +55,7 @@ def economist_schedules(
 ):
     allowed_cities = get_economist_cities(user)
 
-    if not allowed_cities and not user.is_admin:
+    if allowed_cities is not None and not allowed_cities and not user.is_admin:
         return templates.TemplateResponse(
             request,
             "economist_schedules.html",
@@ -78,7 +78,7 @@ def economist_schedules(
 
     store_query = session.query(Shift.store).distinct()
 
-    if not user.is_admin:
+    if not user.is_admin and allowed_cities is not None:
         store_query = store_query.filter(Shift.city.in_(allowed_cities))
 
     all_stores = store_query.all()
@@ -99,7 +99,7 @@ def economist_schedules(
             Shift.store.in_(stores),
         )
 
-        if not user.is_admin:
+        if not user.is_admin and allowed_cities is not None:
             shifts_query = shifts_query.filter(Shift.city.in_(allowed_cities))
 
         shifts = shifts_query.order_by(
@@ -139,11 +139,11 @@ def hr_schedules(
     session: Session = Depends(get_db),
     user=Depends(require_permission("schedules.view")),
 ):
-    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+    if canonical_role(user) not in {ROLE_HR_LEAD, ROLE_TM}:
         from fastapi.responses import RedirectResponse
         return RedirectResponse("/", status_code=302)
 
-    allowed_cities = get_user_cities(session, user)  # None = hr_lead (unrestricted), list = hr_manager
+    allowed_cities = get_user_cities(session, user)  # None = без ограничений (hr_lead или скоупы выключены), list = ТМ
 
     if allowed_cities is not None and not allowed_cities:
         return templates.TemplateResponse(

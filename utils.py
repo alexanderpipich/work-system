@@ -1,7 +1,7 @@
 ﻿import re
 
 from passlib.context import CryptContext
-from models import Rate
+from models import Rate, User
 from time_helpers import business_today, now_utc
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
@@ -26,6 +26,23 @@ def normalize_text(value) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def normalize_person_name(value) -> str:
+    """Ключ сравнения ФИО: пробелы схлопнуты, регистр и ё/е не различаются.
+
+    «Иванов  Пётр» и «иванов петр» — один человек. Это ключ User.employee_name_norm;
+    само ФИО хранится как ввели (normalize_text).
+    """
+    return " ".join(normalize_text(value).split()).casefold().replace("ё", "е")
+
+
+def find_user_by_name(session, name):
+    """User с тем же нормализованным ФИО или None (ФИО уникально по этому ключу)."""
+    key = normalize_person_name(name)
+    if not key:
+        return None
+    return session.query(User).filter(User.employee_name_norm == key).first()
 
 
 # Хвост ".0" у числа, прочитанного как float (напр. "780000000000.0").
@@ -112,6 +129,122 @@ def requisite_issues(inn, account_number, bik) -> list:
             if issue]
 
 
+# --- Выплата на карту (П1-Г) -------------------------------------------------
+
+PAYOUT_CARD = "card"
+PAYOUT_CARD_PHONE = "card_phone"
+PAYOUT_CASH = "cash"
+PAYOUT_METHODS = {
+    PAYOUT_CARD: "Карта",
+    PAYOUT_CARD_PHONE: "Карта / номер телефона",
+    PAYOUT_CASH: "Наличные",
+}
+CARD_MIN_DIGITS = 16  # в РФ бывают 18–19
+CARD_MAX_DIGITS = 19
+
+
+def normalize_card_number(value) -> str:
+    """Номер карты сплошными цифрами: пробелы и дефисы ввода убираются.
+
+    Число из Excel (float) переводится без хвоста «.0»; прочие символы
+    оставляются, чтобы проверка показала мусор, а не съела его молча.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    return re.sub(r"[\s-]+", "", str(value))
+
+
+def luhn_valid(card_number) -> bool:
+    digits = normalize_card_number(card_number)
+    if not digits.isdigit():
+        return False
+    total = 0
+    for index, char in enumerate(reversed(digits)):
+        digit = int(char)
+        if index % 2 == 1:
+            digit *= 2
+            if digit > 9:
+                digit -= 9
+        total += digit
+    return total % 10 == 0
+
+
+def card_number_issues(card_number) -> list:
+    """Что мешает выплате на эту карту. Luhn сюда не входит — это предупреждение."""
+    card = normalize_card_number(card_number)
+    if not card:
+        return ["Номер карты не заполнен"]
+    if not card.isdigit():
+        return ["Номер карты: только цифры"]
+    if not CARD_MIN_DIGITS <= len(card) <= CARD_MAX_DIGITS:
+        return ["Номер карты: %d цифр, нужно %d–%d" % (len(card), CARD_MIN_DIGITS, CARD_MAX_DIGITS)]
+    return []
+
+
+def format_card_number(value) -> str:
+    """«0000 0000 0000 0000» для показа; хвост длинной карты — последней группой."""
+    card = normalize_card_number(value)
+    if not card.isdigit():
+        return card
+    return " ".join(card[i:i + 4] for i in range(0, len(card), 4))
+
+
+def normalize_card_phone(value) -> str:
+    """Телефон для перевода по номеру: 11 цифр с ведущей 7.
+
+    normalize_phone (логин) не трогает скобки и дефисы, а здесь номер идёт в банк:
+    оставляем только цифры, 8XXXXXXXXXX и 10 цифр с 9 приводим к 7XXXXXXXXXX.
+    """
+    digits = re.sub(r"\D", "", normalize_phone(value))
+    if len(digits) == 11 and digits.startswith("8"):
+        digits = "7" + digits[1:]
+    elif len(digits) == 10 and digits.startswith("9"):
+        digits = "7" + digits
+    return digits
+
+
+def card_phone_issues(card_phone) -> list:
+    phone = normalize_card_phone(card_phone)
+    if not phone:
+        return ["Телефон для выплаты не заполнен"]
+    if len(phone) != 11 or not phone.startswith("7"):
+        return ["Телефон для выплаты: нужно 11 цифр, начиная с 7"]
+    return []
+
+
+def normalize_card_expiry(month, year=None) -> str:
+    """Срок карты MM/YY из «MM/YY» или пары месяц + год (числа из Excel). Иначе ""."""
+    if year is None:
+        match = re.fullmatch(r"\s*(\d{1,2})\s*/\s*(\d{2}|\d{4})\s*", str(month or ""))
+        if not match:
+            return ""
+        month, year = match.groups()
+    try:
+        month_num = int(float(month))
+        year_num = int(float(year))
+    except (TypeError, ValueError):
+        return ""
+    if not 1 <= month_num <= 12 or year_num < 0:
+        return ""
+    return "%02d/%02d" % (month_num, year_num % 100)
+
+
+def payout_method_issues(payout_method, card_number, card_phone, bank_name) -> list:
+    """Что мешает выплате выбранным способом. Пустой список — способ годен."""
+    if payout_method == PAYOUT_CASH:
+        return []
+    if payout_method == PAYOUT_CARD:
+        return card_number_issues(card_number)
+    if payout_method == PAYOUT_CARD_PHONE:
+        issues = card_phone_issues(card_phone)
+        if not normalize_text(bank_name):
+            issues.append("Банк не указан")
+        return issues
+    return ["Способ выплаты не выбран"]
+
+
 def is_valid_requisite(inn, account_number, bik) -> bool:
     """Годны ли реквизиты для выплаты."""
     return not requisite_issues(inn, account_number, bik)
@@ -172,7 +305,9 @@ def normalize_format(value) -> str:
 
 def normalize_role(value) -> str:
     role = normalize_text(value).lower()
-    allowed = {"admin", "superadmin", "hr_lead", "hr_manager", "employee", "brigadier", "economist", "headhunter"}
+    allowed = {"admin", "superadmin", "hr_lead", "tm", "hr_clerk", "employee", "brigadier", "economist", "headhunter"}
+    if role == "hr_manager":  # старое имя роли ТМ (П1)
+        return "tm"
 
     if role in allowed:
         return role
@@ -208,6 +343,9 @@ def safe_return_to(value, default: str) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    # Сотрудник без кабинета (password_hash NULL) не проходит никакой пароль.
+    if not hashed_password:
+        return False
     return pwd_context.verify(str(plain_password).strip(), hashed_password)
 
 

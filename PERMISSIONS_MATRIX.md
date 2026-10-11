@@ -18,7 +18,8 @@
 |---|---|
 | `superadmin` | Технический владелец системы: разработка, отладка, безопасность и неограниченный доступ |
 | `hr_lead` | Руководитель HR-проекта: все HR-регионы и управленческий контроль без технического администрирования |
-| `hr_manager` | Операционный HR-менеджер: работа только в закреплённых регионах |
+| `tm` | ТМ (территориальный менеджер), до П1 — `hr_manager`: операционная работа с сотрудниками своих регионов |
+| `hr_clerk` | Кадровик: документы, гражданства, типы документов, мониторинг сотрудников, справочники; без выплат, ставок и рассылок |
 | `economist` | Финансовая работа только в закреплённых регионах |
 | `brigadier` | Работа только с закреплёнными магазинами |
 | `employee` | Работа только с собственными данными |
@@ -26,6 +27,12 @@
 ### Переходное правило
 
 До завершения миграции текущие пользователи с `role = "admin"` или `is_admin = True` считаются `superadmin`. Новым пользователям роль `admin` не назначается.
+
+Значение `role = "hr_manager"` считается `tm` (`rbac.LEGACY_ROLE_ALIASES`) до запуска `scripts/migrate_role_tm.py --apply`.
+
+### Скоупы (П1)
+
+Скоупы городов и магазинов выключены: `rbac.get_scope_values()` и `access.get_economist_cities()` возвращают `None` (без ограничений) для всех ролей. Области `@CITIES` и `@STORES` в таблице ниже фактически равны `@ALL`, пока не задан `SCOPES_ENABLED=true`. Инфраструктура (`UserAccessScope`, `access.py`, `scripts/migrate_scopes.py`) сохранена, при включении флага возвращается прежняя логика.
 
 ## 3. Области данных
 
@@ -57,36 +64,39 @@
 
 ## 5. Целевая матрица по модулям
 
-| Модуль | `superadmin` | `hr_lead` | `hr_manager` | `economist` | `brigadier` | `employee` |
-|---|---|---|---|---|---|---|
-| Пользователи и роли | `V/C/U/D/HD/S@ALL` | `V/C/U/D@HR_ALL` | `V/C/U@CITIES` | `V@CITIES` | `V@STORES` | `V/U@OWN` |
-| Загрузка пользователей | `V/C@ALL` | `V/C@HR_ALL` | `V/C@CITIES` | `NONE` | `NONE` | `NONE` |
-| Загрузка смен | `V/C/D/HD/S@ALL` | `V@HR_ALL` | `V@CITIES` | `V/C@CITIES` | `NONE` | `NONE` |
-| Графики и смены | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `V/X@CITIES` | `V@STORES` | `V@OWN` |
-| Модуль «Сотрудники» | `V/C/U/A/X/D/S@ALL` | `V/C/U/A/X/D@HR_ALL` | `V/C/U/A/X/D@CITIES` | `V/C/U/A/X/D@CITIES` | `V@STORES` | `NONE` |
-| Документы сотрудников | `V/C/U/A/X/D/S@ALL` | `V/C/U/A/X/D@HR_ALL` | `V/C/U/A/X/D@CITIES` | `V/A/X@CITIES` | `V@STORES` | `V/C/X@OWN` |
-| Типы документов | `V/C/U/D/S@ALL` | `V/C/U/D@HR_ALL` | `V@ALL` | `V@ALL` | `NONE` | `V@OWN` |
-| Реквизиты | `V/C/U/D/X@ALL` | `V/C/U/D/X@HR_ALL` | `V/C/U@CITIES` | `V@CITIES` | `NONE` | `V/U@OWN` |
-| Юридические лица | `V/C/U/D/HD@ALL` | `V@ALL` | `V@ALL` | `V/C/U/D@ALL` | `NONE` | `NONE` |
-| Ставки | `V/C/U/D/HD@ALL` | `V@ALL` | `V@CITIES` | `V/C/U/D@CITIES` | `NONE` | `NONE` |
-| Выплатный табель | `V/C/U/A/X/D/F@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `V/C/U/A/X/D@CITIES` | `NONE` | `NONE` |
-| История выплат | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `V/X@CITIES` | `NONE` | `V@OWN` |
-| Автокорректировки | `V/C/U/A/D@ALL` | `V@SUMMARY` | `NONE` | `V/C/U/A/D@CITIES` | `NONE` | `V@OWN` |
-| Ручные корректировки | `V/C/U/D@ALL` | `V@SUMMARY` | `NONE` | `V/C/U/D@CITIES` | `NONE` | `NONE` |
-| ЛМК | `V/C/U/D@ALL` | `V@HR_ALL` | `V@CITIES` | `V/C/U/D@CITIES` | `NONE` | `V@OWN` |
-| Отчёты и аналитика | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `V/X@CITIES` | `V@STORES` | `V@OWN` |
-| Audit Log | `V/X@ALL` | `V@HR_ALL` | `NONE` | `NONE` | `NONE` | `NONE` |
-| Системные настройки | `V/C/U/D/HD/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` |
-| `/docs`, `/redoc`, `/openapi.json` | `V@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` |
-| Обслуживание и debug | `V/C/U/D/HD/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` |
+| Модуль | `superadmin` | `hr_lead` | `tm` | `hr_clerk` | `economist` | `brigadier` | `employee` |
+|---|---|---|---|---|---|---|---|
+| Пользователи и роли | `V/C/U/D/HD/S@ALL` | `V/C/U/D@HR_ALL` | `V/C/U@CITIES` | `NONE` | `V@CITIES` | `V@STORES` | `V/U@OWN` |
+| Загрузка пользователей | `V/C@ALL` | `V/C@HR_ALL` | `V/C@CITIES` | `NONE` | `NONE` | `NONE` | `NONE` |
+| Загрузка смен | `V/C/D/HD/S@ALL` | `V@HR_ALL` | `V@CITIES` | `NONE` | `V/C@CITIES` | `NONE` | `NONE` |
+| Графики и смены | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/X@CITIES` | `V@STORES` | `V@OWN` |
+| Модуль «Сотрудники» | `V/C/U/A/X/D/S@ALL` | `V/C/U/A/X/D@HR_ALL` | `V/C/U/A/X/D@CITIES` | `V/C/U/A/X/D@ALL` | `V/C/U/A/X/D@CITIES` | `V@STORES` | `NONE` |
+| Документы сотрудников | `V/C/U/A/X/D/S@ALL` | `V/C/U/A/X/D@HR_ALL` | `V/C/U/A/X/D@CITIES` | `V/C/U/A/X/D@ALL` | `V/A/X@CITIES` | `V@STORES` | `V/C/X@OWN` |
+| Типы документов | `V/C/U/D/S@ALL` | `V/C/U/D@HR_ALL` | `V@ALL` | `V/C/U/D@ALL` | `V@ALL` | `NONE` | `V@OWN` |
+| Реквизиты | `V/C/U/D/X@ALL` | `V/C/U/D/X@HR_ALL` | `V/C/U@CITIES` | `NONE` | `V@CITIES` | `NONE` | `V/U@OWN` |
+| Юридические лица | `V/C/U/D/HD@ALL` | `V@ALL` | `V@ALL` | `NONE` | `V/C/U/D@ALL` | `NONE` | `NONE` |
+| Ставки | `V/C/U/D/HD@ALL` | `V@ALL` | `V@CITIES` | `NONE` | `V/C/U/D@CITIES` | `NONE` | `NONE` |
+| Выплатный табель | `V/C/U/A/X/D/F@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/C/U/A/X/D@CITIES` | `NONE` | `NONE` |
+| История выплат | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/X@CITIES` | `NONE` | `V@OWN` |
+| Автокорректировки | `V/C/U/A/D@ALL` | `V@SUMMARY` | `NONE` | `NONE` | `V/C/U/A/D@CITIES` | `NONE` | `V@OWN` |
+| Ручные корректировки | `V/C/U/D@ALL` | `V@SUMMARY` | `NONE` | `NONE` | `V/C/U/D@CITIES` | `NONE` | `NONE` |
+| ЛМК | `V/C/U/D@ALL` | `V@HR_ALL` | `V@CITIES` | `NONE` | `V/C/U/D@CITIES` | `NONE` | `V@OWN` |
+| Отчёты и аналитика | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/X@CITIES` | `V@STORES` | `V@OWN` |
+| Audit Log | `V/X@ALL` | `V@HR_ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` |
+| Гражданства и режимы | `V/C/U/D@ALL` | `NONE` | `NONE` | `V/C/U/D@ALL` | `NONE` | `NONE` | `NONE` |
+| Справочник услуг | `V/U@ALL` | `NONE` | `NONE` | `V@ALL` | `V/U@ALL` | `NONE` | `NONE` |
+| Системные настройки | `V/C/U/D/HD/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` |
+| `/docs`, `/redoc`, `/openapi.json` | `V@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` |
+| Обслуживание и debug | `V/C/U/D/HD/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` |
 
 ## 6. Ограничения управления пользователями
 
 | Исполнитель | Кого может создавать и редактировать | Какие роли может назначать |
 |---|---|---|
 | `superadmin` | Всех пользователей | Все роли |
-| `hr_lead` | HR Lead, HR Manager, Brigadier, Employee | `hr_lead`, `hr_manager`, `brigadier`, `employee` |
-| `hr_manager` | Brigadier и Employee только в своих городах | `brigadier`, `employee` |
+| `hr_lead` | HR Lead, ТМ, Brigadier, Employee | `hr_lead`, `tm`, `brigadier`, `employee` |
+| `tm` | Brigadier и Employee только в своих городах | `brigadier`, `employee` |
+| `hr_clerk` | Никого | Никакие |
 | `economist` | Никого | Никакие |
 | `brigadier` | Никого | Никакие |
 | `employee` | Только разрешённые поля собственного профиля | Никакие |
@@ -303,3 +313,13 @@ is_active
 - ограничение городов и магазинов применено к HR-модулям и payroll;
 - HR Lead и HR Manager могут безопасно сбрасывать пароли только сотрудникам и бригадирам;
 - новые экономисты без явно заданных городов получают все существующие города.
+
+### Реализовано в П1 (чистый старт)
+
+- `hr_manager` переименован в `tm` (ТМ, территориальный менеджер); старое значение в БД — алиас, миграция `scripts/migrate_role_tm.py`;
+- новая роль `hr_clerk` (кадровик): `employees.view`, `documents.view`, `documents.manage`, `citizenship.manage`, `services.view`, `stores.directory.view`, `stores.contacts.view`;
+- новые права: `citizenship.manage` (раньше гражданства закрывал `admin.settings`, по факту только superadmin) и `services.view` (просмотр матрицы услуг; у экономиста тоже, слияние услуг по-прежнему `rates.manage`);
+- кабинет `/hr` открыт ролям `rbac.HR_CABINET_ROLES` (`hr_lead`, `tm`, `hr_clerk`); разделы выплат, ставок, ЛМК, отчётов и графиков внутри него — только `hr_lead` и `tm` и по-прежнему требуют своих прав;
+- типы документов из HR-кабинета: `/hr/document-types` (те же обработчики, что `/economist/document-types`);
+- скоупы выключены флагом `SCOPES_ENABLED` (по умолчанию `false`).
+

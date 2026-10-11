@@ -14,7 +14,7 @@ from utils import normalize_text
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-_mgmt = require_permission("admin.settings")
+_mgmt = require_permission("citizenship.manage")  # superadmin и кадровик
 
 
 # ── Режимы ───────────────────────────────────────────────────────────────────

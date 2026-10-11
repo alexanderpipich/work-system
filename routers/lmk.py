@@ -12,7 +12,7 @@ from dependencies import get_db
 from lmk_charges import month_start
 from models import MedicalBookCharge, Shift
 from time_helpers import now_utc
-from rbac import canonical_role, require_permission
+from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, require_permission, scopes_enabled
 from utils import normalize_text
 
 
@@ -340,9 +340,9 @@ def hr_lmk_page(
     session: Session = Depends(get_db),
     user=Depends(require_lmk_view),
 ):
-    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+    if canonical_role(user) not in {ROLE_HR_LEAD, ROLE_TM}:
         return RedirectResponse("/", status_code=302)
-    employee_names = None if canonical_role(user) == "hr_lead" else accessible_employee_names(session, user)
+    employee_names = None if canonical_role(user) == "hr_lead" or not scopes_enabled() else accessible_employee_names(session, user)
     return _render_lmk_page(
         request, session, user, base_path="/hr/lmk", back_url="/hr", back_label="HR кабинет",
         payroll_url="/hr/payroll", employee_names=employee_names, message=message, error=error, read_only=True,

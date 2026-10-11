@@ -1,0 +1,353 @@
+[
+  {
+    "tk_number": 115,
+    "display_name": "Лента-115 (г. Брянск)",
+    "city": "Брянск",
+    "format": "ГМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 118,
+    "display_name": "Лента-118 (г. Ярославль)",
+    "city": "Ярославль",
+    "format": "ГМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 12,
+    "display_name": "Лента-12",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": "Хасанская ул., 17/1",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 1313,
+    "display_name": "Лента-1313 (г. Москва)",
+    "city": "Москва",
+    "format": "СМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 1344,
+    "display_name": "Лента-1344 (г. Химки)",
+    "city": "Химки",
+    "format": "СМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 17,
+    "display_name": "Лента-17",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": "пр.Буденного 31 к 1",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 2,
+    "display_name": "Лента-02",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": "ул Савушкина, д 112",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 20,
+    "display_name": "Лента-20",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 210,
+    "display_name": "Лента-210",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": "Брантовская дор., 3, ТРК Охта Молл",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 224,
+    "display_name": "Лента-224 (г. Всеволожск)",
+    "city": "Всеволожск",
+    "format": "ГМ",
+    "object_address": "Колтушское ш., 305",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 246,
+    "display_name": "Лента-246 (г. Луховицы)",
+    "city": "Луховицы",
+    "format": "ГМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 263,
+    "display_name": "Лента-263 (г. Кингисепп)",
+    "city": "Кингисепп",
+    "format": "ГМ",
+    "object_address": "Крикковское ш., стр. 69",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 264,
+    "display_name": "Лента-264 (г. Петергоф)",
+    "city": "Петергоф",
+    "format": "ГМ",
+    "object_address": "ш. Гостилицкое, д. 58, лит. А",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 266,
+    "display_name": "Лента-266",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": "Шуваловский пр., 45",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 268,
+    "display_name": "Лента-268",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 269,
+    "display_name": "Лента-269 (г. Всеволожск)",
+    "city": "Всеволожск",
+    "format": "ГМ",
+    "object_address": "Дорога Жизни ш., 12",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 273,
+    "display_name": "Лента-273",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": "Юрия Гагарина пр., 34/2",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 3002,
+    "display_name": "Лента-3002 (г. Одинцово)",
+    "city": "Одинцово",
+    "format": "СМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 303,
+    "display_name": "Лента-303 (г. Ярославль)",
+    "city": "Ярославль",
+    "format": "ГМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 3168,
+    "display_name": "Лента-3168 (г. Истра)",
+    "city": "Истра",
+    "format": "СМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 318,
+    "display_name": "Лента-318",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": "ул Коллонтай дом 10",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 3511,
+    "display_name": "Лента-3511",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": "ул Социалистическая 21",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 3526,
+    "display_name": "Лента-3526",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": "ул Бабушкина д40",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 48,
+    "display_name": "Лента-48 (д. Кудрово)",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": "Проспект Строителей д7, Кудрово",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 515,
+    "display_name": "Лента-515 (г. Москва)",
+    "city": "Москва",
+    "format": "СМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 534,
+    "display_name": "Лента-534 (г. Ступино)",
+    "city": "Ступино",
+    "format": "СМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 7,
+    "display_name": "Лента-07",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": "Дальневосточный пр-т 16",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 706,
+    "display_name": "Лента-706 (п. Мурино)",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 716,
+    "display_name": "Лента-716",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 717,
+    "display_name": "Лента-717",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": "пр-т Большевиков д7к2",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 723,
+    "display_name": "Лента-723 (г. Петергоф)",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": "Санкт-Петербургское шоссе 60",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 734,
+    "display_name": "Лента-734",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": "Парашютная ул., 61 к.4, стр.1",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 740,
+    "display_name": "Лента-740",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": "прт Дунайский д27",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 749,
+    "display_name": "Лента-749",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": "ул.Русановская д 22",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 751,
+    "display_name": "Лента-751",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 761,
+    "display_name": "Лента-761 (г. Кудрово)",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": null,
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 780,
+    "display_name": "Лента-780",
+    "city": "Санкт-Петербург",
+    "format": "СМ",
+    "object_address": "Пейзажная улица 28",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 8,
+    "display_name": "Лента-08",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": "Московское ш., 16",
+    "is_active": true,
+    "comment": null
+  },
+  {
+    "tk_number": 9,
+    "display_name": "Лента-09",
+    "city": "Санкт-Петербург",
+    "format": "ГМ",
+    "object_address": "ул Уральская д29",
+    "is_active": true,
+    "comment": null
+  }
+]

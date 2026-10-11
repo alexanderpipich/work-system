@@ -12,7 +12,7 @@ from access import accessible_employee_names, apply_shift_scope
 from audit_helpers import create_audit_log
 from dependencies import get_db
 from models import Rate, Service, Shift
-from rbac import canonical_role, require_permission
+from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, require_permission, scopes_enabled
 from service_catalog import get_or_create_service
 from service_matrix import normalize_service_base, parse_service_name
 from utils import normalize_format, normalize_text, safe_return_to
@@ -256,13 +256,13 @@ def economist_rates(
     user=Depends(require_rate_view),
 ):
     role = canonical_role(user)
-    if request.url.path.startswith("/hr") and role not in {"hr_lead", "hr_manager"}:
+    if request.url.path.startswith("/hr") and role not in {ROLE_HR_LEAD, ROLE_TM}:
         return RedirectResponse("/", status_code=302)
     if request.url.path.startswith("/economist") and role not in {"economist", "superadmin"}:
         return RedirectResponse("/", status_code=302)
     layer = layer if layer in _ALLOWED_LAYERS else "all"
     scoped = _apply_search(rates_query(session), q)
-    if role == "hr_manager":
+    if role == ROLE_TM and scopes_enabled():
         scoped_stores = [
             row[0]
             for row in apply_shift_scope(session.query(Shift.store).distinct(), session, user, Shift).all()

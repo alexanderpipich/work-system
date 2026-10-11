@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from dependencies import get_db
 from models import User
-from rbac import ROLE_HEADHUNTER, canonical_role, is_superadmin
+from rbac import HR_CABINET_ROLES, ROLE_HEADHUNTER, canonical_role, is_superadmin
 from utils import normalize_phone, verify_password
 
 
@@ -51,7 +51,7 @@ def login_submit(
     if is_superadmin(user):
         return RedirectResponse(url="/admin", status_code=302)
 
-    if canonical_role(user) in {"hr_lead", "hr_manager"}:
+    if canonical_role(user) in HR_CABINET_ROLES:
         return RedirectResponse(url="/hr", status_code=302)
 
     if user.role == "economist":
