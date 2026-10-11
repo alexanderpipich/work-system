@@ -151,6 +151,24 @@ def _week_shifts(session, week_start, names=None):
     return shifts
 
 
+def no_rate_summary(entries):
+    """Сводка «без ЧТС» над таблицей аванса/табеля (П4.5): entries — [(услуга, часы)].
+    {shifts, hours, by_service: [{service, shifts, hours}]} — по базовому имени услуги, больше часов — выше."""
+    from service_matrix import parse_service_name
+
+    groups = OrderedDict()
+    for service, hours in entries:
+        _level, base = parse_service_name(service)
+        group = groups.setdefault(normalize_text(base) or normalize_text(service) or "—",
+                                  {"shifts": 0, "hours": 0.0})
+        group["shifts"] += 1
+        group["hours"] += hours or 0
+    by_service = sorted(({"service": name, **group} for name, group in groups.items()),
+                        key=lambda item: (-item["hours"], item["service"]))
+    return {"shifts": sum(g["shifts"] for g in by_service), "hours": sum(g["hours"] for g in by_service),
+            "by_service": by_service}
+
+
 def week_deductions(session, week_start):
     """{нормализованное ФИО: ManualPayrollAdjustment} — вычеты аванса недели (магазин «*»)."""
     rows = session.query(ManualPayrollAdjustment).filter(

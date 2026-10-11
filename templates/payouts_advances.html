@@ -35,6 +35,15 @@
     {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
     {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
 
+    {% if no_rate.shifts %}
+    <div class="alert alert-warn mt-0 mb-20">
+        ⚠ Без ЧТС: <b>{{ no_rate.shifts }}</b> смен, <b>{{ '%g' % no_rate.hours }}</b> ч — в расчёт идут с нулевой суммой.
+        По услугам:
+        {% for item in no_rate.by_service %}«{{ item.service }}» — {{ item.shifts }} смен, {{ '%g' % item.hours }} ч{% if not loop.last %}; {% endif %}{% endfor %}.
+        Ставки — на <a href="/admin/rates">/admin/rates</a>; услуги из другого отчёта — признак «Не оплачивать из timebook» на <a href="/admin/services">/admin/services</a>.
+    </div>
+    {% endif %}
+
     <div class="card">
         <div class="week-nav">
             <a class="btn btn-secondary btn-sm" href="?week={{ prev_week.isoformat() }}">← Пред. неделя</a>

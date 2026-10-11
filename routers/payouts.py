@@ -15,7 +15,7 @@ from manual_adjustments import parse_money
 from models import HourlyBonus, PayrollRun, User
 from payouts_helpers import (advance_run_for_week, advance_week_rows, can_select, carry_over_selection,
                              create_period_draft, default_week, fix_advance, fix_period_run, is_frozen,
-                             period_summary, save_registry, save_week_deduction, set_selection, unfix_run,
+                             no_rate_summary, period_summary, save_registry, save_week_deduction, set_selection, unfix_run,
                              unsend_run, week_monday)
 from payroll_run_helpers import RUN_KIND_ADVANCE
 from statement_export import save_statement
@@ -84,6 +84,8 @@ def advances_page(
     carry_over_selection(session, request, user, week_start)
     run = advance_run_for_week(session, week_start)
     rows = advance_week_rows(session, week_start)
+    no_rate = no_rate_summary((item["shift"].service, item["shift"].hours)
+                              for row in rows for item in row["shifts"] if item["no_rate"])
 
     # «Только мои» по умолчанию у ТМ; явный mine=0/1 из формы главнее.
     only_mine = (mine == "1") if mine in {"0", "1"} else canonical_role(user) == ROLE_TM
@@ -116,6 +118,7 @@ def advances_page(
         "perms": perms,
         "filters": {"mine": only_mine, "tm": tm, "q": q},
         "tm_options": tm_options,
+        "no_rate": no_rate,
         "message": message or None,
         "error": error or None,
     })
@@ -303,6 +306,8 @@ def period_page(
         "fixed_by_name": _user_name(session, run.fixed_by),
         "rows": rows,
         "totals": totals,
+        "no_rate": no_rate_summary((item.service, item.hours) for row in rows for item in row["items"]
+                                   if item.comment == "Не найдена ЧТС"),
         "perms": user_permissions(user),
         "message": message or None,
         "error": error or None,
