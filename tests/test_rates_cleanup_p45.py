@@ -90,6 +90,8 @@ class StoreRegionTests(unittest.TestCase):
                          {391: "Московская область", 2812: "Московская область", 2870: "Малоярославец"})
         self.assertEqual({tk: stores[tk]["rate_region"] for tk in (610, 629, 807, 3640, 352)},
                          {610: "Малоярославец", 629: "Обнинск", 807: "Искитим", 3640: "Сортавала", 352: None})
+        self.assertEqual({tk: stores[tk]["rate_region"] for tk in (536, 2947, 3425)},
+                         {536: "Московская область", 2947: "Москва", 3425: "Москва"})
         junk = [st["tk_number"] for st in stores.values()
                 if st["rate_region"] and ("," in st["rate_region"] or st["rate_region"].startswith("г."))]
         self.assertEqual(junk, [])
