@@ -104,7 +104,7 @@ NAV_GROUPS = [
               ("/economist/employees", "employees.view", ECON)]),
         card("users", "Пользователи",
              "Фильтры, роли, магазины бригадиров, гражданство, юрлица, пароли и удаление сотрудников.",
-             [("/admin/users", "users.manage", None)]),
+             [("/admin/users", "users.view", None)]),
         card("upload_users", "Импорт пользователей",
              "Массовая загрузка сотрудников из Excel с телефонами, ФИО и паролями.",
              [("/admin/upload-users", "users.manage", None)]),
@@ -262,7 +262,7 @@ def employees_groups(base_path):
         {"key": "employees", "title": "Сотрудники", "cards": [
             card("employee_list", "Список сотрудников",
                  "Линейный персонал: карточки, гражданство, реквизиты и закреплённый ТМ.",
-                 [("/admin/users?role=employee", "users.manage", None)]),
+                 [("/admin/users?role=employee", "users.view", None)]),
             card("reconciliations", "Сверки",
                  "Сверки часов по магазинам за фиксированные периоды.",
                  [("/admin/employees/reconciliations", "employees.view", SA),

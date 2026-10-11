@@ -137,6 +137,12 @@ class DashboardRendersTests(unittest.TestCase):
         engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
         Base.metadata.create_all(engine)
         Session = sessionmaker(bind=engine)
+        from models import User
+
+        seed = Session()
+        seed.add(User(employee_name="Иванов Иван", phone="79990000001", password_hash="x", role="employee"))
+        seed.commit()
+        seed.close()
 
         def override_db():
             session = Session()
@@ -198,6 +204,38 @@ class DashboardRendersTests(unittest.TestCase):
                 response = self.client.get(prefix + "/employees/planning", follow_redirects=False)
                 self.assertEqual(response.status_code, 301)
                 self.assertEqual(response.headers["location"], "/admin/planning-bp")
+
+    def test_users_list_read_only_for_staff(self):
+        for role in ("hr_lead", "tm", "hr_clerk", "economist"):
+            self._as(role)
+            with self.subTest(role=role):
+                response = self.client.get("/admin/users", follow_redirects=False)
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn('action="/admin/update-user"', response.text)
+                self.assertNotIn('action="/admin/change-password"', response.text)
+                self.assertNotIn('action="/admin/delete-user"', response.text)
+                self.assertNotIn('href="/admin/create-user"', response.text)
+                self.assertIn("Иванов Иван", response.text)
+                self.assertIn("Кабинет: <b>есть</b>", response.text)
+        self._as("superadmin")
+        html = self.client.get("/admin/users").text
+        self.assertIn('action="/admin/update-user"', html)
+
+    def test_users_list_closed_for_others(self):
+        for role in ("brigadier", "headhunter", "employee"):
+            self._as(role)
+            with self.subTest(role=role):
+                self.assertEqual(self.client.get("/admin/users", follow_redirects=False).status_code, 302)
+
+    def test_users_view_does_not_allow_changes(self):
+        self._as("tm")
+        for path, data in (("/admin/update-user", {"user_id": 1, "role": "superadmin"}),
+                           ("/admin/change-password", {"user_id": 1, "new_password": "x123456"}),
+                           ("/admin/delete-user", {"user_id": 1})):
+            with self.subTest(path=path):
+                response = self.client.post(path, data=data, follow_redirects=False)
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.headers["location"], "/")
 
     def test_upload_auto_locked_for_non_superadmin(self):
         self._as("tm")

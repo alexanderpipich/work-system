@@ -62,19 +62,19 @@ PERMISSIONS = {
         "payroll.view", "payroll.export", "payroll.summary_view",
         "rates.view", "lmk.view", "password.reset_limited",
         "audit.hr_view", "hr_team.manage", "schedules.view",
-        "stores.directory.view", "stores.contacts.view", "contracts.view",
+        "stores.directory.view", "stores.contacts.view", "contracts.view", "users.view",
     },
     ROLE_TM: {
         "employees.view", "employees.manage", "documents.view", "documents.manage",
         "requisites.view", "requisites.manage", "reports.view", "payroll.view", "payroll.export",
         "rates.view", "lmk.view", "password.reset_limited", "schedules.view",
-        "stores.directory.view", "stores.contacts.view",
+        "stores.directory.view", "stores.contacts.view", "users.view",
     },
     # Кадровик: документы, гражданства, типы документов, мониторинг сотрудников,
     # справочники. Без выплат, ставок, реквизитов и рассылок.
     ROLE_HR_CLERK: {
         "employees.view", "documents.view", "documents.manage",
-        "citizenship.manage", "services.view", "contracts.view",
+        "citizenship.manage", "services.view", "contracts.view", "users.view",
         "stores.directory.view", "stores.contacts.view",
     },
     ROLE_ECONOMIST: {
@@ -82,7 +82,7 @@ PERMISSIONS = {
         "schedules.view", "payroll.view", "payroll.manage", "payroll.send",
         "adjustments.manage", "rates.view", "rates.manage", "requisites.view", "lmk.manage", "reports.view",
         "legal_entities.manage", "economist.dashboard",
-        "stores.directory.view", "stores.contacts.view", "services.view",
+        "stores.directory.view", "stores.contacts.view", "services.view", "users.view",
     },
     ROLE_BRIGADIER: {"schedules.view", "stores.directory.view", "stores.contacts.view"},
     # Минимальный набор под кабинет-заглушку: доступ к своему дашборду + справочник магазинов.

@@ -5,10 +5,12 @@
 {% block brand_subtitle %}<p class="brand-subtitle">Фильтры, роли, магазины бригадиров/экономистов, гражданство и юрлица</p>{% endblock %}
 
 {% block topbar_actions %}
-<a href="/admin" class="back-link">Назад в админку</a>
+<a href="/admin" class="back-link">{{ 'Назад в админку' if can_manage else 'Назад' }}</a>
+{% if can_manage %}
 <a href="/admin/create-user" class="back-link">Создать пользователя</a>
 <a href="/admin/upload-users" class="back-link">Импорт пользователей</a>
 <a href="/admin/users/pending" class="back-link">Несозданные{% if pending_count is defined and pending_count %} ({{ pending_count }}){% endif %}</a>
+{% endif %}
 <a href="/logout" class="logout">Выйти</a>
 {% endblock %}
 
@@ -155,8 +157,15 @@
                         <span>Студент: <b>{{ 'да' if user.is_student else 'нет' }}</b></span>
                         <span>Юрлицо: <b>{{ user.legal_entity or '—' }}</b></span>
                         {% if user.economist_stores %}<span>Магазины: <b>{{ user.economist_stores }}</b></span>{% endif %}
+                        {% if not can_manage %}
+                        <span>Телефон: <b>{{ user.phone or '—' }}</b></span>
+                        <span>Дата рождения: <b>{{ user.birth_date.strftime('%d.%m.%Y') if user.birth_date else '—' }}</b></span>
+                        <span>ТМ: <b>{{ tm_names.get(user.tm_id, '—') if user.tm_id else '—' }}</b></span>
+                        <span>Кабинет: <b>{{ 'есть' if user.password_hash else 'нет' }}</b></span>
+                        {% endif %}
                     </div>
 
+                    {% if can_manage %}
                     <div class="form-block">
                         <h4>Телефон · роль · магазины · гражданство · юрлицо</h4>
                         <form method="post" action="/admin/update-user">
@@ -362,6 +371,7 @@
                             <button type="submit" class="btn btn-danger">Удалить пользователя</button>
                         </form>
                     </div>
+                    {% endif %}
                 </div>
             </details>
             {% endfor %}

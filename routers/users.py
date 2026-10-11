@@ -14,7 +14,7 @@ from access_scope_helpers import active_scope_values, sync_access_scopes
 from country_helpers import build_country_matcher
 from dependencies import get_db
 from inn_sync import set_employee_inn
-from rbac import ROLE_CHOICES, ROLE_LABELS, TM_ROLE_VALUES, canonical_role, require_permission
+from rbac import ROLE_CHOICES, ROLE_LABELS, TM_ROLE_VALUES, canonical_role, has_permission, require_permission
 from legal_entity_helpers import active_legal_entities
 from models import JOB_TITLES, Country, Shift, TimebookEmployee, User
 from utils import (
@@ -32,6 +32,8 @@ templates = Jinja2Templates(directory="templates")
 # Подписи ролей — только из rbac.ROLE_LABELS (П2).
 templates.env.globals.update(ROLE_LABELS=ROLE_LABELS, ROLE_CHOICES=ROLE_CHOICES, canonical_role=canonical_role)
 require_user_management = require_permission("users.manage", audit_denied=True)
+# Просмотр списка пользователей (П2): служебные роли видят карточки только для чтения.
+require_user_view = require_permission("users.view", audit_denied=True)
 require_user_hard_delete = require_permission("users.hard_delete", audit_denied=True)
 
 
@@ -132,7 +134,9 @@ def render_users(request: Request, session, message=None, error=None, filters=No
             "message": message,
             "error": error,
             "filters": filters or {},
-            "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users}
+            "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users},
+            "tm_users": tm_users(session),
+            "can_manage": True,  # сюда приходят только обработчики с users.manage
         }
     )
 
@@ -542,8 +546,11 @@ def admin_users(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    admin=Depends(require_user_management),
+    admin=Depends(require_user_view),
 ):
+    # Правка, пароль, удаление, QR — только с users.manage; их POST-обработчики
+    # проверяют это право сами, шаблон лишь не показывает формы.
+    can_manage = has_permission(admin, "users.manage")
     query = session.query(User)
 
     if user_id.strip():
@@ -572,7 +579,9 @@ def admin_users(
             "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
             "job_titles": JOB_TITLES,
             "tm_users": tm_users(session),
-            "pending_count": len(pending_employees(session)),
+            "tm_names": {tm.id: tm.employee_name for tm in tm_users(session)},
+            "pending_count": len(pending_employees(session)) if can_manage else 0,
+            "can_manage": can_manage,
             "message": message or None,
             "error": error or None,
             "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users},
