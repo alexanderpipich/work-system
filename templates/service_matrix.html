@@ -303,6 +303,13 @@
                         <td class="left">
                             <span class="base-name">{{ row.name }}</span>
                             {% if not row.is_active %}<span class="badge badge-off">неактивна</span>{% endif %}
+                            {% if row.excluded_from_payroll %}<span class="badge badge-off" title="Смены с этой услугой не входят в аванс и табель">не оплачивается из timebook</span>{% endif %}
+                            {% if can_manage and row.service_id %}
+                            <form method="post" action="/admin/services/{{ row.service_id }}/payroll-exclusion" class="inline-form">
+                                <input type="hidden" name="excluded" value="{{ '0' if row.excluded_from_payroll else '1' }}">
+                                <button type="submit" class="btn btn-sm btn-secondary">{{ 'Вернуть в расчёт' if row.excluded_from_payroll else 'Не оплачивать из timebook' }}</button>
+                            </form>
+                            {% endif %}
                             {% if row.has_key_error or row.is_duplicate or row.similar_to or not row.in_rates or row.individual_count %}
                             <div class="badges">
                                 {% if row.has_key_error %}<span class="badge badge-dup">⚠ дубль ключа (две базовые цены)</span>{% endif %}

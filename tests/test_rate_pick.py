@@ -79,6 +79,9 @@ class PickRateTests(unittest.TestCase):
             def __iter__(self):
                 return iter(self.rows)
 
+            def filter(self, *conditions):
+                return self
+
         class Session:
             def __init__(self, rates):
                 self.rates = rates
@@ -87,7 +90,7 @@ class PickRateTests(unittest.TestCase):
             def query(self, model, *columns):
                 # Этап 2: get_rate_for_shift строит резолвер (запрос Service);
                 # П4.4: и карту тарифных регионов ТК (запрос Store).
-                if model is Service or getattr(model, "class_", None) is Store:
+                if getattr(model, "class_", model) in (Service, Store):
                     return Query([])
                 self.rate_query_count += 1
                 return Query(self.rates)

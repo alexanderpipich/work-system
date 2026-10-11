@@ -2,181 +2,217 @@
   {
     "name": "Вингараж Универсальные услуги",
     "aliases": "Вингараж_Универсальные услуги",
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Заморозка Универсальные услуги",
     "aliases": "Заморозка_Универсальные услуги",
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Зоомаркет Универсальные услуги",
     "aliases": "Зоомаркет_Универсальные услуги",
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Квалифицированные услуги в столовой",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Квалифицированные услуги для ресторана без подбора",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Квалифицированные услуги для ресторана с подбором",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Квалифицированные услуги на производстве",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Комплексные услуги по комплектации заказов Маркетплейса и Дарксторов",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": true
   },
   {
     "name": "Неквалифицированные услуги в столовой",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Неквалифицированные услуги для ресторана без подбора",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Неквалифицированные услуги для ресторана с подбором",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Неквалифицированные услуги на производстве",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Повар осн.",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Продавец-универсал магазина",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Табакошоп Универсальные услуги",
     "aliases": "Табакошоп_Универсальные услуги",
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Уборщик",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Универсальная услуга (Мобильная)",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Универсальная услуга (РТЗ + кассир)",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Универсальная услуга для ММФ",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуга по администрированию кластера магазинов",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуга по администрированию торговго зала",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуга по обслуживанию за прилавком",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуга по обслуживаню покупателей на кассе",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуга по полному администрированию магазина",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуга по прессовке ВТС",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуга по частичному администрированию магазина",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуга уборки производственных и служебных помещений",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуги кассового сервиса",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуги комплектации заказов в ГМ и СМ",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": true
   },
   {
     "name": "Услуги по выкладке СОФ",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуги по погрузке-разгрузке СОФ без применения специальной техники",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуги по погрузке-разгрузке товаров без применения специальной техники",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуги по погрузке-разгрузке товаров с применением специальной техники",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуги по разгрузке без применения специальной техники",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуги по разработке планограмм и проверке ценников",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуги по реализации планограмм",
     "aliases": null,
-    "is_active": true
+    "is_active": true,
+    "excluded_from_payroll": false
   }
 ]

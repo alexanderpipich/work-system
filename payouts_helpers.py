@@ -21,7 +21,7 @@ from models import (AdvanceSelection, AuditLog, ManualPayrollAdjustment, Payroll
                     ReferralPayout, ReferralPromo, Requisite, Shift, User)
 from payroll_run_helpers import (ALL_STORES, PAID_RUN_STATUSES, RUN_KIND_ADVANCE, RUN_KIND_PERIOD,
                                  bonus_per_hour, build_run_items, load_hourly_bonuses, paid_shift_twins,
-                                 shift_pay_key)
+                                 payable_shifts, shift_pay_key)
 from referral_helpers import apply_confirmed_payouts_to_run
 from service_catalog import build_service_resolver
 from shift_helpers import is_no_plan_shift
@@ -178,10 +178,10 @@ def has_card(requisite):
 def advance_week_rows(session, week_start):
     """Строки экрана аванса: по сотруднику — смены недели, расчёт, вычет, отметка."""
     run = advance_run_for_week(session, week_start)
-    shifts = _week_shifts(session, week_start)
-    twins = paid_shift_twins(session, shifts, exclude_run_id=run.id if run else None)
     rates = load_rates(session)
     resolve = build_service_resolver(session)
+    shifts = payable_shifts(_week_shifts(session, week_start), resolve)
+    twins = paid_shift_twins(session, shifts, exclude_run_id=run.id if run else None)
     selection = week_selection(session, week_start)
     previous = week_selection(session, week_start - timedelta(days=7))
     deductions = week_deductions(session, week_start)
@@ -328,6 +328,7 @@ def fix_advance(session, request, user, week_start):
 
     rates = load_rates(session)
     resolve = build_service_resolver(session)
+    shifts = payable_shifts(shifts, resolve)
     errors = [
         f"{s.employee} / {s.store} / {s.shift_date:%d.%m.%Y} — не найдена ЧТС"
         for s in shifts if not is_no_plan_shift(s) and not pick_rate(rates, s, resolve=resolve)

@@ -16,6 +16,10 @@ def ensure_service_columns():
         connection.execute(text(
             "ALTER TABLE rates ADD COLUMN IF NOT EXISTS level INTEGER"
         ))
+        # Услуга, не оплачиваемая из timebook (комплектация — другой отчёт).
+        connection.execute(text(
+            "ALTER TABLE services ADD COLUMN IF NOT EXISTS excluded_from_payroll BOOLEAN NOT NULL DEFAULT FALSE"
+        ))
         # П4.4: тарифный регион магазина (подбор ставки).
         connection.execute(text(
             "ALTER TABLE stores ADD COLUMN IF NOT EXISTS rate_region VARCHAR"

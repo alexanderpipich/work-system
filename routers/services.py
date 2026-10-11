@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from audit_helpers import create_audit_log
 from dependencies import get_db
 from models import Rate, Service, Shift
-from rbac import require_permission
+from rbac import has_permission, require_permission
 from service_matrix import build_service_matrix, normalize_service_base, parse_service_name
 from utils import normalize_text
 
@@ -157,6 +157,7 @@ def admin_services(
             "error": error or None,
             "total_bases": len(matrix["rows"]),
             "shown_bases": len(rows),
+            "can_manage": has_permission(user, "rates.manage"),
         },
     )
 
@@ -172,6 +173,30 @@ def _services_redirect(city, fmt, message="", error=""):
     if error:
         params["error"] = error
     return RedirectResponse(f"/admin/services?{urlencode(params)}", status_code=302)
+
+
+@router.post("/admin/services/{service_id}/payroll-exclusion")
+def toggle_payroll_exclusion(
+    service_id: int,
+    request: Request,
+    excluded: str = Form(default="1"),
+    session: Session = Depends(get_db),
+    user=Depends(_rates_manage),
+):
+    """Услуга не оплачивается из timebook (комплектация — другой отчёт): её смены
+    не входят в аванс и табель и не блокируют фиксацию. Обратимо."""
+    service = session.get(Service, service_id)
+    if service is None:
+        return RedirectResponse("/admin/services?" + urlencode({"error": "Услуга не найдена"}), status_code=303)
+    old = bool(service.excluded_from_payroll)
+    service.excluded_from_payroll = excluded == "1"
+    create_audit_log(session, request, user, "service.payroll_exclusion", "service", service.id, service.name,
+                     old_value={"excluded_from_payroll": old},
+                     new_value={"excluded_from_payroll": service.excluded_from_payroll})
+    session.commit()
+    message = (f"«{service.name}» не оплачивается из timebook" if service.excluded_from_payroll
+               else f"«{service.name}» снова в расчёте выплат")
+    return RedirectResponse("/admin/services?" + urlencode({"message": message}), status_code=303)
 
 
 @router.post("/admin/services/merge")

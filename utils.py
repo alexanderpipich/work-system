@@ -379,6 +379,12 @@ def get_password_hash(password: str) -> str:
 
 
 
+# Форматы, которые в выгрузке приходят своим кодом, а ставку берут по ГМ/СМ
+# (как в ведомости коллег): Табакошоп, Зоомаркет — по МФ (СМ), Централизованное
+# производство — по ГМ. Ставка с точным форматом (если заведут) приоритетнее.
+RATE_FORMAT_ALIASES = {"ТШ": "СМ", "ЗМ": "СМ", "ЦП": "ГМ"}
+
+
 def load_rates(session):
     return session.query(Rate).all()
 
@@ -406,6 +412,8 @@ def pick_rate(rates, shift, resolve=None):
     valid_candidates = []
     region_of = getattr(resolve, "rate_region", None)
     shift_region = normalize_text(region_of(shift) if region_of else getattr(shift, "city", None))
+    shift_format = normalize_text(shift.format)
+    alias_format = RATE_FORMAT_ALIASES.get(normalize_format(shift_format))
 
     for rate in candidates:
         if rate.active_from and shift.shift_date < rate.active_from:
@@ -421,7 +429,7 @@ def pick_rate(rates, shift, resolve=None):
 
         # Формат (ГМ/СМ) — жёсткое условие на всех слоях:
         # услуга может стоить по-разному в ГМ и СМ. Пустой формат = "любой".
-        if rate_format and rate_format != normalize_text(shift.format):
+        if rate_format and rate_format != shift_format and rate_format != alias_format:
             continue
 
         # Rate.city — тарифный регион. Регион смены — Store.rate_region её магазина
@@ -461,6 +469,7 @@ def pick_rate(rates, shift, resolve=None):
             priority(rate),
             1 if normalize_text(rate.city) else 0,
             1 if normalize_text(rate.format) else 0,
+            1 if normalize_text(rate.format) == shift_format else 0,  # точный формат лучше алиаса
         )
 
     valid_candidates.sort(key=specificity, reverse=True)

@@ -146,6 +146,15 @@ def bonus_per_hour(bonuses, day):
                if b.active_from <= day and (b.active_to is None or day <= b.active_to))
 
 
+def payable_shifts(shifts, resolve):
+    """Смены, которые оплачиваются из timebook: без услуг с Service.excluded_from_payroll
+    (комплектация — по другому отчёту). Резолвер — из build_service_resolver."""
+    excluded = getattr(resolve, "excluded", None)
+    if excluded is None:
+        return list(shifts)
+    return [shift for shift in shifts if not excluded(shift)]
+
+
 def build_run_items(
     session,
     run,
@@ -168,6 +177,7 @@ def build_run_items(
     link_paid: смена, уже оплаченная другим зафиксированным прогоном, получает
     paid_by_run_id и advanced_amount (вычитается из total_amount).
     """
+    shifts = payable_shifts(shifts, resolve)
     twins = paid_shift_twins(session, shifts, exclude_run_id=run.id) if link_paid else {}
     manual_map = get_manual_adjustments_map(session, date_from, date_to) if manual else {}
 

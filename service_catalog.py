@@ -95,6 +95,7 @@ def build_service_resolver(session):
             if alias_key and alias_key not in name_map:
                 alias_map.setdefault(alias_key, svc.id)
     lookup = {**alias_map, **name_map}  # имя услуги приоритетнее алиаса
+    excluded_ids = {svc_id for (svc_id,) in session.query(Service.id).filter(Service.excluded_from_payroll == True)}  # noqa: E712
 
     cache = {}
 
@@ -111,6 +112,8 @@ def build_service_resolver(session):
     # Резолвер строится один раз на расчёт и передаётся во все pick_rate — через
     # него же pick_rate узнаёт тарифный регион смены (П4.4), без правки вызовов.
     resolve.rate_region = build_rate_region_resolver(session)
+    # Услуга не оплачивается из timebook (Service.excluded_from_payroll) — смену в расчёт не брать.
+    resolve.excluded = lambda shift: bool(excluded_ids) and resolve(shift)[0] in excluded_ids
     return resolve
 
 
