@@ -40,6 +40,11 @@ WEEKLY_COLUMNS = ["Номер карты", "Срок действия", "Тел�
 WEEKLY = "еженедельно"
 
 
+def is_no_plan_item(item):
+    """Строка смены без плана: build_run_items ставит ей ставку 0 без пометки «Не найдена ЧТС»."""
+    return item.shift_date is not None and not item.rate and not item.comment and not item.amount
+
+
 def _money(value):
     return round(value or 0, 2)
 
@@ -103,14 +108,18 @@ def statement_rows(session, run):
             "premium": 0.0, "bonus": 0.0, "total": 0.0,
         })
         adjustments = (item.other_amount or 0) + (item.auto_adjustments_amount or 0)
-        person["hours"] += item.hours or 0
+        # Смена без плана не оплачивается — в ведомости коллег её часов нет; суммы строки
+        # (на неё может лечь корректировка или ЛМК сотрудника) учитываются как обычно.
+        no_plan = is_no_plan_item(item)
+        if not no_plan:
+            person["hours"] += item.hours or 0
         person["fot"] += item.amount or 0
         person["advance"] += item.advanced_amount or 0
         person["lmk"] += item.lmk_amount or 0
         person["bonus"] += item.bonus_amount or 0
         person["fine" if adjustments < 0 else "premium"] += abs(adjustments)
         person["total"] += item.total_amount or 0
-        if item.shift_date is None:
+        if item.shift_date is None or no_plan:
             continue
         tk, region, fmt = stores.get(item.store, (extract_tk_number(item.store), None, None))
         line = tabel.setdefault((key, normalize_text(item.store), normalize_text(item.service)), {
