@@ -13,6 +13,7 @@ from models import Shift, TimebookEmployee, UploadLog
 from payroll_adjustments import reconcile_sent_payroll_runs
 from rbac import has_permission, require_permission
 from service_catalog import diagnose_uploaded_services
+from store_helpers import extract_tk_number, store_city_by_tk, timebook_cities
 from time_helpers import business_today, is_editable_month, now_utc, previous_month
 from utils import normalize_city, normalize_format, normalize_phone, normalize_text
 
@@ -252,7 +253,11 @@ def _process_shift_dataframe(session, df):
     skipped_duplicates = skipped_invalid
     skipped_locked_months = 0
     empty_city_shifts = 0
+    city_from_reference = 0
     today_date = business_today()
+    # П4.3: пустой «Город» — из справочника ТК, если город магазина встречается в выгрузках.
+    known_cities = timebook_cities(session) | {city for city in rows.get("city", []) if city}
+    city_by_tk = store_city_by_tk(session, known_cities)
 
     for index, row in rows.iterrows():
         shift_date = row["date"].date()
@@ -264,7 +269,11 @@ def _process_shift_dataframe(session, df):
         store = row["store"]
         city = row["city"] or None  # П4.2: пустой город — NULL, не «nan»
         if city is None:
-            empty_city_shifts += 1
+            city = city_by_tk.get(extract_tk_number(store))
+            if city:
+                city_from_reference += 1
+            else:
+                empty_city_shifts += 1
         service = row["service"]
         format_value = row["format"]
         request_type = row["request_type"] or DEFAULT_REQUEST_TYPE
@@ -341,6 +350,7 @@ def _process_shift_dataframe(session, df):
         "unmatched_services": diagnostics["unmatched_services"],
         "services_without_level": diagnostics["services_without_level"],
         "empty_city_shifts": empty_city_shifts,
+        "city_from_reference": city_from_reference,
     }
 
 

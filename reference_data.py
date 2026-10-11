@@ -4,9 +4,10 @@ JSON в репозитории — источник справочников д�
 хранятся естественными ключами (код режима, имя типа документа + sort_order,
 имя услуги), id не переносятся: на новой базе они другие.
 
-Загрузка сверяет записи по естественному ключу: нет в базе — вставка, есть и
-отличается — обновление (JSON главнее базы), совпадает — пропуск. Повторный
-запуск ничего не дублирует.
+Загрузка сверяет записи по естественному ключу. По умолчанию только вставляет
+недостающие записи, существующие не трогает (П4.3: база могла быть поправлена
+руками). С update=True отличающиеся записи обновляются по JSON, кроме полей
+keep_if_set (город магазина). Повторный запуск ничего не дублирует.
 
 Не выгружаются: legal_entities (юрлица новой компании заводятся вручную) и
 document_type_samples (файлы образцов утеряны при переезде на S3).
@@ -18,6 +19,7 @@ from datetime import date
 from pathlib import Path
 
 from models import (
+    STORE_CONTACT_ROLES,
     CitizenshipRegime,
     Country,
     DocumentType,
@@ -28,7 +30,10 @@ from models import (
     Region,
     Service,
     Store,
+    StoreContact,
 )
+
+from utils import normalize_city
 
 REFERENCE_DIR = Path(__file__).resolve().parent / "data" / "reference"
 
@@ -38,6 +43,9 @@ DOCUMENT_TYPE_FIELDS = [
     "extra_field_1_label", "extra_field_2_label", "is_required", "is_active", "is_student_doc",
     "alert_days",
 ]
+STORE_CONTACT_FIELDS = ["email", "role", "name", "for_planning", "for_reconciliation", "for_unplanned",
+                        "is_active"]
+ROLE_BY_LABEL = {label: code for code, label in STORE_CONTACT_ROLES.items()}
 RATE_KEY = ["service", "level", "format", "city", "store", "employee_name", "active_from", "active_to"]
 DATE_FIELDS = {"active_from", "active_to"}
 
@@ -59,6 +67,13 @@ class _Refs:
         services = self.session.query(Service).all()
         self.service_name = {s.id: s.name for s in services}
         self.service_id = {s.name: s.id for s in services}
+        stores = self.session.query(Store.id, Store.tk_number).all()
+        self.store_tk = {store_id: tk for store_id, tk in stores}
+        self.store_id = {tk: store_id for store_id, tk in stores}
+
+
+class Unresolved(Exception):
+    """Запись ссылается на то, чего нет в базе (контакт без магазина) — пропускается с причиной."""
 
 
 def _plain(obj, fields):
@@ -155,7 +170,34 @@ def _store_spec():
         model=Store,
         key=lambda r: r["tk_number"],
         to_record=lambda o, refs: _plain(o, fields),
-        to_values=lambda r, refs: {f: r[f] for f in fields},
+        # Город — как в timebook после normalize_city: без «г.», пустой → NULL.
+        to_values=lambda r, refs: {**{f: r[f] for f in fields}, "city": normalize_city(r["city"]) or None},
+        # Город магазина должен совпадать с «Городом» timebook — по нему подбираются
+        # ставки. JSON мог взять город из таблицы Ленты («МО, Королев» вместо «Москва»),
+        # поэтому известный город базы не перезаписывается, расхождение — в отчёт.
+        keep_if_set=("city",),
+    )
+
+
+def _store_contact_spec():
+    def to_record(o, refs):
+        return {"tk_number": refs.store_tk.get(o.store_id), **_plain(o, STORE_CONTACT_FIELDS)}
+
+    def to_values(r, refs):
+        store_id = refs.store_id.get(r["tk_number"])
+        if store_id is None:
+            raise Unresolved(f"нет ТК {r['tk_number']}")
+        values = {f: r[f] for f in STORE_CONTACT_FIELDS}
+        # В базе — код роли (hr_dept); файл из таблицы Ленты может нести подпись «Отдел персонала».
+        role = ROLE_BY_LABEL.get(values["role"], values["role"])
+        values["role"] = role if role in STORE_CONTACT_ROLES else "other"
+        return {"store_id": store_id, **values}
+
+    return dict(
+        model=StoreContact,
+        key=lambda r: (r["tk_number"], r["email"]),
+        to_record=to_record,
+        to_values=to_values,
     )
 
 
@@ -210,6 +252,7 @@ TABLES = [
     ("regime_document_rules", _rule_spec()),
     ("services", _service_spec()),
     ("stores", _store_spec()),
+    ("store_contacts", _store_contact_spec()),  # после stores: store_id по номеру ТК
     ("rates", _rate_spec()),
     ("employee_monitoring_settings", _singleton_spec(
         EmployeeMonitoringSettings, ["inactive_days", "minimum_shifts", "analysis_days"])),
@@ -257,34 +300,60 @@ def read_reference_files(directory=REFERENCE_DIR):
     return data
 
 
-def seed_reference_data(session, data):
-    """Загрузить справочники; вернуть {таблица: {inserted, updated, skipped}}. Коммит — на вызывающем."""
+def seed_reference_data(session, data, update=False, only=None):
+    """Загрузить справочники. Коммит — на вызывающем.
+
+    update=False — только вставка недостающих; update=True — ещё и обновление
+    отличающихся (кроме keep_if_set, если в базе значение уже есть).
+    only — имена таблиц, остальные пропускаются.
+
+    Вернуть {таблица: {inserted, updated, existing, differs, unresolved, kept}}:
+    existing — уже были и не менялись; differs — из них отличаются от JSON
+    (без --update не обновлены); unresolved — причины пропуска записей;
+    kept — [(ключ, поле, в базе, в JSON)] — оставлено значение базы.
+    """
+    known = {table for table, _spec in TABLES}
+    if only is not None and set(only) - known:
+        raise ValueError("Неизвестные таблицы: " + ", ".join(sorted(set(only) - known)))
     refs = _Refs(session)
     stats = {}
     for table, spec in TABLES:
-        if table not in data:
+        if table not in data or (only is not None and table not in only):
             continue
         model = spec["model"]
         existing = {}
         for obj in session.query(model).order_by(model.id).all():
             existing.setdefault(spec["key"](spec["to_record"](obj, refs)), obj)
 
-        counts = {"inserted": 0, "updated": 0, "skipped": 0}
+        counts = {"inserted": 0, "updated": 0, "existing": 0, "differs": 0, "unresolved": [], "kept": []}
+        keep_if_set = spec.get("keep_if_set", ())
         for record in data[table]:
-            values = spec["to_values"](record, refs)
-            obj = existing.get(spec["key"](record))
+            key = spec["key"](record)
+            try:
+                values = spec["to_values"](record, refs)
+            except Unresolved as reason:
+                counts["unresolved"].append(str(reason))
+                continue
+            obj = existing.get(key)
             if obj is None:
                 obj = model(**values)
                 session.add(obj)
-                existing[spec["key"](record)] = obj
+                existing[key] = obj
                 counts["inserted"] += 1
                 continue
-            changed = False
-            for field, value in values.items():
-                if getattr(obj, field) != value:
+            diff = {field: value for field, value in values.items() if getattr(obj, field) != value}
+            for field in keep_if_set:
+                if field in diff and getattr(obj, field) not in (None, ""):
+                    counts["kept"].append((key, field, getattr(obj, field), diff.pop(field)))
+            if not diff:
+                counts["existing"] += 1
+            elif not update:
+                counts["existing"] += 1
+                counts["differs"] += 1
+            else:
+                for field, value in diff.items():
                     setattr(obj, field, value)
-                    changed = True
-            counts["updated" if changed else "skipped"] += 1
+                counts["updated"] += 1
 
         session.flush()
         refs.reload()  # следующие таблицы ссылаются на только что вставленные id

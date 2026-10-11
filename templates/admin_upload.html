@@ -74,9 +74,15 @@
             </table>
         </div>
 
+        {% if result.city_from_reference %}
+        <div class="alert alert-success">
+            У {{ result.city_from_reference }} смен в выгрузке пустой «Город» — город взят из справочника ТК.
+        </div>
+        {% endif %}
+
         {% if result.empty_city_shifts %}
         <div class="alert alert-warn">
-            ⚠ У {{ result.empty_city_shifts }} смен в выгрузке пустой «Город» — город не записан,
+            ⚠ У {{ result.empty_city_shifts }} смен в выгрузке пустой «Город», и в справочнике ТК города нет — город не записан,
             ставки с привязкой к городу к ним не подберутся.
         </div>
         {% endif %}
