@@ -15,9 +15,10 @@ from sqlalchemy.orm import sessionmaker
 
 from database import Base
 from models import Shift, Store, StoreContact
-from reference_data import export_reference_data, seed_reference_data
+from reference_data import REFERENCE_DIR, export_reference_data, read_reference_files, seed_reference_data
 from routers.upload import _process_shift_dataframe
 from scripts.backfill_shift_city import backfill_shift_city
+from scripts.disable_store_mailings import disable_store_mailings
 from utils import normalize_format
 
 
@@ -155,6 +156,26 @@ class ShiftCityTests(unittest.TestCase):
         self.assertEqual((result["city_from_reference"], result["empty_city_shifts"]), (1, 1))
         cities = {(s.store, s.shift_date.day): s.city for s in self.s.query(Shift).filter_by(employee="Новиков")}
         self.assertEqual(cities, {("Лента-124", 5): "Москва", ("Лента-3168", 5): None, ("Лента-124", 6): "Москва"})
+
+
+class MailingsOffTests(unittest.TestCase):
+    def test_committed_contacts_have_mailings_off(self):
+        contacts = read_reference_files(REFERENCE_DIR)["store_contacts"]
+        self.assertTrue(contacts)
+        self.assertFalse(any(c["for_planning"] or c["for_reconciliation"] or c["for_unplanned"] for c in contacts))
+
+    def test_disable_script(self):
+        s = _session()
+        s.add(Store(id=1, tk_number=1))
+        s.add_all([StoreContact(store_id=1, email="a@x.ru", role="hr_dept", for_planning=True, for_unplanned=True),
+                   StoreContact(store_id=1, email="b@x.ru", role="other", for_reconciliation=True)])
+        s.commit()
+        expected = {"for_planning": 1, "for_reconciliation": 1, "for_unplanned": 1}
+        self.assertEqual(disable_store_mailings(s), expected)
+        self.assertEqual(disable_store_mailings(s, apply=True), expected)
+        s.commit()
+        self.assertEqual(disable_store_mailings(s), dict.fromkeys(expected, 0))
+        self.assertEqual(s.query(StoreContact).filter_by(is_active=True).count(), 2)
 
 
 if __name__ == "__main__":

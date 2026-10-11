@@ -4,9 +4,9 @@
     "email": "lenta1hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Тумановская Анна 8(812)4492039 доб 791",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -14,9 +14,9 @@
     "email": "lenta10hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Семенова Анастасия Михайловна 7 (969) 730-16-21",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -24,9 +24,9 @@
     "email": "lenta108hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Фридман Ольга Вячеславовна 89296873873",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -34,9 +34,9 @@
     "email": "lenta11hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Ниманихина Александра 89819626343",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -44,9 +44,9 @@
     "email": "lenta116hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Ускоева Лилия Рафаэльевна (929) 624-7808",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -54,9 +54,9 @@
     "email": "lenta12hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Синегаева Татьяна Сергеевна 9819629877, 9819629877, 9199451145",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -64,9 +64,9 @@
     "email": "lenta124hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Истомина Екатерина 7 (916) 534-12-46",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -74,9 +74,9 @@
     "email": "lenta128hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Максименкова Ирина Сергеевна (916) 533-7816",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -84,9 +84,9 @@
     "email": "lenta13hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Тулинова Юлия Фаритовна 9095188027",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -94,9 +94,9 @@
     "email": "lenta130hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Федотова Татьяна 916 530 91 98",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -104,9 +104,9 @@
     "email": "sm1309director@lenta.com",
     "role": "hr_dept",
     "name": "Тищенко Ольга Викторовна 79263890405",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -114,9 +114,9 @@
     "email": "sm1313director@lenta.com",
     "role": "hr_dept",
     "name": "Свиридова Наталия 8-985-285-03-72",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -124,9 +124,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Свиридова Наталия 8-985-285-03-72",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -134,9 +134,9 @@
     "email": "sm1320director@lenta.com",
     "role": "hr_dept",
     "name": "Жусупова Элнура 7 926 082-80-04",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -144,9 +144,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Жусупова Элнура 7 926 082-80-04",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -154,9 +154,9 @@
     "email": "andrey.belovintsev@lenta.com",
     "role": "hr_dept",
     "name": "Сидоренко Виктория 8-968-852-39-22",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -164,9 +164,9 @@
     "email": "sm1329director@lenta.com",
     "role": "hr_dept",
     "name": "Сидоренко Виктория 8-968-852-39-22",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -174,9 +174,9 @@
     "email": "marina.a.androsova@lenta.com",
     "role": "hr_dept",
     "name": "Дергачев Валерий 8 915 171 94 50",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -184,9 +184,9 @@
     "email": "valery.dergachev@lenta.com",
     "role": "hr_dept",
     "name": "Дергачев Валерий 8 915 171 94 50",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -194,9 +194,9 @@
     "email": "ludmila.nikulina@lenta.com",
     "role": "hr_dept",
     "name": "Реженок Светлана 8-977-459-72-09",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -204,9 +204,9 @@
     "email": "sm1331director@lenta.com",
     "role": "hr_dept",
     "name": "Реженок Светлана 8-977-459-72-09",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -214,9 +214,9 @@
     "email": "ludmila.nikulina@lenta.com",
     "role": "hr_dept",
     "name": "Нагорная Мария 8-999-828-43-01",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -224,9 +224,9 @@
     "email": "sm1333director@lenta.com",
     "role": "hr_dept",
     "name": "Нагорная Мария 8-999-828-43-01",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -234,9 +234,9 @@
     "email": "sm1335director@lenta.com",
     "role": "hr_dept",
     "name": "Шатрашанова Светлана 8-909-024-60-07",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -244,9 +244,9 @@
     "email": "tatyana.shkerina@lenta.com",
     "role": "hr_dept",
     "name": "Шатрашанова Светлана 8-909-024-60-07",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -254,9 +254,9 @@
     "email": "andrey.belovintsev@lenta.com",
     "role": "hr_dept",
     "name": "Ворокута Анастасия 7 (968) 939-12-14",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -264,9 +264,9 @@
     "email": "sm1336director@lenta.com",
     "role": "hr_dept",
     "name": "Ворокута Анастасия 7 (968) 939-12-14",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -274,9 +274,9 @@
     "email": "aishat.gaziteeva@lenta.com",
     "role": "hr_dept",
     "name": "Кертбиев Руслан Абуевич 89855729231",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -284,9 +284,9 @@
     "email": "sm1337director@lenta.com",
     "role": "hr_dept",
     "name": "Кертбиев Руслан Абуевич 89855729231",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -294,9 +294,9 @@
     "email": "igor.gavrikov@lenta.com",
     "role": "hr_dept",
     "name": "Гавриков Игорь Александрович 79651802464",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -304,9 +304,9 @@
     "email": "yulia.sinitsyna@lenta.com",
     "role": "hr_dept",
     "name": "Гавриков Игорь Александрович 79651802464",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -314,9 +314,9 @@
     "email": "darya.mironova@lenta.com",
     "role": "hr_dept",
     "name": "Рудько Наталия 7 980 738-29-65",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -324,9 +324,9 @@
     "email": "sm1340director@lenta.com",
     "role": "hr_dept",
     "name": "Рудько Наталия 7 980 738-29-65",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -334,9 +334,9 @@
     "email": "sm1342director@lenta.com",
     "role": "hr_dept",
     "name": "Воронин Олег 7 926 852-53-23",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -344,9 +344,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Воронин Олег 7 926 852-53-23",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -354,9 +354,9 @@
     "email": "irina.tarakanova@lenta.com",
     "role": "hr_dept",
     "name": "Акимова Татьяна 7 (969) 345-55-58",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -364,9 +364,9 @@
     "email": "sm1344director@lenta.com",
     "role": "hr_dept",
     "name": "Акимова Татьяна 7 (969) 345-55-58",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -374,9 +374,9 @@
     "email": "sm1346director@lenta.com",
     "role": "hr_dept",
     "name": "Киселева Наталия 7 926 580-11-31",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -384,9 +384,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Киселева Наталия 7 926 580-11-31",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -394,9 +394,9 @@
     "email": "marina.a.androsova@lenta.com",
     "role": "hr_dept",
     "name": "Хроменкова Наталья 8-985-639-55-44",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -404,9 +404,9 @@
     "email": "natalya.khromenkova@lenta.com",
     "role": "hr_dept",
     "name": "Хроменкова Наталья 8-985-639-55-44",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -414,9 +414,9 @@
     "email": "lyudmila.laskovaya@lenta.com",
     "role": "hr_dept",
     "name": "Саркисян Аксана Эгнатосовна 8-966-0142-111",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -424,9 +424,9 @@
     "email": "sm1357director@lenta.com",
     "role": "hr_dept",
     "name": "Саркисян Аксана Эгнатосовна 8-966-0142-111",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -434,9 +434,9 @@
     "email": "sm1360director@lenta.com",
     "role": "hr_dept",
     "name": "Урусова Альбина 8-903-527-97-67",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -444,9 +444,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Урусова Альбина 8-903-527-97-67",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -454,9 +454,9 @@
     "email": "sm1361director@lenta.com",
     "role": "hr_dept",
     "name": "Набатчикова Светлана (новый директор) 89164689058",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -464,9 +464,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Набатчикова Светлана (новый директор) 89164689058",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -474,9 +474,9 @@
     "email": "irina.tarakanova@lenta.com",
     "role": "hr_dept",
     "name": "Жарова Анастасия Владимировна 8-926-319-88-08",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -484,9 +484,9 @@
     "email": "sm1362director@lenta.com",
     "role": "hr_dept",
     "name": "Жарова Анастасия Владимировна 8-926-319-88-08",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -494,9 +494,9 @@
     "email": "lenta137hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Сорокина Анастасия Игоревна 89136100827",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -504,9 +504,9 @@
     "email": "ludmila.nikulina@lenta.com",
     "role": "hr_dept",
     "name": "Колеватых Ирина Алексеевна 7 (916) 220-98-92",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -514,9 +514,9 @@
     "email": "sm1375director@lenta.com",
     "role": "hr_dept",
     "name": "Колеватых Ирина Алексеевна 7 (916) 220-98-92",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -524,9 +524,9 @@
     "email": "ludmila.nikulina@lenta.com",
     "role": "hr_dept",
     "name": "Варнавский Даниил Павлович 8-925-467-26-74",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -534,9 +534,9 @@
     "email": "sm1377director@lenta.com",
     "role": "hr_dept",
     "name": "Варнавский Даниил Павлович 8-925-467-26-74",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -544,9 +544,9 @@
     "email": "marina.a.androsova@lenta.com",
     "role": "hr_dept",
     "name": "Амеличкина Юлия 8 995 505 04 86",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -554,9 +554,9 @@
     "email": "sm1378director@lenta.com",
     "role": "hr_dept",
     "name": "Амеличкина Юлия 8 995 505 04 86",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -564,9 +564,9 @@
     "email": "a.fedoseeva@lenta.com",
     "role": "hr_dept",
     "name": "Яковлева Ирина 89267105494",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -574,9 +574,9 @@
     "email": "sm1380director@lenta.com",
     "role": "hr_dept",
     "name": "Яковлева Ирина 89267105494",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -584,9 +584,9 @@
     "email": "ludmila.nikulina@lenta.com",
     "role": "hr_dept",
     "name": "Шландакова Алена 8-968-868-12-82",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -594,9 +594,9 @@
     "email": "sm1381director@lenta.com",
     "role": "hr_dept",
     "name": "Шландакова Алена 8-968-868-12-82",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -604,9 +604,9 @@
     "email": "sm1392director@lenta.com",
     "role": "hr_dept",
     "name": "Шангина Марина 8-917-653-91-11",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -614,9 +614,9 @@
     "email": "tatyana.shkerina@lenta.com",
     "role": "hr_dept",
     "name": "Шангина Марина 8-917-653-91-11",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -624,9 +624,9 @@
     "email": "irina.tarakanova@lenta.com",
     "role": "hr_dept",
     "name": "Канукова Валентина 7(903)293-99-85",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -634,9 +634,9 @@
     "email": "sm1395director@lenta.com",
     "role": "hr_dept",
     "name": "Канукова Валентина 7(903)293-99-85",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -644,9 +644,9 @@
     "email": "artem.inkin@lenta.com",
     "role": "hr_dept",
     "name": "Инкин Артем 89254430332",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -654,9 +654,9 @@
     "email": "e.feoktistova@lenta.com",
     "role": "hr_dept",
     "name": "Инкин Артем 89254430332",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -664,9 +664,9 @@
     "email": "lenta140hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Чанчикова Инесса Юрьевна 89131802358",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -674,9 +674,9 @@
     "email": "sm1409director@lenta.com",
     "role": "hr_dept",
     "name": "Зимин Андрей 8-9104877038",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -684,9 +684,9 @@
     "email": "yulia.vaschenko@lenta.com",
     "role": "hr_dept",
     "name": "Зимин Андрей 8-9104877038",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -694,9 +694,9 @@
     "email": "lenta141hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Скиданова Юлия Сергеевна 9133001658, 9617103353",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -704,9 +704,9 @@
     "email": "elena.n.perova@lenta.com",
     "role": "hr_dept",
     "name": "Бобкова Кристина 8-919-139-89-03",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -714,9 +714,9 @@
     "email": "kristina.bobkova@lenta.com",
     "role": "hr_dept",
     "name": "Бобкова Кристина 8-919-139-89-03",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -724,9 +724,9 @@
     "email": "sm1413director@lenta.com",
     "role": "hr_dept",
     "name": "Дышлюк Анастасия 8-966-019-48-16",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -734,9 +734,9 @@
     "email": "tatyana.shkerina@lenta.com",
     "role": "hr_dept",
     "name": "Дышлюк Анастасия 8-966-019-48-16",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -744,9 +744,9 @@
     "email": "a.fedoseeva@lenta.com",
     "role": "hr_dept",
     "name": "Фотьев Валерий 89268478079",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -754,9 +754,9 @@
     "email": "sm1414director@lenta.com",
     "role": "hr_dept",
     "name": "Фотьев Валерий 89268478079",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -764,9 +764,9 @@
     "email": "andrey.belovintsev@lenta.com",
     "role": "hr_dept",
     "name": "Птичкина Алла 7 (915) 252-34-60",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -774,9 +774,9 @@
     "email": "sm1415director@lenta.com",
     "role": "hr_dept",
     "name": "Птичкина Алла 7 (915) 252-34-60",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -784,9 +784,9 @@
     "email": "anna.kapitonova@lenta.com",
     "role": "hr_dept",
     "name": "Едельскова Наталья 8 977 570 80 30",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -794,9 +794,9 @@
     "email": "sm1416director@lenta.com",
     "role": "hr_dept",
     "name": "Едельскова Наталья 8 977 570 80 30",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -804,9 +804,9 @@
     "email": "aishat.gaziteeva@lenta.com",
     "role": "hr_dept",
     "name": "Кспоян Каринэ 7 905 518 48 26",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -814,9 +814,9 @@
     "email": "sm1417director@lenta.com",
     "role": "hr_dept",
     "name": "Кспоян Каринэ 7 905 518 48 26",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -824,9 +824,9 @@
     "email": "aishat.gaziteeva@lenta.com",
     "role": "hr_dept",
     "name": "Кунина Анна 8 926 239 96 89",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -834,9 +834,9 @@
     "email": "sm1419director@lenta.com",
     "role": "hr_dept",
     "name": "Кунина Анна 8 926 239 96 89",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -844,9 +844,9 @@
     "email": "lenta142hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Пилюгина Людмила Павловна (929) 909-3902",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -854,9 +854,9 @@
     "email": "lyudmila.laskovaya@lenta.com",
     "role": "hr_dept",
     "name": "Илюхина Екатерина 8 9254518151",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -864,9 +864,9 @@
     "email": "sm1422director@lenta.com",
     "role": "hr_dept",
     "name": "Илюхина Екатерина 8 9254518151",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -874,9 +874,9 @@
     "email": "sm1424director@lenta.com",
     "role": "hr_dept",
     "name": "Киракосян Лилит",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -884,9 +884,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Киракосян Лилит",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -894,9 +894,9 @@
     "email": "andrey.belovintsev@lenta.com",
     "role": "hr_dept",
     "name": "Озерова Марина Валериевна 8-915-383-80-02",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -904,9 +904,9 @@
     "email": "sm1425director@lenta.com",
     "role": "hr_dept",
     "name": "Озерова Марина Валериевна 8-915-383-80-02",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -914,9 +914,9 @@
     "email": "maria.krupen@lenta.com",
     "role": "hr_dept",
     "name": "Замуруева Анастасия 8-968-818-09-83",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -924,9 +924,9 @@
     "email": "sm1435director@lenta.com",
     "role": "hr_dept",
     "name": "Замуруева Анастасия 8-968-818-09-83",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -934,9 +934,9 @@
     "email": "sm1445director@lenta.com",
     "role": "hr_dept",
     "name": "Карчаидзе Хатуна 89263648475",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -944,9 +944,9 @@
     "email": "yulia.vaschenko@lenta.com",
     "role": "hr_dept",
     "name": "Карчаидзе Хатуна 89263648475",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -954,9 +954,9 @@
     "email": "sm1446director@lenta.com",
     "role": "hr_dept",
     "name": "Васькина Наталия 7 903 963-16-37",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -964,9 +964,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Васькина Наталия 7 903 963-16-37",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -974,9 +974,9 @@
     "email": "sm1447director@lenta.com",
     "role": "hr_dept",
     "name": "Байрамян Ануш 89651816354",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -984,9 +984,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Байрамян Ануш 89651816354",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -994,9 +994,9 @@
     "email": "ludmila.nikulina@lenta.com",
     "role": "hr_dept",
     "name": "Хизриева Бурлият Ибрагимовна 9-968-666-65-73",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1004,9 +1004,9 @@
     "email": "sm1448director@lenta.com",
     "role": "hr_dept",
     "name": "Хизриева Бурлият Ибрагимовна 9-968-666-65-73",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1014,9 +1014,9 @@
     "email": "e.feoktistova@lenta.com",
     "role": "hr_dept",
     "name": "Кузьменкова Елена 8-985-171-69-59",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1024,9 +1024,9 @@
     "email": "elena.kuzmenkova@lenta.com",
     "role": "hr_dept",
     "name": "Кузьменкова Елена 8-985-171-69-59",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1034,9 +1034,9 @@
     "email": "e.feoktistova@lenta.com",
     "role": "hr_dept",
     "name": "Ушакова Ирина Николаевна 8-926-135-00-44",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1044,9 +1044,9 @@
     "email": "irina.ushakova@lenta.com",
     "role": "hr_dept",
     "name": "Ушакова Ирина Николаевна 8-926-135-00-44",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1054,9 +1054,9 @@
     "email": "a.fedoseeva@lenta.com",
     "role": "hr_dept",
     "name": "Журова Светлана 7 996 666-70-25",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1064,9 +1064,9 @@
     "email": "sm1454director@lenta.com",
     "role": "hr_dept",
     "name": "Журова Светлана 7 996 666-70-25",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1074,9 +1074,9 @@
     "email": "natalia.v.vaskina@lenta.com",
     "role": "hr_dept",
     "name": "Имангулова Динара 8(977)354-01-71",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1084,9 +1084,9 @@
     "email": "sm1456director@lenta.com",
     "role": "hr_dept",
     "name": "Имангулова Динара 8(977)354-01-71",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1094,9 +1094,9 @@
     "email": "sm1457director@lenta.com",
     "role": "hr_dept",
     "name": "Брагина Светлана 7 906 760-06-10",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1104,9 +1104,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Брагина Светлана 7 906 760-06-10",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1114,9 +1114,9 @@
     "email": "anna.kapitonova@lenta.com",
     "role": "hr_dept",
     "name": "Нурутдинова Гульнара 7 (919) 961-65-60",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1124,9 +1124,9 @@
     "email": "sm1458director@lenta.com",
     "role": "hr_dept",
     "name": "Нурутдинова Гульнара 7 (919) 961-65-60",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1134,9 +1134,9 @@
     "email": "sm1462director@lenta.com",
     "role": "hr_dept",
     "name": "Фролова Екатерина 7 (929) 624-80-26",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1144,9 +1144,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Фролова Екатерина 7 (929) 624-80-26",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1154,9 +1154,9 @@
     "email": "irina.tarakanova@lenta.com",
     "role": "hr_dept",
     "name": "Михалёва Евгения Геннадьевна (отпуск) Светлана 89683836896 Кристина 89101709247",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1164,9 +1164,9 @@
     "email": "sm1463director@lenta.com",
     "role": "hr_dept",
     "name": "Михалёва Евгения Геннадьевна (отпуск) Светлана 89683836896 Кристина 89101709247",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1174,9 +1174,9 @@
     "email": "sm1464director@lenta.com",
     "role": "hr_dept",
     "name": "Коновалова Виктория 8-980-489-22-34",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1184,9 +1184,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Коновалова Виктория 8-980-489-22-34",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1194,9 +1194,9 @@
     "email": "a.fedoseeva@lenta.com",
     "role": "hr_dept",
     "name": "Исмаилова Юлия Олеговна 7 910 050-06-11",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1204,9 +1204,9 @@
     "email": "sm1466director@lenta.com",
     "role": "hr_dept",
     "name": "Исмаилова Юлия Олеговна 7 910 050-06-11",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1214,9 +1214,9 @@
     "email": "lenta15hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Фешина Анна Дмитриевна 7 981 963 41 28",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1224,9 +1224,9 @@
     "email": "lenta150hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Бабранова Наталия Сергеевна (929) 911-1914",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1234,9 +1234,9 @@
     "email": "lenta153hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Симакова Екатерина 89233338165",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1244,9 +1244,9 @@
     "email": "lenta160hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Илякова Екатерина (925) 182-4661",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1254,9 +1254,9 @@
     "email": "lenta168hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Лисина Марина Николаевна (926) 991-2183",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1264,9 +1264,9 @@
     "email": "lenta169hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Капран Наталья Вадимовна (916) 532-8740",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1274,9 +1274,9 @@
     "email": "lenta17hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Родкина Наталия Анатольевна 79819634149",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1284,9 +1284,9 @@
     "email": "lenta173hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Евгения Емельянова +7(383) 230-53-90",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1294,9 +1294,9 @@
     "email": "lenta175hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Сергеева Татьяна (929) 687-3919",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1304,9 +1304,9 @@
     "email": "lenta18hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Громыко Лана Григорьева (ЗДТК) 89112301620",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1314,9 +1314,9 @@
     "email": "lenta182hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Гусева Алина Илдусовна 89801672310",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1324,9 +1324,9 @@
     "email": "lenta183hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Иванова Анна Александровна 89166413597",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1334,9 +1334,9 @@
     "email": "lenta19hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Громыко Лана Григорьева (ЗДТК) 8 981 240 03 68",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1344,9 +1344,9 @@
     "email": "lenta196hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Сухова Марина 7 (929) 621-36-73",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1354,9 +1354,9 @@
     "email": "lenta2hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Федорова Ирина Геннадьевна 9819634361, 9213884098",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1364,9 +1364,9 @@
     "email": "lenta20hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Лопарева Елена 8 911 085 58 05",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1374,9 +1374,9 @@
     "email": "lenta201hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Кукина Ирина Геннадьевна (929) 624-6942",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1384,9 +1384,9 @@
     "email": "lenta210hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Тумановская Анна 7 (812) 449-20-39",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1394,9 +1394,9 @@
     "email": "lenta214hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Коптина Юлия Владимировна 8(981)963-41-26; 8(812)309-02-33; 8(911)295-68-60",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1404,9 +1404,9 @@
     "email": "lenta216hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Антонюк Юлия Валерьевна 7 (981) 710-80-17; 7(921)341-55-75",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1414,9 +1414,9 @@
     "email": "lenta223hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Жукова Юлия Александровна 89131802710",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1424,9 +1424,9 @@
     "email": "lenta224hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Степанова Елена Александровна 9819304473",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1434,9 +1434,9 @@
     "email": "lenta233hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Юлия Акишина 8-951-185-3828",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1444,9 +1444,9 @@
     "email": "lenta246hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Егорова Ирина Валерьевна 89031021702",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1454,9 +1454,9 @@
     "email": "lenta247hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Губинская Марина Валерьевна 73912026990 доб. 791 или 798; 79333271406",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1464,9 +1464,9 @@
     "email": "saida.glebova@lenta.com",
     "role": "hr_dept",
     "name": "Глебова Саида Олимжоновна 89819828384",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1474,9 +1474,9 @@
     "email": "aleksandr.savushkin@lenta.com",
     "role": "hr_dept",
     "name": "Савушкин Александр Павлович 89268080070",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1484,9 +1484,9 @@
     "email": "saida.glebova@lenta.com",
     "role": "hr_dept",
     "name": "Глебова Саида Олимжоновна 89819828384",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1494,9 +1494,9 @@
     "email": "varvara.menshikova@lenta.com",
     "role": "hr_dept",
     "name": "Меньшикова Варварав 89811984307",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1504,9 +1504,9 @@
     "email": "valeria.dragunova@lenta.com",
     "role": "hr_dept",
     "name": "Драгунова Валерия Сергеевна 89520598880",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1514,9 +1514,9 @@
     "email": "dmitry.zhigadlo@lenta.com",
     "role": "hr_dept",
     "name": "Жигадло Дмитрий Александрович 89531431133",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1524,9 +1524,9 @@
     "email": "olga.v.shanina@lenta.com",
     "role": "hr_dept",
     "name": "Шанина Ольга Владимировна 89818537357",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1534,9 +1534,9 @@
     "email": "e.plashkareva@lenta.com",
     "role": "hr_dept",
     "name": "Плашкарева Екатерина Ивановна 89215807876",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1544,9 +1544,9 @@
     "email": "olga.koshkina@lenta.com",
     "role": "hr_dept",
     "name": "Кошкина Ольга Станиславовна 89214307797",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1554,9 +1554,9 @@
     "email": "karina.tashkulova@lenta.com",
     "role": "hr_dept",
     "name": "Ваганова Карина Суванкуловна 89110091858",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1564,9 +1564,9 @@
     "email": "maria.poleschuk@lenta.com",
     "role": "hr_dept",
     "name": "Полещук Мария Алексеевна 8-996-205-0065",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1574,9 +1574,9 @@
     "email": "olga.lambreht@lenta.com",
     "role": "hr_dept",
     "name": "Дубовая Ольга Евгеньевна 8-923-423-7114",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1584,9 +1584,9 @@
     "email": "a.a.smirnova@lenta.com",
     "role": "hr_dept",
     "name": "Смирнова Анастасия Александровна 89218931613",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1594,9 +1594,9 @@
     "email": "lenta260hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Калиненко Мария Александровна 8(926)798-15-72",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1604,9 +1604,9 @@
     "email": "olga.koshkina@lenta.com",
     "role": "hr_dept",
     "name": "Кошкина Ольга Станиславовна 89214307797",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1614,9 +1614,9 @@
     "email": "a.a.smirnova@lenta.com",
     "role": "hr_dept",
     "name": "Смирнова Анастасия Александровна 89218931613",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1624,9 +1624,9 @@
     "email": "elena.v.moiseeva@lenta.com",
     "role": "hr_dept",
     "name": "Моисеева Елена Владимировна 89669846138",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1634,9 +1634,9 @@
     "email": "lenta263hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Лебедева Вера 7 905 2753619",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1644,9 +1644,9 @@
     "email": "lenta264hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Козырева Кристина Сергеевна 9217808017",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1654,9 +1654,9 @@
     "email": "lenta265hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Ненахова Яна 8-981-963-34-93",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1664,9 +1664,9 @@
     "email": "lenta266hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Стрельникова Карина 8-981-963-45-24",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1674,9 +1674,9 @@
     "email": "lenta267hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Такаева Юлия Алексеевна 8 (812) 385-09-33; : 8-911-296-00-28.",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1684,9 +1684,9 @@
     "email": "sabina.lebedeva@lenta.com",
     "role": "hr_dept",
     "name": "Лебедева Сабина Валерьевна 89157440364",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1694,9 +1694,9 @@
     "email": "lenta268hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Буслова Наталья Владимировна 8 -911-112-73-05",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1704,9 +1704,9 @@
     "email": "lubov.gutorova@lenta.com",
     "role": "hr_dept",
     "name": "Гуторова Любовь Юрьевна 89290883213",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1714,9 +1714,9 @@
     "email": "lenta269hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Чецкая Светлана 7 (981) 963-34-70",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1724,9 +1724,9 @@
     "email": "lenta27hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Алалина Наталия Вячеславовна (916) 533-1096",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1734,9 +1734,9 @@
     "email": "lenta270hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Бауер-Бимштейн Елена Валерьевна / Ткачева Оксана 9819634783, 9219753792, 7 (81369) 6-28-99",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1744,9 +1744,9 @@
     "email": "lenta271hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Кравчук Маргарита 8-981-788-86-46",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1754,9 +1754,9 @@
     "email": "lenta272hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Андреева Мария 89819633429",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1764,9 +1764,9 @@
     "email": "lenta273hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Андреева Мария Андреевна 9643339459, 9045540030",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1774,9 +1774,9 @@
     "email": "lenta277hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Ковалева Клавдия Александровна (929) 687-3899",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1784,9 +1784,9 @@
     "email": "dmitry.zhigadlo@lenta.com",
     "role": "hr_dept",
     "name": "Жигадло Дмитрий Александрович 89531431133",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1794,9 +1794,9 @@
     "email": "dmitry.zhigadlo@lenta.com",
     "role": "hr_dept",
     "name": "Жигадло Дмитрий Александрович 89531431133",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1804,9 +1804,9 @@
     "email": "anton.s.ivanov@lenta.com",
     "role": "hr_dept",
     "name": "Иванов Антон Сергеевич 89997141375",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1814,9 +1814,9 @@
     "email": "a.kandrushina@lenta.com",
     "role": "hr_dept",
     "name": "Кандрушина Александра Геннадьевна 89215922449",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1824,9 +1824,9 @@
     "email": "n.borodinevskaya@lenta.com",
     "role": "hr_dept",
     "name": "Бородиневская Наталья Владимировна 89211816111",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1834,9 +1834,9 @@
     "email": "a.a.smirnova@lenta.com",
     "role": "hr_dept",
     "name": "Смирнова Анастасия Александровна 89218931613",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1844,9 +1844,9 @@
     "email": "saida.glebova@lenta.com",
     "role": "hr_dept",
     "name": "Глебова Саида Олимжоновна 89819828384",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1854,9 +1854,9 @@
     "email": "lenta29hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Гусева Алина Илдусовна (916) 973-4845",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1864,9 +1864,9 @@
     "email": "lenta291hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Устюжина Юлия 89299095688",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1874,9 +1874,9 @@
     "email": "a.kandrushina@lenta.com",
     "role": "hr_dept",
     "name": "Кандрушина Александра Геннадьевна 89215922449",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1884,9 +1884,9 @@
     "email": "lenta292hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Ляпина Альфия 7 929-909-56-01",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1894,9 +1894,9 @@
     "email": "lenta293hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Бабранова Наталия Сергеевна (929) 911-1914",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1904,9 +1904,9 @@
     "email": "lenta295hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Маленкина Яна 8(926) 826-50-55",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1914,9 +1914,9 @@
     "email": "saida.glebova@lenta.com",
     "role": "hr_dept",
     "name": "Глебова Саида Олимжоновна 89819828384",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1924,9 +1924,9 @@
     "email": "lenta296hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Бородкина Светлана Леонидовна (929) 914-5362",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1934,9 +1934,9 @@
     "email": "lenta298hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Шмитова Марина 8 929 909 52 93",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1944,9 +1944,9 @@
     "email": "lenta3hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Рослякова Ирина Александровна 8-966 754 93 54",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1954,9 +1954,9 @@
     "email": "maria.krupen@lenta.com",
     "role": "hr_dept",
     "name": "Габдулина Зульфия 8-977-330-15-53",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1964,9 +1964,9 @@
     "email": "sm3002director@lenta.com",
     "role": "hr_dept",
     "name": "Габдулина Зульфия 8-977-330-15-53",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1974,9 +1974,9 @@
     "email": "kristina.bobkova@lenta.com",
     "role": "hr_dept",
     "name": "Бобкова Кристина 8-993-333-55-54",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1984,9 +1984,9 @@
     "email": "sm3012director@lenta.com",
     "role": "hr_dept",
     "name": "Бобкова Кристина 8-993-333-55-54",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -1994,9 +1994,9 @@
     "email": "lenta302hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Пястолова Марина (929) 909-5640",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2004,9 +2004,9 @@
     "email": "elena.panichkina@lenta.com",
     "role": "hr_dept",
     "name": "Азизова Саадат 8 915 250 73 23",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2014,9 +2014,9 @@
     "email": "sm3024director@lenta.com",
     "role": "hr_dept",
     "name": "Азизова Саадат 8 915 250 73 23",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2024,9 +2024,9 @@
     "email": "kristina.bobkova@lenta.com",
     "role": "hr_dept",
     "name": "Бобкова Кристина 8-980-158-32-17",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2034,9 +2034,9 @@
     "email": "sm3025director@lenta.com",
     "role": "hr_dept",
     "name": "Бобкова Кристина 8-980-158-32-17",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2044,9 +2044,9 @@
     "email": "sm30339director@lenta.com",
     "role": "hr_dept",
     "name": "Зарядина Татьяна 7 (985) 488-60-56",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2054,9 +2054,9 @@
     "email": "yulia.vaschenko@lenta.com",
     "role": "hr_dept",
     "name": "Зарядина Татьяна 7 (985) 488-60-56",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2064,9 +2064,9 @@
     "email": "sm3037director@lenta.com",
     "role": "hr_dept",
     "name": "Кораблева Светлана 8-905-594-56-83",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2074,9 +2074,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Кораблева Светлана 8-905-594-56-83",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2084,9 +2084,9 @@
     "email": "aishat.gaziteeva@lenta.com",
     "role": "hr_dept",
     "name": "Галкина Александра 7 925 840-91-92",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2094,9 +2094,9 @@
     "email": "aleksandra.galkina@lenta.com",
     "role": "hr_dept",
     "name": "Галкина Александра 7 925 840-91-92",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2104,9 +2104,9 @@
     "email": "lyudmila.laskovaya@lenta.com",
     "role": "hr_dept",
     "name": "Бузак Алина 89773392784",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2114,9 +2114,9 @@
     "email": "sm3039director@lenta.com",
     "role": "hr_dept",
     "name": "Бузак Алина 89773392784",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2124,9 +2124,9 @@
     "email": "lenta304hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Калинина Надежда Викторовна (985) 161-1541",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2134,9 +2134,9 @@
     "email": "elena.panichkina@lenta.com",
     "role": "hr_dept",
     "name": "Жигунова Юлия 8-999-880-73-18",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2144,9 +2144,9 @@
     "email": "sm3044director@lenta.com",
     "role": "hr_dept",
     "name": "Жигунова Юлия 8-999-880-73-18",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2154,9 +2154,9 @@
     "email": "irina.varlamkina@lenta.com",
     "role": "hr_dept",
     "name": "Варламкина Ирина 8 963 607 20 05",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2164,9 +2164,9 @@
     "email": "marina.a.androsova@lenta.com",
     "role": "hr_dept",
     "name": "Варламкина Ирина 8 963 607 20 05",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2174,9 +2174,9 @@
     "email": "lyudmila.laskovaya@lenta.com",
     "role": "hr_dept",
     "name": "Набатчикова Светлана 8-916-468-90-58",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2184,9 +2184,9 @@
     "email": "sm3072director@lenta.com",
     "role": "hr_dept",
     "name": "Набатчикова Светлана 8-916-468-90-58",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2194,9 +2194,9 @@
     "email": "natalya.v.stepanova@lenta.com",
     "role": "hr_dept",
     "name": "Щербакова Елена Владимировна 8 926 266-09-15",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2204,9 +2204,9 @@
     "email": "sm3088director@lenta.com",
     "role": "hr_dept",
     "name": "Щербакова Елена Владимировна 8 926 266-09-15",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2214,9 +2214,9 @@
     "email": "anna.mamonova@lenta.com",
     "role": "hr_dept",
     "name": "Мамонова Анна 8-905-783-46-60",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2224,9 +2224,9 @@
     "email": "tatyana.shkerina@lenta.com",
     "role": "hr_dept",
     "name": "Мамонова Анна 8-905-783-46-60",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2234,9 +2234,9 @@
     "email": "maria.krupen@lenta.com",
     "role": "hr_dept",
     "name": "Плахова Анна 8-985-215-85-40",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2244,9 +2244,9 @@
     "email": "sm3091director@lenta.com",
     "role": "hr_dept",
     "name": "Плахова Анна 8-985-215-85-40",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2254,9 +2254,9 @@
     "email": "elena.panichkina@lenta.com",
     "role": "hr_dept",
     "name": "Ушакова Наталья 7 953 319-99-46",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2264,9 +2264,9 @@
     "email": "sm3119director@lenta.com",
     "role": "hr_dept",
     "name": "Ушакова Наталья 7 953 319-99-46",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2274,9 +2274,9 @@
     "email": "lenta312hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Титова Людмила Васильевна 9819633297, 9215521797",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2284,9 +2284,9 @@
     "email": "sm3134director@lenta.com",
     "role": "hr_dept",
     "name": "Сухарева Валентина Владимировна 8 977 922 30 13",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2294,9 +2294,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Сухарева Валентина Владимировна 8 977 922 30 13",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2304,9 +2304,9 @@
     "email": "sm3154director@lenta.com",
     "role": "hr_dept",
     "name": "Тукляева Анна 8(961) 9028588",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2314,9 +2314,9 @@
     "email": "lenta316hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Лебедева Светлана 89118465252",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2324,9 +2324,9 @@
     "email": "anna.kapitonova@lenta.com",
     "role": "hr_dept",
     "name": "Крамачёва Елена 7 (926) 284-16-53",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2334,9 +2334,9 @@
     "email": "elena.kramacheva@lenta.com",
     "role": "hr_dept",
     "name": "Крамачёва Елена 7 (926) 284-16-53",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2344,9 +2344,9 @@
     "email": "lenta318hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Веселова Ирина 7 (981) 963-29-86",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2354,9 +2354,9 @@
     "email": "lenta319hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Олейникова Светлана 7 (911) 771-47-97",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2364,9 +2364,9 @@
     "email": "elena.panichkina@lenta.com",
     "role": "hr_dept",
     "name": "Мамедова Наталья 7 (900)-576-05-71",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2374,9 +2374,9 @@
     "email": "sm3197director@lenta.com",
     "role": "hr_dept",
     "name": "Мамедова Наталья 7 (900)-576-05-71",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2384,9 +2384,9 @@
     "email": "lenta344hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Федулову Ольгу Борисовну 89855201235",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2394,9 +2394,9 @@
     "email": "lenta350hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Бабанина Марина 79151300673",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2404,9 +2404,9 @@
     "email": "lenta351hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Кутикова Любовь 79036701949",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2414,9 +2414,9 @@
     "email": "lenta355hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Медведева Кристина 89233177272",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2424,9 +2424,9 @@
     "email": "lenta358hrmanager@lenta.com",
     "role": "hr_dept",
     "name": "Герасимова Екатерина 318-34-92 доб 790 \\ 8-905-271-91-57",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2434,9 +2434,9 @@
     "email": "lenta361hrmanager@lenta.com",
     "role": "hr_dept",
     "name": "Редькина Екатерина 89052714360",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2444,9 +2444,9 @@
     "email": "lenta363hrmanager@lenta.com",
     "role": "hr_dept",
     "name": "Иванова Анна 7 981 870-73-43",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2454,9 +2454,9 @@
     "email": "lenta366hrmanager@lenta.com",
     "role": "hr_dept",
     "name": "Громова Ольга 89213971760",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2464,9 +2464,9 @@
     "email": "lenta367hrmanager@lenta.com",
     "role": "hr_dept",
     "name": "Калинина Татьяна 89675300647",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2474,9 +2474,9 @@
     "email": "lenta372hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Кухарева Марина 7 985 441-80-22",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2484,9 +2484,9 @@
     "email": "irina.yankina@lenta.com",
     "role": "hr_dept",
     "name": "Янкина Ирина 79623430668",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2494,9 +2494,9 @@
     "email": "ekaterina.e.nikitina@lenta.com",
     "role": "hr_dept",
     "name": "Никитина Екатерина 89819601140",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2504,9 +2504,9 @@
     "email": "lenta381hrmanager@lenta.com",
     "role": "hr_dept",
     "name": "Боярун Екатерина 7 965 037 47-31",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2514,9 +2514,9 @@
     "email": "gm.oms.entuziastov_mku@okmarket.ru",
     "role": "hr_dept",
     "name": "РОП - Федорова Виктория МКУ - Шкуренко Юлия 8-923-674-44-93",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2524,9 +2524,9 @@
     "email": "gm.oms.entuziastov_rop@okmarket.ru",
     "role": "hr_dept",
     "name": "РОП - Федорова Виктория МКУ - Шкуренко Юлия 8-923-674-44-93",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2534,9 +2534,9 @@
     "email": "lenta4hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Житнова Светлана 7981-963-41-66",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2544,9 +2544,9 @@
     "email": "eugenia.kucherenko@lenta.com",
     "role": "hr_dept",
     "name": "Шишкин Константин 8 906 996 04 70",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2554,9 +2554,9 @@
     "email": "k.a.shishkin@lenta.com",
     "role": "hr_dept",
     "name": "Шишкин Константин 8 906 996 04 70",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2564,9 +2564,9 @@
     "email": "elena.lovenyak@lenta.com",
     "role": "hr_dept",
     "name": "Елена Ловеньяк 79137169281",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2574,9 +2574,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Елена Ловеньяк 79137169281",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2584,9 +2584,9 @@
     "email": "anastasia.yakimova@lenta.com",
     "role": "hr_dept",
     "name": "Якимова Анастасия 7 (812) 380-61-56",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2594,9 +2594,9 @@
     "email": "svetlana.kislenko@lenta.com",
     "role": "hr_dept",
     "name": "Якимова Анастасия 7 (812) 380-61-56",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2604,9 +2604,9 @@
     "email": "galina.rodygina@lenta.com",
     "role": "hr_dept",
     "name": "Родыгина Галина 89832350614",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2614,9 +2614,9 @@
     "email": "svetlana.kislenko@lenta.com",
     "role": "hr_dept",
     "name": "Родыгина Галина 89832350614",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2624,9 +2624,9 @@
     "email": "lenta410hrmanager@lenta.com",
     "role": "hr_dept",
     "name": "Фисюк Наталья 83832105608; 89607978835",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2634,9 +2634,9 @@
     "email": "lenta48hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Немчина Ирина 79602878263",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2644,9 +2644,9 @@
     "email": "lenta49hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Подковырина Дарья 7 (812) 336-7149 доб.: 791/790 7 (905) 213-25-96",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2654,9 +2654,9 @@
     "email": "lenta5hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Сидорова Елена Николаевна Моб.: +7 (981) 905-00-13",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2664,9 +2664,9 @@
     "email": "sm509director@lenta.com",
     "role": "hr_dept",
     "name": "Рожкова Евгения 89259005765",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2674,9 +2674,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Рожкова Евгения 89259005765",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2684,9 +2684,9 @@
     "email": "kristina.bobkova@lenta.com",
     "role": "hr_dept",
     "name": "Краева Вера 8-980-158-33-04",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2694,9 +2694,9 @@
     "email": "sm510director@lenta.com",
     "role": "hr_dept",
     "name": "Краева Вера 8-980-158-33-04",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2704,9 +2704,9 @@
     "email": "sm512director@lenta.com",
     "role": "hr_dept",
     "name": "Ласковая Людмила 89935935299",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2714,9 +2714,9 @@
     "email": "aishat.gaziteeva@lenta.com",
     "role": "hr_dept",
     "name": "Атрасевич Олеся Анатольевна 8-977-962-54-14",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2724,9 +2724,9 @@
     "email": "sm513director@lenta.com",
     "role": "hr_dept",
     "name": "Атрасевич Олеся Анатольевна 8-977-962-54-14",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2734,9 +2734,9 @@
     "email": "e.feoktistova@lenta.com",
     "role": "hr_dept",
     "name": "Алфимова Мария 8-915-389-72-84",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2744,9 +2744,9 @@
     "email": "maria.alfimova@lenta.com",
     "role": "hr_dept",
     "name": "Алфимова Мария 8-915-389-72-84",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2754,9 +2754,9 @@
     "email": "a.fedoseeva@lenta.com",
     "role": "hr_dept",
     "name": "Солина Ирина 8-927-840-34-95",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2764,9 +2764,9 @@
     "email": "irina.solina@lenta.com",
     "role": "hr_dept",
     "name": "Солина Ирина 8-927-840-34-95",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2774,9 +2774,9 @@
     "email": "andrey.belovintsev@lenta.com",
     "role": "hr_dept",
     "name": "Барбаянова Ольга 8-985-343-1573",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2784,9 +2784,9 @@
     "email": "sm516director@lenta.com",
     "role": "hr_dept",
     "name": "Барбаянова Ольга 8-985-343-1573",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2794,9 +2794,9 @@
     "email": "anna.kapitonova@lenta.com",
     "role": "hr_dept",
     "name": "Давданова Юлия 9-905-400-18-03",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2804,9 +2804,9 @@
     "email": "sm517director@lenta.com",
     "role": "hr_dept",
     "name": "Давданова Юлия 9-905-400-18-03",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2814,9 +2814,9 @@
     "email": "e.feoktistova@lenta.com",
     "role": "hr_dept",
     "name": "Диккайа Максим 8 926 040 55 70",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2824,9 +2824,9 @@
     "email": "maksim.dikkaia@lenta.com",
     "role": "hr_dept",
     "name": "Диккайа Максим 8 926 040 55 70",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2834,9 +2834,9 @@
     "email": "sm521director@lenta.com",
     "role": "hr_dept",
     "name": "Токарева Анна Юрьевна 8-916-318-31-18",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2844,9 +2844,9 @@
     "email": "tatyana.shkerina@lenta.com",
     "role": "hr_dept",
     "name": "Токарева Анна Юрьевна 8-916-318-31-18",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2854,9 +2854,9 @@
     "email": "irina.tarakanova@lenta.com",
     "role": "hr_dept",
     "name": "Исмонова Мерьем 8-963-629-96-67",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2864,9 +2864,9 @@
     "email": "merem.ismonova@lenta.com",
     "role": "hr_dept",
     "name": "Исмонова Мерьем 8-963-629-96-67",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2874,9 +2874,9 @@
     "email": "elena.vuivan@lenta.com",
     "role": "hr_dept",
     "name": "Вуиван Елена Владимировна 8 991 223 14 77",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2884,9 +2884,9 @@
     "email": "marina.a.androsova@lenta.com",
     "role": "hr_dept",
     "name": "Вуиван Елена Владимировна 8 991 223 14 77",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2894,9 +2894,9 @@
     "email": "e.feoktistova@lenta.com",
     "role": "hr_dept",
     "name": "Шеременда Евгений 8-929-944-27-54",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2904,9 +2904,9 @@
     "email": "eugeny.sheremenda@lenta.com",
     "role": "hr_dept",
     "name": "Шеременда Евгений 8-929-944-27-54",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2914,9 +2914,9 @@
     "email": "natalya.v.stepanova@lenta.com",
     "role": "hr_dept",
     "name": "Иванова Ольга Михайловна 7 977 644-01-79",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2924,9 +2924,9 @@
     "email": "sm529director@lenta.com",
     "role": "hr_dept",
     "name": "Иванова Ольга Михайловна 7 977 644-01-79",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2934,9 +2934,9 @@
     "email": "sm534director@lenta.com",
     "role": "hr_dept",
     "name": "Бочкарева Светлана 8 985 682-33-80",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2944,9 +2944,9 @@
     "email": "yulia.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Бочкарева Светлана 8 985 682-33-80",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2954,9 +2954,9 @@
     "email": "andrey.belovintsev@lenta.com",
     "role": "hr_dept",
     "name": "Медведева Тамара 7 (977) 593-81-20",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2964,9 +2964,9 @@
     "email": "sm535director@lenta.com",
     "role": "hr_dept",
     "name": "Медведева Тамара 7 (977) 593-81-20",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2974,9 +2974,9 @@
     "email": "natalya.v.stepanova@lenta.com",
     "role": "hr_dept",
     "name": "Варчак Сергей 8 968 547 7477",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2984,9 +2984,9 @@
     "email": "ekaterina.komarova@lenta.com",
     "role": "hr_dept",
     "name": "Комарова Екатерина 8-961-224-00-63",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -2994,9 +2994,9 @@
     "email": "tatyana.shkerina@lenta.com",
     "role": "hr_dept",
     "name": "Комарова Екатерина 8-961-224-00-63",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3004,9 +3004,9 @@
     "email": "sm539director@lenta.com",
     "role": "hr_dept",
     "name": "Филиппов Евгений 8-968-730-72-63",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3014,9 +3014,9 @@
     "email": "diana.drugova@lenta.com",
     "role": "hr_dept",
     "name": "Другова Диана 7 905 551 95 73",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3024,9 +3024,9 @@
     "email": "natalya.v.stepanova@lenta.com",
     "role": "hr_dept",
     "name": "Другова Диана 7 905 551 95 73",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3034,9 +3034,9 @@
     "email": "kristina.bobkova@lenta.com",
     "role": "hr_dept",
     "name": "Чидаткина Наталья 7-968-792-47-38",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3044,9 +3044,9 @@
     "email": "sm551director@lenta.com",
     "role": "hr_dept",
     "name": "Чидаткина Наталья 7-968-792-47-38",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3054,9 +3054,9 @@
     "email": "ludmila.nikulina@lenta.com",
     "role": "hr_dept",
     "name": "Зайцева Ольга Викторовна 8 968 772 51 14",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3064,9 +3064,9 @@
     "email": "sm554director@lenta.com",
     "role": "hr_dept",
     "name": "Зайцева Ольга Викторовна 8 968 772 51 14",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3074,9 +3074,9 @@
     "email": "anna.kapitonova@lenta.com",
     "role": "hr_dept",
     "name": "Шаптала Анастасия 89804242134",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3084,9 +3084,9 @@
     "email": "sm563director@lenta.com",
     "role": "hr_dept",
     "name": "Шаптала Анастасия 89804242134",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3094,9 +3094,9 @@
     "email": "kristina.bobkova@lenta.com",
     "role": "hr_dept",
     "name": "Бутина Надежда 8-910-968-44-52",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3104,9 +3104,9 @@
     "email": "nadezhda.butina@lenta.com",
     "role": "hr_dept",
     "name": "Бутина Надежда 8-910-968-44-52",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3114,9 +3114,9 @@
     "email": "marina.a.androsova@lenta.com",
     "role": "hr_dept",
     "name": "Шпак Алия 89637768306",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3124,9 +3124,9 @@
     "email": "sm567director@lenta.com",
     "role": "hr_dept",
     "name": "Шпак Алия 89637768306",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3134,9 +3134,9 @@
     "email": "lenta6hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Горбачева Наталья Александровна 981-963-41-56",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3144,9 +3144,9 @@
     "email": "natalia.gorbacheva@lenta.com",
     "role": "hr_dept",
     "name": "Горбачева Наталья Александровна 981-963-41-56",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3154,9 +3154,9 @@
     "email": "ludmila.nikulina@lenta.com",
     "role": "hr_dept",
     "name": "Рысина Елена 8-925-586-10-87",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3164,9 +3164,9 @@
     "email": "sm601director@lenta.com",
     "role": "hr_dept",
     "name": "Рысина Елена 8-925-586-10-87",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3174,9 +3174,9 @@
     "email": "anna.kapitonova@lenta.com",
     "role": "hr_dept",
     "name": "Кудасова Татьяна 7 965 257 78 31",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3184,9 +3184,9 @@
     "email": "sm605director@lenta.com",
     "role": "hr_dept",
     "name": "Кудасова Татьяна 7 965 257 78 31",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3194,9 +3194,9 @@
     "email": "maria.krupen@lenta.com",
     "role": "hr_dept",
     "name": "Лукьянченкова Ирина 8-926-700-02-90",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3204,9 +3204,9 @@
     "email": "sm606director@lenta.com",
     "role": "hr_dept",
     "name": "Лукьянченкова Ирина 8-926-700-02-90",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3214,9 +3214,9 @@
     "email": "anna.kapitonova@lenta.com",
     "role": "hr_dept",
     "name": "Косаковская Оксана 8-977-984-31-33",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3224,9 +3224,9 @@
     "email": "oksana.kosakovskaya@lenta.com",
     "role": "hr_dept",
     "name": "Косаковская Оксана 8-977-984-31-33",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3234,9 +3234,9 @@
     "email": "e.feoktistova@lenta.com",
     "role": "hr_dept",
     "name": "Валинцова Вкитория 8-925-314-71-14",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3244,9 +3244,9 @@
     "email": "victoria.valintsova@lenta.com",
     "role": "hr_dept",
     "name": "Валинцова Вкитория 8-925-314-71-14",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3254,9 +3254,9 @@
     "email": "maria.hahulina@lenta.com",
     "role": "hr_dept",
     "name": "Хахулина Мария 7 965 115-24-58",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3264,9 +3264,9 @@
     "email": "natalya.v.stepanova@lenta.com",
     "role": "hr_dept",
     "name": "Хахулина Мария 7 965 115-24-58",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3274,9 +3274,9 @@
     "email": "sm614director@lenta.com",
     "role": "hr_dept",
     "name": "Давыдова Татьяна 7 (910) 480-04-78 +79013474015-здсм Тамара",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3284,9 +3284,9 @@
     "email": "marina.a.androsova@lenta.com",
     "role": "hr_dept",
     "name": "Забабурина Наталья Сергеевна 8 926 664 95 29",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3294,9 +3294,9 @@
     "email": "natalia.zababurina@lenta.com",
     "role": "hr_dept",
     "name": "Забабурина Наталья Сергеевна 8 926 664 95 29",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3304,9 +3304,9 @@
     "email": "marina.a.androsova@lenta.com",
     "role": "hr_dept",
     "name": "Атрощенко Наталия 8 926 113 12 16",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3314,9 +3314,9 @@
     "email": "natalia.atroschenko@lenta.com",
     "role": "hr_dept",
     "name": "Атрощенко Наталия 8 926 113 12 16",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3324,9 +3324,9 @@
     "email": "lenta173hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Хайитбаева Ксения +7(383) 230-53-90",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3334,9 +3334,9 @@
     "email": "lenta62hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Степанова Елена Александровна 7 (981) 930-44-73",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3344,9 +3344,9 @@
     "email": "elena.lantsova@lenta.com",
     "role": "hr_dept",
     "name": "Ланцова Елена Федоровна 8 910 463 99 75",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3354,9 +3354,9 @@
     "email": "marina.a.androsova@lenta.com",
     "role": "hr_dept",
     "name": "Ланцова Елена Федоровна 8 910 463 99 75",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3364,9 +3364,9 @@
     "email": "kristina.bobkova@lenta.com",
     "role": "hr_dept",
     "name": "Бобкова Кристина 8-968-496-87-31",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3374,9 +3374,9 @@
     "email": "sm623director@lenta.com",
     "role": "hr_dept",
     "name": "Бобкова Кристина 8-968-496-87-31",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3384,9 +3384,9 @@
     "email": "andrey.belovintsev@lenta.com",
     "role": "hr_dept",
     "name": "Колышкина Ирина Олеговна 8- 926-713-55-66",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3394,9 +3394,9 @@
     "email": "sm626director@lenta.com",
     "role": "hr_dept",
     "name": "Колышкина Ирина Олеговна 8- 926-713-55-66",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3404,9 +3404,9 @@
     "email": "anna.kapitonova@lenta.com",
     "role": "hr_dept",
     "name": "Шрейдер Ольга 8-965-339-38-43",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3414,9 +3414,9 @@
     "email": "sm628director@lenta.com",
     "role": "hr_dept",
     "name": "Шрейдер Ольга 8-965-339-38-43",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3424,9 +3424,9 @@
     "email": "kristina.bobkova@lenta.com",
     "role": "hr_dept",
     "name": "Яковлева Юлия Юрьевна 8-967-187-60-93",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3434,9 +3434,9 @@
     "email": "sm632director@lenta.com",
     "role": "hr_dept",
     "name": "Яковлева Юлия Юрьевна 8-967-187-60-93",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3444,9 +3444,9 @@
     "email": "maria.krupen@lenta.com",
     "role": "hr_dept",
     "name": "Виктория 8901-787-11-80",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3454,9 +3454,9 @@
     "email": "sm639director@lenta.com",
     "role": "hr_dept",
     "name": "Виктория 8901-787-11-80",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3464,9 +3464,9 @@
     "email": "elena.panichkina@lenta.com",
     "role": "hr_dept",
     "name": "Иванчихин Геннадий 8-977 304-38-36",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3474,9 +3474,9 @@
     "email": "sm642director@lenta.com",
     "role": "hr_dept",
     "name": "Иванчихин Геннадий 8-977 304-38-36",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3484,9 +3484,9 @@
     "email": "elena.panichkina@lenta.com",
     "role": "hr_dept",
     "name": "Богдановская Ольга 8-962-972-32-23",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3494,9 +3494,9 @@
     "email": "sm643director@lenta.com",
     "role": "hr_dept",
     "name": "Богдановская Ольга 8-962-972-32-23",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3504,9 +3504,9 @@
     "email": "elena.panichkina@lenta.com",
     "role": "hr_dept",
     "name": "Мусинов Роман 8 (930) 842-81-90",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3514,9 +3514,9 @@
     "email": "sm644director@lenta.com",
     "role": "hr_dept",
     "name": "Мусинов Роман 8 (930) 842-81-90",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3524,9 +3524,9 @@
     "email": "andrey.belovintsev@lenta.com",
     "role": "hr_dept",
     "name": "Карохова Светлана Петровна \\ Бобкова Кристина 8-929-911-43-06",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3534,9 +3534,9 @@
     "email": "sm647director@lenta.com",
     "role": "hr_dept",
     "name": "Карохова Светлана Петровна \\ Бобкова Кристина 8-929-911-43-06",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3544,9 +3544,9 @@
     "email": "sm648director@lenta.com",
     "role": "hr_dept",
     "name": "Петракова Варвара 7 (916) 873 31 71",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3554,9 +3554,9 @@
     "email": "yulia.vaschenko@lenta.com",
     "role": "hr_dept",
     "name": "Петракова Варвара 7 (916) 873 31 71",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3564,9 +3564,9 @@
     "email": "natalya.v.stepanova@lenta.com",
     "role": "hr_dept",
     "name": "Мелокумова Виктория 8 929 955 12 78",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3574,9 +3574,9 @@
     "email": "sm649director@lenta.com",
     "role": "hr_dept",
     "name": "Мелокумова Виктория 8 929 955 12 78",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3584,9 +3584,9 @@
     "email": "a.fedoseeva@lenta.com",
     "role": "hr_dept",
     "name": "Зеленева Мария 8- 985- 572-72-69",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3594,9 +3594,9 @@
     "email": "sm651director@lenta.com",
     "role": "hr_dept",
     "name": "Зеленева Мария 8- 985- 572-72-69",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3604,9 +3604,9 @@
     "email": "aishat.gaziteeva@lenta.com",
     "role": "hr_dept",
     "name": "Панина Светлана 7 903 665-37-92",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3614,9 +3614,9 @@
     "email": "sm656director@lenta.com",
     "role": "hr_dept",
     "name": "Панина Светлана 7 903 665-37-92",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3624,9 +3624,9 @@
     "email": "maria.krupen@lenta.com",
     "role": "hr_dept",
     "name": "Суслов Владимир 8-926-991-37-89",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3634,9 +3634,9 @@
     "email": "sm660director@lenta.com",
     "role": "hr_dept",
     "name": "Суслов Владимир 8-926-991-37-89",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3644,9 +3644,9 @@
     "email": "sm661director@lenta.com",
     "role": "hr_dept",
     "name": "Шишкин Павел 8-995-118-22-06",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3654,9 +3654,9 @@
     "email": "lyudmila.laskovaya@lenta.com",
     "role": "hr_dept",
     "name": "Захаров Андрей 8-926-990-20-50",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3664,9 +3664,9 @@
     "email": "sm664director@lenta.com",
     "role": "hr_dept",
     "name": "Захаров Андрей 8-926-990-20-50",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3674,9 +3674,9 @@
     "email": "sm665director@lenta.com",
     "role": "hr_dept",
     "name": "Цховребова Инна 01398-702",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3684,9 +3684,9 @@
     "email": "yulia.vaschenko@lenta.com",
     "role": "hr_dept",
     "name": "Цховребова Инна 01398-702",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3694,9 +3694,9 @@
     "email": "anna.kapitonova@lenta.com",
     "role": "hr_dept",
     "name": "Мехрякова Юлия 8 906 642 42 00",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3704,9 +3704,9 @@
     "email": "sm667director@lenta.com",
     "role": "hr_dept",
     "name": "Мехрякова Юлия 8 906 642 42 00",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3714,9 +3714,9 @@
     "email": "marina.a.androsova@lenta.com",
     "role": "hr_dept",
     "name": "Павлова Ольга 8 925 482 60 23",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3724,9 +3724,9 @@
     "email": "o.pavlova@lenta.com",
     "role": "hr_dept",
     "name": "Павлова Ольга 8 925 482 60 23",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3734,9 +3734,9 @@
     "email": "natalya.v.stepanova@lenta.com",
     "role": "hr_dept",
     "name": "Мухина Эльмира Дамировна 8 926 167-63-27",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3744,9 +3744,9 @@
     "email": "sm673director@lenta.com",
     "role": "hr_dept",
     "name": "Мухина Эльмира Дамировна 8 926 167-63-27",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3754,9 +3754,9 @@
     "email": "aishat.gaziteeva@lenta.com",
     "role": "hr_dept",
     "name": "Березуев Иван 8 926 192 72 10",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3764,9 +3764,9 @@
     "email": "ivan.berezuev@lenta.com",
     "role": "hr_dept",
     "name": "Березуев Иван 8 926 192 72 10",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3774,9 +3774,9 @@
     "email": "sm680director@lenta.com",
     "role": "hr_dept",
     "name": "Вербова Ирина 9-977-857-87-89",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3784,9 +3784,9 @@
     "email": "tatyana.shkerina@lenta.com",
     "role": "hr_dept",
     "name": "Вербова Ирина 9-977-857-87-89",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3794,9 +3794,9 @@
     "email": "kristina.bobkova@lenta.com",
     "role": "hr_dept",
     "name": "Бобкова Кристина 8-965-119-37-13",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3804,9 +3804,9 @@
     "email": "sm683director@lenta.com",
     "role": "hr_dept",
     "name": "Бобкова Кристина 8-965-119-37-13",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3814,9 +3814,9 @@
     "email": "lenta7hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Семыкина Анна Викторовна 7 (981) 963-41-53",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3824,9 +3824,9 @@
     "email": "lenta71hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Ануфриева Марина 8(383)210-54-80 ; 9137205808",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3834,9 +3834,9 @@
     "email": "lenta72hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Шабалина Яна Владимировна 9139248813",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3844,9 +3844,9 @@
     "email": "lenta73hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Енина Марина Викторовна 9137205840, 9237772461",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3854,9 +3854,9 @@
     "email": "lenta75hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Васюнова Елена Михайловна 9331609659",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3864,9 +3864,9 @@
     "email": "lenta76hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Васякина Мария Андреевна 9136100812",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3874,9 +3874,9 @@
     "email": "lenta77hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Сухотерина Анастасия Николаевна 9137205846",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3884,9 +3884,9 @@
     "email": "lenta78hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Гончарова Марина Олеговна 89136100816",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3894,9 +3894,9 @@
     "email": "lenta79hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Усик Оксана Петровна 9136100818, 3812767682",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3904,9 +3904,9 @@
     "email": "lenta8hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Рогаткина Екатерина 79819634517",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3914,9 +3914,9 @@
     "email": "alexander.yatsenko@lenta.com",
     "role": "hr_dept",
     "name": "Чусовкова Любовь Геннадьевна 9137304388",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3924,9 +3924,9 @@
     "email": "denis.belanov@lenta.com",
     "role": "hr_dept",
     "name": "Чусовкова Любовь Геннадьевна 9137304388",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3934,9 +3934,9 @@
     "email": "ilya.n.kalashnikov@lenta.com",
     "role": "hr_dept",
     "name": "Чусовкова Любовь Геннадьевна 9137304388",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3944,9 +3944,9 @@
     "email": "konstantin.drayling@lenta.com",
     "role": "hr_dept",
     "name": "Чусовкова Любовь Геннадьевна 9137304388",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3954,9 +3954,9 @@
     "email": "lenta80hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Чусовкова Любовь Геннадьевна 9137304388",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3964,9 +3964,9 @@
     "email": "lenta80productiondepartment@lenta.com",
     "role": "hr_dept",
     "name": "Чусовкова Любовь Геннадьевна 9137304388",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3974,9 +3974,9 @@
     "email": "eugenia.kucherenko@lenta.com",
     "role": "hr_dept",
     "name": "Сергеев Олег 8 929 382 14 35",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3984,9 +3984,9 @@
     "email": "oleg.sergeev@lenta.com",
     "role": "hr_dept",
     "name": "Сергеев Олег 8 929 382 14 35",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -3994,9 +3994,9 @@
     "email": "lyubov.tsymbalist@lenta.com",
     "role": "hr_dept",
     "name": "Исаева Наталья 8-961-220-55-56",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4004,9 +4004,9 @@
     "email": "natalia.al.isaeva@lenta.com",
     "role": "hr_dept",
     "name": "Исаева Наталья 8-961-220-55-56",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4014,9 +4014,9 @@
     "email": "aleksandr.kozyrev@lenta.com",
     "role": "hr_dept",
     "name": "Козырев Александр 8 913 906 74 27",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4024,9 +4024,9 @@
     "email": "lyubov.tsymbalist@lenta.com",
     "role": "hr_dept",
     "name": "Козырев Александр 8 913 906 74 27",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4034,9 +4034,9 @@
     "email": "lenta81hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Зимина Светлана Степановна 9136100819",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4044,9 +4044,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Грановская Марина 8 (913) 003-75-45",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4054,9 +4054,9 @@
     "email": "marina.granovskaya@lenta.com",
     "role": "hr_dept",
     "name": "Грановская Марина 8 (913) 003-75-45",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4064,9 +4064,9 @@
     "email": "eugenia.kucherenko@lenta.com",
     "role": "hr_dept",
     "name": "Шихалева Ирина 8 913 715 88 95",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4074,9 +4074,9 @@
     "email": "irina.shihaleva@lenta.com",
     "role": "hr_dept",
     "name": "Шихалева Ирина 8 913 715 88 95",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4084,9 +4084,9 @@
     "email": "irina.kurnosova@lenta.com",
     "role": "hr_dept",
     "name": "Курносова Ирина 79232200325",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4094,9 +4094,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Курносова Ирина 79232200325",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4104,9 +4104,9 @@
     "email": "lenta82hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Полуэктова Евгения Борисовна 9136100822",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4114,9 +4114,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Боровкова Венера 8-923-223-98-13",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4124,9 +4124,9 @@
     "email": "venera.borovkova@lenta.com",
     "role": "hr_dept",
     "name": "Боровкова Венера 8-923-223-98-13",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4134,9 +4134,9 @@
     "email": "eugenia.kucherenko@lenta.com",
     "role": "hr_dept",
     "name": "Мелехина Ольга Александровна 89833191036",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4144,9 +4144,9 @@
     "email": "olga.melehina@lenta.com",
     "role": "hr_dept",
     "name": "Мелехина Ольга Александровна 89833191036",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4154,9 +4154,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Стародубцева Нина 79137204535",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4164,9 +4164,9 @@
     "email": "nina.starodubtseva@lenta.com",
     "role": "hr_dept",
     "name": "Стародубцева Нина 79137204535",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4174,9 +4174,9 @@
     "email": "lenta83hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Печеникова Галина 89836001511 и 89132136760",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4184,9 +4184,9 @@
     "email": "eugenia.kucherenko@lenta.com",
     "role": "hr_dept",
     "name": "Маталасова Кристина 8 913 986 34 95",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4194,9 +4194,9 @@
     "email": "kristina.matalasova@lenta.com",
     "role": "hr_dept",
     "name": "Маталасова Кристина 8 913 986 34 95",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4204,9 +4204,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Дорогина Ольга 8 993 788 63 92",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4214,9 +4214,9 @@
     "email": "lyubov.tsymbalist@lenta.com",
     "role": "hr_dept",
     "name": "Дорогина Ольга 8 993 788 63 92",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4224,9 +4224,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Данилова Олеся 79293821357",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4234,9 +4234,9 @@
     "email": "olesya.danilova@lenta.com",
     "role": "hr_dept",
     "name": "Данилова Олеся 79293821357",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4244,9 +4244,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Рубежная Олеся 79913784720",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4254,9 +4254,9 @@
     "email": "olesya.rubezhnaya@lenta.com",
     "role": "hr_dept",
     "name": "Рубежная Олеся 79913784720",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4264,9 +4264,9 @@
     "email": "l.pervutinskaya@lenta.com",
     "role": "hr_dept",
     "name": "Первутинская Людмила 79635079500",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4274,9 +4274,9 @@
     "email": "svetlana.kislenko@lenta.com",
     "role": "hr_dept",
     "name": "Первутинская Людмила 79635079500",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4284,9 +4284,9 @@
     "email": "svetlana.bondareva@lenta.com",
     "role": "hr_dept",
     "name": "Бондарева Светлана 89130972038",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4294,9 +4294,9 @@
     "email": "svetlana.kislenko@lenta.com",
     "role": "hr_dept",
     "name": "Бондарева Светлана 89130972038",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4304,9 +4304,9 @@
     "email": "elena.silina@lenta.com",
     "role": "hr_dept",
     "name": "Силина Елена 7 (960) 936-80-98",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4314,9 +4314,9 @@
     "email": "svetlana.kislenko@lenta.com",
     "role": "hr_dept",
     "name": "Силина Елена 7 (960) 936-80-98",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4324,9 +4324,9 @@
     "email": "irina.e.ershova@lenta.com",
     "role": "hr_dept",
     "name": "Ершова Ирина 8913 783 30 18",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4334,9 +4334,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Ершова Ирина 8913 783 30 18",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4344,9 +4344,9 @@
     "email": "svetlana.kislenko@lenta.com",
     "role": "hr_dept",
     "name": "Шарандин Вячеслав 89231600528",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4354,9 +4354,9 @@
     "email": "vyacheslav.sharandin@lenta.com",
     "role": "hr_dept",
     "name": "Шарандин Вячеслав 89231600528",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4364,9 +4364,9 @@
     "email": "eugenia.kucherenko@lenta.com",
     "role": "hr_dept",
     "name": "Абакумов Владимир 79231976540",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4374,9 +4374,9 @@
     "email": "vladimir.abakumov@lenta.com",
     "role": "hr_dept",
     "name": "Абакумов Владимир 79231976540",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4384,9 +4384,9 @@
     "email": "elena.putintseva@lenta.com",
     "role": "hr_dept",
     "name": "Путинцева Елена 89089509308",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4394,9 +4394,9 @@
     "email": "natalia.serbinenko@lenta.com",
     "role": "hr_dept",
     "name": "Путинцева Елена 89089509308",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4404,9 +4404,9 @@
     "email": "kristina.mitrofanova@lenta.com",
     "role": "hr_dept",
     "name": "Митрофанова Кристиина 9133307167",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4414,9 +4414,9 @@
     "email": "svetlana.kislenko@lenta.com",
     "role": "hr_dept",
     "name": "Митрофанова Кристиина 9133307167",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4424,9 +4424,9 @@
     "email": "natalya.vinokurova@lenta.com",
     "role": "hr_dept",
     "name": "Винокурова Наталья 8-929-391-11-41",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4434,9 +4434,9 @@
     "email": "svetlana.kislenko@lenta.com",
     "role": "hr_dept",
     "name": "Винокурова Наталья 8-929-391-11-41",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4444,9 +4444,9 @@
     "email": "eugenia.kucherenko@lenta.com",
     "role": "hr_dept",
     "name": "Беляева Яна 8 965 823 90 68",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4454,9 +4454,9 @@
     "email": "yana.belyaeva@lenta.com",
     "role": "hr_dept",
     "name": "Беляева Яна 8 965 823 90 68",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4464,9 +4464,9 @@
     "email": "ekaterina.kaschenko@lenta.com",
     "role": "hr_dept",
     "name": "Кащенко Екатерина 79137204389",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4474,9 +4474,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Кащенко Екатерина 79137204389",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4484,9 +4484,9 @@
     "email": "anna.a.merkulova@lenta.com",
     "role": "hr_dept",
     "name": "Меркулова Анна Александровна 89137964033",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4494,9 +4494,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Меркулова Анна Александровна 89137964033",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4504,9 +4504,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Полянская Наталья 79831212246",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4514,9 +4514,9 @@
     "email": "natalya.polyanskaya@lenta.com",
     "role": "hr_dept",
     "name": "Полянская Наталья 79831212246",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4524,9 +4524,9 @@
     "email": "lenta86hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Богданова Юлия Александровна 9133006780, 9618634933",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4534,9 +4534,9 @@
     "email": "alexandra.bykova@lenta.com",
     "role": "hr_dept",
     "name": "Быкова Александра ДСМ : 8 913 980 88 29",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4544,9 +4544,9 @@
     "email": "lyubov.tsymbalist@lenta.com",
     "role": "hr_dept",
     "name": "Быкова Александра ДСМ : 8 913 980 88 29",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4554,9 +4554,9 @@
     "email": "natalia.serbinenko@lenta.com",
     "role": "hr_dept",
     "name": "Воробьева Ольга 89960374697",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4564,9 +4564,9 @@
     "email": "olga.vorobva@lenta.com",
     "role": "hr_dept",
     "name": "Воробьева Ольга 89960374697",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4574,9 +4574,9 @@
     "email": "alexey.mamontov@lenta.com",
     "role": "hr_dept",
     "name": "Мамонтов Алексей 9234124988",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4584,9 +4584,9 @@
     "email": "svetlana.kislenko@lenta.com",
     "role": "hr_dept",
     "name": "Мамонтов Алексей 9234124988",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4594,9 +4594,9 @@
     "email": "karina.novozhilova@lenta.com",
     "role": "hr_dept",
     "name": "Гапонова Юлия 952 949 41 35",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4604,9 +4604,9 @@
     "email": "yulia.gaponova@lenta.com",
     "role": "hr_dept",
     "name": "Гапонова Юлия 952 949 41 35",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4614,9 +4614,9 @@
     "email": "lenta87hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Обеднина Елена 9131802351; 8923-571-35-86",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4624,9 +4624,9 @@
     "email": "lyubov.tsymbalist@lenta.com",
     "role": "hr_dept",
     "name": "Наталия Андреева 79538595129",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4634,9 +4634,9 @@
     "email": "natalia.e.andreeva@lenta.com",
     "role": "hr_dept",
     "name": "Наталия Андреева 79538595129",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4644,9 +4644,9 @@
     "email": "alena.borova@lenta.com",
     "role": "hr_dept",
     "name": "Борова Алена 8913 921 18 60",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4654,9 +4654,9 @@
     "email": "lyubov.tsymbalist@lenta.com",
     "role": "hr_dept",
     "name": "Борова Алена 8913 921 18 60",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4664,9 +4664,9 @@
     "email": "andrey.zverev@lenta.com",
     "role": "hr_dept",
     "name": "Зверев Андрей 9627866540",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4674,9 +4674,9 @@
     "email": "svetlana.kislenko@lenta.com",
     "role": "hr_dept",
     "name": "Зверев Андрей 9627866540",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4684,9 +4684,9 @@
     "email": "marina.tovt@lenta.com",
     "role": "hr_dept",
     "name": "Товт Марина 8-929-396-9390",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4694,9 +4694,9 @@
     "email": "svetlana.kislenko@lenta.com",
     "role": "hr_dept",
     "name": "Товт Марина 8-929-396-9390",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4704,9 +4704,9 @@
     "email": "lenta88hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Деменьшина Ольга 9131005924",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4714,9 +4714,9 @@
     "email": "lenta9hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Петухова Светлана Юрьевна 981-963-41-50",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4724,9 +4724,9 @@
     "email": "lenta95hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Стрелкова Кристина 89137945404",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4734,9 +4734,9 @@
     "email": "lenta96hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Захарова Наталья Сергеевна 9131005925",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4744,9 +4744,9 @@
     "email": "lenta97hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Кисленко Светлана Юрьевна 9836001512",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   },
   {
@@ -4754,9 +4754,9 @@
     "email": "lenta99hrdepartment@lenta.com",
     "role": "hr_dept",
     "name": "Кузнецова Анастасия Михайловна 7 913 100-59-30; 3822289656",
-    "for_planning": true,
-    "for_reconciliation": true,
-    "for_unplanned": true,
+    "for_planning": false,
+    "for_reconciliation": false,
+    "for_unplanned": false,
     "is_active": true
   }
 ]
