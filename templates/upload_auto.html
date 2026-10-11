@@ -1,0 +1,19 @@
+{% extends "coming_soon.html" %}
+{% from "_nav_card.html" import nav_lock_modal %}
+
+{# Вкладка «Настройка автозагрузки» (П2): заглушка. «Настроить» — только для
+   права upload.auto (суперадмин); остальным модалка объясняет почему. #}
+{% block brand_subtitle %}<p class="brand-subtitle">Загрузка данных</p>{% endblock %}
+
+{% block before_content %}
+<div class="page page-pad-top">
+    {% set active = 'auto' %}
+    {% include "_upload_tabs.html" %}
+</div>
+{% endblock %}
+
+{% block coming_soon_extra %}
+    <a href="#" class="btn btn-primary mt-14" data-locked="1" data-title="Настройка автозагрузки"
+       {% if can_configure %}data-coming-soon="1"{% else %}data-message="Доступно только системному суперадмину."{% endif %}>Настроить</a>
+    {{ nav_lock_modal() }}
+{% endblock %}

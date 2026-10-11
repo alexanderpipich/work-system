@@ -25,6 +25,8 @@
 
 {% block content %}
 <div class="page page-pad-top">
+    {% set active = 'upload' %}
+    {% include "_upload_tabs.html" %}
 
     {% if message %}
         <div class="alert alert-success mt-0 mb-20">{{ message }}</div>
