@@ -110,7 +110,7 @@ def run_fix(path, user_id, env=None):
         finally:
             db.close()
 
-    user = session.query(User).get(user_id)
+    user = session.get(User, user_id)
     session.expunge(user)
     main.app.dependency_overrides[get_db] = override_db
     main.app.dependency_overrides[current_user] = lambda: user
