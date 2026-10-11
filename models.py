@@ -95,6 +95,8 @@ class User(Base):
     # П4: m | f | NULL — для «гражданин/гражданка» и «получил/получила»; если пусто,
     # генератор угадывает по отчеству и предлагает сохранить.
     gender = Column(String(1), nullable=True)
+    # П4: почта для уведомлений (сроки документов); у большинства сотрудников пусто.
+    email = Column(String, nullable=True)
     # Закреплённый ТМ (User с ролью tm); может быть пустым.
     tm_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     # Загруженные QR-пропуска (до 3, с подписью специальности). qr_image_path выше — legacy,
@@ -410,6 +412,9 @@ class DocumentType(Base):
     is_active = Column(Boolean, default=True)
     sort_order = Column(Integer, default=0)
     is_student_doc = Column(Boolean, default=False)
+    # П4: уровни напоминаний до окончания срока, «30,14,7,0»; NULL — из настроек
+    # (env DOCUMENT_ALERT_DAYS). Первый уровень — порог статуса «скоро истекает».
+    alert_days = Column(String, nullable=True)
 
     created_at = Column(DateTime, default=now_utc)
     updated_at = Column(DateTime, nullable=True)
@@ -740,6 +745,22 @@ class Country(Base):
     aliases = Column(String, nullable=True)  # CSV сокращений для матчинга («РФ»→«Россия»)
     # П4: «гражданин(ка) Республики Узбекистан» в договоре.
     name_genitive = Column(String, nullable=True)
+
+
+class DocumentExpiryAlert(Base):
+    """Напоминание о сроке документа (П4): документ × уровень × адресат — один раз."""
+    __tablename__ = "document_expiry_alerts"
+    __table_args__ = (
+        UniqueConstraint("document_id", "level", "recipient_user_id", name="uq_document_expiry_alert"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("employee_documents.id"), nullable=False, index=True)
+    level = Column(Integer, nullable=False)  # дней до окончания: 30 / 14 / 7 / 0
+    recipient_user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    email_status = Column(String, nullable=True)  # sent | disabled | failed | NULL (нет почты)
+    created_at = Column(DateTime, default=now_utc)
+    read_at = Column(DateTime, nullable=True)
 
 
 class Region(Base):

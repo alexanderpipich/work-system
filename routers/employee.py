@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
 from dependencies import current_user, get_db
+from document_alerts import employee_banners
 from document_helpers import (
     employee_completeness,
     employee_document_rows,
@@ -120,6 +121,8 @@ def cabinet(
             "all_ok": all_ok,
             "attention_count": attention_count,
             "status_styles": _STATUS_STYLES,
+            # П4: напоминания о сроках документов (DocumentExpiryAlert сотруднику).
+            "expiry_banners": employee_banners(session, user),
             "error": None,
         },
     )

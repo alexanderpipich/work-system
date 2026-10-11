@@ -36,6 +36,7 @@ DOCUMENT_TYPE_FIELDS = [
     "name", "sort_order", "description", "help_text", "citizenship_filter",
     "requires_number", "requires_issue_date", "requires_expiry_date", "allow_permanent",
     "extra_field_1_label", "extra_field_2_label", "is_required", "is_active", "is_student_doc",
+    "alert_days",
 ]
 RATE_KEY = ["service", "level", "format", "city", "store", "employee_name", "active_from", "active_to"]
 DATE_FIELDS = {"active_from", "active_to"}
@@ -109,7 +110,7 @@ def _document_type_spec():
         model=DocumentType,
         key=lambda r: (r["name"], r["sort_order"]),
         to_record=lambda o, refs: _plain(o, DOCUMENT_TYPE_FIELDS),
-        to_values=lambda r, refs: {f: r[f] for f in DOCUMENT_TYPE_FIELDS},
+        to_values=lambda r, refs: {f: r.get(f) for f in DOCUMENT_TYPE_FIELDS},
     )
 
 

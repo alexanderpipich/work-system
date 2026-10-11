@@ -26,6 +26,9 @@
             </div>
         </div>
         <div class="topbar-actions">
+            {% if request and request.state and request.state.expiry_alerts %}
+            <a href="/admin/documents/expiring" class="back-link" title="Истекают сроки документов">Сроки документов: {{ request.state.expiry_alerts }}</a>
+            {% endif %}
             {% block topbar_actions %}<a href="/logout" class="logout">Выйти</a>{% endblock %}
         </div>
     </div>

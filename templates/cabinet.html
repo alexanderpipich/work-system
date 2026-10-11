@@ -59,6 +59,9 @@
 
 {% block content %}
 <main class="page page-narrow page-pad-top">
+    {% for banner in expiry_banners or [] %}
+    <div class="alert alert-error mt-0 mb-20">{{ banner }}</div>
+    {% endfor %}
     {% if user.password_is_temporary %}
     <div class="alert alert-warn alert-row mt-0 mb-20">
         <span>Вы используете временный пароль. Рекомендуем сменить его на свой.</span>

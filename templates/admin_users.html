@@ -234,6 +234,11 @@
                                 </div>
 
                                 <div class="field">
+                                    <label>Email (уведомления о сроках документов)</label>
+                                    <input type="email" name="email" value="{{ user.email or '' }}" placeholder="name@example.com">
+                                </div>
+
+                                <div class="field">
                                     <label>Дата рождения</label>
                                     <input type="date" name="birth_date" value="{{ user.birth_date.isoformat() if user.birth_date else '' }}">
                                 </div>
