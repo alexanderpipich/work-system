@@ -41,11 +41,14 @@
                 <tbody>
                     {% for row in rows %}
                     <tr>
-                        <td>{{ row.employee_name }}</td>
+                        <td>
+                            {{ row.employee_name }}
+                            {% if row.contract %}<div class="muted">договор №{{ row.contract.document_number or '—' }}{% if row.contract.issue_date %} от {{ row.contract.issue_date.strftime('%d.%m.%Y') }}{% endif %}</div>{% endif %}
+                        </td>
                         <td>{{ row.citizenship or '—' }}</td>
-                        <td>{{ row.last_date.strftime('%d.%m.%Y') }}</td>
+                        <td>{{ row.last_date.strftime('%d.%m.%Y') if row.last_date else 'смен нет' }}</td>
                         <td>{{ row.store or '—' }}{% if row.city %} · {{ row.city }}{% endif %}</td>
-                        <td>{{ row.days_ago }}</td>
+                        <td>{{ row.days_ago if row.days_ago is not none else '—' }}</td>
                         <td>
                             {% if row.decision == 'dismiss' %}<span class="pill pill-danger">к увольнению</span>
                             {% elif row.decision == 'keep' %}<span class="pill pill-success">оставить</span>
@@ -56,6 +59,14 @@
                                 <button class="btn btn-danger btn-sm" name="decision" value="dismiss">К увольнению</button>
                                 <button class="btn btn-primary btn-sm" name="decision" value="keep">Оставить</button>
                             </form>
+                            {% if row.decision == 'dismiss' and row.contract %}
+                            {# П4: уволен — договор в архив с датой. #}
+                            <form method="post" action="{{ base_path }}/dismissals/archive-contract" class="decide-form mt-8">
+                                <input type="hidden" name="document_id" value="{{ row.contract.id }}">
+                                <input type="date" name="dismissed_on">
+                                <button class="btn btn-secondary btn-sm">Архивировать договор</button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
