@@ -45,7 +45,7 @@
     "name": "Комплексные услуги по комплектации заказов Маркетплейса и Дарксторов",
     "aliases": null,
     "is_active": true,
-    "excluded_from_payroll": true
+    "excluded_from_payroll": false
   },
   {
     "name": "Неквалифицированные услуги в столовой",
@@ -171,7 +171,7 @@
     "name": "Услуги комплектации заказов в ГМ и СМ",
     "aliases": null,
     "is_active": true,
-    "excluded_from_payroll": true
+    "excluded_from_payroll": false
   },
   {
     "name": "Услуги по выкладке СОФ",
