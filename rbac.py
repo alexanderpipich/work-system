@@ -64,20 +64,21 @@ PERMISSIONS = {
         "audit.hr_view", "hr_team.manage", "schedules.view",
         "stores.directory.view", "stores.contacts.view", "contracts.view", "users.view",
         "payouts.advances.select_any", "payouts.advances.fix", "payouts.export",
-        "regions.manage",
+        "regions.manage", "contracts.manage",
     },
     ROLE_TM: {
         "employees.view", "employees.manage", "documents.view", "documents.manage",
         "requisites.view", "requisites.manage", "reports.view", "payroll.view", "payroll.export",
         "rates.view", "lmk.view", "password.reset_limited", "schedules.view",
         "stores.directory.view", "stores.contacts.view", "users.view",
-        "payouts.advances.select_own",
+        "payouts.advances.select_own", "contracts.view",
     },
     # Кадровик: документы, гражданства, типы документов, мониторинг сотрудников,
     # справочники. Без выплат, ставок, реквизитов и рассылок.
     ROLE_HR_CLERK: {
         "employees.view", "documents.view", "documents.manage",
         "citizenship.manage", "services.view", "contracts.view", "users.view", "regions.manage",
+        "contracts.manage",
         "stores.directory.view", "stores.contacts.view",
     },
     ROLE_ECONOMIST: {

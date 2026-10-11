@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{# Форма договора / ходатайства (П4) с проверкой полноты. Недостающее вводится на
+   месте и сохраняется в источник (сотрудник, документ, юрлицо, регион). #}
+{% set is_contract = kind == 'contract' %}
+{% set title = 'Трудовой договор' if is_contract else 'Ходатайство' %}
+
+{% macro fix_input(f) -%}
+{% set t = f.target %}
+{% if t[0] == 'user' %}{% set name = 'fix:user:' ~ t[1] %}
+{% elif t[0] == 'doc' %}{% set name = 'fix:doc:' ~ t[1] ~ ':' ~ t[2] %}
+{% elif t[0] == 'patent' %}{% set name = 'fix:patent:' ~ t[1] %}
+{% elif t[0] == 'le' %}{% set name = 'fix:le:' ~ t[1] %}
+{% elif t[0] == 'region' %}{% set name = 'fix:region:' ~ t[1] %}
+{% endif %}
+{% if t[0] == 'user' and t[1] == 'gender' %}
+<select name="{{ name }}"><option value="">—</option><option value="m">мужской</option><option value="f">женский</option></select>
+{% elif t[-1].endswith('date') or t[-1] == 'expiry_date' %}
+<input type="date" name="{{ name }}">
+{% else %}
+<input type="text" name="{{ name }}" placeholder="{{ f.label }}">
+{% endif %}
+{%- endmacro %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block brand_title %}{{ title }}{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">{{ employee.employee_name }}{% if region %} · {{ region.name }}{% endif %}</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="/admin/contracts">Договоры</a>{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: проверка полноты */
+    .fill-table td { vertical-align: middle; }
+    .fill-table tr.is-missing td { background: var(--error-bg); }
+    .fill-table tr.is-missing .fill-label { color: var(--error-text); font-weight: 700; }
+    .fill-table input, .fill-table select { min-width: 220px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top page-wide">
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
+
+    <form method="post" action="/admin/contracts/{{ kind }}/{{ employee.id }}">
+        <div class="card">
+            <h2>Параметры</h2>
+            <div class="form-grid align-end">
+                <div class="field"><label>Юрлицо</label>
+                    <select name="legal_entity_id">
+                        <option value="0">— выберите —</option>
+                        {% for e in legal_entities %}<option value="{{ e.id }}" {% if entity and entity.id == e.id %}selected{% endif %}>{{ e.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="field"><label>Регион{% if profile.region and region and region.id == profile.region.id %} <span class="pill pill-info">по последним сменам</span>{% endif %}</label>
+                    <select name="region_id">
+                        <option value="0">— выберите —</option>
+                        {% for r in regions %}<option value="{{ r.id }}" {% if region and region.id == r.id %}selected{% endif %}>{{ r.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                {% if is_contract %}
+                <div class="field"><label>Номер договора</label><input type="text" name="contract_number" value="{{ form.contract_number }}"></div>
+                <div class="field"><label>Дата договора</label><input type="date" name="contract_date" value="{{ form.contract_date.isoformat() }}"></div>
+                <div class="field"><label>Город</label><input type="text" name="city" value="{{ form.city }}" placeholder="г. Санкт-Петербург"></div>
+                <div class="field"><label>Вступает в силу</label><input type="date" name="effective_date" value="{{ form.effective_date.isoformat() if form.effective_date else '' }}" placeholder="= дата договора"></div>
+                <div class="field"><label>Начало работы</label><input type="date" name="start_date" value="{{ form.start_date.isoformat() if form.start_date else '' }}"></div>
+                <div class="field"><label>Должность</label><input type="text" name="position" value="{{ form.position or values.position }}" placeholder="{{ 'из патента' if with_patent else 'подсобный рабочий' }}"></div>
+                <div class="field"><label>Ставка за час, ₽</label><input type="text" name="rate" value="{{ form.rate }}" placeholder="232,18"></div>
+                <div class="field"><label>Срок</label>
+                    <label class="bulk-check"><input type="radio" name="term_indefinite" value="1" {% if form.term_indefinite %}checked{% endif %}> бессрочный</label>
+                    <label class="bulk-check"><input type="radio" name="term_indefinite" value="0" {% if not form.term_indefinite %}checked{% endif %}> до даты</label>
+                    <input type="date" name="term_until" value="{{ form.term_until.isoformat() if form.term_until else '' }}"
+                           {% if with_patent and profile.patent_expiry %}max="{{ profile.patent_expiry.isoformat() }}"{% endif %}>
+                    {% if with_patent and profile.patent_expiry %}<span class="field-hint">Не позже окончания патента {{ profile.patent_expiry.strftime('%d.%m.%Y') }}</span>{% endif %}
+                </div>
+                {% else %}
+                <div class="field"><label>Дата ходатайства</label><input type="date" name="petition_date" value="{{ form.petition_date.isoformat() }}"></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Проверка полноты{% if missing %} — не хватает: {{ missing|length }}{% else %} — всё заполнено{% endif %}</h2>
+            <div class="table-wrap fill-table">
+                <table>
+                    <thead><tr><th>Поле</th><th>Значение</th><th>Источник</th><th>Ввести</th></tr></thead>
+                    <tbody>
+                    {% for f in fields %}
+                        {% if f.target and f.target[0] != 'form' or f.missing %}
+                        <tr class="{% if f.missing %}is-missing{% endif %}">
+                            <td class="fill-label">{{ f.label }}</td>
+                            <td>{{ f.value or '—' }}</td>
+                            <td class="muted">{{ f.source }}</td>
+                            <td>{% if f.missing and f.target and f.target[0] != 'form' %}{{ fix_input(f) }}{% elif f.missing %}<span class="muted">в параметрах выше</span>{% endif %}</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="field-hint">Введённое сохраняется туда, откуда поле берётся: в карточку сотрудника, его документ, юрлицо или регион.</p>
+        </div>
+
+        <div class="card">
+            <div class="row">
+                <button type="submit" name="action" value="check" class="btn btn-secondary">Сохранить и проверить</button>
+                <button type="submit" name="action" value="generate" class="btn btn-primary" {% if missing %}disabled title="Не хватает данных"{% endif %}>Сгенерировать</button>
+                <button type="submit" name="action" value="generate_skip" class="btn btn-peach">Сгенерировать, пропустив недостающее</button>
+            </div>
+            <p class="field-hint">Пропущенное попадёт в документ как «НЕТ ДАННЫХ» с жёлтой подсветкой. Документ сохранится у сотрудника и скачается.</p>
+        </div>
+    </form>
+</div>
+{% endblock %}

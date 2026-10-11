@@ -35,6 +35,7 @@ from routers.payroll import router as payroll_router
 from routers.payroll_runs import router as payroll_runs_router
 from routers.payouts import router as payouts_router
 from routers.regions import router as regions_router
+from routers.contracts import router as contracts_router
 from routers.rates import router as rates_router
 from routers.referral import router as referral_router
 from routers.requisites import router as requisites_router
@@ -87,6 +88,7 @@ app.include_router(payroll_router)
 app.include_router(payroll_runs_router)
 app.include_router(payouts_router)
 app.include_router(regions_router)
+app.include_router(contracts_router)
 app.include_router(rates_router)
 app.include_router(referral_router)
 app.include_router(requisites_router)
