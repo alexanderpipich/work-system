@@ -12,6 +12,11 @@ def extract_tk_number(store_str: str):
 
 
 def populate_stores_from_shifts(session: Session) -> dict:
+    """Создать недостающие ТК из выгрузки смен (П4.2): номер ТК, название, город,
+    формат. Адреса и контакты — пустые, их заполняет ТМ по мере надобности.
+    У существующих ТК заполняются только пустые название/город/формат."""
+    from utils import normalize_city, normalize_format
+
     rows = session.query(Shift.store, Shift.city, Shift.format).distinct().all()
 
     seen_tk: dict[int, tuple] = {}
@@ -22,9 +27,13 @@ def populate_stores_from_shifts(session: Session) -> dict:
         if tk is None:
             unrecognized.append(store_str)
             continue
-        # prefer longest display name as most descriptive
+        city = normalize_city(city) or None
+        fmt = normalize_format(fmt) or None
+        # prefer longest display name as most descriptive; keep a known city/format
         if tk not in seen_tk or len(store_str) > len(seen_tk[tk][0]):
-            seen_tk[tk] = (store_str, city, fmt)
+            previous = seen_tk.get(tk)
+            seen_tk[tk] = (store_str, city or (previous[1] if previous else None),
+                           fmt or (previous[2] if previous else None))
 
     created = 0
     updated = 0

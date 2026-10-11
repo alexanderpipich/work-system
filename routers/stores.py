@@ -1,4 +1,5 @@
 import json
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -50,7 +51,13 @@ def admin_stores_populate(
     user=Depends(_manage),
 ):
     report = populate_stores_from_shifts(session)
-    return JSONResponse(report)
+    create_audit_log(session, request, user, "stores.populated_from_shifts", "store", None,
+                     "Магазины из смен", new_value=report)
+    session.commit()
+    message = f"Из смен: создано ТК {report['created']}, дополнено {report['updated']}"
+    if report["unrecognized"]:
+        message += f"; без номера ТК (не созданы): {', '.join(report['unrecognized'][:5])}"
+    return RedirectResponse(f"/admin/stores?message={quote(message)}", status_code=302)
 
 
 # ── list ──────────────────────────────────────────────────────────────────────
