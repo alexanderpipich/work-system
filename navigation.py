@@ -15,6 +15,7 @@
 """
 
 from rbac import (
+    ROLE_BRIGADIER,
     ROLE_ECONOMIST,
     ROLE_HR_CLERK,
     ROLE_HR_LEAD,
@@ -131,7 +132,8 @@ NAV_GROUPS = [
              "Просмотр выходов сотрудников по магазинам и периодам в формате календарной таблицы.",
              [("/admin/schedules", "schedules.admin_view", None),
               ("/economist/schedules", "schedules.view", ECON),
-              ("/hr/schedules", "schedules.view", HR_VIEW)]),
+              ("/hr/schedules", "schedules.view", HR_VIEW),
+              ("/brigadier", "schedules.view", {ROLE_BRIGADIER})]),
         card("requisites", "Реквизиты",
              "Реквизиты сотрудников: карта, телефон для выплаты, банк, ИНН, счёт и БИК.",
              [("/admin/requisites", "requisites.manage", SA),

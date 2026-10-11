@@ -2,45 +2,51 @@
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from access import get_economist_cities
-from dependencies import get_db
-from rbac import HR_CABINET_ROLES, canonical_role, get_scope_values, require_permission
+from dependencies import current_user
+from navigation import all_cards, build_navigation
+from rbac import canonical_role, require_permission, role_label
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 require_hr_dashboard = require_permission("employees.view", audit_denied=True)
-_admin_dashboard = require_permission("admin.dashboard")
 _economist_dashboard = require_permission("economist.dashboard")
 _headhunter_dashboard = require_permission("headhunter.dashboard")
 
 
+def render_dashboard(request, user):
+    """Единый дашборд (П2): все группы и карточки, недоступные — приглушены."""
+    role = canonical_role(user)
+    return templates.TemplateResponse(
+        request,
+        "admin_dashboard.html",
+        {
+            "user": user,
+            "role": role,
+            "role_label": role_label(role),
+            "groups": build_navigation(user),
+            "cards_total": sum(1 for _ in all_cards()),
+        },
+    )
+
+
+# /admin открыт любому вошедшему: это только меню, права проверяет каждый раздел.
 @router.get("/admin", response_class=HTMLResponse)
-def admin_dashboard(request: Request, user=Depends(_admin_dashboard)):
-    return templates.TemplateResponse(request, "admin_dashboard.html", {"admin": user})
+def admin_dashboard(request: Request, user=Depends(current_user)):
+    return render_dashboard(request, user)
 
 
+# /economist и /hr — прежние «домашние» адреса ролей (на них ведёт вход), теперь тот же дашборд.
 @router.get("/economist", response_class=HTMLResponse)
 def economist_dashboard(request: Request, user=Depends(_economist_dashboard)):
-    return templates.TemplateResponse(
-        request, "economist_dashboard.html",
-        {"user": user, "allowed_cities": get_economist_cities(user)},
-    )
+    return render_dashboard(request, user)
+
+
+@router.get("/hr", response_class=HTMLResponse)
+def hr_dashboard(request: Request, user=Depends(require_hr_dashboard)):
+    return render_dashboard(request, user)
 
 
 @router.get("/headhunter", response_class=HTMLResponse)
 def headhunter_dashboard(request: Request, user=Depends(_headhunter_dashboard)):
     return templates.TemplateResponse(request, "headhunter.html", {"user": user})
-
-
-@router.get("/hr", response_class=HTMLResponse)
-def hr_dashboard(request: Request, session=Depends(get_db), user=Depends(require_hr_dashboard)):
-    role = canonical_role(user)
-    if role not in HR_CABINET_ROLES:
-        return templates.TemplateResponse(request, "hr_dashboard.html", {"user": user, "role": role, "allowed_cities": [], "access_error": True}, status_code=403)
-    allowed_cities = get_scope_values(session, user, "city")
-    return templates.TemplateResponse(
-        request, "hr_dashboard.html",
-        {"user": user, "role": role, "allowed_cities": sorted(allowed_cities) if allowed_cities is not None else None, "access_error": False},
-    )
-
