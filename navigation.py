@@ -198,7 +198,7 @@ NAV_GROUPS = [
     {"key": "planning", "title": "Планирование и рассылки", "cards": [
         card("planning_bp", "Бланк планирования",
              "Формирование PDF-бланка планирования по магазину (по образцу БП-007) и скачивание.",
-             [("/admin/planning-bp", "admin.settings", None)]),
+             [("/admin/planning-bp", "planning.manage", None)]),
         card("monitoring", "Мониторинг сотрудников",
              "Рекомендации для бланка планирования: кого убрать из планирования, кого добавить — по фактическим сменам.",
              [("/admin/employees/monitoring", "employees.view", SA),

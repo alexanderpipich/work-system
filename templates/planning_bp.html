@@ -57,6 +57,7 @@
         <p class="field-hint mb-14">Слева — магазины с привязками/рекомендациями (красная точка = есть рекомендации).
             Справа — сотрудники выбранного магазина. Добавить/убрать — только по вашему клику.</p>
 
+        {% if can_settings %}
         <form method="post" action="/admin/planning-bp/monitoring/settings" class="mb-20">
             <input type="hidden" name="store" value="{{ selected_store }}">
             <div class="form-grid align-end">
@@ -69,6 +70,13 @@
                 </div>
             </div>
         </form>
+        {% else %}
+        <form method="post" action="/admin/planning-bp/monitoring/recompute" class="mb-20">
+            <input type="hidden" name="store" value="{{ selected_store }}">
+            <span class="muted">Пороги: нет смен {{ settings.inactive_days }} дн. → убрать; {{ settings.minimum_shifts }} смен за {{ settings.analysis_days }} дн. → добавить.</span>
+            <button type="submit" class="btn btn-secondary btn-sm">Обновить рекомендации</button>
+        </form>
+        {% endif %}
 
         <div class="bp-cols">
             <div class="bp-stores">
@@ -123,7 +131,12 @@
                     <h4 class="mt-14 mb-8">В бланке ({{ store_block.assignments|length }})</h4>
                     {% if store_block.assignments %}
                     <ul class="bp-list">
-                        {% for a in store_block.assignments %}<li>{{ a.employee_name }}</li>{% endfor %}
+                        {% for a in store_block.assignments %}<li>{{ a.employee_name }}
+                            <form method="post" action="/admin/planning-bp/assignment/deactivate" class="inline-form"
+                                  onsubmit="return confirm('Убрать {{ a.employee_name }} из БП?');">
+                                <input type="hidden" name="assignment_id" value="{{ a.id }}"><input type="hidden" name="store" value="{{ store_block.store }}">
+                                <button type="submit" class="btn btn-secondary btn-sm">Убрать из БП</button>
+                            </form></li>{% endfor %}
                     </ul>
                     {% else %}
                     <p class="empty">Нет закреплённых сотрудников.</p>
@@ -134,6 +147,8 @@
                         <div class="field bp-name"><label>Добавить вручную (ФИО)</label><input type="text" name="employee_name" placeholder="Фамилия Имя"></div>
                         <button type="submit" class="btn btn-primary">Добавить в БП</button>
                     </form>
+                {% elif selected_not_gm %}
+                    <p class="empty">{{ selected_store }} — не ГМ: бланк планирования ведётся только для гипермаркетов.</p>
                 {% else %}
                     <p class="empty">Выберите магазин слева.</p>
                 {% endif %}

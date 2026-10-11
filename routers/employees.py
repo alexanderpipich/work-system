@@ -38,6 +38,7 @@ from monitoring_helpers import (
     recompute_recommendations,
 )
 from navigation import build_navigation, employees_groups
+from store_helpers import allows_bp, store_formats
 from rbac import HR_CABINET_ROLES, canonical_role, has_permission, is_superadmin, require_permission
 from time_helpers import business_today, now_utc
 from utils import normalize_person_name, normalize_text
@@ -545,13 +546,17 @@ def dismissals_archive_contract(request: Request, document_id: int = Form(...), 
 def reconciliations_page(request: Request, message: str = "", session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     rows = _scope(session.query(StoreReconciliation), StoreReconciliation, user).order_by(StoreReconciliation.id.desc()).all()
     settings = _scope(session.query(StoreReconciliationSettings), StoreReconciliationSettings, user).order_by(StoreReconciliationSettings.store).all()
-    return templates.TemplateResponse(request, "employees_reconciliations.html", _context(request, user, "reconciliations", rows=rows, settings=settings, stores=_stores(session,user), message=message))
+    formats = store_formats(session)
+    # П4.2: сверки — только для ГМ; СМ в списке магазинов не предлагаем.
+    stores = [item for item in _stores(session, user) if allows_bp(formats.get(item[0]))]
+    return templates.TemplateResponse(request, "employees_reconciliations.html", _context(request, user, "reconciliations", rows=rows, settings=settings, stores=stores, message=message))
 
 
 @router.post("/admin/employees/reconciliations/settings")
 @router.post("/economist/employees/reconciliations/settings")
 @router.post("/hr/employees/reconciliations/settings")
 def reconciliation_settings(request: Request, store: str = Form(...), email: str = Form(default=""), enabled: str = Form(default=""), comment: str = Form(default=""), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
+    if not allows_bp(store_formats(session).get(normalize_text(store))): return _redirect(request,"/reconciliations",message="Сверки ведутся только для формата ГМ")
     city=_store_city(session,store)
     if not _scope_allowed(session,user,city,store): return _redirect(request,"/reconciliations",message="Нет доступа к городу")
     row=session.query(StoreReconciliationSettings).filter(StoreReconciliationSettings.store==normalize_text(store)).first() or StoreReconciliationSettings(store=normalize_text(store)); session.add(row); row.city=city; row.email=normalize_text(email) or None; row.enabled=enabled=="1"; row.comment=normalize_text(comment) or None; session.commit()
@@ -562,6 +567,7 @@ def reconciliation_settings(request: Request, store: str = Form(...), email: str
 @router.post("/economist/employees/reconciliations/generate")
 @router.post("/hr/employees/reconciliations/generate")
 def reconciliation_generate(request: Request, store: str = Form(...), date_from: str = Form(...), date_to: str = Form(...), session: Session = Depends(get_db), user=Depends(require_employee_manager)):
+    if not allows_bp(store_formats(session).get(normalize_text(store))): return _redirect(request,"/reconciliations",message="Сверки ведутся только для формата ГМ")
     city=_store_city(session,store)
     if not _scope_allowed(session,user,city,store): return _redirect(request,"/reconciliations",message="Нет доступа к городу")
     start,end=_parse_date(date_from),_parse_date(date_to)

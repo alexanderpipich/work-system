@@ -68,6 +68,34 @@ def populate_stores_from_shifts(session: Session) -> dict:
     return {"created": created, "updated": updated, "unrecognized": unrecognized}
 
 
+def store_formats(session: Session) -> dict:
+    """{строка магазина из смен: формат} — по справочнику ТК, иначе по последней смене.
+
+    П4.2: БП и сверки делаются только для ГМ; для СМ разделы действий не предлагают.
+    """
+    from utils import normalize_format
+
+    by_tk = {s.tk_number: normalize_format(s.format) for s in session.query(Store).all() if s.format}
+    result = {}
+    for store_str, fmt in session.query(Shift.store, Shift.format).distinct().all():
+        tk = extract_tk_number(store_str)
+        known = by_tk.get(tk) if tk is not None else None
+        result[store_str] = known or result.get(store_str) or normalize_format(fmt)
+    return result
+
+
+def is_gm(fmt) -> bool:
+    from utils import normalize_format
+
+    return normalize_format(fmt) == "ГМ"
+
+
+def allows_bp(fmt) -> bool:
+    """БП и сверки: ГМ — да; явно другой формат (СМ…) — нет; формат неизвестен — не
+    отсекаем (магазина нет в справочнике и смен ещё не было)."""
+    return not fmt or is_gm(fmt)
+
+
 def _find_store_by_string(session: Session, store_str: str):
     tk = extract_tk_number(store_str)
     if tk is None:
