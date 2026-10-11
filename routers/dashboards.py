@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from dependencies import current_user
-from navigation import PAYOUTS_GROUPS, all_cards, build_navigation
+from navigation import PAYOUTS_GROUPS, build_navigation
 from rbac import canonical_role, require_permission, role_label
 
 
@@ -18,6 +18,7 @@ _payroll_view = require_permission("payroll.view")
 def render_dashboard(request, user):
     """Единый дашборд (П2): все группы и карточки, недоступные — приглушены."""
     role = canonical_role(user)
+    groups = build_navigation(user)
     return templates.TemplateResponse(
         request,
         "admin_dashboard.html",
@@ -25,8 +26,8 @@ def render_dashboard(request, user):
             "user": user,
             "role": role,
             "role_label": role_label(role),
-            "groups": build_navigation(user),
-            "cards_total": sum(1 for _ in all_cards()),
+            "groups": groups,
+            "cards_total": sum(len(group["cards"]) for group in groups),
         },
     )
 
