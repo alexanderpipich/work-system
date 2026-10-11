@@ -29,3 +29,16 @@ def ensure_requisite_profile_columns():
         connection.execute(text(
             "ALTER TABLE requisites ADD COLUMN IF NOT EXISTS comment TEXT"
         ))
+        # П1-Г: карта, телефон для перевода по номеру, срок карты, способ выплаты.
+        connection.execute(text(
+            "ALTER TABLE requisites ADD COLUMN IF NOT EXISTS card_number VARCHAR"
+        ))
+        connection.execute(text(
+            "ALTER TABLE requisites ADD COLUMN IF NOT EXISTS card_phone VARCHAR"
+        ))
+        connection.execute(text(
+            "ALTER TABLE requisites ADD COLUMN IF NOT EXISTS card_expiry VARCHAR(5)"
+        ))
+        connection.execute(text(
+            "ALTER TABLE requisites ADD COLUMN IF NOT EXISTS payout_method VARCHAR NOT NULL DEFAULT 'card_phone'"
+        ))

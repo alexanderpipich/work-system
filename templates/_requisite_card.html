@@ -1,10 +1,12 @@
 {# Карточка реквизита. Ожидает в контексте `r` и (необязательно) `problems` —
-   список [(вид, текст)] из requisite_validation.requisite_problems. #}
-    <div class="req-card{% if problems %} req-card-bad{% endif %}">
+   список [(вид, текст)] из requisite_validation.requisite_problems.
+   Предупреждения (warning_kind) показываются, но карточку красной не делают. #}
+    {% set blocking = (problems or []) | rejectattr(0, 'equalto', warning_kind) | list %}
+    <div class="req-card{% if blocking %} req-card-bad{% endif %}">
         {% if problems %}
         <div class="req-problems">
             {% for kind, text in problems %}
-                <span class="pill {% if kind == blocks_payroll_kind %}pill-danger{% else %}pill-warn{% endif %}">{{ text }}</span>
+                <span class="pill {% if kind == blocks_payroll_kind %}pill-danger{% elif kind == warning_kind %}pill-info{% else %}pill-warn{% endif %}">{{ text }}</span>
             {% endfor %}
         </div>
         {% endif %}
@@ -50,8 +52,13 @@
                     </div>
 
                     <div>
+                        {% if r.card_number or not r.account_number %}
+                        <div class="small-muted">Карта · {{ payout_methods.get(r.payout_method, r.payout_method) }}</div>
+                        <div class="nowrap">{{ r.card_number | card_format if r.card_number else '—' }}</div>
+                        {% else %}
                         <div class="small-muted">Счёт</div>
-                        <div>{{ r.account_number or '—' }}</div>
+                        <div>{{ r.account_number }}</div>
+                        {% endif %}
                     </div>
 
                     <div class="open-hint">Открыть / редактировать</div>
@@ -87,6 +94,31 @@
                         <div class="field">
                             <label>ФИО сотрудника</label>
                             <input type="text" name="employee_name" value="{{ r.employee_name or '' }}" required>
+                        </div>
+
+                        <div class="field">
+                            <label>Способ выплаты</label>
+                            <select name="payout_method">
+                                {% for code, label in payout_methods.items() %}
+                                <option value="{{ code }}" {% if code == r.payout_method %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label>Номер карты</label>
+                            <input type="text" name="card_number" inputmode="numeric"
+                                   value="{{ r.card_number | card_format if r.card_number else '' }}" placeholder="0000 0000 0000 0000">
+                        </div>
+
+                        <div class="field">
+                            <label>Телефон для выплаты</label>
+                            <input type="text" name="card_phone" value="{{ r.card_phone or '' }}" placeholder="79990000000">
+                        </div>
+
+                        <div class="field">
+                            <label>Срок карты</label>
+                            <input type="text" name="card_expiry" value="{{ r.card_expiry or '' }}" placeholder="ММ/ГГ" maxlength="7">
                         </div>
 
                         <div class="field">

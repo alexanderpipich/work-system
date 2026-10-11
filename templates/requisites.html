@@ -71,6 +71,30 @@
                 </div>
 
                 <div class="field">
+                    <label>Способ выплаты</label>
+                    <select name="payout_method">
+                        {% for code, label in payout_methods.items() %}
+                        <option value="{{ code }}" {% if code == 'card_phone' %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Номер карты</label>
+                    <input type="text" name="card_number" inputmode="numeric" placeholder="0000 0000 0000 0000">
+                </div>
+
+                <div class="field">
+                    <label>Телефон для выплаты</label>
+                    <input type="text" name="card_phone" placeholder="79990000000">
+                </div>
+
+                <div class="field">
+                    <label>Срок карты</label>
+                    <input type="text" name="card_expiry" placeholder="ММ/ГГ" maxlength="7">
+                </div>
+
+                <div class="field">
                     <label>ИНН</label>
                     <input type="text" name="inn">
                 </div>
@@ -287,7 +311,7 @@
         <h3 class="mt-0 mb-0">Готовы к выплате — {{ clean|length }}</h3>
     </div>
     {% for r in clean %}
-        {% set problems = None %}
+        {% set problems = problems_by_id.get(r.id) %}
         {% include "_requisite_card.html" %}
     {% endfor %}
     {% endif %}

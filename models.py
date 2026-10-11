@@ -189,6 +189,14 @@ class Requisite(Base):
     is_third_party = Column(Boolean, default=False)
     recipient_name = Column(String, nullable=True)
 
+    # Выплата на карту (П1-Г). Номер карты — сплошные цифры; телефон — 11 цифр с 7;
+    # срок — MM/YY. Способ: card | card_phone | cash (utils.PAYOUT_METHODS).
+    # ИНН/счёт/БИК выше — запасной путь: годен хотя бы один способ.
+    card_number = Column(String, nullable=True)
+    card_phone = Column(String, nullable=True)
+    card_expiry = Column(String(5), nullable=True)
+    payout_method = Column(String, nullable=False, default="card_phone", server_default="card_phone")
+
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
 

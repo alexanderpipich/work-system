@@ -59,6 +59,7 @@ def main(argv=None):
     session = SessionLocal()
     try:
         user, created = ensure_admin(session, phone, name, password)
+        saved_name = user.employee_name
         session.commit()
     except Exception:
         session.rollback()
@@ -66,7 +67,7 @@ def main(argv=None):
     finally:
         session.close()
     action = "Создан" if created else "Обновлён"
-    print(f"{action} superadmin: {user.employee_name}, логин {phone}. Смените пароль после входа.")
+    print(f"{action} superadmin: {saved_name}, логин {phone}. Смените пароль после входа.")
     return 0
 
 

@@ -17,11 +17,12 @@ from document_helpers import (
 from models import Requisite, Shift
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today
-from utils import get_password_hash, normalize_text, verify_password
+from utils import format_card_number, get_password_hash, normalize_text, verify_password
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+templates.env.filters["card_format"] = format_card_number
 
 _STATUS_STYLES = {
     "ok":            {"border": "#16a34a", "bg": "#f0fdf4", "glyph": "✓", "label": "Проверен, годен"},

@@ -122,9 +122,14 @@
                 {% set m_doc_id = '' %}
                 {% set m_file_ext = '' %}
                 {% set m_has_manual = '' %}
-                {% set m_number = item.requisite.account_number or '—' %}
-                {% set m_issued = item.requisite.bank_name or '—' %}
+                {% if item.requisite.card_number %}
+                {% set m_number = item.requisite.card_number | card_format %}
+                {% set m_expires = item.requisite.card_expiry or '—' %}
+                {% else %}
+                {% set m_number = item.requisite.account_number or item.requisite.card_phone or '—' %}
                 {% set m_expires = 'Бессрочно' %}
+                {% endif %}
+                {% set m_issued = item.requisite.bank_name or '—' %}
             {% else %}
                 {% set m_doc_id = '' %}
                 {% set m_file_ext = '' %}
