@@ -87,7 +87,7 @@
 | Справочник услуг | `V/U@ALL` | `NONE` | `NONE` | `V@ALL` | `V/U@ALL` | `NONE` | `NONE` | Справочники › Услуги |
 | Мониторинг сотрудников | `V/A@ALL` | `V/A@HR_ALL` | `V/A@CITIES` | `V/A@ALL` | `V/A@CITIES` | `NONE` | `NONE` | Планирование и рассылки › Мониторинг сотрудников |
 | Мониторинг увольнений | `V/A@ALL` | `V/A@HR_ALL` | `V/A@CITIES` | `V/A@ALL` | `V/A@CITIES` | `NONE` | `NONE` | Документы, Кадры и комплаенс › Мониторинг увольнений |
-| Бланк планирования | `V/C/X/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | Планирование и рассылки › Бланк планирования |
+| Бланк планирования | `V/C/U/X/S@ALL` | `V/C/U/X@ALL` | `V/C/U/X@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | Планирование и рассылки › Бланк планирования |
 | Договоры (заглушка до П4) | `V@ALL` | `V@ALL` | `NONE` | `V@ALL` | `NONE` | `NONE` | `NONE` | Документы, Кадры и комплаенс › Договоры |
 | Еженедельные авансы | `V/C/U/A/X/F@ALL` | `V/U/A/X@HR_ALL` | `V/U@OWN` (свои по `tm_id`) | `NONE` | `V/U/A/X@ALL` | `NONE` | `NONE` | Время, ставки и выплаты › Выплаты › Еженедельные авансы |
 | Табель за период (черновик, фиксация) | `V/C/U/A/X/F@ALL` | `X@HR_ALL` (реестр) | `NONE` | `NONE` | `V/C/U/A/X@ALL` | `NONE` | `NONE` | Время, ставки и выплаты › Выплаты › Выплатной табель › «Табель за период» |
@@ -344,3 +344,9 @@ is_active
 - Экран авансов `/admin/payouts/advances` открыт тем, у кого есть хотя бы одно из `select_own`, `select_any`, `fix`. Вычеты аванса правят только с `payouts.advances.fix`.
 - Табель за период (`/admin/payouts/period/*`) — `payroll.manage`; реестр xlsx любого прогона — `payouts.export`; отправка — `payroll.send`, как раньше.
 - Правило «одна смена оплачивается один раз»: смена, уже оплаченная прогоном `fixed`/`sent`/`closed`, в аванс не входит, а в табеле за период вычитается (`advanced_amount`).
+
+### Реализовано в П4 и П4.2
+
+- П4: `contracts.view` (hr_lead, tm, hr_clerk), `contracts.manage` (hr_lead, hr_clerk) — «Договоры»; `regions.manage` (hr_lead, hr_clerk) — справочник регионов.
+- П4.2: `planning.manage` (hr_lead, tm) — бланк планирования `/admin/planning-bp`: закрепления (добавить / убрать из БП), рекомендации, PDF. Пороги мониторинга — по-прежнему только суперадмин (`admin.settings`). БП и сверки — только для формата ГМ.
+
