@@ -231,5 +231,76 @@ class HourlyBonusTests(unittest.TestCase):
             main.app.dependency_overrides.pop(current_user, None)
 
 
+class StatementExportTests(unittest.TestCase):
+    def test_two_sheets_two_tabel_rows_one_statement_row(self):
+        from io import BytesIO
+
+        import openpyxl
+
+        from statement_export import STATEMENT_COLUMNS, build_statement_xlsx, statement_filename, statement_rows
+
+        s = _session()
+        s.add_all([User(id=1, employee_name="Абрамов Александр", role="tm"),
+                   User(id=2, employee_name="Абазов Жанторо", tm_id=1),
+                   User(id=3, employee_name="Борисова Вера"),
+                   Store(tk_number=660, city="Москва", rate_region="Московская область", format="СМ"),
+                   Shift(employee="Абазов Жанторо", store="Лента-660 (г. Одинцово)", city="Москва", format="СМ",
+                         service="3ур_ММФ", hours=11, shift_date=datetime.date(2026, 9, 16),
+                         request_type="Основные заказы")])
+        run = PayrollRun(kind="period", status="fixed", date_from=datetime.date(2026, 9, 16),
+                         date_to=datetime.date(2026, 9, 30), legal_entity="ООО")
+        s.add(run)
+        s.flush()
+
+        def item(name, service, day, hours, rate, **extra):
+            amount = hours * rate
+            values = dict(run_id=run.id, employee_name=name, store="Лента-660 (г. Одинцово)", service=service,
+                          shift_date=datetime.date(2026, 9, day), hours=hours, rate=rate, amount=amount,
+                          bonus_amount=hours * 5, advanced_amount=0, lmk_amount=0, other_amount=0,
+                          auto_adjustments_amount=0, manual_adjustments_amount=0)
+            values.update(extra)
+            values["total_amount"] = (amount + values["bonus_amount"] + values["other_amount"]
+                                      - values["lmk_amount"] - values["advanced_amount"])
+            return PayrollRunItem(**values)
+
+        s.add_all([
+            item("Абазов Жанторо", "3ур_ММФ", 16, 11, 304, advanced_amount=3399),
+            item("Абазов Жанторо", "3ур_ММФ", 17, 10, 304),
+            item("Абазов Жанторо", "2ур_Касса", 18, 8, 280),
+            item("Борисова Вера", "3ур_ММФ", 16, 8, 304, other_amount=-500, manual_adjustments_amount=-500),
+        ])
+        s.add(AdvanceSelection(week_start=datetime.date(2026, 9, 14), employee_name="Абазов Жанторо"))
+        s.commit()
+
+        days, tabel, statement = statement_rows(s, run)
+        self.assertEqual(days, [str(d) for d in range(16, 31)])
+        abazov = [r for r in tabel if r["ФИО сотрудника Исполнителя"] == "Абазов Жанторо"]
+        self.assertEqual(len(abazov), 2)
+        mmf = next(r for r in abazov if r["Услуга"] == "3ур_ММФ")
+        self.assertEqual((mmf["Номер ТК"], mmf["Город"], mmf["Тип"], mmf["16"], mmf["17"], mmf["ИЧ"], mmf["ТМ"],
+                          mmf["Ставка"], mmf["ФОТ"]),
+                         (660, "Московская область", "СМ", 11, 10, 21, "Абрамов Александр", 304, 6384))
+        self.assertEqual(len(statement), 2)
+        row = statement[0]
+        self.assertEqual((row["ФИО сотрудника Исполнителя"], row["ИЧ"], row["ФОТ"], row["Аванс"], row["Акция"],
+                          row["Итого к Выплате"], row["Номер карты"], row["Комментарии"]),
+                         ("Абазов Жанторо", 29, 8624, 3399, 145, 8624 + 145 - 3399, "еженедельно", "еженедельно"))
+        borisova = statement[1]
+        self.assertEqual((borisova["Штраф"], borisova["Премия"], borisova["Итого к Выплате"]),
+                         (500, None, 8 * 304 + 40 - 500))
+        self.assertNotEqual(borisova["Номер карты"], "еженедельно")
+
+        workbook = openpyxl.load_workbook(BytesIO(build_statement_xlsx(days, tabel, statement)))
+        self.assertEqual(workbook.sheetnames, ["Табель", "Ведомость"])
+        header = [c.value for c in workbook["Табель"][1]]
+        self.assertEqual(header[:5] + header[-4:],
+                         ["ФИО сотрудника Исполнителя", "Номер ТК", "Город", "Тип", "Услуга", "ИЧ", "ТМ", "Ставка",
+                          "ФОТ"])
+        self.assertEqual(header[5:-4], [str(d) for d in range(16, 31)])
+        self.assertEqual([c.value for c in workbook["Ведомость"][1]], STATEMENT_COLUMNS)
+        self.assertEqual(workbook["Ведомость"].max_row, 4)  # заголовок + 2 + «Итог»
+        self.assertEqual(statement_filename(run), "Ведомость_16.09-30.09.2026.xlsx")
+
+
 if __name__ == "__main__":
     unittest.main()

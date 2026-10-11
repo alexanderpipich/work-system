@@ -65,6 +65,7 @@
             {% endif %}
             {% if run.status in ('fixed', 'sent', 'closed') and can_export %}
             <a class="btn btn-secondary" href="/admin/payouts/runs/{{ run.id }}/registry">Реестр xlsx</a>
+            <a class="btn btn-secondary" href="/admin/payouts/runs/{{ run.id }}/statement">Ведомость xlsx</a>
             {% endif %}
             {% if run.status != 'draft' %}
             <a class="btn btn-secondary" href="/admin/payroll/runs/{{ run.id }}">Строки табеля №{{ run.id }}</a>

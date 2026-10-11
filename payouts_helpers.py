@@ -430,6 +430,36 @@ def _expiry_parts(card_expiry):
     return "", ""
 
 
+def requisite_fields(session, user, name):
+    """Реквизиты сотрудника для реестра и ведомости: карта, срок, телефон,
+    получатель, банк, способ выплаты, комментарий (нет карты — наличные)."""
+    requisite = active_requisite(session, user, name)
+    method = (requisite.payout_method if requisite else None) or PAYOUT_CARD_PHONE
+    comment = ""
+    card = normalize_card_number(requisite.card_number) if requisite and requisite.card_number else ""
+    if method == PAYOUT_CASH:
+        label = PAYOUT_METHOD_LABELS[PAYOUT_CASH]
+    elif not has_card(requisite):
+        label = PAYOUT_METHOD_LABELS[PAYOUT_CASH]
+        comment = NO_CARD_COMMENT
+    else:
+        label = PAYOUT_METHOD_LABELS.get(method, PAYOUT_METHOD_LABELS[PAYOUT_CARD_PHONE])
+    month, year = _expiry_parts(requisite.card_expiry if requisite else None)
+    recipient = (requisite.recipient_name if requisite and requisite.is_third_party
+                 and requisite.recipient_name else name)
+    return {
+        "card": card,
+        "month": month,
+        "year": year,
+        "expiry": (requisite.card_expiry or "") if requisite else "",
+        "phone": (requisite.card_phone or "") if requisite else "",
+        "recipient": recipient,
+        "bank": (requisite.bank_name or "") if requisite else "",
+        "comment": comment,
+        "label": label,
+    }
+
+
 def registry_rows(session, run):
     """Строки реестра: одна на сотрудника (Σ total_amount смен) + премии отдельно."""
     purpose = "Аванс" if run.kind == RUN_KIND_ADVANCE else "Выплата"
@@ -449,38 +479,25 @@ def registry_rows(session, run):
 
     def build(name, amount, row_purpose):
         user = users.get(normalize_person_name(name))
-        requisite = active_requisite(session, user, name)
-        method = (requisite.payout_method if requisite else None) or PAYOUT_CARD_PHONE
-        comment = ""
-        card = normalize_card_number(requisite.card_number) if requisite and requisite.card_number else ""
-        if method == PAYOUT_CASH:
-            label = PAYOUT_METHOD_LABELS[PAYOUT_CASH]
-        elif not has_card(requisite):
-            label = PAYOUT_METHOD_LABELS[PAYOUT_CASH]
-            comment = NO_CARD_COMMENT
-        else:
-            label = PAYOUT_METHOD_LABELS.get(method, PAYOUT_METHOD_LABELS[PAYOUT_CARD_PHONE])
-        month, year = _expiry_parts(requisite.card_expiry if requisite else None)
-        recipient = (requisite.recipient_name if requisite and requisite.is_third_party
-                     and requisite.recipient_name else name)
+        req = requisite_fields(session, user, name)
         return {
             "Сотрудник": name,
-            "Номер карты": card,
-            "Месяц": month,
-            "Год": year,
-            "Телефон": (requisite.card_phone or "") if requisite else "",
+            "Номер карты": req["card"],
+            "Месяц": req["month"],
+            "Год": req["year"],
+            "Телефон": req["phone"],
             "Адрес эл. почты": "",
-            "Получатель ФИО": recipient,
+            "Получатель ФИО": req["recipient"],
             "Получатель Фамилия": "",
             "Получатель Имя2": "",
             "Получатель Отчество": "",
-            "Банк получателя": (requisite.bank_name or "") if requisite else "",
-            "Комментарии": comment,
+            "Банк получателя": req["bank"],
+            "Комментарии": req["comment"],
             "Итого к выплате": round(amount, 2),
             "Проект": payout_project(),
             "Менеджер": tm_names.get(user.tm_id, "") if user and user.tm_id else "",
             "Назначение": row_purpose,
-            "Способ выплаты": label,
+            "Способ выплаты": req["label"],
             "Статус": "",
             "Исполнил": "",
             "Проверка карты": "",

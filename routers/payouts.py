@@ -18,6 +18,7 @@ from payouts_helpers import (advance_run_for_week, advance_week_rows, can_select
                              period_summary, save_registry, save_week_deduction, set_selection, unfix_run,
                              unsend_run, week_monday)
 from payroll_run_helpers import RUN_KIND_ADVANCE
+from statement_export import save_statement
 from rbac import ROLE_TM, canonical_role, has_permission, require_permission
 from time_helpers import business_today
 from utils import find_user_by_name, format_card_number, normalize_person_name, normalize_text
@@ -236,6 +237,19 @@ def run_registry(run_id: int, session: Session = Depends(get_db), user=Depends(c
     if not run or run.status not in {"fixed", "sent", "closed"}:
         return RedirectResponse(_run_back_url(run, error="Реестр — только у зафиксированного прогона"), 302)
     key, filename = save_registry(session, run)
+    return storage_response(key, filename=filename) or RedirectResponse(_run_back_url(run), 302)
+
+
+@router.get("/admin/payouts/runs/{run_id}/statement")
+def run_statement(run_id: int, session: Session = Depends(get_db), user=Depends(current_user)):
+    """П4.4: табель за период в формате ведомости («Табель» + «Ведомость»)."""
+    if not has_permission(user, "payouts.export"):
+        raise RedirectException("/")
+    run = session.query(PayrollRun).filter(PayrollRun.id == run_id).first()
+    if not run or run.kind == RUN_KIND_ADVANCE or run.status not in {"fixed", "sent", "closed"}:
+        return RedirectResponse(_run_back_url(run, error="Ведомость — только у зафиксированного табеля за период"),
+                                302)
+    key, filename = save_statement(session, run)
     return storage_response(key, filename=filename) or RedirectResponse(_run_back_url(run), 302)
 
 
