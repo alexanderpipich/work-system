@@ -78,7 +78,12 @@ def recompute_recommendations(session, request=None, user=None):
         assignment_q = apply_shift_scope(assignment_q, session, user, EmployeeStoreAssignment)
         shift_q = apply_shift_scope(shift_q, session, user, Shift)
 
-    assignments = assignment_q.all()
+    # П4.2: БП только для ГМ — по СМ рекомендаций не создаём. Закрепление — только
+    # список для бланка, не ограничитель: смена считается там, где её поймала выгрузка.
+    from store_helpers import allows_bp, store_formats
+
+    formats = store_formats(session)
+    assignments = [a for a in assignment_q.all() if allows_bp(formats.get(a.store))]
     active_keys = {(a.employee_name, a.store) for a in assignments}
 
     for item in assignments:
@@ -89,17 +94,19 @@ def recompute_recommendations(session, request=None, user=None):
             created += create_recommendation(
                 session, request, user, item.employee_name, item.store, item.city,
                 "remove_from_planning",
-                f"Сотрудник закреплён за магазином, но не имеет смен {settings.inactive_days} "
-                f"дней. Возможно его следует убрать из бланка планирования.",
+                f"В бланке планирования, но нет смен в этом магазине {settings.inactive_days} "
+                f"дней — убрать из БП.",
             )
 
     for item in shift_q.having(func.count(Shift.id) >= settings.minimum_shifts).all():
+        if not allows_bp(formats.get(item.store)):
+            continue
         if (item.employee, item.store) not in active_keys:
             created += create_recommendation(
                 session, request, user, item.employee, item.store, item.city,
                 "add_to_planning",
-                f"Сотрудник отработал {item.count} смен за последние {settings.analysis_days} "
-                f"дней, но отсутствует в планировании. Возможно его следует добавить.",
+                f"{item.count} смен в этом магазине за {settings.analysis_days} дней, "
+                f"а в бланке планирования его нет — добавить в БП.",
             )
 
     session.commit()

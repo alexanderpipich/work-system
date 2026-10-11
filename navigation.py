@@ -81,8 +81,9 @@ ICONS.update({
 })
 
 
-def card(key, title, desc, variants=(), icon=None, coming_soon=False):
-    """Карточка. `variants` — [(href, permission, roles|None)], канонический первым."""
+def card(key, title, desc, variants=(), icon=None, coming_soon=False, hidden_for=()):
+    """Карточка. `variants` — [(href, permission, roles|None)], канонический первым.
+    hidden_for — роли, которым карточка не показывается вовсе (дубль другого раздела)."""
     variants = [tuple(v) for v in variants]
     return {
         "key": key,
@@ -93,6 +94,7 @@ def card(key, title, desc, variants=(), icon=None, coming_soon=False):
         "variants": variants,
         "icon": icon or key,
         "coming_soon": coming_soon,
+        "hidden_for": frozenset(hidden_for),
     }
 
 
@@ -115,10 +117,11 @@ NAV_GROUPS = [
         card("hr_team", "Команда ТМ",
              "Назначение регионов территориальным менеджерам.",
              [("/hr/team", "hr_team.manage", None)]),
+        # У суперадмина сброс паролей — в «Пользователях»; дубль ему не показываем (П4.2).
         card("access", "Доступ сотрудников",
              "Безопасный сброс паролей сотрудников и бригадиров.",
-             [("/admin/users", "users.manage", SA),
-              ("/hr/access", "password.reset_limited", HR_VIEW)]),
+             [("/hr/access", "password.reset_limited", HR_VIEW)],
+             hidden_for={ROLE_SUPERADMIN}),
     ]},
     {"key": "money", "title": "Время, ставки и выплаты", "cards": [
         card("rates", "ЧТС",
@@ -198,7 +201,7 @@ NAV_GROUPS = [
     {"key": "planning", "title": "Планирование и рассылки", "cards": [
         card("planning_bp", "Бланк планирования",
              "Формирование PDF-бланка планирования по магазину (по образцу БП-007) и скачивание.",
-             [("/admin/planning-bp", "admin.settings", None)]),
+             [("/admin/planning-bp", "planning.manage", None)]),
         card("monitoring", "Мониторинг сотрудников",
              "Рекомендации для бланка планирования: кого убрать из планирования, кого добавить — по фактическим сменам.",
              [("/admin/employees/monitoring", "employees.view", SA),
@@ -320,9 +323,12 @@ def build_navigation(user, groups=None):
     `available`, `url` (куда вести этого пользователя), `allowed_roles`
     и их подписи `roles_label`."""
     result = []
+    role = canonical_role(user)
     for group in NAV_GROUPS if groups is None else groups:
         cards = []
         for entry in group["cards"]:
+            if role in entry["hidden_for"]:
+                continue
             url = None if entry["coming_soon"] else role_href(user, entry)
             roles = [] if entry["coming_soon"] else allowed_roles(entry)
             cards.append({

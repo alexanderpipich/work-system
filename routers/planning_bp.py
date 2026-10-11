@@ -3,7 +3,8 @@
 
 По образцу БП-007: один PDF на ТК со списком активных сотрудников этого ТК.
 Рассылки здесь нет (отдельный пункт) — только формирование, сохранение и
-скачивание. Доступ: superadmin (право admin.settings).
+скачивание. Доступ: planning.manage (ТМ, руководитель ТМ, суперадмин); пороги
+мониторинга — глобальная настройка, только admin.settings. Только формат ГМ.
 """
 
 import calendar
@@ -30,15 +31,16 @@ from models import (
 )
 from monitoring_helpers import get_monitoring_settings, recompute_recommendations
 from planning_pdf import build_filename, build_planning_pdf
-from rbac import require_permission
-from store_helpers import extract_tk_number
+from rbac import has_permission, require_permission
+from store_helpers import allows_bp, extract_tk_number, store_formats
 from time_helpers import business_today, now_utc
 from utils import normalize_format, normalize_text
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-_mgmt = require_permission("admin.settings")
+_mgmt = require_permission("planning.manage")
+_settings = require_permission("admin.settings")
 
 # Префикс ключей в хранилище (в локальном режиме — под GENERATED_FILES_ROOT).
 PLANNING_PREFIX = "generated_files/planning_forms"
@@ -141,8 +143,11 @@ def _page(request, user, session, selected_store="", **extra):
         ).all()
     }
     attention_stores = {r.store for r in new_recs}
-    monitoring_stores = sorted(assign_stores | attention_stores)
+    formats = store_formats(session)
+    # П4.2: БП только для ГМ — СМ в списке не показываем.
+    monitoring_stores = sorted(s for s in assign_stores | attention_stores if allows_bp(formats.get(s)))
     selected_store = normalize_text(selected_store)
+    selected_is_gm = allows_bp(formats.get(selected_store)) if selected_store else True
     context = {
         "request": request,
         "user": user,
@@ -152,7 +157,9 @@ def _page(request, user, session, selected_store="", **extra):
         "attention_stores": attention_stores,
         "settings": get_monitoring_settings(session),
         "selected_store": selected_store,
-        "store_block": _store_block(session, selected_store, new_recs),
+        "store_block": _store_block(session, selected_store, new_recs) if selected_is_gm else None,
+        "selected_not_gm": bool(selected_store) and not selected_is_gm,
+        "can_settings": has_permission(user, "admin.settings"),
         "period": {"date_from": start, "date_to": end},
         # Значения полей формы (ISO для <input type=date>); по умолчанию — дефолт.
         "form": {"date_from": start.isoformat(), "date_to": end.isoformat()},
@@ -162,7 +169,7 @@ def _page(request, user, session, selected_store="", **extra):
         "download_url": None,
     }
     context.update(extra)
-    return templates.TemplateResponse("planning_bp.html", context)
+    return templates.TemplateResponse(request, "planning_bp.html", context)
 
 
 def _bp_redirect(store="", message="", error=""):
@@ -225,7 +232,7 @@ def planning_bp_recompute(request: Request, store: str = Form(default=""),
 @router.post("/admin/planning-bp/monitoring/settings")
 def planning_bp_settings(request: Request, inactive_days: int = Form(...),
                          minimum_shifts: int = Form(...), analysis_days: int = Form(...),
-                         store: str = Form(default=""), session: Session = Depends(get_db), user=Depends(_mgmt)):
+                         store: str = Form(default=""), session: Session = Depends(get_db), user=Depends(_settings)):
     settings = get_monitoring_settings(session)
     settings.inactive_days = max(inactive_days, 1)
     settings.minimum_shifts = max(minimum_shifts, 1)
@@ -242,6 +249,8 @@ def planning_bp_assignment_add(request: Request, employee_name: str = Form(...),
     store = normalize_text(store)
     if not normalize_text(employee_name) or not store:
         return _bp_redirect(store, error="Укажите сотрудника и магазин")
+    if not allows_bp(store_formats(session).get(store)):
+        return _bp_redirect(store, error="БП ведётся только для формата ГМ")
     store_row = session.query(Store).filter(Store.display_name == store).first()
     row = _activate_assignment(session, user, employee_name, store,
                                store_row.city if store_row else None, active=True, comment=comment)
@@ -249,6 +258,21 @@ def planning_bp_assignment_add(request: Request, employee_name: str = Form(...),
                      "employee_store_assignment", row.id, f"{row.employee_name} / {row.store}")
     session.commit()
     return _bp_redirect(store, message=f"Добавлен в БП: {row.employee_name}")
+
+
+@router.post("/admin/planning-bp/assignment/deactivate")
+def planning_bp_assignment_deactivate(request: Request, assignment_id: int = Form(...), store: str = Form(default=""),
+                                      session: Session = Depends(get_db), user=Depends(_mgmt)):
+    """П4.2: убрать сотрудника из БП (закрепление неактивно; работать в ТК это не мешает)."""
+    row = session.query(EmployeeStoreAssignment).filter(EmployeeStoreAssignment.id == assignment_id).first()
+    if row is None or not row.is_active:
+        return _bp_redirect(store, error="Закрепление не найдено")
+    row.is_active = False
+    create_audit_log(session, request, user, "planning_assignment_updated", "employee_store_assignment",
+                     row.id, f"{row.employee_name} / {row.store}",
+                     old_value={"is_active": True}, new_value={"is_active": False}, comment="убран из БП вручную")
+    session.commit()
+    return _bp_redirect(row.store, message=f"{row.employee_name} убран из БП")
 
 
 @router.post("/admin/planning-bp/monitoring/accept")

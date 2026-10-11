@@ -35,12 +35,19 @@ def _cards(nav):
 
 class BuildNavigationTests(unittest.TestCase):
     def test_every_role_sees_every_group_and_card(self):
-        total = sum(1 for _ in all_cards())
         for role in ROLES:
             nav = build_navigation(_user(role))
             with self.subTest(role=role):
                 self.assertEqual([g["key"] for g in nav], [g["key"] for g in NAV_GROUPS])
-                self.assertEqual(len(_cards(nav)), total)
+                expected = [c["key"] for c in all_cards() if role not in c["hidden_for"]]
+                self.assertEqual([c["key"] for c in _cards(nav)], expected)
+
+    def test_access_card_hidden_for_superadmin_only(self):
+        keys = {c["key"] for c in _cards(build_navigation(_user("superadmin")))}
+        self.assertNotIn("access", keys)
+        tm_cards = {c["key"]: c for c in _cards(build_navigation(_user("tm")))}
+        self.assertTrue(tm_cards["access"]["available"])
+        self.assertEqual(tm_cards["access"]["url"], "/hr/access")
 
     def test_superadmin_has_nothing_locked_except_coming_soon(self):
         for name, groups in ALL_GROUPS.items():
@@ -169,8 +176,8 @@ class DashboardRendersTests(unittest.TestCase):
         self.app.dependency_overrides[self.current_user] = lambda: user
 
     def test_dashboard_for_every_role(self):
-        total = sum(1 for _ in all_cards())
         for role in ROLES:
+            total = sum(1 for c in all_cards() if role not in c["hidden_for"])
             self._as(role)
             with self.subTest(role=role):
                 response = self.client.get("/admin", follow_redirects=False)

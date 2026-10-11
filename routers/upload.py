@@ -14,7 +14,7 @@ from payroll_adjustments import reconcile_sent_payroll_runs
 from rbac import has_permission, require_permission
 from service_catalog import diagnose_uploaded_services
 from time_helpers import business_today, is_editable_month, now_utc, previous_month
-from utils import normalize_format, normalize_phone, normalize_text
+from utils import normalize_city, normalize_format, normalize_phone, normalize_text
 
 _require_upload = require_permission("shifts.upload")
 
@@ -209,7 +209,7 @@ def _normalize_upload_dataframe(df):
 
     df["store"] = df["store"].apply(normalize_text)
     df["format"] = df["format"].apply(normalize_format)
-    df["city"] = df["city"].apply(normalize_text)
+    df["city"] = df["city"].apply(normalize_city)  # П4.2: без «г.», NaN → пусто
     df["request_type"] = df["request_type"].apply(normalize_text)
     df.loc[df["request_type"] == "", "request_type"] = DEFAULT_REQUEST_TYPE
     df["service"] = df["service"].apply(normalize_text)
@@ -251,6 +251,7 @@ def _process_shift_dataframe(session, df):
     updated = 0
     skipped_duplicates = skipped_invalid
     skipped_locked_months = 0
+    empty_city_shifts = 0
     today_date = business_today()
 
     for index, row in rows.iterrows():
@@ -261,7 +262,9 @@ def _process_shift_dataframe(session, df):
 
         employee = row["employee"]
         store = row["store"]
-        city = row["city"]
+        city = row["city"] or None  # П4.2: пустой город — NULL, не «nan»
+        if city is None:
+            empty_city_shifts += 1
         service = row["service"]
         format_value = row["format"]
         request_type = row["request_type"] or DEFAULT_REQUEST_TYPE
@@ -275,7 +278,7 @@ def _process_shift_dataframe(session, df):
                 existing.hours = hours
                 row_changed = True
 
-            if normalize_text(existing.city) != city:
+            if (normalize_city(existing.city) or None) != city:
                 existing.city = city
                 row_changed = True
 
@@ -337,6 +340,7 @@ def _process_shift_dataframe(session, df):
         "adjustments_created": adjustments_created,
         "unmatched_services": diagnostics["unmatched_services"],
         "services_without_level": diagnostics["services_without_level"],
+        "empty_city_shifts": empty_city_shifts,
     }
 
 

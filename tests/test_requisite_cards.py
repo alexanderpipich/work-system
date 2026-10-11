@@ -207,7 +207,7 @@ class ImportEmployeesCardsTests(unittest.TestCase):
     def test_helpers(self):
         self.assertEqual(canonical_bank("Т банк"), ("Т-Банк", True))
         self.assertEqual(canonical_bank("Тинькоф"), ("Т-Банк", True))
-        self.assertEqual(canonical_bank("ФораБанк"), ("ФораБанк", False))
+        self.assertEqual(canonical_bank("Точка Банк"), ("Точка Банк", False))
         self.assertEqual(payout_method_from("Карта", None, None), "card")
         self.assertEqual(payout_method_from("Карта/телефон", "Наличные", None), "cash")
 
