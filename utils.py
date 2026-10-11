@@ -28,6 +28,28 @@ def normalize_text(value) -> str:
     return str(value).strip()
 
 
+_CITY_PREFIX_RE = re.compile(r"^(?:г\.|г\s|город\s)\s*", re.IGNORECASE)
+
+
+def normalize_city(value) -> str:
+    """Город из выгрузки смен (П4.2): «г. Москва», «город  Москва» → «Москва».
+
+    Пустое, NaN из pandas и строка «nan» → "" (в смену пишется NULL). Ставки
+    (Rate.city) матчатся с Shift.city строка в строку — поэтому без префиксов.
+    """
+    if value is None:
+        return ""
+    try:
+        if value != value:  # NaN
+            return ""
+    except Exception:
+        pass
+    text = " ".join(str(value).split())
+    if text.lower() in {"", "nan", "none", "null"}:
+        return ""
+    return _CITY_PREFIX_RE.sub("", text).strip()
+
+
 def normalize_person_name(value) -> str:
     """Ключ сравнения ФИО: пробелы схлопнуты, регистр и ё/е не различаются.
 

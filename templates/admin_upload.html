@@ -74,6 +74,13 @@
             </table>
         </div>
 
+        {% if result.empty_city_shifts %}
+        <div class="alert alert-warn">
+            ⚠ У {{ result.empty_city_shifts }} смен в выгрузке пустой «Город» — город не записан,
+            ставки с привязкой к городу к ним не подберутся.
+        </div>
+        {% endif %}
+
         {% if result.unmatched_services %}
         <div class="alert alert-warn">
             ⚠ {{ result.unmatched_services | length }} услуг из загруженных смен не найдены в справочнике услуг —
