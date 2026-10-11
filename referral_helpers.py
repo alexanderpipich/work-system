@@ -131,9 +131,11 @@ def cancel_payout(session, request, user, payout_id):
     return payout
 
 
-def apply_confirmed_payouts_to_run(session, request, user, run_id):
+def apply_confirmed_payouts_to_run(session, request, user, run_id,
+                                   service="Премия АПД", comment="Премия АПД (приведи друга)"):
     """Подтверждённые, ещё не привязанные к табелю премии → строкой в этот прогон
-    (для выгодоприобретателя) + промо paid. Возвращает число вставленных строк."""
+    (для выгодоприобретателя) + промо paid. Возвращает число вставленных строк.
+    service/comment — подпись строки (аванс П3: «Приведи друга»)."""
     added = 0
     for payout in session.query(ReferralPayout).filter(
         ReferralPayout.status == "confirmed", ReferralPayout.run_id == None  # noqa: E711
@@ -143,12 +145,12 @@ def apply_confirmed_payouts_to_run(session, request, user, run_id):
             run_id=run_id,
             employee_name=payout.beneficiary_name or "—",
             store=None,
-            service="Премия АПД",
+            service=service,
             shift_date=None,
             hours=0, rate=0, amount=0,
             other_amount=amount, manual_adjustments_amount=amount,
             auto_adjustments_amount=0, lmk_amount=0, total_amount=amount,
-            comment="Премия АПД (приведи друга)",
+            comment=comment,
         ))
         payout.run_id = run_id
         promo = session.query(ReferralPromo).filter(ReferralPromo.id == payout.promo_id).first()

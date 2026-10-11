@@ -66,12 +66,6 @@ def _coming_soon(request, title, description, stage):
     })
 
 
-@router.get("/admin/payouts/advances", response_class=HTMLResponse)
-def payouts_advances(request: Request, user=Depends(_payroll_view)):
-    return _coming_soon(request, "Еженедельные авансы",
-                        "Расчёт и выгрузка еженедельных авансов по картам сотрудников.", "П3")
-
-
 @router.get("/admin/contracts", response_class=HTMLResponse)
 def contracts_page(request: Request, user=Depends(_contracts_view)):
     return _coming_soon(request, "Договоры",
