@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{# Заглушка раздела, который появится позже (П2): Договоры, Еженедельные авансы,
+   Настройка автозагрузки. Контекст: title, description, back_url, back_label, stage. #}
+{% block title %}{{ title }}{% endblock %}
+{% block brand_title %}{{ title }}{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Раздел в разработке</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="{{ back_url }}">{{ back_label or 'Назад' }}</a>{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top page-narrow">
+    <div class="card">
+        <h2>Раздел в разработке</h2>
+        <p>{{ description }}</p>
+        {% if stage %}<p class="field-hint">Появится в {{ stage }}.</p>{% endif %}
+        {% block coming_soon_extra %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

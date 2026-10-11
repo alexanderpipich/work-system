@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from dependencies import current_user
-from navigation import all_cards, build_navigation
+from navigation import PAYOUTS_GROUPS, all_cards, build_navigation
 from rbac import canonical_role, require_permission, role_label
 
 
@@ -12,6 +12,8 @@ templates = Jinja2Templates(directory="templates")
 require_hr_dashboard = require_permission("employees.view", audit_denied=True)
 _economist_dashboard = require_permission("economist.dashboard")
 _headhunter_dashboard = require_permission("headhunter.dashboard")
+_payroll_view = require_permission("payroll.view")
+_contracts_view = require_permission("contracts.view")
 
 
 def render_dashboard(request, user):
@@ -45,6 +47,35 @@ def economist_dashboard(request: Request, user=Depends(_economist_dashboard)):
 @router.get("/hr", response_class=HTMLResponse)
 def hr_dashboard(request: Request, user=Depends(require_hr_dashboard)):
     return render_dashboard(request, user)
+
+
+@router.get("/admin/payouts", response_class=HTMLResponse)
+def payouts_dashboard(request: Request, user=Depends(_payroll_view)):
+    """Поддашборд «Выплаты» (П2): табель, история, еженедельные авансы."""
+    return templates.TemplateResponse(request, "nav_section.html", {
+        "title": "Выплаты",
+        "subtitle": "Выплатной табель, история выплат и еженедельные авансы",
+        "groups": build_navigation(user, PAYOUTS_GROUPS),
+        "back_url": "/admin",
+    })
+
+
+def _coming_soon(request, title, description, stage):
+    return templates.TemplateResponse(request, "coming_soon.html", {
+        "title": title, "description": description, "stage": stage, "back_url": "/admin",
+    })
+
+
+@router.get("/admin/payouts/advances", response_class=HTMLResponse)
+def payouts_advances(request: Request, user=Depends(_payroll_view)):
+    return _coming_soon(request, "Еженедельные авансы",
+                        "Расчёт и выгрузка еженедельных авансов по картам сотрудников.", "П3")
+
+
+@router.get("/admin/contracts", response_class=HTMLResponse)
+def contracts_page(request: Request, user=Depends(_contracts_view)):
+    return _coming_soon(request, "Договоры",
+                        "Договоры с сотрудниками: шаблоны, формирование и подписание.", "П4")
 
 
 @router.get("/headhunter", response_class=HTMLResponse)

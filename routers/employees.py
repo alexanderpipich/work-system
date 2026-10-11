@@ -35,6 +35,7 @@ from monitoring_helpers import (
     get_monitoring_settings,
     recompute_recommendations,
 )
+from navigation import build_navigation, employees_groups
 from rbac import HR_CABINET_ROLES, canonical_role, has_permission, is_superadmin, require_permission
 from time_helpers import business_today, now_utc
 from utils import normalize_text
@@ -222,12 +223,21 @@ _create_recommendation = create_recommendation
 @router.get("/economist/employees", response_class=HTMLResponse)
 @router.get("/hr/employees", response_class=HTMLResponse)
 def employees_dashboard(request: Request, user=Depends(require_employee_manager)):
-    return templates.TemplateResponse(request, "employees_dashboard.html", _context(request, user))
+    context = _context(request, user)
+    context["groups"] = build_navigation(user, employees_groups(context["base_path"]))
+    return templates.TemplateResponse(request, "employees_dashboard.html", context)
 
 
-@router.get("/admin/employees/planning", response_class=HTMLResponse)
-@router.get("/economist/employees/planning", response_class=HTMLResponse)
-@router.get("/hr/employees/planning", response_class=HTMLResponse)
+@router.get("/admin/employees/planning")
+@router.get("/economist/employees/planning")
+@router.get("/hr/employees/planning")
+def planning_page_redirect():
+    """П2: старый XLSX-бланк выведен из меню — адреса ведут на новый БП.
+    planning_page ниже и POST-обработчики /planning/* оставлены до отдельной
+    задачи удаления старого БП после демо."""
+    return RedirectResponse("/admin/planning-bp", status_code=301)
+
+
 def planning_page(request: Request, view: str = "list", message: str = "", session: Session = Depends(get_db), user=Depends(require_employee_manager)):
     forms = _scope(session.query(PlanningForm), PlanningForm, user).order_by(PlanningForm.id.desc()).all()
     assignments = _scope(session.query(EmployeeStoreAssignment), EmployeeStoreAssignment, user).order_by(EmployeeStoreAssignment.city, EmployeeStoreAssignment.store, EmployeeStoreAssignment.employee_name).all()

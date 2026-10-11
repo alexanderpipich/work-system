@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_nav_card.html" import nav_card, nav_lock_modal %}
+
+{# Поддашборд раздела (П2): «Выплаты» и т.п. Карточки — navigation.build_navigation. #}
+{% block title %}{{ title }}{% endblock %}
+{% block brand_title %}{{ title }}{% endblock %}
+{% block brand_subtitle %}{% if subtitle %}<p class="brand-subtitle">{{ subtitle }}</p>{% endif %}{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="{{ back_url }}">Назад</a>{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top">
+    {% for group in groups %}
+    <div class="grid">
+        {% for card in group.cards %}
+            {{ nav_card(card) }}
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+
+{{ nav_lock_modal() }}
+{% endblock %}
