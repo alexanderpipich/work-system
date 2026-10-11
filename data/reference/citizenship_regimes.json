@@ -1,0 +1,37 @@
+[
+  {
+    "code": "eaeu",
+    "name": "ЕАЭС",
+    "description": "Кыргызстан/Казахстан/Армения",
+    "is_active": true,
+    "sort_order": 0
+  },
+  {
+    "code": "patent",
+    "name": "безвизовые, работа по патенту",
+    "description": "Таджикистан/Узбекистан (+ безвизовые)",
+    "is_active": true,
+    "sort_order": 0
+  },
+  {
+    "code": "resident",
+    "name": "Резидент РФ",
+    "description": "Россия",
+    "is_active": true,
+    "sort_order": 0
+  },
+  {
+    "code": "union",
+    "name": "союзное государство",
+    "description": "Белоруссия",
+    "is_active": true,
+    "sort_order": 0
+  },
+  {
+    "code": "visa",
+    "name": "визовые страны",
+    "description": "визовые страны",
+    "is_active": true,
+    "sort_order": 0
+  }
+]

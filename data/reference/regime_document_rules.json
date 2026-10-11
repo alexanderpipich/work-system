@@ -1,0 +1,248 @@
+[
+  {
+    "regime_code": "eaeu",
+    "document_type_name": "ДАКТИЛОСКОПИЯ",
+    "document_type_sort_order": 8,
+    "is_required": true
+  },
+  {
+    "regime_code": "eaeu",
+    "document_type_name": "ИНН",
+    "document_type_sort_order": 4,
+    "is_required": true
+  },
+  {
+    "regime_code": "eaeu",
+    "document_type_name": "ЛМК",
+    "document_type_sort_order": 2,
+    "is_required": true
+  },
+  {
+    "regime_code": "eaeu",
+    "document_type_name": "МИГРАЦИОННАЯ КАРТА",
+    "document_type_sort_order": 11,
+    "is_required": true
+  },
+  {
+    "regime_code": "eaeu",
+    "document_type_name": "ПЕРЕВОД ПАСПОРТА",
+    "document_type_sort_order": 9,
+    "is_required": true
+  },
+  {
+    "regime_code": "eaeu",
+    "document_type_name": "Паспорт",
+    "document_type_sort_order": 3,
+    "is_required": true
+  },
+  {
+    "regime_code": "eaeu",
+    "document_type_name": "РЕГИСТРАЦИЯ",
+    "document_type_sort_order": 6,
+    "is_required": true
+  },
+  {
+    "regime_code": "eaeu",
+    "document_type_name": "СНИЛС",
+    "document_type_sort_order": 5,
+    "is_required": true
+  },
+  {
+    "regime_code": "eaeu",
+    "document_type_name": "СТУДЕНЧЕСКИЙ БИЛЕТ",
+    "document_type_sort_order": 13,
+    "is_required": true
+  },
+  {
+    "regime_code": "patent",
+    "document_type_name": "ДАКТИЛОСКОПИЯ",
+    "document_type_sort_order": 8,
+    "is_required": true
+  },
+  {
+    "regime_code": "patent",
+    "document_type_name": "ИНН",
+    "document_type_sort_order": 4,
+    "is_required": true
+  },
+  {
+    "regime_code": "patent",
+    "document_type_name": "ЛМК",
+    "document_type_sort_order": 2,
+    "is_required": true
+  },
+  {
+    "regime_code": "patent",
+    "document_type_name": "МИГРАЦИОННАЯ КАРТА",
+    "document_type_sort_order": 11,
+    "is_required": true
+  },
+  {
+    "regime_code": "patent",
+    "document_type_name": "ПАТЕНТ",
+    "document_type_sort_order": 7,
+    "is_required": true
+  },
+  {
+    "regime_code": "patent",
+    "document_type_name": "ПЕРЕВОД ПАСПОРТА",
+    "document_type_sort_order": 9,
+    "is_required": true
+  },
+  {
+    "regime_code": "patent",
+    "document_type_name": "ПОЛИС ДМС",
+    "document_type_sort_order": 10,
+    "is_required": true
+  },
+  {
+    "regime_code": "patent",
+    "document_type_name": "Паспорт",
+    "document_type_sort_order": 3,
+    "is_required": true
+  },
+  {
+    "regime_code": "patent",
+    "document_type_name": "РЕГИСТРАЦИЯ",
+    "document_type_sort_order": 6,
+    "is_required": true
+  },
+  {
+    "regime_code": "patent",
+    "document_type_name": "СНИЛС",
+    "document_type_sort_order": 5,
+    "is_required": true
+  },
+  {
+    "regime_code": "patent",
+    "document_type_name": "ЧЕКИ ПО ОПЛАТЕ ПАТЕНТА",
+    "document_type_sort_order": 12,
+    "is_required": true
+  },
+  {
+    "regime_code": "resident",
+    "document_type_name": "ИНН",
+    "document_type_sort_order": 4,
+    "is_required": true
+  },
+  {
+    "regime_code": "resident",
+    "document_type_name": "ЛМК",
+    "document_type_sort_order": 2,
+    "is_required": true
+  },
+  {
+    "regime_code": "resident",
+    "document_type_name": "Паспорт",
+    "document_type_sort_order": 3,
+    "is_required": true
+  },
+  {
+    "regime_code": "resident",
+    "document_type_name": "СНИЛС",
+    "document_type_sort_order": 5,
+    "is_required": true
+  },
+  {
+    "regime_code": "union",
+    "document_type_name": "ИНН",
+    "document_type_sort_order": 4,
+    "is_required": true
+  },
+  {
+    "regime_code": "union",
+    "document_type_name": "ЛМК",
+    "document_type_sort_order": 2,
+    "is_required": true
+  },
+  {
+    "regime_code": "union",
+    "document_type_name": "МИГРАЦИОННАЯ КАРТА",
+    "document_type_sort_order": 11,
+    "is_required": true
+  },
+  {
+    "regime_code": "union",
+    "document_type_name": "Паспорт",
+    "document_type_sort_order": 3,
+    "is_required": true
+  },
+  {
+    "regime_code": "union",
+    "document_type_name": "РЕГИСТРАЦИЯ",
+    "document_type_sort_order": 6,
+    "is_required": true
+  },
+  {
+    "regime_code": "union",
+    "document_type_name": "СНИЛС",
+    "document_type_sort_order": 5,
+    "is_required": true
+  },
+  {
+    "regime_code": "visa",
+    "document_type_name": "ДАКТИЛОСКОПИЯ",
+    "document_type_sort_order": 8,
+    "is_required": true
+  },
+  {
+    "regime_code": "visa",
+    "document_type_name": "ИНН",
+    "document_type_sort_order": 4,
+    "is_required": true
+  },
+  {
+    "regime_code": "visa",
+    "document_type_name": "ЛМК",
+    "document_type_sort_order": 2,
+    "is_required": true
+  },
+  {
+    "regime_code": "visa",
+    "document_type_name": "МИГРАЦИОННАЯ КАРТА",
+    "document_type_sort_order": 11,
+    "is_required": true
+  },
+  {
+    "regime_code": "visa",
+    "document_type_name": "ПАТЕНТ",
+    "document_type_sort_order": 7,
+    "is_required": true
+  },
+  {
+    "regime_code": "visa",
+    "document_type_name": "ПЕРЕВОД ПАСПОРТА",
+    "document_type_sort_order": 9,
+    "is_required": true
+  },
+  {
+    "regime_code": "visa",
+    "document_type_name": "ПОЛИС ДМС",
+    "document_type_sort_order": 10,
+    "is_required": true
+  },
+  {
+    "regime_code": "visa",
+    "document_type_name": "Паспорт",
+    "document_type_sort_order": 3,
+    "is_required": true
+  },
+  {
+    "regime_code": "visa",
+    "document_type_name": "РЕГИСТРАЦИЯ",
+    "document_type_sort_order": 6,
+    "is_required": true
+  },
+  {
+    "regime_code": "visa",
+    "document_type_name": "СНИЛС",
+    "document_type_sort_order": 5,
+    "is_required": true
+  },
+  {
+    "regime_code": "visa",
+    "document_type_name": "ЧЕКИ ПО ОПЛАТЕ ПАТЕНТА",
+    "document_type_sort_order": 12,
+    "is_required": true
+  }
+]
