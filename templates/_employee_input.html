@@ -1,0 +1,16 @@
+{# Поле выбора сотрудника (П4): <input list> + <datalist> вместо <select> на ~1500
+   ФИО — видно, что набираешь, работает вставка из буфера, подсказки остаются.
+   Значение — та же строка ФИО, сервер не меняется. Пустое = «все».
+   with_list=false — сослаться на datalist, уже выведенный на странице. #}
+{% macro employee_input(name, options, value='', list_id='employees-list', required=false, placeholder='Начните вводить ФИО', input_id=none, css_class='', with_list=true) -%}
+<input type="text" name="{{ name }}" list="{{ list_id }}" value="{{ value or '' }}"
+       placeholder="{{ placeholder }}" autocomplete="off"
+       {%- if input_id %} id="{{ input_id }}"{% endif %}
+       {%- if css_class %} class="{{ css_class }}"{% endif %}
+       {%- if required %} required{% endif %}>
+{% if with_list %}
+<datalist id="{{ list_id }}">
+    {% for option in options or [] %}<option value="{{ option }}">{% endfor %}
+</datalist>
+{% endif %}
+{%- endmacro %}

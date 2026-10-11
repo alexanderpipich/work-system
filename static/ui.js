@@ -179,7 +179,94 @@
         });
     }
 
-    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); }
+    /* ── Просмотр документа во всплывающем окне (П4) ──────────────────────
+       Ссылка с data-preview-url: PDF — iframe, изображение — img, прочее
+       (HEIC) — только «Скачать». Делегирование: ссылок в реестре сотни. */
+    function initDocPreview() {
+        var modal = document.getElementById('doc-preview-modal');
+        if (!modal) { return; }
+        var body = document.getElementById('doc-preview-body');
+        var title = document.getElementById('doc-preview-title');
+        var download = document.getElementById('doc-preview-download');
+
+        function close() {
+            modal.classList.remove('open');
+            body.innerHTML = '';  /* выгрузить iframe — иначе PDF продолжает висеть в памяти */
+        }
+
+        function open(link) {
+            var kind = link.getAttribute('data-preview-kind');
+            var url = link.getAttribute('data-preview-url');
+            body.innerHTML = '';
+            var node;
+            if (kind === 'pdf') {
+                node = document.createElement('iframe');
+                node.src = url;
+                node.title = link.getAttribute('data-preview-title') || 'Документ';
+            } else if (kind === 'image') {
+                node = document.createElement('img');
+                node.src = url;
+                node.alt = link.getAttribute('data-preview-title') || 'Документ';
+            } else {
+                node = document.createElement('p');
+                node.className = 'preview-none';
+                node.textContent = 'Браузер не показывает этот формат — скачайте файл.';
+            }
+            body.appendChild(node);
+            title.textContent = link.getAttribute('data-preview-title') || 'Документ';
+            download.href = link.getAttribute('data-download-url') || url;
+            modal.classList.add('open');
+        }
+
+        document.addEventListener('click', function (e) {
+            var link = e.target.closest ? e.target.closest('[data-preview-url]') : null;
+            if (!link) { return; }
+            e.preventDefault();
+            open(link);
+        });
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal || (e.target.closest && e.target.closest('[data-preview-close]'))) {
+                close();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && modal.classList.contains('open')) { close(); }
+        });
+    }
+
+    /* ── Массовый выбор строк (П4, «Проверено (N)») ────────────────────────
+       data-bulk-all / -item / -count / -submit с одним именем группы. */
+    function initBulkSelect() {
+        function items(group) {
+            return document.querySelectorAll('[data-bulk-item="' + group + '"]');
+        }
+        function refresh(group) {
+            var checked = 0;
+            items(group).forEach(function (box) { if (box.checked) { checked += 1; } });
+            document.querySelectorAll('[data-bulk-count="' + group + '"]').forEach(function (node) {
+                node.textContent = checked;
+            });
+            document.querySelectorAll('[data-bulk-submit="' + group + '"]').forEach(function (btn) {
+                btn.disabled = checked === 0;
+            });
+        }
+        document.addEventListener('change', function (e) {
+            var target = e.target;
+            if (!target.getAttribute) { return; }
+            var all = target.getAttribute('data-bulk-all');
+            if (all) {
+                items(all).forEach(function (box) { box.checked = target.checked; });
+                refresh(all);
+                return;
+            }
+            var group = target.getAttribute('data-bulk-item');
+            if (group) { refresh(group); }
+        });
+    }
+
+    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

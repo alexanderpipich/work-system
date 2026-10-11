@@ -92,6 +92,20 @@ def ensure_document_tables():
         )
 
 
+PREVIEW_PDF = {".pdf"}
+PREVIEW_IMAGE = {".jpg", ".jpeg", ".png"}
+
+
+def preview_kind(path) -> str:
+    """Как показать файл в модалке: pdf | image | none (HEIC и прочее — только скачать)."""
+    suffix = Path(str(path or "")).suffix.lower()
+    if suffix in PREVIEW_PDF:
+        return "pdf"
+    if suffix in PREVIEW_IMAGE:
+        return "image"
+    return "none"
+
+
 def parse_bool(value) -> bool:
     return str(value or "").lower() in {"1", "true", "on", "yes"}
 

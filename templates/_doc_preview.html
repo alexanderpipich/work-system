@@ -1,0 +1,27 @@
+{# Просмотр документа во всплывающем окне (П4). Ссылка ведёт на скачивание —
+   без JS это обычная ссылка; ui.js (initDocPreview) перехватывает клик и
+   показывает PDF в iframe, изображение — в img. HEIC браузеры не рисуют —
+   только «Скачать». Вид файла — document_helpers.preview_kind(path). #}
+{% macro preview_link(preview_url, download_url, kind, title='Документ', label='Открыть', css_class='back-link') -%}
+<a href="{{ download_url }}" class="{{ css_class }}" data-preview-url="{{ preview_url }}"
+   data-preview-kind="{{ kind }}" data-preview-title="{{ title }}" data-download-url="{{ download_url }}">{{ label }}</a>
+{%- endmacro %}
+
+{% macro preview_modal() -%}
+<div class="overlay" id="doc-preview-modal" role="dialog" aria-modal="true" aria-labelledby="doc-preview-title">
+    <div class="modal modal-preview">
+        <div class="m-hdr">
+            <div>
+                <div class="m-kicker">Просмотр</div>
+                <div class="m-title" id="doc-preview-title">Документ</div>
+            </div>
+            <button type="button" class="m-x" data-preview-close aria-label="Закрыть">×</button>
+        </div>
+        <div class="preview-body" id="doc-preview-body"></div>
+        <div class="np-actions">
+            <button type="button" class="btn btn-secondary" data-preview-close>Закрыть</button>
+            <a class="btn btn-primary" id="doc-preview-download" href="#">Скачать</a>
+        </div>
+    </div>
+</div>
+{%- endmacro %}

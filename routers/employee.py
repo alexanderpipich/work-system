@@ -12,6 +12,7 @@ from document_helpers import (
     employee_completeness,
     employee_document_rows,
     latest_employee_document,
+    preview_kind,
     user_citizenship,
 )
 from models import Requisite, Shift
@@ -22,6 +23,7 @@ from utils import format_card_number, get_password_hash, normalize_text, verify_
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+templates.env.globals["preview_kind"] = preview_kind  # П4: просмотр документа в модалке
 templates.env.filters["card_format"] = format_card_number
 
 _STATUS_STYLES = {

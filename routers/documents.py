@@ -14,7 +14,6 @@ from dependencies import (
     get_db,
 )
 from document_helpers import (
-    DocumentDateParseError,
     INVALID_DATE_MESSAGE,
     MATRIX_COLUMNS,
     STATUS_LABELS,
@@ -23,6 +22,7 @@ from document_helpers import (
     build_document_registry_rows,
     classify_document,
     computed_document_status,
+    DocumentDateParseError,
     economist_employee_names,
     employee_names,
     false_green_count,
@@ -31,6 +31,7 @@ from document_helpers import (
     normalize_employee_folder,
     parse_bool,
     parse_date,
+    preview_kind,
     save_upload_file,
 )
 from file_storage import storage_delete, storage_response
@@ -45,6 +46,7 @@ from utils import normalize_text
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+templates.env.globals["preview_kind"] = preview_kind  # П4: просмотр документа в модалке
 
 
 SAFE_MEDIA_TYPES = {
@@ -578,6 +580,19 @@ def _document_allowed_for_user(session, document, user):
     return normalize_text(document.employee_name) == normalize_text(user.employee_name)
 
 
+def _set_document_status(document, user, new_status, comment=""):
+    """Сменить статус документа (без аудита и commit). Возвращает (старый статус, старый комментарий)."""
+    old_status = document.status
+    old_comment = document.comment
+    document.status = new_status
+    document.comment = normalize_text(comment) or document.comment
+    document.updated_at = now_utc()
+    if new_status == "verified":
+        document.verified_by = user.id
+        document.verified_at = now_utc()
+    return old_status, old_comment
+
+
 def _change_document_status(
     request,
     session,
@@ -597,14 +612,7 @@ def _change_document_status(
     if not _document_allowed_for_user(session, document, user):
         return _redirect(base_path, status=status_filter, employee_name=employee_name, error="Нет доступа к документу")
 
-    old_status = document.status
-    old_comment = document.comment
-    document.status = new_status
-    document.comment = normalize_text(comment) or document.comment
-    document.updated_at = now_utc()
-    if new_status == "verified":
-        document.verified_by = user.id
-        document.verified_at = now_utc()
+    old_status, old_comment = _set_document_status(document, user, new_status, comment)
     action = {
         "verified": "document_verified",
         "rejected": "document_rejected",
@@ -1080,6 +1088,53 @@ async def cabinet_upload_document(
     except Exception as exc:
         session.rollback()
         return _redirect("/employee_docs", error=str(exc))
+
+
+BULK_SKIP_REASONS = {
+    "archived": "в архиве",
+    "verified": "уже проверен",
+}
+
+
+@router.post("/admin/documents/verify-bulk")
+@router.post("/economist/documents/verify-bulk")
+@router.post("/hr/documents/verify-bulk")
+def verify_documents_bulk(
+    request: Request,
+    document_ids: list[int] = Form(default=[]),
+    status: str = Form(default="pending_verification"),
+    employee_name: str = Form(default=""),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    """П4: «Проверено (N)» — несколько документов разом. Отказ по одному документу
+    (нет доступа, в архиве, уже проверен) не отменяет остальные; один аудит на пачку."""
+    base_path, _, _ = _documents_base(request)
+    verified, skipped = [], []
+    for document_id in dict.fromkeys(document_ids):
+        document = session.query(EmployeeDocument).filter(EmployeeDocument.id == document_id).first()
+        if not _document_allowed_for_user(session, document, user):
+            skipped.append((document_id, "нет доступа"))
+            continue
+        if document.status in BULK_SKIP_REASONS:
+            skipped.append((document_id, BULK_SKIP_REASONS[document.status]))
+            continue
+        _set_document_status(document, user, "verified")
+        verified.append(document_id)
+    if verified or skipped:
+        create_audit_log(
+            session, request, user, "documents.verify_bulk", "employee_document", None,
+            f"Проверено {len(verified)}",
+            new_value={"verified": verified, "skipped": [{"id": i, "reason": r} for i, r in skipped]},
+        )
+    session.commit()
+    message = f"Проверено {len(verified)}"
+    if skipped:
+        reasons = {}
+        for _, reason in skipped:
+            reasons[reason] = reasons.get(reason, 0) + 1
+        message += ", пропущено %d (%s)" % (len(skipped), ", ".join(f"{r}: {n}" for r, n in reasons.items()))
+    return _redirect(base_path, status=status, employee_name=employee_name, message=message)
 
 
 @router.post("/admin/documents/verify")
