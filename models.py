@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, Boolean, UniqueConstraint, ForeignKey, DateTime, Text
+from sqlalchemy import Column, Integer, String, Float, Date, Boolean, UniqueConstraint, ForeignKey, DateTime, Text, event
 from sqlalchemy.orm import relationship
 from database import Base
 from time_helpers import now_utc
@@ -59,10 +59,20 @@ JOB_TITLES = ["ОПРР", "РТЗ", "ПЕКАРНЯ", "ГАСТРОНОМ", "П�
 class User(Base):
     __tablename__ = "users"
 
+    __table_args__ = (
+        UniqueConstraint("employee_name_norm", name="uq_users_employee_name_norm"),
+    )
+
     id = Column(Integer, primary_key=True, index=True)
-    phone = Column(String(50), unique=True, nullable=False)
-    password_hash = Column(String, nullable=False)
+    # Сотрудник без кабинета: phone и password_hash оба NULL, войти нельзя.
+    # Выдача пароля заполняет оба поля. Несколько NULL в unique-колонке допустимы.
+    phone = Column(String(50), unique=True, nullable=True)
+    password_hash = Column(String, nullable=True)
     employee_name = Column(String(255), nullable=False)
+    # Ключ уникальности ФИО (utils.normalize_person_name). Заполняется ТОЛЬКО
+    # событием ORM ниже — вручную не присваивать. Bulk-update/сырой SQL событие
+    # обходят: при правке employee_name так — пересчитать и это поле.
+    employee_name_norm = Column(String(255), nullable=False)
 
     is_admin = Column(Boolean, default=False)
 
@@ -81,6 +91,9 @@ class User(Base):
     # Временный пароль (задан админом/при массовом создании) — сотруднику предлагается сменить.
     # Снимается в False, когда сотрудник сменил пароль сам.
     password_is_temporary = Column(Boolean, default=False)
+    birth_date = Column(Date, nullable=True)
+    # Закреплённый ТМ (User с ролью tm); может быть пустым.
+    tm_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     # Загруженные QR-пропуска (до 3, с подписью специальности). qr_image_path выше — legacy,
     # deprecated после переноса в employee_qr (см. scripts/migrate_qr_codes.py).
     qr_codes = relationship(
@@ -89,6 +102,13 @@ class User(Base):
         order_by="EmployeeQr.sort_order",
         cascade="all, delete-orphan",
     )
+
+
+@event.listens_for(User, "before_insert")
+@event.listens_for(User, "before_update")
+def _fill_employee_name_norm(mapper, connection, target):
+    from utils import normalize_person_name  # utils импортирует models — только лениво
+    target.employee_name_norm = normalize_person_name(target.employee_name)
 
 
 class EmployeeQr(Base):

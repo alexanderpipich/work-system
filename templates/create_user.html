@@ -32,8 +32,9 @@
 
         <form method="post" action="/admin/create-user" class="stack">
             <div class="field">
-                <label for="phone">Телефон</label>
-                <input id="phone" type="text" name="phone" placeholder="Введите телефон" required>
+                <label for="phone">Телефон (логин)</label>
+                <input id="phone" type="text" name="phone" placeholder="Введите телефон">
+                <span class="field-hint">Телефон и пароль — вход в кабинет. Оставьте оба пустыми, чтобы завести сотрудника без кабинета.</span>
             </div>
 
             <div class="field">
@@ -43,7 +44,7 @@
 
             <div class="field">
                 <label for="password">Пароль</label>
-                <input id="password" type="password" name="password" placeholder="Введите пароль" required>
+                <input id="password" type="password" name="password" placeholder="Введите пароль">
             </div>
 
             <div class="field">

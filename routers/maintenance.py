@@ -34,6 +34,8 @@ def fix_phones(
 
         for user in users:
             old_phone = user.phone
+            if not old_phone:
+                continue  # сотрудник без кабинета: NULL не превращать в ""
             new_phone = normalize_phone(user.phone)
 
             if old_phone == new_phone:

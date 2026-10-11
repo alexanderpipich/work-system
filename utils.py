@@ -1,7 +1,7 @@
 ﻿import re
 
 from passlib.context import CryptContext
-from models import Rate
+from models import Rate, User
 from time_helpers import business_today, now_utc
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
@@ -26,6 +26,23 @@ def normalize_text(value) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def normalize_person_name(value) -> str:
+    """Ключ сравнения ФИО: пробелы схлопнуты, регистр и ё/е не различаются.
+
+    «Иванов  Пётр» и «иванов петр» — один человек. Это ключ User.employee_name_norm;
+    само ФИО хранится как ввели (normalize_text).
+    """
+    return " ".join(normalize_text(value).split()).casefold().replace("ё", "е")
+
+
+def find_user_by_name(session, name):
+    """User с тем же нормализованным ФИО или None (ФИО уникально по этому ключу)."""
+    key = normalize_person_name(name)
+    if not key:
+        return None
+    return session.query(User).filter(User.employee_name_norm == key).first()
 
 
 # Хвост ".0" у числа, прочитанного как float (напр. "780000000000.0").
@@ -208,6 +225,9 @@ def safe_return_to(value, default: str) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    # Сотрудник без кабинета (password_hash NULL) не проходит никакой пароль.
+    if not hashed_password:
+        return False
     return pwd_context.verify(str(plain_password).strip(), hashed_password)
 
 

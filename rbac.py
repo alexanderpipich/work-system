@@ -14,6 +14,9 @@ ROLE_BRIGADIER = "brigadier"
 ROLE_HEADHUNTER = "headhunter"
 ROLE_EMPLOYEE = "employee"
 
+# Значения users.role, означающие ТМ (для выборок по колонке, где canonical_role не применить).
+TM_ROLE_VALUES = ("hr_manager",)
+
 ROLES = {
     ROLE_SUPERADMIN,
     ROLE_HR_LEAD,

@@ -244,6 +244,23 @@
                                 </div>
 
                                 <div class="field">
+                                    <label>Дата рождения</label>
+                                    <input type="date" name="birth_date" value="{{ user.birth_date.isoformat() if user.birth_date else '' }}">
+                                </div>
+
+                                <div class="field">
+                                    <label>Закреплённый ТМ</label>
+                                    <select name="tm_id">
+                                        <option value="0">— не закреплён —</option>
+                                        {% for tm in tm_users %}
+                                        {% if tm.id != user.id %}
+                                        <option value="{{ tm.id }}" {% if user.tm_id == tm.id %}selected{% endif %}>{{ tm.employee_name }}</option>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="field">
                                     <label>ИНН</label>
                                     <input type="text" name="inn" value="{{ user.inn or '' }}" placeholder="ИНН"
                                            title="Синхронизируется с реквизитами и документом-ИНН">

@@ -1,3 +1,4 @@
+from datetime import date
 from urllib.parse import quote, urlencode
 
 import pandas as pd
@@ -13,10 +14,12 @@ from access_scope_helpers import active_scope_values, sync_access_scopes
 from country_helpers import build_country_matcher
 from dependencies import get_db
 from inn_sync import set_employee_inn
-from rbac import require_permission
+from rbac import TM_ROLE_VALUES, require_permission
 from legal_entity_helpers import active_legal_entities
 from models import JOB_TITLES, Country, Shift, TimebookEmployee, User
 from utils import (
+    find_user_by_name,
+    normalize_person_name,
     get_password_hash,
     normalize_phone,
     normalize_role,
@@ -42,6 +45,8 @@ def _user_payload(user):
         "is_student": getattr(user, "is_student", False),
         "legal_entity": user.legal_entity,
         "job_title": getattr(user, "job_title", None),
+        "birth_date": user.birth_date.isoformat() if getattr(user, "birth_date", None) else None,
+        "tm_id": getattr(user, "tm_id", None),
     }
 
 
@@ -54,8 +59,14 @@ def _default_city_scope(session, role, raw_scope):
     return ", ".join(cities)
 
 
+def tm_users(session):
+    """Пользователи, которых можно закрепить ТМ за сотрудником (П1-Б)."""
+    users = session.query(User).filter(User.role.in_(TM_ROLE_VALUES)).all()
+    return sorted(users, key=lambda u: normalize_text(u.employee_name).lower())
+
+
 def pending_employees(session):
-    """ФИО из смен, у которых НЕТ аккаунта User (нормализованное сравнение).
+    """ФИО из смен, у которых нет кабинета: нет User или User без пароля (П1-Б).
 
     Для каждого — подтянутые из timebook телефон/ИНН/табельный (стейджинг
     TimebookEmployee), кол-во смен и последний ТК/город для контекста.
@@ -63,10 +74,11 @@ def pending_employees(session):
     shift_names = {
         normalize_text(e) for (e,) in session.query(Shift.employee).distinct().all() if normalize_text(e)
     }
-    user_names = {
-        normalize_text(n) for (n,) in session.query(User.employee_name).distinct().all() if normalize_text(n)
+    with_cabinet = {
+        normalize_person_name(n)
+        for (n,) in session.query(User.employee_name).filter(User.password_hash != None).all()
     }
-    pending = sorted(shift_names - user_names)
+    pending = sorted(name for name in shift_names if normalize_person_name(name) not in with_cabinet)
     if not pending:
         return []
 
@@ -144,8 +156,8 @@ def create_user_page(
 @router.post("/admin/create-user", response_class=HTMLResponse)
 def create_user_submit(
     request: Request,
-    phone: str = Form(...),
-    password: str = Form(...),
+    phone: str = Form(default=""),
+    password: str = Form(default=""),
     employee_name: str = Form(...),
     role: str = Form(default="employee"),
     brigadier_store: str = Form(default=""),
@@ -176,44 +188,60 @@ def create_user_submit(
             status_code=400,
         )
 
-    if session.query(User).filter(User.phone == phone_clean).first():
+    def refuse(error):
         return templates.TemplateResponse(
             request,
             "create_user.html",
             {
-                "error": "Пользователь уже существует",
+                "error": error,
                 "message": None,
                 "legal_entities": active_legal_entities(session),
                 "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
             }
         )
 
-    user = User(
-        phone=phone_clean,
-        password_hash=get_password_hash(password_clean),
-        employee_name=employee_name_clean,
-        is_admin=(role_clean in {"admin", "superadmin"}),
-        role=role_clean,
-        brigadier_store=normalize_text(brigadier_store) or None,
-        economist_stores=scope_value or None,
-        citizenship_country_id=citizenship_country_id,
-        is_student=bool(is_student),
-        legal_entity=normalize_text(legal_entity) or None,
-        password_is_temporary=True,  # админ задал пароль — сотруднику предложить сменить
-    )
+    # Кабинет выдаётся парой «телефон + пароль»; без обоих — сотрудник без кабинета.
+    if bool(phone_clean) != bool(password_clean):
+        return refuse("Для входа в кабинет нужны и телефон, и пароль. Без кабинета — оставьте оба поля пустыми.")
 
-    session.add(user)
+    if phone_clean and session.query(User).filter(User.phone == phone_clean).first():
+        return refuse("Пользователь уже существует")
+
+    # Контракт по ФИО: тот же человек без кабинета — выдать кабинет и обновить
+    # поля формы; с кабинетом — отказ (иначе молча перехватили бы чужой логин).
+    user = find_user_by_name(session, employee_name_clean)
+    if user and user.password_hash:
+        return refuse("Сотрудник «%s» уже есть (ID %s) и у него есть кабинет" % (user.employee_name, user.id))
+
+    old_value = _user_payload(user) if user else None
+    if user is None:
+        user = User(employee_name=employee_name_clean)
+        session.add(user)
+    user.role = role_clean
+    user.is_admin = role_clean in {"admin", "superadmin"}
+    user.brigadier_store = normalize_text(brigadier_store) or None
+    user.economist_stores = scope_value or None
+    user.citizenship_country_id = citizenship_country_id
+    user.is_student = bool(is_student)
+    user.legal_entity = normalize_text(legal_entity) or None
+    if phone_clean:
+        user.phone = phone_clean
+        user.password_hash = get_password_hash(password_clean)
+        user.password_is_temporary = True  # админ задал пароль — сотруднику предложить сменить
+
     session.flush()
     sync_access_scopes(session, request, admin, user, "city", scope_value)
     create_audit_log(
         session,
         request,
         admin,
-        "user_created",
+        "user_updated" if old_value else "user_created",
         "user",
         user.id,
         user.employee_name,
+        old_value=old_value,
         new_value=_user_payload(user),
+        comment="cabinet issued for existing employee" if old_value else None,
     )
     session.commit()
 
@@ -221,7 +249,7 @@ def create_user_submit(
         request,
         "create_user.html",
         {
-            "message": "Пользователь создан",
+            "message": "Сотруднику выдан кабинет" if old_value else "Пользователь создан",
             "error": None,
             "legal_entities": active_legal_entities(session),
             "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
@@ -311,6 +339,7 @@ async def upload_users_submit(
     linked = 0
     unmatched = []
     changes_report = []
+    conflicts = []
 
     for _, row in df.iterrows():
         try:
@@ -332,11 +361,33 @@ async def upload_users_submit(
             legal_clean = cell_text(row.get("legal_entity"))
 
             existing = session.query(User).filter(User.phone == phone_clean).first()
+            by_name = find_user_by_name(session, name_clean) if name_clean else None
+            if existing and by_name and by_name.id != existing.id:
+                # Телефон у одного User, ФИО — у другого: склеивать вслепую нельзя.
+                conflicts.append({
+                    "name": name_clean,
+                    "reason": "телефон %s у «%s» (ID %s), ФИО — у ID %s"
+                              % (phone_clean, existing.employee_name, existing.id, by_name.id),
+                })
+                continue
+            if not existing and by_name:
+                if by_name.phone:
+                    conflicts.append({
+                        "name": name_clean,
+                        "reason": "ФИО уже есть (ID %s) с другим телефоном %s" % (by_name.id, by_name.phone),
+                    })
+                    continue
+                # Сотрудник без кабинета: строка таблицы выдаёт ему кабинет.
+                existing = by_name
 
             if existing:
                 # Обновление существующего: непустые ячейки обновляют, пустые не затирают.
                 old_value = _user_payload(existing)
                 row_changes = []
+
+                if not existing.phone:
+                    row_changes.append(f"телефон →{phone_clean}")
+                    existing.phone = phone_clean
 
                 if name_clean and name_clean != existing.employee_name:
                     row_changes.append(f"ФИО {existing.employee_name}→{name_clean}")
@@ -371,6 +422,13 @@ async def upload_users_submit(
                 if legal_clean and legal_clean != (existing.legal_entity or ""):
                     row_changes.append(f"юрлицо →{legal_clean}")
                     existing.legal_entity = legal_clean
+
+                # Кабинет выдаётся парой «телефон + пароль»: без пароля в таблице
+                # сотруднику без кабинета телефон не ставим.
+                if not existing.password_hash and not password_clean:
+                    session.rollback()
+                    conflicts.append({"name": existing.employee_name, "reason": "нет пароля для выдачи кабинета"})
+                    continue
 
                 # Пароль — только если в таблице явно указан непустой.
                 if password_clean:
@@ -465,6 +523,7 @@ async def upload_users_submit(
             "linked": linked,
             "unmatched": unmatched,
             "changes_report": changes_report,
+            "conflicts": conflicts,
             "error": None,
         }
     )
@@ -510,6 +569,7 @@ def admin_users(
             "legal_entities": active_legal_entities(session),
             "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
             "job_titles": JOB_TITLES,
+            "tm_users": tm_users(session),
             "pending_count": len(pending_employees(session)),
             "message": message or None,
             "error": error or None,
@@ -538,6 +598,8 @@ def update_user(
     legal_entity: str = Form(default=""),
     inn: str = Form(default=""),
     job_title: str = Form(default=""),
+    birth_date: str = Form(default=""),
+    tm_id: int = Form(0),
     f_user_id: str = Form(default=""),
     f_phone: str = Form(default=""),
     f_employee_name: str = Form(default=""),
@@ -614,6 +676,19 @@ def update_user(
         user.job_title = None
     elif job_title_clean in JOB_TITLES:
         user.job_title = job_title_clean
+
+    birth_date_clean = normalize_text(birth_date)
+    if not birth_date_clean:
+        user.birth_date = None
+    else:
+        try:
+            user.birth_date = date.fromisoformat(birth_date_clean)
+        except ValueError:
+            pass  # кривая дата из формы — не меняем
+
+    # ТМ: только пользователь с ролью ТМ и не сам сотрудник; иначе — снять.
+    tm_ids = {tm.id for tm in tm_users(session)}
+    user.tm_id = tm_id if tm_id in tm_ids and tm_id != user.id else None
 
     inn_clean = normalize_text(inn)
     if inn_clean:
@@ -769,6 +844,7 @@ async def users_pending_create(
     created = 0
     no_phone = []
     skipped = []
+    issued = []
 
     for i in range(row_count):
         if not form.get(f"sel_{i}"):
@@ -782,23 +858,20 @@ async def users_pending_create(
             no_phone.append(name)
             continue
 
-        # Идемпотентность: уже есть по телефону ИЛИ по ФИО — пропускаем.
-        exists = session.query(User).filter(
-            (User.phone == phone) | (User.employee_name == name)
-        ).first()
-        if exists:
+        # Идемпотентность: телефон занят или у сотрудника уже есть кабинет — пропускаем.
+        # Сотрудник без кабинета (например, из импорта авансов) получает кабинет.
+        user = find_user_by_name(session, name)
+        if session.query(User).filter(User.phone == phone).first() or (user and user.password_hash):
             skipped.append(name)
             continue
 
-        user = User(
-            phone=phone,
-            password_hash=get_password_hash(password),
-            employee_name=name,
-            is_admin=False,
-            role="employee",
-            password_is_temporary=True,  # общий пароль пачки → сотруднику сменить
-        )
-        session.add(user)
+        is_new = user is None
+        if is_new:
+            user = User(employee_name=name, is_admin=False, role="employee")
+            session.add(user)
+        user.phone = phone
+        user.password_hash = get_password_hash(password)
+        user.password_is_temporary = True  # общий пароль пачки → сотруднику сменить
         try:
             session.flush()
             staged = session.query(TimebookEmployee).filter(
@@ -808,16 +881,21 @@ async def users_pending_create(
                 set_employee_inn(session, user, staged.inn, source="timebook", actor=admin, request=request)
             create_audit_log(
                 session, request, admin,
-                "user_created_from_shifts", "user", user.id, user.employee_name,
+                "user_created_from_shifts" if is_new else "user_cabinet_issued", "user", user.id, user.employee_name,
                 new_value=_user_payload(user), comment="created from timebook shifts",
             )
             session.commit()
-            created += 1
+            if is_new:
+                created += 1
+            else:
+                issued.append(name)
         except IntegrityError:
             session.rollback()
             skipped.append(name)
 
     parts = [f"Создано: {created}"]
+    if issued:
+        parts.append(f"выдан кабинет существующим: {len(issued)}")
     if skipped:
         parts.append(f"пропущено (уже есть): {len(skipped)}")
     if no_phone:
@@ -890,6 +968,14 @@ def change_password(
             request,
             session,
             error="Новый пароль не может быть пустым"
+        )
+
+    if not user.phone:
+        # Пароль без логина — кабинет, в который не войти. Сначала телефон.
+        return render_users(
+            request,
+            session,
+            error="У сотрудника нет телефона (логина) — сначала укажите телефон в карточке"
         )
 
     user.password_hash = get_password_hash(new_password_clean)
