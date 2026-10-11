@@ -13,7 +13,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from database import Base
-from models import AdvanceSelection, AuditLog, Rate, Service, Shift, Store, User
+from models import (AdvanceSelection, AuditLog, HourlyBonus, PayrollRun, PayrollRunItem, Rate, Service, Shift,
+                    Store, User)
+from payroll_run_helpers import build_run_items
 from service_catalog import build_service_resolver
 from store_helpers import populate_stores_from_shifts
 from utils import pick_rate
@@ -152,6 +154,81 @@ class WeeklyFlagsTests(unittest.TestCase):
         self.assertEqual(s.query(AuditLog).filter_by(action="advance.selection.import").count(), 1)
         again = import_weekly_flags(s, names, week, apply=True)
         self.assertEqual((again["added"], len(again["existing"])), ([], 2))
+
+
+class HourlyBonusTests(unittest.TestCase):
+    def setUp(self):
+        self.s = _session()
+        _grid(self.s)
+        self.s.add(Store(tk_number=522, city="Москва", rate_region="Москва", format="СМ"))
+        self.s.add(HourlyBonus(name="Акция", amount_per_hour=5.0, active_from=datetime.date(2026, 9, 1)))
+        self.shifts = [_shift(store="Лента-522"),
+                       _shift(store="Лента-522", day=DAY + datetime.timedelta(days=1),
+                              request_type="Смена без плана"),
+                       _shift(store="Лента-522", service="3ур_Нет такой", day=DAY + datetime.timedelta(days=2))]
+        self.s.add_all(self.shifts)
+        self.s.commit()
+
+    def _run(self, kind, link_paid):
+        run = PayrollRun(status="draft", kind=kind, date_from=DAY, date_to=DAY + datetime.timedelta(days=6),
+                         legal_entity="ООО")
+        self.s.add(run)
+        self.s.flush()
+        items = build_run_items(self.s, run, self.shifts, date_from=run.date_from, date_to=run.date_to,
+                                rates=self.s.query(Rate).all(), resolve=build_service_resolver(self.s),
+                                apply_lmk=False, apply_auto=False, manual=None, link_paid=link_paid)
+        run.status = "fixed"
+        self.s.commit()
+        return items
+
+    def test_abazov_advance_then_period(self):
+        advance = self._run("advance", link_paid=False)
+        paid = advance[0]
+        self.assertEqual((paid.amount, paid.bonus_amount, paid.total_amount), (3344, 55, 3399))
+        self.assertEqual([i.bonus_amount for i in advance[1:]], [0, 0])  # без плана, без ЧТС
+        period = self._run("period", link_paid=True)
+        self.assertEqual((period[0].advanced_amount, period[0].total_amount), (3399, 0))  # без ложного остатка
+
+    def test_closed_bonus_not_applied(self):
+        bonus = self.s.query(HourlyBonus).one()
+        bonus.active_to = DAY - datetime.timedelta(days=1)
+        self.s.commit()
+        item = self._run("advance", link_paid=False)[0]
+        self.assertEqual((item.bonus_amount, item.total_amount), (0, 3344))
+
+    def test_bonuses_sum(self):
+        self.s.add(HourlyBonus(name="Ещё", amount_per_hour=2.5, active_from=DAY))
+        self.s.commit()
+        self.assertEqual(self._run("advance", link_paid=False)[0].bonus_amount, 11 * 7.5)
+
+    def test_screen_adds_and_closes(self):
+        import main
+        from fastapi.testclient import TestClient
+
+        from dependencies import current_user, get_db
+
+        admin = User(id=1, employee_name="Админ", role="superadmin", is_admin=True)
+        self.s.add(admin)
+        self.s.commit()
+        self.s.refresh(admin)
+        self.s.expunge(admin)
+        main.app.dependency_overrides[get_db] = lambda: self.s
+        main.app.dependency_overrides[current_user] = lambda: admin
+        try:
+            client = TestClient(main.app)
+            response = client.post("/admin/payouts/bonuses/add", follow_redirects=False,
+                                   data={"name": "Ночь", "amount_per_hour": "10,5", "active_from": "2026-10-01"})
+            self.assertIn("message=", response.headers["location"])
+            bonus = self.s.query(HourlyBonus).filter_by(name="Ночь").one()
+            self.assertEqual(bonus.amount_per_hour, 10.5)
+            client.post(f"/admin/payouts/bonuses/{bonus.id}/close", data={"active_to": "2026-10-31"})
+            self.assertEqual(bonus.active_to, datetime.date(2026, 10, 31))
+            html = client.get("/admin/payouts/bonuses").text
+            self.assertIn("Ночь", html)
+            self.assertIn("31.10.2026", html)
+        finally:
+            main.app.dependency_overrides.pop(get_db, None)
+            main.app.dependency_overrides.pop(current_user, None)
 
 
 if __name__ == "__main__":

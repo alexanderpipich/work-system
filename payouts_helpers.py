@@ -20,7 +20,8 @@ from manual_adjustments import parse_money
 from models import (AdvanceSelection, AuditLog, ManualPayrollAdjustment, PayrollRun, PayrollRunItem,
                     ReferralPayout, ReferralPromo, Requisite, Shift, User)
 from payroll_run_helpers import (ALL_STORES, PAID_RUN_STATUSES, RUN_KIND_ADVANCE, RUN_KIND_PERIOD,
-                                 build_run_items, paid_shift_twins, shift_pay_key)
+                                 bonus_per_hour, build_run_items, load_hourly_bonuses, paid_shift_twins,
+                                 shift_pay_key)
 from referral_helpers import apply_confirmed_payouts_to_run
 from service_catalog import build_service_resolver
 from shift_helpers import is_no_plan_shift
@@ -184,6 +185,7 @@ def advance_week_rows(session, week_start):
     selection = week_selection(session, week_start)
     previous = week_selection(session, week_start - timedelta(days=7))
     deductions = week_deductions(session, week_start)
+    bonuses = load_hourly_bonuses(session)
 
     users = {u.employee_name_norm: u for u in session.query(User).all()}
     tm_names = {u.id: u.employee_name for u in users.values()}
@@ -204,6 +206,7 @@ def advance_week_rows(session, week_start):
                 "selected": key in selection,
                 "hours": 0.0,
                 "calc": 0.0,
+                "bonus": 0.0,
                 "paid_hours": 0.0,
                 "shifts": [],
                 "no_shifts": False,
@@ -221,6 +224,8 @@ def advance_week_rows(session, week_start):
         rate_value = rate.hourly_rate if rate else 0
         no_plan = is_no_plan_shift(shift)
         amount = 0 if (no_plan or twin) else (shift.hours or 0) * rate_value
+        # Надбавка к часу (П4.4) — как в build_run_items: только к смене со ставкой.
+        bonus = (shift.hours or 0) * bonus_per_hour(bonuses, shift.shift_date) if amount else 0
         if twin:
             status = "Оплачено в табеле №%s" % twin.run_id
             row["paid_hours"] += shift.hours or 0
@@ -231,8 +236,9 @@ def advance_week_rows(session, week_start):
         else:
             status = ""
         row["hours"] += shift.hours or 0
-        row["calc"] += amount
-        row["shifts"].append({"shift": shift, "rate": rate_value, "amount": amount,
+        row["calc"] += amount + bonus
+        row["bonus"] += bonus
+        row["shifts"].append({"shift": shift, "rate": rate_value, "amount": amount, "bonus": bonus,
                               "paid": bool(twin), "status": status, "no_rate": not rate and not no_plan and not twin})
 
     for key in list(selection) + list(previous):
@@ -615,7 +621,7 @@ def period_summary(session, run):
     for item in items:
         key = normalize_person_name(item.employee_name)
         group = groups.setdefault(key, {
-            "employee_name": item.employee_name, "items": [], "hours": 0.0, "accrued": 0.0,
+            "employee_name": item.employee_name, "items": [], "hours": 0.0, "accrued": 0.0, "bonus": 0.0,
             "adjustments": 0.0, "lmk": 0.0, "advanced": 0.0, "total": 0.0,
         })
         user = users.get(key)
@@ -623,6 +629,7 @@ def period_summary(session, run):
         group["items"].append(item)
         group["hours"] += item.hours or 0
         group["accrued"] += item.amount or 0
+        group["bonus"] += item.bonus_amount or 0
         group["adjustments"] += (item.other_amount or 0) + (item.auto_adjustments_amount or 0)
         group["lmk"] += item.lmk_amount or 0
         group["advanced"] += item.advanced_amount or 0
@@ -631,5 +638,6 @@ def period_summary(session, run):
     for row in rows:
         row["overpaid"] = round(row["total"], 2) < 0
         row["has_negative_item"] = any(round(i.total_amount or 0, 2) < 0 for i in row["items"])
-    totals = {k: sum(r[k] for r in rows) for k in ("hours", "accrued", "adjustments", "lmk", "advanced", "total")}
+    totals = {k: sum(r[k] for r in rows)
+              for k in ("hours", "accrued", "bonus", "adjustments", "lmk", "advanced", "total")}
     return rows, totals

@@ -17,7 +17,8 @@ from manual_adjustments import (
 )
 from models import PayrollRun, Requisite, Shift
 from payouts_helpers import period_runs_for
-from payroll_run_helpers import build_run_items, half_month_bounds, is_half_month
+from payroll_run_helpers import (bonus_per_hour, build_run_items, half_month_bounds, is_half_month,
+                                 load_hourly_bonuses)
 from payroll_adjustments import apply_auto_adjustments_to_rows
 from referral_helpers import apply_confirmed_payouts_to_run, pending_payouts
 from schedule_grid import build_payroll_rows, days_between
@@ -250,6 +251,7 @@ def economist_payroll(
 
     rates = load_rates(session)
     resolve = build_service_resolver(session)
+    bonuses = load_hourly_bonuses(session)
     payroll_map = {}
 
     for shift in shifts:
@@ -257,6 +259,9 @@ def economist_payroll(
         rate = pick_rate(rates, shift, resolve=resolve)
         rate_value = rate.hourly_rate if rate else 0
         amount = 0 if shift_is_no_plan else (shift.hours * rate_value if rate else 0)
+        # П4.4: надбавка к часу входит в начисленное — как в зафиксированном табеле.
+        if amount and bonuses:
+            amount += shift.hours * bonus_per_hour(bonuses, shift.shift_date)
 
         key = (shift.employee, shift.city, shift.store, shift_is_no_plan)
 

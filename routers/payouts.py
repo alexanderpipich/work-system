@@ -1,4 +1,4 @@
-"""Выплаты (П3): еженедельные авансы и табель за период, реестр выплат xlsx."""
+"""Выплаты (П3): еженедельные авансы и табель за период, реестр выплат xlsx; надбавки к часу (П4.4)."""
 
 from datetime import date, datetime, timedelta
 from urllib.parse import quote, urlencode
@@ -10,13 +10,15 @@ from sqlalchemy.orm import Session
 
 from dependencies import RedirectException, current_user, get_db
 from file_storage import storage_response
-from models import PayrollRun, User
+from audit_helpers import create_audit_log
+from manual_adjustments import parse_money
+from models import HourlyBonus, PayrollRun, User
 from payouts_helpers import (advance_run_for_week, advance_week_rows, can_select, carry_over_selection,
                              create_period_draft, default_week, fix_advance, fix_period_run, is_frozen,
                              period_summary, save_registry, save_week_deduction, set_selection, unfix_run,
                              unsend_run, week_monday)
 from payroll_run_helpers import RUN_KIND_ADVANCE
-from rbac import ROLE_TM, canonical_role, has_permission
+from rbac import ROLE_TM, canonical_role, has_permission, require_permission
 from time_helpers import business_today
 from utils import find_user_by_name, format_card_number, normalize_person_name, normalize_text
 
@@ -311,3 +313,83 @@ def period_fix(request: Request, run_id: int, session: Session = Depends(get_db)
     if errors:
         return RedirectResponse(_run_back_url(run, error="; ".join(errors[:10])), 302)
     return RedirectResponse(_run_back_url(run, message="Табель зафиксирован"), 302)
+
+
+# ── Надбавки к часу (П4.4) ───────────────────────────────────────────────────
+
+_bonuses_manage = require_permission("payroll.manage")
+BONUSES_URL = "/admin/payouts/bonuses"
+
+
+def _parse_day(value):
+    try:
+        return date.fromisoformat(value) if value else None
+    except ValueError:
+        return None
+
+
+def _bonuses_redirect(message=None, error=None):
+    params = {k: v for k, v in (("message", message), ("error", error)) if v}
+    return RedirectResponse(BONUSES_URL + ("?" + urlencode(params) if params else ""), status_code=303)
+
+
+@router.get(BONUSES_URL, response_class=HTMLResponse)
+def payouts_bonuses(request: Request, message: str = "", error: str = "",
+                    session: Session = Depends(get_db), user=Depends(_bonuses_manage)):
+    bonuses = session.query(HourlyBonus).order_by(HourlyBonus.active_from.desc(), HourlyBonus.id.desc()).all()
+    return templates.TemplateResponse(request, "payouts_bonuses.html", {
+        "user": user, "bonuses": bonuses, "today": business_today(), "message": message, "error": error,
+    })
+
+
+@router.post(BONUSES_URL + "/add")
+def payouts_bonus_add(request: Request, name: str = Form(""), amount_per_hour: str = Form(""),
+                      active_from: str = Form(""), active_to: str = Form(""), comment: str = Form(""),
+                      session: Session = Depends(get_db), user=Depends(_bonuses_manage)):
+    name = normalize_text(name)
+    amount = parse_money(amount_per_hour)
+    start, end = _parse_day(active_from), _parse_day(active_to)
+    if not name or amount <= 0 or start is None:
+        return _bonuses_redirect(error="Нужны название, сумма за час больше нуля и дата начала")
+    if end and end < start:
+        return _bonuses_redirect(error="Дата окончания раньше даты начала")
+    bonus = HourlyBonus(name=name, amount_per_hour=amount, active_from=start, active_to=end, is_active=True,
+                        comment=normalize_text(comment) or None, created_by=user.id)
+    session.add(bonus)
+    session.flush()
+    create_audit_log(session, request, user, "hourly_bonus.create", "hourly_bonus", bonus.id, name,
+                     new_value={"amount_per_hour": amount, "active_from": start.isoformat(),
+                                "active_to": end.isoformat() if end else None})
+    session.commit()
+    return _bonuses_redirect(message=f"Надбавка «{name}» {amount:g} ₽/ч добавлена")
+
+
+@router.post(BONUSES_URL + "/{bonus_id}/close")
+def payouts_bonus_close(bonus_id: int, request: Request, active_to: str = Form(""),
+                        session: Session = Depends(get_db), user=Depends(_bonuses_manage)):
+    bonus = session.get(HourlyBonus, bonus_id)
+    end = _parse_day(active_to)
+    if bonus is None or end is None:
+        return _bonuses_redirect(error="Укажите дату окончания")
+    if end < bonus.active_from:
+        return _bonuses_redirect(error="Дата окончания раньше даты начала")
+    old = bonus.active_to
+    bonus.active_to = end
+    create_audit_log(session, request, user, "hourly_bonus.close", "hourly_bonus", bonus.id, bonus.name,
+                     old_value={"active_to": old.isoformat() if old else None},
+                     new_value={"active_to": end.isoformat()})
+    session.commit()
+    return _bonuses_redirect(message=f"«{bonus.name}» действует по {end:%d.%m.%Y}")
+
+
+@router.post(BONUSES_URL + "/{bonus_id}/toggle")
+def payouts_bonus_toggle(bonus_id: int, request: Request,
+                         session: Session = Depends(get_db), user=Depends(_bonuses_manage)):
+    bonus = session.get(HourlyBonus, bonus_id)
+    if bonus is None:
+        return _bonuses_redirect()
+    bonus.is_active = not bonus.is_active
+    create_audit_log(session, request, user, "hourly_bonus.toggle", "hourly_bonus", bonus.id, bonus.name,
+                     old_value={"is_active": not bonus.is_active}, new_value={"is_active": bonus.is_active})
+    session.commit()
+    return _bonuses_redirect(message=f"«{bonus.name}» {'включена' if bonus.is_active else 'выключена'}")

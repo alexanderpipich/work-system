@@ -6,7 +6,7 @@ from sqlalchemy import text
 from database import engine
 from lmk_charges import get_lmk_charge_for_employee
 from manual_adjustments import get_manual_adjustments_map
-from models import PayrollRun, PayrollRunItem
+from models import HourlyBonus, PayrollRun, PayrollRunItem
 from payroll_adjustments import get_payroll_auto_adjustments
 from shift_helpers import is_no_plan_shift
 from utils import normalize_text, pick_rate
@@ -70,6 +70,10 @@ def ensure_payroll_run_closing_columns():
         connection.execute(text(
             "ALTER TABLE payroll_run_items ADD COLUMN IF NOT EXISTS advanced_amount DOUBLE PRECISION DEFAULT 0"
         ))
+        # П4.4: надбавка к часу.
+        connection.execute(text(
+            "ALTER TABLE payroll_run_items ADD COLUMN IF NOT EXISTS bonus_amount DOUBLE PRECISION DEFAULT 0"
+        ))
 
 
 # ── Расчёт строк прогона (П3) ────────────────────────────────────────────────
@@ -131,6 +135,17 @@ def paid_shift_twins(session, shifts, exclude_run_id=None):
     return twins
 
 
+def load_hourly_bonuses(session):
+    """Включённые надбавки к часу (П4.4) — один запрос на расчёт."""
+    return session.query(HourlyBonus).filter(HourlyBonus.is_active == True).all()  # noqa: E712
+
+
+def bonus_per_hour(bonuses, day):
+    """Σ надбавок, действующих на дату смены."""
+    return sum(b.amount_per_hour or 0 for b in bonuses
+               if b.active_from <= day and (b.active_to is None or day <= b.active_to))
+
+
 def build_run_items(
     session,
     run,
@@ -160,11 +175,16 @@ def build_run_items(
     used_auto_keys = set()
     used_lmk_employees = set()
     items = []
+    bonuses = load_hourly_bonuses(session)
 
     for shift in shifts:
         rate = pick_rate(rates, shift, resolve=resolve)
         rate_value = rate.hourly_rate if rate else 0
         amount = 0 if is_no_plan_shift(shift) else shift.hours * rate_value
+        # Надбавка — только к оплачиваемой смене со ставкой (без плана и без ЧТС — 0).
+        bonus_amount = 0
+        if amount and bonuses and shift.shift_date:
+            bonus_amount = shift.hours * bonus_per_hour(bonuses, shift.shift_date)
         manual_key = (normalize_text(shift.employee), normalize_text(shift.store))
         other_amount = 0
         auto_amount = 0
@@ -200,7 +220,9 @@ def build_run_items(
                     used_lmk_employees.add(employee_lmk_key)
 
         twin = twins.get(shift_pay_key(shift.employee, shift.store, shift.service, shift.shift_date))
-        advanced_amount = ((twin.amount or 0) + (twin.manual_adjustments_amount or 0)) if twin else 0
+        # Надбавка двойника выплачена вместе с ним — иначе табель покажет ложный остаток.
+        advanced_amount = ((twin.amount or 0) + (twin.bonus_amount or 0)
+                           + (twin.manual_adjustments_amount or 0)) if twin else 0
 
         item = PayrollRunItem(
             run_id=run.id,
@@ -217,7 +239,8 @@ def build_run_items(
             lmk_amount=lmk_amount,
             paid_by_run_id=twin.run_id if twin else None,
             advanced_amount=advanced_amount,
-            total_amount=amount + other_amount + auto_amount - lmk_amount - advanced_amount,
+            bonus_amount=bonus_amount,
+            total_amount=amount + bonus_amount + other_amount + auto_amount - lmk_amount - advanced_amount,
             comment=None if (rate or is_no_plan_shift(shift)) else "Не найдена ЧТС",
         )
         session.add(item)

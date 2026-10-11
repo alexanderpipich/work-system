@@ -84,6 +84,7 @@
                         <th>ТМ</th>
                         <th class="num">Часы</th>
                         <th class="num">Начислено</th>
+                        <th class="num">Акция</th>
                         <th class="num">Корректировки</th>
                         <th class="num">ЛМК</th>
                         <th class="num">Авансировано</th>
@@ -113,13 +114,14 @@
                         <td>{{ row.tm_name or '—' }}</td>
                         <td class="num">{{ '%g' % row.hours }}</td>
                         <td class="num">{{ '%.2f' % row.accrued }}</td>
+                        <td class="num">{{ '%.2f' % row.bonus }}</td>
                         <td class="num">{{ '%.2f' % row.adjustments }}</td>
                         <td class="num">{{ '%.2f' % row.lmk }}</td>
                         <td class="num">{{ '%.2f' % row.advanced }}</td>
                         <td class="num total">{{ '%.2f' % row.total }}</td>
                     </tr>
                 {% else %}
-                    <tr><td colspan="8" class="muted">Строк нет{% if run.status == 'draft' %} — пересчитайте черновик{% endif %}</td></tr>
+                    <tr><td colspan="9" class="muted">Строк нет{% if run.status == 'draft' %} — пересчитайте черновик{% endif %}</td></tr>
                 {% endfor %}
                 </tbody>
                 {% if rows %}
@@ -128,6 +130,7 @@
                         <th>Итого</th><th></th>
                         <th class="num">{{ '%g' % totals.hours }}</th>
                         <th class="num">{{ '%.2f' % totals.accrued }}</th>
+                        <th class="num">{{ '%.2f' % totals.bonus }}</th>
                         <th class="num">{{ '%.2f' % totals.adjustments }}</th>
                         <th class="num">{{ '%.2f' % totals.lmk }}</th>
                         <th class="num">{{ '%.2f' % totals.advanced }}</th>
