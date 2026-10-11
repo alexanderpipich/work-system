@@ -321,6 +321,9 @@ def normalize_format(value) -> str:
     # услуги РЦ = «нет тарифа», но формат легитимный, не «прочее»).
     if compact_text in {"ГМ", "СМ", "РЦ"}:
         return compact_text
+    # «МФ» в таблице магазинов Ленты — тот же формат, что «СМ» в выгрузке смен (П4.3).
+    if compact_text == "МФ":
+        return "СМ"
 
     return text
 
