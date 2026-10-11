@@ -70,6 +70,10 @@ PayrollRun lifecycle: `draft` → `fixed` → `sent` → `closed`.
 
 **Never change numerical results** (rates, LMK deductions, adjustment amounts) during refactoring. Calculation logic in `payroll_run_helpers.py`, `lmk_charges.py`, `payroll_adjustments.py` must produce identical outputs before and after any structural change.
 
+## Store Assignments and Where a Shift Counts
+
+An employee↔store assignment (`EmployeeStoreAssignment`, managed on `/admin/planning-bp`) is **only an input for the planning blank (БП)** — it does not restrict where the employee may work. A shift counts where the timebook export caught it, for the service stated in the export: the store, city and service of `Shift` come from the upload, never from the assignment. Monitoring therefore says «убрать из БП» / «добавить в БП», not «не работает». БП and reconciliations are for the ГМ format only (`store_helpers.allows_bp`). City from the export is normalized (`utils.normalize_city`: no «г.», empty → NULL) because `Rate.city` matches `Shift.city` string-for-string.
+
 ## Contracts and Petitions (P4)
 
 `contract_generator.py` fills `data/templates/contract_template.docx` / `petition_template.docx` by replacing template **sample text** inside the paragraph found by an **anchor** (spans across Word runs, formatting kept, substituted text highlighted yellow, missing → «НЕТ ДАННЫХ» only on explicit request). The map is `CONTRACT_SUBS` / `PETITION_SUBS`; `tests/test_documents_contracts.py -k real_templates` fails with `TemplateMismatch` if a template edit removed a sample. Field sources live in `contract_data.py`; see `docs/contracts.md`.
