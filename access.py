@@ -1,8 +1,12 @@
-from rbac import canonical_role, get_scope_values
+from rbac import canonical_role, get_scope_values, scopes_enabled
 from utils import normalize_text
 
 
 def get_economist_cities(user):
+    """Города экономиста из legacy-поля economist_stores; None — без ограничений
+    (скоупы выключены, rbac.scopes_enabled)."""
+    if not scopes_enabled():
+        return None
     raw = getattr(user, "economist_stores", None) or ""
     return [normalize_text(city) for city in raw.split(",") if normalize_text(city)]
 

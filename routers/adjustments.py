@@ -167,6 +167,8 @@ def _filter_economist_adjustments(session, adjustments, user):
         return adjustments
 
     allowed_cities = get_economist_cities(user)
+    if allowed_cities is None:
+        return adjustments
     allowed_keys = _allowed_adjustment_keys(session, allowed_cities)
 
     return [
@@ -188,6 +190,8 @@ def _economist_can_manage_adjustment(session, adjustment, user):
         return True
 
     allowed_cities = get_economist_cities(user)
+    if allowed_cities is None:
+        return True
     if not allowed_cities:
         return False
 

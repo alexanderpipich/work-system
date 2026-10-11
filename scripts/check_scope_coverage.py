@@ -1,7 +1,7 @@
 """
 RBAC-5 Step 4 (Part 1): Coverage check after scope migration.
 
-For each active economist / hr_manager / brigadier shows:
+For each active economist / tm (ex hr_manager) / brigadier shows:
   - scopes present in UserAccessScope
   - users with EMPTY scope (will fall back to legacy data or see nothing)
 
@@ -18,8 +18,8 @@ from database import SessionLocal
 from models import User, UserAccessScope
 from rbac import canonical_role
 
-SCOPED_ROLES = {"economist", "hr_manager", "brigadier"}
-SCOPE_TYPE = {"economist": "city", "hr_manager": "city", "brigadier": "store"}
+SCOPED_ROLES = {"economist", "tm", "brigadier"}
+SCOPE_TYPE = {"economist": "city", "tm": "city", "brigadier": "store"}
 
 
 def main():

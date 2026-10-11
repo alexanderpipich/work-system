@@ -68,7 +68,8 @@
                     <option value="employee" selected>Сотрудник</option>
                     <option value="brigadier">Бригадир</option>
                     <option value="economist">Экономист</option>
-                    <option value="hr_manager">HR-менеджер региона</option>
+                    <option value="tm">ТМ (территориальный менеджер)</option>
+                    <option value="hr_clerk">Кадровик</option>
                     <option value="hr_lead">Руководитель HR-проекта</option>
                     <option value="headhunter">Подборщик</option>
                     <option value="superadmin">Суперадминистратор</option>
@@ -127,7 +128,7 @@ function updateRoleFields() {
         brigadierField.style.display = "block";
     }
 
-    if (["economist", "hr_manager"].includes(roleSelect.value)) {
+    if (["economist", "tm"].includes(roleSelect.value)) {
         economistField.style.display = "block";
     }
 }

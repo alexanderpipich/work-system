@@ -8,7 +8,7 @@ from access_scope_helpers import active_scope_values, sync_access_scopes
 from audit_helpers import create_audit_log
 from dependencies import get_db
 from models import Shift, User
-from rbac import canonical_role, require_permission
+from rbac import ROLE_HR_LEAD, ROLE_TM, TM_ROLE_VALUES, canonical_role, require_permission, scopes_enabled
 from utils import get_password_hash
 
 
@@ -20,7 +20,7 @@ require_limited_password_reset = require_permission("password.reset_limited", au
 
 @router.get("/hr/team", response_class=HTMLResponse)
 def hr_team(request: Request, message: str = "", session: Session = Depends(get_db), user=Depends(require_hr_team_management)):
-    managers = session.query(User).filter(User.role == "hr_manager").order_by(User.employee_name).all()
+    managers = session.query(User).filter(User.role.in_(TM_ROLE_VALUES)).order_by(User.employee_name).all()
     available_cities = [
         row[0]
         for row in session.query(Shift.city).filter(Shift.city != None).distinct().order_by(Shift.city).all()
@@ -46,22 +46,22 @@ def update_hr_manager_scopes(
     session: Session = Depends(get_db),
     user=Depends(require_hr_team_management),
 ):
-    manager = session.query(User).filter(User.id == user_id, User.role == "hr_manager").first()
+    manager = session.query(User).filter(User.id == user_id, User.role.in_(TM_ROLE_VALUES)).first()
     if not manager:
-        return RedirectResponse("/hr/team?message=HR-менеджер не найден", status_code=302)
+        return RedirectResponse("/hr/team?message=ТМ не найден", status_code=302)
     cities = sync_access_scopes(session, request, user, manager, "city", scope_cities)
     valid_stores = [row[0] for row in session.query(Shift.store).filter(Shift.city.in_(cities or ["__none__"]), Shift.store.in_(scope_stores or ["__none__"])).distinct().all()]
     sync_access_scopes(session, request, user, manager, "store", valid_stores)
     manager.economist_stores = ", ".join(cities) or None
     session.commit()
-    return RedirectResponse("/hr/team?message=Область HR-менеджера обновлена", status_code=302)
+    return RedirectResponse("/hr/team?message=Область ТМ обновлена", status_code=302)
 
 @router.get("/hr/access", response_class=HTMLResponse)
 def hr_access(request: Request, message: str = "", error: str = "", session: Session = Depends(get_db), user=Depends(require_limited_password_reset)):
     role = canonical_role(user)
-    if role not in {"hr_lead", "hr_manager"}:
+    if role not in {ROLE_HR_LEAD, ROLE_TM}:
         return RedirectResponse("/", status_code=302)
-    allowed_names = None if role == "hr_lead" else set(accessible_employee_names(session, user))
+    allowed_names = None if role == "hr_lead" or not scopes_enabled() else set(accessible_employee_names(session, user))
     query = session.query(User).filter(User.role.in_(["employee", "brigadier"]))
     if allowed_names is not None:
         query = query.filter(User.employee_name.in_(allowed_names or ["__none__"]))
@@ -73,7 +73,7 @@ def hr_access(request: Request, message: str = "", error: str = "", session: Ses
 def hr_reset_password(request: Request, user_id: int = Form(...), new_password: str = Form(...), session: Session = Depends(get_db), user=Depends(require_limited_password_reset)):
     role = canonical_role(user)
     target = session.query(User).filter(User.id == user_id, User.role.in_(["employee", "brigadier"])).first()
-    allowed_names = None if role == "hr_lead" else set(accessible_employee_names(session, user))
+    allowed_names = None if role == "hr_lead" or not scopes_enabled() else set(accessible_employee_names(session, user))
     if not target or (allowed_names is not None and target.employee_name not in allowed_names):
         return RedirectResponse("/hr/access?error=Пользователь недоступен", status_code=302)
     password = str(new_password or "").strip()

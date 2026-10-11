@@ -1,3 +1,5 @@
+import os
+
 from fastapi import Depends, Request
 
 from audit_helpers import create_audit_log
@@ -8,23 +10,45 @@ from utils import normalize_text
 
 ROLE_SUPERADMIN = "superadmin"
 ROLE_HR_LEAD = "hr_lead"
-ROLE_HR_MANAGER = "hr_manager"
+ROLE_TM = "tm"  # территориальный менеджер; до П1 — hr_manager
+ROLE_HR_CLERK = "hr_clerk"  # кадровик
 ROLE_ECONOMIST = "economist"
 ROLE_BRIGADIER = "brigadier"
 ROLE_HEADHUNTER = "headhunter"
 ROLE_EMPLOYEE = "employee"
 
-# Значения users.role, означающие ТМ (для выборок по колонке, где canonical_role не применить).
-TM_ROLE_VALUES = ("hr_manager",)
-
 ROLES = {
     ROLE_SUPERADMIN,
     ROLE_HR_LEAD,
-    ROLE_HR_MANAGER,
+    ROLE_TM,
+    ROLE_HR_CLERK,
     ROLE_ECONOMIST,
     ROLE_BRIGADIER,
     ROLE_HEADHUNTER,
     ROLE_EMPLOYEE,
+}
+
+# Старые значения users.role → каноническая роль (как admin → superadmin).
+# hr_manager остаётся в базах до scripts/migrate_role_tm.py.
+LEGACY_ROLE_ALIASES = {"hr_manager": ROLE_TM}
+
+# Значения users.role, означающие ТМ (для выборок по колонке, где canonical_role не применить).
+TM_ROLE_VALUES = (ROLE_TM, "hr_manager")
+
+# Роли, работающие в кабинете /hr. Доступ к разделам внутри него всё равно
+# решают права (payroll.view и т.п.): кадровик в выплаты не попадает.
+HR_CABINET_ROLES = frozenset({ROLE_HR_LEAD, ROLE_TM, ROLE_HR_CLERK})
+
+# Подписи ролей в интерфейсе. Ключи — канонические роли.
+ROLE_LABELS = {
+    ROLE_SUPERADMIN: "Суперадминистратор",
+    ROLE_HR_LEAD: "Руководитель HR-проекта",
+    ROLE_TM: "ТМ (территориальный менеджер)",
+    ROLE_HR_CLERK: "Кадровик",
+    ROLE_ECONOMIST: "Экономист",
+    ROLE_BRIGADIER: "Бригадир",
+    ROLE_HEADHUNTER: "Подборщик",
+    ROLE_EMPLOYEE: "Сотрудник",
 }
 
 # Permissions exclusive to superadmin (not listed per-role since superadmin bypasses the check):
@@ -39,10 +63,17 @@ PERMISSIONS = {
         "audit.hr_view", "hr_team.manage", "schedules.view",
         "stores.directory.view", "stores.contacts.view",
     },
-    ROLE_HR_MANAGER: {
+    ROLE_TM: {
         "employees.view", "employees.manage", "documents.view", "documents.manage",
         "requisites.view", "requisites.manage", "reports.view", "payroll.view", "payroll.export",
         "rates.view", "lmk.view", "password.reset_limited", "schedules.view",
+        "stores.directory.view", "stores.contacts.view",
+    },
+    # Кадровик: документы, гражданства, типы документов, мониторинг сотрудников,
+    # справочники. Без выплат, ставок, реквизитов и рассылок.
+    ROLE_HR_CLERK: {
+        "employees.view", "documents.view", "documents.manage",
+        "citizenship.manage", "services.view",
         "stores.directory.view", "stores.contacts.view",
     },
     ROLE_ECONOMIST: {
@@ -50,7 +81,7 @@ PERMISSIONS = {
         "schedules.view", "payroll.view", "payroll.manage", "payroll.send",
         "adjustments.manage", "rates.view", "rates.manage", "requisites.view", "lmk.manage", "reports.view",
         "legal_entities.manage", "economist.dashboard",
-        "stores.directory.view", "stores.contacts.view",
+        "stores.directory.view", "stores.contacts.view", "services.view",
     },
     ROLE_BRIGADIER: {"schedules.view", "stores.directory.view", "stores.contacts.view"},
     # Минимальный набор под кабинет-заглушку: доступ к своему дашборду + справочник магазинов.
@@ -65,7 +96,17 @@ def canonical_role(user) -> str:
     role = normalize_text(getattr(user, "role", "")).lower()
     if getattr(user, "is_admin", False) or role in {"admin", ROLE_SUPERADMIN}:
         return ROLE_SUPERADMIN
+    role = LEGACY_ROLE_ALIASES.get(role, role)
     return role if role in ROLES else ROLE_EMPLOYEE
+
+
+def role_label(role) -> str:
+    """Подпись роли для интерфейса; принимает и старые значения (hr_manager)."""
+    role = normalize_text(role).lower()
+    if role == "admin":
+        role = ROLE_SUPERADMIN
+    role = LEGACY_ROLE_ALIASES.get(role, role)
+    return ROLE_LABELS.get(role, role or ROLE_LABELS[ROLE_EMPLOYEE])
 
 
 def is_superadmin(user) -> bool:
@@ -104,7 +145,16 @@ def require_permission(permission: str, audit_denied: bool = False):
     return dependency
 
 
+def scopes_enabled() -> bool:
+    """Скоупы городов/магазинов. П1: выключены — все видят всё. Инфраструктура
+    (UserAccessScope, access.py, scripts/migrate_scopes.py) сохранена: SCOPES_ENABLED=true
+    возвращает прежнюю логику."""
+    return os.getenv("SCOPES_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def get_scope_values(session, user, scope_type: str):
+    if not scopes_enabled():
+        return None
     if canonical_role(user) in {ROLE_SUPERADMIN, ROLE_HR_LEAD}:
         return None
     rows = session.query(UserAccessScope.scope_value).filter(

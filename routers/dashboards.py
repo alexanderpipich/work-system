@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 
 from access import get_economist_cities
 from dependencies import get_db
-from rbac import canonical_role, get_scope_values, require_permission
+from rbac import HR_CABINET_ROLES, canonical_role, get_scope_values, require_permission
 
 
 router = APIRouter()
@@ -36,7 +36,7 @@ def headhunter_dashboard(request: Request, user=Depends(_headhunter_dashboard)):
 @router.get("/hr", response_class=HTMLResponse)
 def hr_dashboard(request: Request, session=Depends(get_db), user=Depends(require_hr_dashboard)):
     role = canonical_role(user)
-    if role not in {"hr_lead", "hr_manager"}:
+    if role not in HR_CABINET_ROLES:
         return templates.TemplateResponse(request, "hr_dashboard.html", {"user": user, "role": role, "allowed_cities": [], "access_error": True}, status_code=403)
     allowed_cities = get_scope_values(session, user, "city")
     return templates.TemplateResponse(

@@ -34,97 +34,107 @@ def _allowed(perm, role):
 ROUTE_PERMISSION_MATRIX = [
     # reports
     ("reports.view",
-        ["superadmin", "hr_lead", "hr_manager", "economist"],
-        ["brigadier", "employee"]),
+        ["superadmin", "hr_lead", "hr_manager", "tm", "economist"],
+        ["brigadier", "employee", "hr_clerk"]),
 
     # schedules
     ("schedules.view",
-        ["superadmin", "economist", "hr_lead", "hr_manager", "brigadier"],
-        ["employee"]),
+        ["superadmin", "economist", "hr_lead", "hr_manager", "tm", "brigadier"],
+        ["employee", "hr_clerk"]),
     # bypass-only: admin schedules page shows all stores unfiltered
     ("schedules.admin_view",
         ["superadmin"],
-        ["economist", "hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
 
     # bypass-only: audit log, shift upload
     ("audit.view",
         ["superadmin"],
-        ["economist", "hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("shifts.upload",
         ["superadmin"],
-        ["economist", "hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
 
     # lmk
     ("lmk.manage",
         ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("lmk.view",
-        ["superadmin", "hr_lead", "hr_manager"],
-        ["economist", "brigadier", "employee"]),
+        ["superadmin", "hr_lead", "hr_manager", "tm"],
+        ["economist", "brigadier", "employee", "hr_clerk"]),
 
     # adjustments
     ("adjustments.manage",
         ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
 
     # legal entities
     ("legal_entities.manage",
         ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
 
     # documents
     # documents.manage goes to hr_lead/hr_manager; economist gets verify-only
     ("documents.manage",
-        ["superadmin", "hr_lead", "hr_manager"],
+        ["superadmin", "hr_lead", "hr_manager", "tm", "hr_clerk"],
         ["economist", "brigadier", "employee"]),
     ("documents.verify",
         ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
 
     # payroll
     # payroll.manage: economist can create/fix runs (not just view)
     ("payroll.manage",
         ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("payroll.view",
-        ["superadmin", "hr_lead", "hr_manager", "economist"],
-        ["brigadier", "employee"]),
+        ["superadmin", "hr_lead", "hr_manager", "tm", "economist"],
+        ["brigadier", "employee", "hr_clerk"]),
 
     # rates
     ("rates.manage",
         ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("rates.view",
-        ["superadmin", "hr_lead", "hr_manager", "economist"],
-        ["brigadier", "employee"]),
+        ["superadmin", "hr_lead", "hr_manager", "tm", "economist"],
+        ["brigadier", "employee", "hr_clerk"]),
 
     # requisites: hr roles can manage; economist gets view-only
     ("requisites.manage",
-        ["superadmin", "hr_lead", "hr_manager"],
-        ["economist", "brigadier", "employee"]),
+        ["superadmin", "hr_lead", "hr_manager", "tm"],
+        ["economist", "brigadier", "employee", "hr_clerk"]),
 
     # dashboards
     ("admin.dashboard",
         ["superadmin"],
-        ["economist", "hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("economist.dashboard",
         ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("headhunter.dashboard",
         ["superadmin", "headhunter"],
-        ["economist", "hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
 
     # справочник магазинов: витрина — всем ролям; контакты — всем кроме рядового employee
     ("stores.directory.view",
-        ["superadmin", "hr_lead", "hr_manager", "economist", "brigadier", "headhunter", "employee"],
+        ["superadmin", "hr_lead", "hr_manager", "tm", "economist", "brigadier", "headhunter", "employee", "hr_clerk"],
         []),
     ("stores.contacts.view",
-        ["superadmin", "hr_lead", "hr_manager", "economist", "brigadier", "headhunter"],
+        ["superadmin", "hr_lead", "hr_manager", "tm", "economist", "brigadier", "headhunter", "hr_clerk"],
         ["employee"]),
+    # П1-В: гражданства и просмотр услуг — кадровик; суперадмин — по bypass
+    ("citizenship.manage",
+        ["superadmin", "hr_clerk"],
+        ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee"]),
+    ("services.view",
+        ["superadmin", "economist", "hr_clerk"],
+        ["hr_lead", "hr_manager", "tm", "brigadier", "employee"]),
+    ("employees.view",
+        ["superadmin", "hr_lead", "hr_manager", "tm", "economist", "hr_clerk"],
+        ["brigadier", "employee"]),
     # bypass-only: planning scenarios, monitoring settings
     ("admin.settings",
         ["superadmin"],
-        ["economist", "hr_lead", "hr_manager", "brigadier", "employee"]),
+        ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
 ]
 
 
@@ -223,18 +233,18 @@ class HrPayrollBoundaryTests(unittest.TestCase):
         self.assertFalse(_allowed("payroll.manage", "hr_manager"))
 
     def test_hr_roles_have_lmk_view_not_manage(self):
-        for role in ("hr_lead", "hr_manager"):
+        for role in ("hr_lead", "hr_manager", "tm"):
             with self.subTest(role=role):
                 self.assertTrue(_allowed("lmk.view", role))
                 self.assertFalse(_allowed("lmk.manage", role))
 
     def test_hr_roles_have_requisites_manage(self):
-        for role in ("hr_lead", "hr_manager"):
+        for role in ("hr_lead", "hr_manager", "tm"):
             with self.subTest(role=role):
                 self.assertTrue(_allowed("requisites.manage", role))
 
     def test_hr_roles_blocked_from_admin_settings(self):
-        for role in ("hr_lead", "hr_manager"):
+        for role in ("hr_lead", "hr_manager", "tm"):
             with self.subTest(role=role):
                 self.assertFalse(_allowed("admin.settings", role))
                 self.assertFalse(_allowed("admin.dashboard", role))

@@ -37,7 +37,7 @@ from file_storage import storage_delete, storage_response
 from inn_sync import INN_DOCUMENT_SORT_ORDER, set_employee_inn
 from models import CitizenshipRegime, Country, DocumentType, DocumentTypeSample, EmployeeDocument, EmployeeStoreAssignment, RegimeDocumentRule, Store, User
 from store_helpers import extract_tk_number
-from rbac import canonical_role, has_permission, is_superadmin
+from rbac import HR_CABINET_ROLES, ROLE_HR_CLERK, ROLE_TM, canonical_role, has_permission, is_superadmin, scopes_enabled
 from sqlalchemy.orm import Session
 from time_helpers import now_utc
 from utils import normalize_text
@@ -76,11 +76,13 @@ def require_document_manager(
         raise RedirectException("/")
     if request.url.path.startswith("/admin") and not is_superadmin(user):
         raise RedirectException("/")
-    if request.url.path.startswith("/hr") and canonical_role(user) not in {"hr_lead", "hr_manager"}:
+    if request.url.path.startswith("/hr") and canonical_role(user) not in HR_CABINET_ROLES:
         raise RedirectException("/")
     return user
 
 def _document_type_base(request):
+    if request.url.path.startswith("/hr"):
+        return "/hr/document-types", "/hr", "HR кабинет"
     if request.url.path.startswith("/economist"):
         return "/economist/document-types", "/economist", "Кабинет экономиста"
     return "/admin/document-types", "/admin", "Назад в админку"
@@ -95,7 +97,7 @@ def _documents_base(request):
 
 
 def _employee_scope(session, user, *, admin=False):
-    if admin or canonical_role(user) in {"superadmin", "hr_lead"}:
+    if admin or canonical_role(user) in {"superadmin", "hr_lead", ROLE_HR_CLERK} or not scopes_enabled():
         return None
     return accessible_employee_names(session, user)
 
@@ -566,9 +568,11 @@ async def _create_employee_document(
 def _document_allowed_for_user(session, document, user):
     if not document:
         return False
-    if canonical_role(user) in {"superadmin", "hr_lead"}:
+    if canonical_role(user) in {"superadmin", "hr_lead", ROLE_HR_CLERK}:
         return True
-    if canonical_role(user) in {"economist", "hr_manager"}:
+    if canonical_role(user) in {"economist", ROLE_TM}:
+        if not scopes_enabled():
+            return True
         allowed = accessible_employee_names(session, user)
         return _is_employee_allowed(document.employee_name, allowed)
     return normalize_text(document.employee_name) == normalize_text(user.employee_name)
@@ -634,6 +638,7 @@ def admin_document_types(
 
 
 @router.get("/economist/document-types", response_class=HTMLResponse)
+@router.get("/hr/document-types", response_class=HTMLResponse)
 def economist_document_types(
     request: Request,
     message: str = "",
@@ -646,6 +651,7 @@ def economist_document_types(
 
 @router.post("/admin/document-types/add")
 @router.post("/economist/document-types/add")
+@router.post("/hr/document-types/add")
 async def add_document_type(
     request: Request,
     name: str = Form(...),
@@ -713,6 +719,7 @@ async def add_document_type(
 
 @router.post("/admin/document-types/update")
 @router.post("/economist/document-types/update")
+@router.post("/hr/document-types/update")
 async def update_document_type(
     request: Request,
     type_id: int = Form(...),
@@ -791,6 +798,7 @@ async def update_document_type(
 
 @router.post("/admin/document-types/delete")
 @router.post("/economist/document-types/delete")
+@router.post("/hr/document-types/delete")
 def delete_document_type(
     request: Request,
     type_id: int = Form(...),

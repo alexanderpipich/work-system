@@ -15,7 +15,7 @@ from document_helpers import (
     economist_employee_names,
     employee_names,
 )
-from rbac import canonical_role, require_permission
+from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, require_permission, scopes_enabled
 from models import (
     DocumentType,
     EmployeeDocument,
@@ -413,7 +413,7 @@ def _render_report(request, session, user, report, economist=False):
     hr_view = request.url.path.startswith("/hr")
     filters = _filters(request)
     allowed_cities = _scope_allowed_cities(user, economist)
-    scoped_employees = accessible_employee_names(session, user) if hr_view and canonical_role(user) == "hr_manager" else None
+    scoped_employees = accessible_employee_names(session, user) if hr_view and canonical_role(user) == ROLE_TM and scopes_enabled() else None
     base_path = "/hr/reports" if hr_view else ("/economist/reports" if economist else "/admin/reports")
     back_url = base_path
     common = {
@@ -504,13 +504,13 @@ def economist_report(
 
 @router.get("/hr/reports", response_class=HTMLResponse)
 def hr_reports(request: Request, user=Depends(require_reports_view)):
-    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+    if canonical_role(user) not in {ROLE_HR_LEAD, ROLE_TM}:
         return RedirectResponse(url="/", status_code=302)
     return _dashboard(request, user, economist=True)
 
 
 @router.get("/hr/reports/{report}", response_class=HTMLResponse)
 def hr_report(request: Request, report: str, session: Session = Depends(get_db), user=Depends(require_reports_view)):
-    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+    if canonical_role(user) not in {ROLE_HR_LEAD, ROLE_TM}:
         return RedirectResponse(url="/", status_code=302)
     return _render_report(request, session, user, report, economist=True)

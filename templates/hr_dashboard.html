@@ -2,7 +2,7 @@
 
 {% block title %}HR кабинет{% endblock %}
 {% block brand_title %}HR кабинет{% endblock %}
-{% block brand_subtitle %}<p class="brand-subtitle">{{ 'Руководитель HR-проекта' if role == 'hr_lead' else 'Региональный HR-менеджер' }} · {{ user.employee_name }}</p>{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">{{ {'hr_lead': 'Руководитель HR-проекта', 'hr_clerk': 'Кадровик'}.get(role, 'ТМ (территориальный менеджер)') }} · {{ user.employee_name }}</p>{% endblock %}
 
 {% block content %}
 <div class="page page-pad-top">
@@ -29,7 +29,7 @@
                 <span class="card-top">
                     <span class="title">Команда HR</span>
                 </span>
-                <span class="desc">Назначение регионов HR-менеджерам</span>
+                <span class="desc">Назначение регионов ТМ</span>
             </span>
             <span class="go" aria-hidden="true">→</span>
         </a>
@@ -46,6 +46,7 @@
             <span class="go" aria-hidden="true">→</span>
         </a>
 
+        {% if role != 'hr_clerk' %}
         <a class="nav-card" href="/hr/schedules">
             <span class="icon violet"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3.5v3M16 3.5v3"/></svg></span>
             <span class="card-body">
@@ -56,6 +57,7 @@
             </span>
             <span class="go" aria-hidden="true">→</span>
         </a>
+        {% endif %}
 
         <a class="nav-card" href="/hr/documents">
             <span class="icon coral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 7.5 9 15a3 3 0 0 0 4.2 4.2l6.4-6.4a5 5 0 0 0-7-7L5.6 12.7a7 7 0 0 0 9.9 9.9"/></svg></span>
@@ -68,6 +70,40 @@
             <span class="go" aria-hidden="true">→</span>
         </a>
 
+        {% if role == 'hr_clerk' %}
+        <a class="nav-card" href="/hr/document-types">
+            <span class="icon coral"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+            <span class="card-body">
+                <span class="card-top">
+                    <span class="title">Типы документов</span>
+                </span>
+                <span class="desc">Справочник документов и образцы</span>
+            </span>
+            <span class="go" aria-hidden="true">→</span>
+        </a>
+
+        <a class="nav-card" href="/admin/citizenship/countries">
+            <span class="icon teal"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/></svg></span>
+            <span class="card-body">
+                <span class="card-top">
+                    <span class="title">Гражданства</span>
+                </span>
+                <span class="desc">Страны, режимы и обязательные документы</span>
+            </span>
+            <span class="go" aria-hidden="true">→</span>
+        </a>
+
+        <a class="nav-card" href="/admin/services">
+            <span class="icon violet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+            <span class="card-body">
+                <span class="card-top">
+                    <span class="title">Услуги</span>
+                </span>
+                <span class="desc">Справочник услуг</span>
+            </span>
+            <span class="go" aria-hidden="true">→</span>
+        </a>
+        {% else %}
         <a class="nav-card" href="/hr/requisites">
             <span class="icon teal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10L12 5l8.5 5"/><path d="M5 10v8M19 10v8M9.5 10v8M14.5 10v8"/><path d="M3.5 20h17"/></svg></span>
             <span class="card-body">
@@ -144,6 +180,7 @@
             </span>
             <span class="go" aria-hidden="true">→</span>
         </a>
+        {% endif %}
 
         <a class="nav-card" href="/stores">
             <span class="icon lime"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9l1-4h14l1 4"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/></svg></span>

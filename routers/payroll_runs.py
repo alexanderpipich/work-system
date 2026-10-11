@@ -14,7 +14,7 @@ from document_helpers import citizenship_display
 from dependencies import current_user, get_db
 from models import PayrollRun, PayrollRunItem, Requisite, Shift, User
 from payroll_closing import close_payroll_run as close_payroll_run_financials
-from rbac import canonical_role, has_permission, is_superadmin, require_permission
+from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, has_permission, is_superadmin, require_permission
 from schedule_grid import days_between
 from time_helpers import now_utc
 from utils import normalize_text
@@ -436,14 +436,14 @@ def economist_payroll_run_detail(
 
 @router.get("/hr/payroll/runs", response_class=HTMLResponse)
 def hr_payroll_runs(request: Request, message: str = "", error: str = "", session: Session = Depends(get_db), user=Depends(require_payroll_view)):
-    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+    if canonical_role(user) not in {ROLE_HR_LEAD, ROLE_TM}:
         return RedirectResponse("/", status_code=302)
     return templates.TemplateResponse(request, "payroll_runs.html", {"run_rows": build_run_rows_for_user(session, user), "error": error or None, "message": message or None})
 
 
 @router.get("/hr/payroll/runs/{run_id}", response_class=HTMLResponse)
 def hr_payroll_run_detail(request: Request, run_id: int, session: Session = Depends(get_db), user=Depends(require_payroll_view)):
-    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+    if canonical_role(user) not in {ROLE_HR_LEAD, ROLE_TM}:
         return RedirectResponse("/", status_code=302)
     run, items = get_run_items_for_user(session, run_id, user)
     if not run or not items:
@@ -454,7 +454,7 @@ def hr_payroll_run_detail(request: Request, run_id: int, session: Session = Depe
 
 @router.get("/hr/payroll/runs/{run_id}/export")
 def hr_export_payroll_run(request: Request, run_id: int, session: Session = Depends(get_db), user=Depends(require_payroll_export)):
-    if canonical_role(user) not in {"hr_lead", "hr_manager"}:
+    if canonical_role(user) not in {ROLE_HR_LEAD, ROLE_TM}:
         return RedirectResponse("/", status_code=302)
     run, items = get_run_items_for_user(session, run_id, user)
     if not run or not items:
@@ -628,7 +628,7 @@ def send_payroll_run(
     if not is_superadmin(user):
         items = session.query(PayrollRunItem).filter(PayrollRunItem.run_id == run.id).all()
         allowed_cities = get_economist_cities(user)
-        if not _all_items_accessible_to_cities(session, items, allowed_cities):
+        if allowed_cities is not None and not _all_items_accessible_to_cities(session, items, allowed_cities):
             return RedirectResponse(
                 url="/economist/payroll/runs?error=Табель содержит строки вне доступных городов",
                 status_code=302,

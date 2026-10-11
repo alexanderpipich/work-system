@@ -6,7 +6,7 @@
 {% block brand_subtitle %}
 <p class="brand-subtitle">Зафиксированные и отправленные табели</p>
 <div class="row cities">
-    {% for city in allowed_cities %}
+    {% for city in allowed_cities or [] %}
         <div class="pill">
             {{ city }}
         </div>

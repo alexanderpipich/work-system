@@ -16,6 +16,7 @@ from utils import normalize_text
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 _rates_manage = require_permission("rates.manage")
+_services_view = require_permission("services.view")  # просмотр матрицы; слияние — rates.manage
 
 
 def _is_base_rate(rate):
@@ -45,7 +46,7 @@ def admin_services(
     message: str = "",
     error: str = "",
     session: Session = Depends(get_db),
-    user=Depends(_rates_manage),
+    user=Depends(_services_view),
 ):
     """Диагностическая матрица услуг: строка = базовая услуга, колонки = уровни
     1..5 + «без уровня». Только чтение — правка ставок на /admin/rates."""

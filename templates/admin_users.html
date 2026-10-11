@@ -25,7 +25,8 @@
 
     .role-superadmin { background: #fee4e2; color: #b42318; }
     .role-hr_lead { background: var(--success-bg); color: var(--success-text); }
-    .role-hr_manager { background: var(--warn-bg); color: var(--warn-text); }
+    .role-tm { background: var(--warn-bg); color: var(--warn-text); }
+    .role-hr_clerk { background: var(--warn-bg); color: var(--warn-text); }
     .role-admin { background: #fee4e2; color: #b42318; }
     .role-economist { background: #f4ebff; color: #6941c6; }
     .role-brigadier { background: #e0f2fe; color: #026aa2; }
@@ -113,7 +114,8 @@
                         <option value="employee" {% if filters and filters.role == 'employee' %}selected{% endif %}>Сотрудник</option>
                         <option value="brigadier" {% if filters and filters.role == 'brigadier' %}selected{% endif %}>Бригадир</option>
                         <option value="economist" {% if filters and filters.role == 'economist' %}selected{% endif %}>Экономист</option>
-                        <option value="hr_manager" {% if filters and filters.role == 'hr_manager' %}selected{% endif %}>HR-менеджер</option>
+                        <option value="tm" {% if filters and filters.role == 'tm' %}selected{% endif %}>ТМ (территориальный менеджер)</option>
+                        <option value="hr_clerk" {% if filters and filters.role == 'hr_clerk' %}selected{% endif %}>Кадровик</option>
                         <option value="hr_lead" {% if filters and filters.role == 'hr_lead' %}selected{% endif %}>HR Lead</option>
                         <option value="headhunter" {% if filters and filters.role == 'headhunter' %}selected{% endif %}>Подборщик</option>
                         <option value="superadmin" {% if filters and filters.role == 'superadmin' %}selected{% endif %}>Superadmin</option>
@@ -148,8 +150,10 @@
                             <span class="pill role-superadmin">Superadmin</span>
                         {% elif user.role == "hr_lead" %}
                             <span class="pill role-hr_lead">HR Lead</span>
-                        {% elif user.role == "hr_manager" %}
-                            <span class="pill role-hr_manager">HR-менеджер</span>
+                        {% elif user.role in ("tm", "hr_manager") %}
+                            <span class="pill role-tm">ТМ</span>
+                        {% elif user.role == "hr_clerk" %}
+                            <span class="pill role-hr_clerk">Кадровик</span>
                         {% elif user.role == "economist" %}
                             <span class="pill role-economist">Экономист</span>
                         {% elif user.role == "brigadier" %}
@@ -200,7 +204,8 @@
                                         <option value="employee" {% if user.role == "employee" and not user.is_admin %}selected{% endif %}>Сотрудник</option>
                                         <option value="brigadier" {% if user.role == "brigadier" %}selected{% endif %}>Бригадир</option>
                                         <option value="economist" {% if user.role == "economist" %}selected{% endif %}>Экономист</option>
-                                        <option value="hr_manager" {% if user.role == "hr_manager" %}selected{% endif %}>HR-менеджер</option>
+                                        <option value="tm" {% if user.role in ("tm", "hr_manager") %}selected{% endif %}>ТМ (территориальный менеджер)</option>
+                                        <option value="hr_clerk" {% if user.role == "hr_clerk" %}selected{% endif %}>Кадровик</option>
                                         <option value="hr_lead" {% if user.role == "hr_lead" %}selected{% endif %}>HR Lead</option>
                                         <option value="headhunter" {% if user.role == "headhunter" %}selected{% endif %}>Подборщик</option>
                                         <option value="superadmin" {% if user.role == "superadmin" or user.role == "admin" or user.is_admin %}selected{% endif %}>Superadmin</option>
