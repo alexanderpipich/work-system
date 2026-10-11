@@ -304,12 +304,14 @@ def read_reference_files(directory=REFERENCE_DIR):
     return data
 
 
-def seed_reference_data(session, data, update=False, only=None):
+def seed_reference_data(session, data, update=False, only=None, force=None):
     """Загрузить справочники. Коммит — на вызывающем.
 
     update=False — только вставка недостающих; update=True — ещё и обновление
     отличающихся (кроме keep_if_set, если в базе значение уже есть).
     only — имена таблиц, остальные пропускаются.
+    force — {таблица: (ключи, поля)}: у этих записей перечисленные поля из
+    keep_if_set перезаписываются по JSON (П4.5: мусорный регион у конкретных ТК).
 
     Вернуть {таблица: {inserted, updated, existing, differs, unresolved, kept}}:
     existing — уже были и не менялись; differs — из них отличаются от JSON
@@ -331,6 +333,7 @@ def seed_reference_data(session, data, update=False, only=None):
 
         counts = {"inserted": 0, "updated": 0, "existing": 0, "differs": 0, "unresolved": [], "kept": []}
         keep_if_set = spec.get("keep_if_set", ())
+        forced_keys, forced_fields = (force or {}).get(table, (set(), set()))
         for record in data[table]:
             key = spec["key"](record)
             try:
@@ -347,6 +350,8 @@ def seed_reference_data(session, data, update=False, only=None):
                 continue
             diff = {field: value for field, value in values.items() if getattr(obj, field) != value}
             for field in keep_if_set:
+                if key in forced_keys and field in forced_fields:
+                    continue
                 if field in diff and getattr(obj, field) not in (None, ""):
                     counts["kept"].append((key, field, getattr(obj, field), diff.pop(field)))
             if not diff:
