@@ -116,7 +116,7 @@
                     <tr>
                         <td>{{ log.created_at.strftime('%d.%m.%Y %H:%M:%S') if log.created_at else '' }}</td>
                         <td>{{ users.get(log.user_id, '—') }}</td>
-                        <td>{{ log.user_role or '—' }}</td>
+                        <td>{{ role_label(log.user_role) if log.user_role else '—' }}</td>
                         <td class="mono">{{ log.action }}</td>
                         <td class="mono">{{ log.entity_type }}</td>
                         <td>{{ log.entity_name or log.entity_id or '—' }}</td>

@@ -5,10 +5,12 @@
 {% block brand_subtitle %}<p class="brand-subtitle">Фильтры, роли, магазины бригадиров/экономистов, гражданство и юрлица</p>{% endblock %}
 
 {% block topbar_actions %}
-<a href="/admin" class="back-link">Назад в админку</a>
+<a href="/admin" class="back-link">{{ 'Назад в админку' if can_manage else 'Назад' }}</a>
+{% if can_manage %}
 <a href="/admin/create-user" class="back-link">Создать пользователя</a>
 <a href="/admin/upload-users" class="back-link">Импорт пользователей</a>
 <a href="/admin/users/pending" class="back-link">Несозданные{% if pending_count is defined and pending_count %} ({{ pending_count }}){% endif %}</a>
+{% endif %}
 <a href="/logout" class="logout">Выйти</a>
 {% endblock %}
 
@@ -111,14 +113,9 @@
                     <label>Роль</label>
                     <select name="role">
                         <option value="">Все роли</option>
-                        <option value="employee" {% if filters and filters.role == 'employee' %}selected{% endif %}>Сотрудник</option>
-                        <option value="brigadier" {% if filters and filters.role == 'brigadier' %}selected{% endif %}>Бригадир</option>
-                        <option value="economist" {% if filters and filters.role == 'economist' %}selected{% endif %}>Экономист</option>
-                        <option value="tm" {% if filters and filters.role == 'tm' %}selected{% endif %}>ТМ (территориальный менеджер)</option>
-                        <option value="hr_clerk" {% if filters and filters.role == 'hr_clerk' %}selected{% endif %}>Кадровик</option>
-                        <option value="hr_lead" {% if filters and filters.role == 'hr_lead' %}selected{% endif %}>HR Lead</option>
-                        <option value="headhunter" {% if filters and filters.role == 'headhunter' %}selected{% endif %}>Подборщик</option>
-                        <option value="superadmin" {% if filters and filters.role == 'superadmin' %}selected{% endif %}>Superadmin</option>
+                        {% for code, label in ROLE_CHOICES %}
+                        <option value="{{ code }}" {% if filters and filters.role == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>
@@ -146,23 +143,8 @@
                     <span class="u-phone">{{ user.phone }}</span>
                     <span class="u-name">{{ user.employee_name }}</span>
                     <span class="u-role">
-                        {% if user.role == "admin" or user.role == "superadmin" or user.is_admin %}
-                            <span class="pill role-superadmin">Superadmin</span>
-                        {% elif user.role == "hr_lead" %}
-                            <span class="pill role-hr_lead">HR Lead</span>
-                        {% elif user.role in ("tm", "hr_manager") %}
-                            <span class="pill role-tm">ТМ</span>
-                        {% elif user.role == "hr_clerk" %}
-                            <span class="pill role-hr_clerk">Кадровик</span>
-                        {% elif user.role == "economist" %}
-                            <span class="pill role-economist">Экономист</span>
-                        {% elif user.role == "brigadier" %}
-                            <span class="pill role-brigadier">Бригадир</span>
-                        {% elif user.role == "headhunter" %}
-                            <span class="pill role-headhunter">Подборщик</span>
-                        {% else %}
-                            <span class="pill role-employee">Сотрудник</span>
-                        {% endif %}
+                        {% set crole = canonical_role(user) %}
+                        <span class="pill role-{{ crole }}">{{ ROLE_LABELS[crole] }}</span>
                     </span>
                     <span class="u-chev" aria-hidden="true">▾</span>
                 </summary>
@@ -175,8 +157,15 @@
                         <span>Студент: <b>{{ 'да' if user.is_student else 'нет' }}</b></span>
                         <span>Юрлицо: <b>{{ user.legal_entity or '—' }}</b></span>
                         {% if user.economist_stores %}<span>Магазины: <b>{{ user.economist_stores }}</b></span>{% endif %}
+                        {% if not can_manage %}
+                        <span>Телефон: <b>{{ user.phone or '—' }}</b></span>
+                        <span>Дата рождения: <b>{{ user.birth_date.strftime('%d.%m.%Y') if user.birth_date else '—' }}</b></span>
+                        <span>ТМ: <b>{{ tm_names.get(user.tm_id, '—') if user.tm_id else '—' }}</b></span>
+                        <span>Кабинет: <b>{{ 'есть' if user.password_hash else 'нет' }}</b></span>
+                        {% endif %}
                     </div>
 
+                    {% if can_manage %}
                     <div class="form-block">
                         <h4>Телефон · роль · магазины · гражданство · юрлицо</h4>
                         <form method="post" action="/admin/update-user">
@@ -201,14 +190,10 @@
                                 <div class="field">
                                     <label>Роль</label>
                                     <select name="role">
-                                        <option value="employee" {% if user.role == "employee" and not user.is_admin %}selected{% endif %}>Сотрудник</option>
-                                        <option value="brigadier" {% if user.role == "brigadier" %}selected{% endif %}>Бригадир</option>
-                                        <option value="economist" {% if user.role == "economist" %}selected{% endif %}>Экономист</option>
-                                        <option value="tm" {% if user.role in ("tm", "hr_manager") %}selected{% endif %}>ТМ (территориальный менеджер)</option>
-                                        <option value="hr_clerk" {% if user.role == "hr_clerk" %}selected{% endif %}>Кадровик</option>
-                                        <option value="hr_lead" {% if user.role == "hr_lead" %}selected{% endif %}>HR Lead</option>
-                                        <option value="headhunter" {% if user.role == "headhunter" %}selected{% endif %}>Подборщик</option>
-                                        <option value="superadmin" {% if user.role == "superadmin" or user.role == "admin" or user.is_admin %}selected{% endif %}>Superadmin</option>
+                                        {% set crole = canonical_role(user) %}
+                                        {% for code, label in ROLE_CHOICES %}
+                                        <option value="{{ code }}" {% if crole == code %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
                                     </select>
                                 </div>
 
@@ -386,6 +371,7 @@
                             <button type="submit" class="btn btn-danger">Удалить пользователя</button>
                         </form>
                     </div>
+                    {% endif %}
                 </div>
             </details>
             {% endfor %}

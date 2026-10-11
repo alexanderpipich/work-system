@@ -1,0 +1,7 @@
+{# Вкладки страницы загрузки смен (П2). active: "upload" | "auto". #}
+<div class="toolbar mb-20">
+    <div class="tabs">
+        <a href="/admin/upload" class="tab{% if active == 'upload' %} is-active{% endif %}">Загрузка</a>
+        <a href="/admin/upload/auto" class="tab{% if active == 'auto' %} is-active{% endif %}">Настройка автозагрузки</a>
+    </div>
+</div>

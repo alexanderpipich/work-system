@@ -1019,3 +1019,9 @@ body:has(.page-wide)   { --page-max: 1600px; }
     .ripple-layer { display: none !important; }
     .brand img.is-spinning, .auth-logo img.is-spinning { animation: none !important; }
 }
+
+/* ── Недоступный раздел (П2): карточка видна, но приглушена ───────────── */
+.nav-card.is-locked { opacity: .5; filter: grayscale(.4); cursor: not-allowed; }
+.nav-card.is-locked:hover { transform: none; box-shadow: none; border-color: var(--border); }
+.nav-card.is-locked .go { display: none; }
+.nav-lock-text { margin: 0 0 12px; font-size: 14px; line-height: 1.5; color: var(--text); }

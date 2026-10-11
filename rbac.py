@@ -41,18 +41,19 @@ HR_CABINET_ROLES = frozenset({ROLE_HR_LEAD, ROLE_TM, ROLE_HR_CLERK})
 
 # Подписи ролей в интерфейсе. Ключи — канонические роли.
 ROLE_LABELS = {
-    ROLE_SUPERADMIN: "Суперадминистратор",
-    ROLE_HR_LEAD: "Руководитель HR-проекта",
+    ROLE_SUPERADMIN: "Суперадмин",
+    ROLE_HR_LEAD: "Руководитель ТМ",
     ROLE_TM: "ТМ (территориальный менеджер)",
     ROLE_HR_CLERK: "Кадровик",
     ROLE_ECONOMIST: "Экономист",
     ROLE_BRIGADIER: "Бригадир",
-    ROLE_HEADHUNTER: "Подборщик",
+    ROLE_HEADHUNTER: "Рекрутер",
     ROLE_EMPLOYEE: "Сотрудник",
 }
 
 # Permissions exclusive to superadmin (not listed per-role since superadmin bypasses the check):
 #   email.manage
+#   upload.auto — настройка автозагрузки смен из timebook (П2, вкладка на /admin/upload)
 
 PERMISSIONS = {
     ROLE_HR_LEAD: {
@@ -61,19 +62,19 @@ PERMISSIONS = {
         "payroll.view", "payroll.export", "payroll.summary_view",
         "rates.view", "lmk.view", "password.reset_limited",
         "audit.hr_view", "hr_team.manage", "schedules.view",
-        "stores.directory.view", "stores.contacts.view",
+        "stores.directory.view", "stores.contacts.view", "contracts.view", "users.view",
     },
     ROLE_TM: {
         "employees.view", "employees.manage", "documents.view", "documents.manage",
         "requisites.view", "requisites.manage", "reports.view", "payroll.view", "payroll.export",
         "rates.view", "lmk.view", "password.reset_limited", "schedules.view",
-        "stores.directory.view", "stores.contacts.view",
+        "stores.directory.view", "stores.contacts.view", "users.view",
     },
     # Кадровик: документы, гражданства, типы документов, мониторинг сотрудников,
     # справочники. Без выплат, ставок, реквизитов и рассылок.
     ROLE_HR_CLERK: {
         "employees.view", "documents.view", "documents.manage",
-        "citizenship.manage", "services.view",
+        "citizenship.manage", "services.view", "contracts.view", "users.view",
         "stores.directory.view", "stores.contacts.view",
     },
     ROLE_ECONOMIST: {
@@ -81,7 +82,7 @@ PERMISSIONS = {
         "schedules.view", "payroll.view", "payroll.manage", "payroll.send",
         "adjustments.manage", "rates.view", "rates.manage", "requisites.view", "lmk.manage", "reports.view",
         "legal_entities.manage", "economist.dashboard",
-        "stores.directory.view", "stores.contacts.view", "services.view",
+        "stores.directory.view", "stores.contacts.view", "services.view", "users.view",
     },
     ROLE_BRIGADIER: {"schedules.view", "stores.directory.view", "stores.contacts.view"},
     # Минимальный набор под кабинет-заглушку: доступ к своему дашборду + справочник магазинов.
@@ -98,6 +99,13 @@ def canonical_role(user) -> str:
         return ROLE_SUPERADMIN
     role = LEGACY_ROLE_ALIASES.get(role, role)
     return role if role in ROLES else ROLE_EMPLOYEE
+
+
+# Порядок ролей в выпадающих списках форм пользователей: (код, подпись).
+ROLE_CHOICES = [(role, ROLE_LABELS[role]) for role in (
+    ROLE_EMPLOYEE, ROLE_BRIGADIER, ROLE_ECONOMIST, ROLE_TM, ROLE_HR_CLERK,
+    ROLE_HR_LEAD, ROLE_HEADHUNTER, ROLE_SUPERADMIN,
+)]
 
 
 def role_label(role) -> str:

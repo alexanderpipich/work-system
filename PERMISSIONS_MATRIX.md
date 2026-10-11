@@ -64,30 +64,36 @@
 
 ## 5. Целевая матрица по модулям
 
-| Модуль | `superadmin` | `hr_lead` | `tm` | `hr_clerk` | `economist` | `brigadier` | `employee` |
-|---|---|---|---|---|---|---|---|
-| Пользователи и роли | `V/C/U/D/HD/S@ALL` | `V/C/U/D@HR_ALL` | `V/C/U@CITIES` | `NONE` | `V@CITIES` | `V@STORES` | `V/U@OWN` |
-| Загрузка пользователей | `V/C@ALL` | `V/C@HR_ALL` | `V/C@CITIES` | `NONE` | `NONE` | `NONE` | `NONE` |
-| Загрузка смен | `V/C/D/HD/S@ALL` | `V@HR_ALL` | `V@CITIES` | `NONE` | `V/C@CITIES` | `NONE` | `NONE` |
-| Графики и смены | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/X@CITIES` | `V@STORES` | `V@OWN` |
-| Модуль «Сотрудники» | `V/C/U/A/X/D/S@ALL` | `V/C/U/A/X/D@HR_ALL` | `V/C/U/A/X/D@CITIES` | `V/C/U/A/X/D@ALL` | `V/C/U/A/X/D@CITIES` | `V@STORES` | `NONE` |
-| Документы сотрудников | `V/C/U/A/X/D/S@ALL` | `V/C/U/A/X/D@HR_ALL` | `V/C/U/A/X/D@CITIES` | `V/C/U/A/X/D@ALL` | `V/A/X@CITIES` | `V@STORES` | `V/C/X@OWN` |
-| Типы документов | `V/C/U/D/S@ALL` | `V/C/U/D@HR_ALL` | `V@ALL` | `V/C/U/D@ALL` | `V@ALL` | `NONE` | `V@OWN` |
-| Реквизиты | `V/C/U/D/X@ALL` | `V/C/U/D/X@HR_ALL` | `V/C/U@CITIES` | `NONE` | `V@CITIES` | `NONE` | `V/U@OWN` |
-| Юридические лица | `V/C/U/D/HD@ALL` | `V@ALL` | `V@ALL` | `NONE` | `V/C/U/D@ALL` | `NONE` | `NONE` |
-| Ставки | `V/C/U/D/HD@ALL` | `V@ALL` | `V@CITIES` | `NONE` | `V/C/U/D@CITIES` | `NONE` | `NONE` |
-| Выплатный табель | `V/C/U/A/X/D/F@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/C/U/A/X/D@CITIES` | `NONE` | `NONE` |
-| История выплат | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/X@CITIES` | `NONE` | `V@OWN` |
-| Автокорректировки | `V/C/U/A/D@ALL` | `V@SUMMARY` | `NONE` | `NONE` | `V/C/U/A/D@CITIES` | `NONE` | `V@OWN` |
-| Ручные корректировки | `V/C/U/D@ALL` | `V@SUMMARY` | `NONE` | `NONE` | `V/C/U/D@CITIES` | `NONE` | `NONE` |
-| ЛМК | `V/C/U/D@ALL` | `V@HR_ALL` | `V@CITIES` | `NONE` | `V/C/U/D@CITIES` | `NONE` | `V@OWN` |
-| Отчёты и аналитика | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/X@CITIES` | `V@STORES` | `V@OWN` |
-| Audit Log | `V/X@ALL` | `V@HR_ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` |
-| Гражданства и режимы | `V/C/U/D@ALL` | `NONE` | `NONE` | `V/C/U/D@ALL` | `NONE` | `NONE` | `NONE` |
-| Справочник услуг | `V/U@ALL` | `NONE` | `NONE` | `V@ALL` | `V/U@ALL` | `NONE` | `NONE` |
-| Системные настройки | `V/C/U/D/HD/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` |
-| `/docs`, `/redoc`, `/openapi.json` | `V@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` |
-| Обслуживание и debug | `V/C/U/D/HD/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` |
+| Модуль | `superadmin` | `hr_lead` | `tm` | `hr_clerk` | `economist` | `brigadier` | `employee` | Где в меню |
+|---|---|---|---|---|---|---|---|---|
+| Пользователи и роли | `V/C/U/D/HD/S@ALL` | `V/C/U/D@HR_ALL` | `V/C/U@CITIES` | `NONE` | `V@CITIES` | `V@STORES` | `V/U@OWN` | Сотрудники и доступ › Пользователи; Доступ сотрудников |
+| Загрузка пользователей | `V/C@ALL` | `V/C@HR_ALL` | `V/C@CITIES` | `NONE` | `NONE` | `NONE` | `NONE` | Сотрудники и доступ › Импорт пользователей |
+| Загрузка смен | `V/C/D/HD/S@ALL` | `V@HR_ALL` | `V@CITIES` | `NONE` | `V/C@CITIES` | `NONE` | `NONE` | Сотрудники и доступ › Загрузка смен (вкладки «Загрузка», «Настройка автозагрузки») |
+| Графики и смены | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/X@CITIES` | `V@STORES` | `V@OWN` | Время, ставки и выплаты › Графики выходов |
+| Модуль «Сотрудники» | `V/C/U/A/X/D/S@ALL` | `V/C/U/A/X/D@HR_ALL` | `V/C/U/A/X/D@CITIES` | `V/C/U/A/X/D@ALL` | `V/C/U/A/X/D@CITIES` | `V@STORES` | `NONE` | Сотрудники и доступ › Сотрудники (Список сотрудников, Сверки); мониторинги — см. ниже |
+| Документы сотрудников | `V/C/U/A/X/D/S@ALL` | `V/C/U/A/X/D@HR_ALL` | `V/C/U/A/X/D@CITIES` | `V/C/U/A/X/D@ALL` | `V/A/X@CITIES` | `V@STORES` | `V/C/X@OWN` | Документы, Кадры и комплаенс › Документы |
+| Типы документов | `V/C/U/D/S@ALL` | `V/C/U/D@HR_ALL` | `V@ALL` | `V/C/U/D@ALL` | `V@ALL` | `NONE` | `V@OWN` | Документы, Кадры и комплаенс › Типы документов |
+| Реквизиты | `V/C/U/D/X@ALL` | `V/C/U/D/X@HR_ALL` | `V/C/U@CITIES` | `NONE` | `V@CITIES` | `NONE` | `V/U@OWN` | Время, ставки и выплаты › Реквизиты |
+| Юридические лица | `V/C/U/D/HD@ALL` | `V@ALL` | `V@ALL` | `NONE` | `V/C/U/D@ALL` | `NONE` | `NONE` | Справочники › Юрлица |
+| Ставки | `V/C/U/D/HD@ALL` | `V@ALL` | `V@CITIES` | `NONE` | `V/C/U/D@CITIES` | `NONE` | `NONE` | Время, ставки и выплаты › ЧТС |
+| Выплатный табель | `V/C/U/A/X/D/F@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/C/U/A/X/D@CITIES` | `NONE` | `NONE` | Время, ставки и выплаты › Выплаты › Выплатной табель |
+| История выплат | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/X@CITIES` | `NONE` | `V@OWN` | Время, ставки и выплаты › Выплаты › История выплат |
+| Автокорректировки | `V/C/U/A/D@ALL` | `V@SUMMARY` | `NONE` | `NONE` | `V/C/U/A/D@CITIES` | `NONE` | `V@OWN` | Время, ставки и выплаты › МОНИТОРИНГ ИЗМЕНЕНИЙ |
+| Ручные корректировки | `V/C/U/D@ALL` | `V@SUMMARY` | `NONE` | `NONE` | `V/C/U/D@CITIES` | `NONE` | `NONE` | Внутри «Выплатного табеля» |
+| ЛМК | `V/C/U/D@ALL` | `V@HR_ALL` | `V@CITIES` | `NONE` | `V/C/U/D@CITIES` | `NONE` | `V@OWN` | Время, ставки и выплаты › ЛМК |
+| Отчёты и аналитика | `V/X@ALL` | `V/X@HR_ALL` | `V/X@CITIES` | `NONE` | `V/X@CITIES` | `V@STORES` | `V@OWN` | Отчётность › Отчеты; Аналитика |
+| Audit Log | `V/X@ALL` | `V@HR_ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | Отчётность › Audit Log |
+| Гражданства и режимы | `V/C/U/D@ALL` | `NONE` | `NONE` | `V/C/U/D@ALL` | `NONE` | `NONE` | `NONE` | Документы, Кадры и комплаенс › Гражданства и режимы |
+| Справочник услуг | `V/U@ALL` | `NONE` | `NONE` | `V@ALL` | `V/U@ALL` | `NONE` | `NONE` | Справочники › Услуги |
+| Мониторинг сотрудников | `V/A@ALL` | `V/A@HR_ALL` | `V/A@CITIES` | `V/A@ALL` | `V/A@CITIES` | `NONE` | `NONE` | Планирование и рассылки › Мониторинг сотрудников |
+| Мониторинг увольнений | `V/A@ALL` | `V/A@HR_ALL` | `V/A@CITIES` | `V/A@ALL` | `V/A@CITIES` | `NONE` | `NONE` | Документы, Кадры и комплаенс › Мониторинг увольнений |
+| Бланк планирования | `V/C/X/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | Планирование и рассылки › Бланк планирования |
+| Договоры (заглушка до П4) | `V@ALL` | `V@ALL` | `NONE` | `V@ALL` | `NONE` | `NONE` | `NONE` | Документы, Кадры и комплаенс › Договоры |
+| Еженедельные авансы (заглушка до П3) | `V@ALL` | `V@HR_ALL` | `V@CITIES` | `NONE` | `V@CITIES` | `NONE` | `NONE` | Время, ставки и выплаты › Выплаты › Еженедельные авансы |
+| Настройка автозагрузки (`upload.auto`) | `V/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | Загрузка смен › Настройка автозагрузки |
+| Системные настройки | `V/C/U/D/HD/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | — (настройки внутри разделов) |
+| `/docs`, `/redoc`, `/openapi.json` | `V@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | — |
+| Обслуживание и debug | `V/C/U/D/HD/S@ALL` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | `NONE` | — |
 
 ## 6. Ограничения управления пользователями
 
@@ -322,4 +328,12 @@ is_active
 - кабинет `/hr` открыт ролям `rbac.HR_CABINET_ROLES` (`hr_lead`, `tm`, `hr_clerk`); разделы выплат, ставок, ЛМК, отчётов и графиков внутри него — только `hr_lead` и `tm` и по-прежнему требуют своих прав;
 - типы документов из HR-кабинета: `/hr/document-types` (те же обработчики, что `/economist/document-types`);
 - скоупы выключены флагом `SCOPES_ENABLED` (по умолчанию `false`).
+
+### Реализовано в П2 (навигация)
+
+- Меню — данные: `navigation.NAV_GROUPS` (+ `PAYOUTS_GROUPS`, `employees_groups`). Карточка видна всем ролям; доступна, если подходит хотя бы один её вариант `(href, право, роли)`. Колонка «Где в меню» выше — расположение раздела.
+- Один дашборд `/admin` для всех вошедших (это только меню; права проверяет каждый раздел); `/hr` и `/economist` рендерят его же. Недоступные карточки приглушены, клик показывает, каким ролям раздел открыт (подписи — `rbac.ROLE_LABELS`).
+- Роли попадают в свой режим раздела: ТМ — `/hr/...` (просмотр), экономист — `/economist/...`, суперадмин — `/admin/...`.
+- Новые права: `contracts.view` (`hr_lead`, `hr_clerk`), `upload.auto` (только суперадмин), `users.view` (`hr_lead`, `tm`, `hr_clerk`, `economist`).
+- `users.view` открывает `/admin/users` (карточки «Пользователи» и «Список сотрудников») только на чтение: формы правки, пароля, удаления, QR, создания и импорта видны лишь с `users.manage` (суперадмин), и все POST-обработчики по-прежнему требуют `users.manage`. Бригадиру, рекрутеру и сотруднику список закрыт — в нём телефоны, ИНН и гражданство всех людей.
 

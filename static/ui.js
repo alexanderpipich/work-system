@@ -131,7 +131,55 @@
         });
     }
 
-    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); }
+    /* ── Недоступный раздел (П2): карточка с data-locked ─────────────────
+       Клик (и Enter — браузер превращает его в click на ссылке) не уводит на
+       страницу, а объясняет, каким ролям раздел открыт. Текст берётся из
+       data-message, иначе собирается из data-title и data-roles. */
+    function initLockedNav() {
+        var modal = document.getElementById('nav-lock-modal');
+        if (!modal) { return; }
+        var kicker = document.getElementById('nav-lock-kicker');
+        var title = document.getElementById('nav-lock-title');
+        var text = document.getElementById('nav-lock-text');
+
+        function close() { modal.classList.remove('open'); }
+
+        function open(card) {
+            var name = card.getAttribute('data-title') || '';
+            var soon = card.hasAttribute('data-coming-soon');
+            var message = card.getAttribute('data-message');
+            if (!message) {
+                message = soon
+                    ? 'Модуль «' + name + '» в разработке.'
+                    : 'Раздел «' + name + '» доступен ролям: ' + (card.getAttribute('data-roles') || '—') + '.';
+            }
+            kicker.textContent = soon ? 'Скоро' : 'Нет доступа';
+            title.textContent = soon ? 'Модуль в разработке' : name;
+            text.textContent = message;
+            modal.classList.add('open');
+            var ok = modal.querySelector('.m-btn');
+            if (ok) { ok.focus(); }
+        }
+
+        document.addEventListener('click', function (e) {
+            var card = e.target.closest ? e.target.closest('[data-locked]') : null;
+            if (!card) { return; }
+            e.preventDefault();
+            open(card);
+        });
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal || (e.target.closest && e.target.closest('[data-nav-lock-close]'))) {
+                close();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { close(); }
+        });
+    }
+
+    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

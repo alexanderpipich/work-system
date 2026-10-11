@@ -1,64 +1,24 @@
 {% extends "base.html" %}
+{% from "_nav_card.html" import nav_card, nav_lock_modal %}
 
 {% block title %}Сотрудники{% endblock %}
 {% block brand_title %}Сотрудники{% endblock %}
-{% block brand_subtitle %}<p class="brand-subtitle">Планирование, мониторинг и сверки</p>{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Сотрудники — линейный персонал; пользователи системы — в разделе «Пользователи»</p>{% endblock %}
 
 {% block topbar_actions %}<a class="back-link" href="{{ back_url }}">Назад</a>{% endblock %}
 
-{% block head %}
-<style>
-    /* специфика страницы: в слоте иконки — порядковый номер шага, а не svg */
-    .icon .step { font-size: 15px; font-weight: 800; letter-spacing: -.3px; }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="page page-pad-top">
+    {# Бланки планирования и мониторинги переехали на главный дашборд (П2):
+       «Планирование и рассылки» и «Документы, Кадры и комплаенс». #}
+    {% for group in groups %}
     <div class="grid">
-        <a class="nav-card" href="{{ base_path }}/planning">
-            <span class="icon indigo"><span class="step">01</span></span>
-            <span class="card-body">
-                <span class="card-top">
-                    <span class="title">Бланки планирования</span>
-                </span>
-                <span class="desc">Назначения сотрудников на магазины, сценарии и XLSX-бланки.</span>
-            </span>
-            <span class="go" aria-hidden="true">→</span>
-        </a>
-
-        <a class="nav-card" href="{{ base_path }}/monitoring">
-            <span class="icon sky"><span class="step">02</span></span>
-            <span class="card-body">
-                <span class="card-top">
-                    <span class="title">Мониторинг сотрудников</span>
-                </span>
-                <span class="desc">Рекомендации по фактическим сменам и назначениям.</span>
-            </span>
-            <span class="go" aria-hidden="true">→</span>
-        </a>
-
-        <a class="nav-card" href="{{ base_path }}/dismissals">
-            <span class="icon coral"><span class="step">02б</span></span>
-            <span class="card-body">
-                <span class="card-top">
-                    <span class="title">Мониторинг увольнений</span>
-                </span>
-                <span class="desc">Пропавшие со смен — кандидаты на увольнение (кадровое).</span>
-            </span>
-            <span class="go" aria-hidden="true">→</span>
-        </a>
-
-        <a class="nav-card" href="{{ base_path }}/reconciliations">
-            <span class="icon teal"><span class="step">03</span></span>
-            <span class="card-body">
-                <span class="card-top">
-                    <span class="title">Сверки</span>
-                </span>
-                <span class="desc">Сверки часов по магазинам за фиксированные периоды.</span>
-            </span>
-            <span class="go" aria-hidden="true">→</span>
-        </a>
+        {% for card in group.cards %}
+            {{ nav_card(card) }}
+        {% endfor %}
     </div>
+    {% endfor %}
 </div>
+
+{{ nav_lock_modal() }}
 {% endblock %}

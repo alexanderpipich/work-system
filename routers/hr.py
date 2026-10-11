@@ -8,12 +8,13 @@ from access_scope_helpers import active_scope_values, sync_access_scopes
 from audit_helpers import create_audit_log
 from dependencies import get_db
 from models import Shift, User
-from rbac import ROLE_HR_LEAD, ROLE_TM, TM_ROLE_VALUES, canonical_role, require_permission, scopes_enabled
+from rbac import ROLE_HR_LEAD, ROLE_TM, TM_ROLE_VALUES, canonical_role, require_permission, role_label, scopes_enabled
 from utils import get_password_hash
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+templates.env.globals["role_label"] = role_label
 require_hr_team_management = require_permission("hr_team.manage", audit_denied=True)
 require_limited_password_reset = require_permission("password.reset_limited", audit_denied=True)
 

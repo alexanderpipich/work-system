@@ -24,6 +24,13 @@ class RbacRoleTests(unittest.TestCase):
         self.assertEqual(role_label("hr_manager"), "ТМ (территориальный менеджер)")
         self.assertEqual(role_label("hr_clerk"), "Кадровик")
 
+    def test_every_role_has_label(self):
+        from rbac import ROLE_LABELS, ROLES
+        self.assertEqual(set(ROLE_LABELS), set(ROLES))
+        self.assertTrue(all(ROLE_LABELS.values()))
+        self.assertEqual(ROLE_LABELS["hr_lead"], "Руководитель ТМ")
+        self.assertEqual(ROLE_LABELS["headhunter"], "Рекрутер")
+
     def test_hr_clerk_permissions(self):
         clerk = SimpleNamespace(role="hr_clerk", is_admin=False)
         for perm in ("documents.manage", "citizenship.manage", "employees.view",

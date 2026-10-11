@@ -8,10 +8,10 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
-from dependencies import get_db
+from dependencies import current_user, get_db
 from models import Shift, TimebookEmployee, UploadLog
 from payroll_adjustments import reconcile_sent_payroll_runs
-from rbac import require_permission
+from rbac import has_permission, require_permission
 from service_catalog import diagnose_uploaded_services
 from time_helpers import business_today, is_editable_month, now_utc, previous_month
 from utils import normalize_format, normalize_phone, normalize_text
@@ -412,6 +412,20 @@ def admin_upload_page(
     )
 
 
+
+
+@router.get("/admin/upload/auto", response_class=HTMLResponse)
+def admin_upload_auto(request: Request, user=Depends(current_user)):
+    """Вкладка «Настройка автозагрузки» (П2) — заглушка. Страница открыта всем,
+    настройка — только по праву upload.auto (суперадмин)."""
+    return templates.TemplateResponse(request, "upload_auto.html", {
+        "title": "Настройка автозагрузки",
+        "description": "Автоматическая выгрузка смен из timebook.ru по расписанию: "
+                       "файл забирается сам и проходит ту же загрузку, что и ручная.",
+        "stage": None,
+        "back_url": "/admin",
+        "can_configure": has_permission(user, "upload.auto"),
+    })
 
 
 @router.post("/admin/upload", response_class=HTMLResponse)

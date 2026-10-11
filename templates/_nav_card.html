@@ -1,0 +1,56 @@
+{# Карточка раздела и модалка «нет доступа» (П2). Данные — navigation.build_navigation.
+   Недоступная карточка приглушена; клик/Enter открывает модалку (static/ui.js,
+   initLockedNav), переход не происходит. #}
+{% macro nav_card(card) -%}
+{% if card.available %}
+<a href="{{ card.url }}" class="nav-card">
+{% else %}
+<a href="{{ card.url }}" class="nav-card is-locked" aria-disabled="true" data-locked="1"
+   data-title="{{ card.title }}" data-roles="{{ card.roles_label }}"
+   {%- if card.coming_soon %} data-coming-soon="1"{% endif %}
+   {%- if card.locked_message %} data-message="{{ card.locked_message }}"{% endif %}>
+{% endif %}
+    <span class="icon {{ card.icon_color }}">{{ card.icon_svg | safe }}</span>
+    <span class="card-body">
+        <span class="card-top">
+            <span class="title">{{ card.title }}</span>
+        </span>
+        <span class="desc">{{ card.desc }}</span>
+    </span>
+    <span class="go" aria-hidden="true">→</span>
+</a>
+{%- endmacro %}
+
+{% macro nav_groups(groups) -%}
+{% for group in groups %}
+    <section class="group">
+        <div class="group-hdr">
+            <h2 class="group-title">{{ group.title }}</h2>
+            <span class="group-count">{{ group.cards | length }}</span>
+        </div>
+        <div class="grid">
+        {% for card in group.cards %}
+            {{ nav_card(card) }}
+        {% endfor %}
+        </div>
+    </section>
+{% endfor %}
+{%- endmacro %}
+
+{% macro nav_lock_modal() -%}
+<div class="overlay" id="nav-lock-modal" role="dialog" aria-modal="true" aria-labelledby="nav-lock-title">
+    <div class="modal">
+        <div class="m-hdr">
+            <div>
+                <div class="m-kicker" id="nav-lock-kicker">Нет доступа</div>
+                <div class="m-title" id="nav-lock-title">Раздел недоступен</div>
+            </div>
+            <button type="button" class="m-x" data-nav-lock-close aria-label="Закрыть">×</button>
+        </div>
+        <div class="m-body">
+            <p class="nav-lock-text" id="nav-lock-text"></p>
+        </div>
+        <button type="button" class="m-btn" data-nav-lock-close>Понятно</button>
+    </div>
+</div>
+{%- endmacro %}
