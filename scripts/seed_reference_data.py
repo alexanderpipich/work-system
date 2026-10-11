@@ -7,6 +7,7 @@
     python scripts/seed_reference_data.py                    # только добавить недостающее
     python scripts/seed_reference_data.py --update           # и обновить отличающееся по JSON
     python scripts/seed_reference_data.py --only stores,store_contacts --update
+    python scripts/seed_reference_data.py --only stores --update --force-region 352,353,610
 
 Без --update существующие записи не трогаются (их могли поправить в базе руками),
 в отчёте — «есть: N» и сколько из них отличается от JSON. При --update у магазинов
@@ -47,8 +48,15 @@ def main():
                         help="обновить существующие записи, отличающиеся от JSON")
     parser.add_argument("--only", default="",
                         help="через запятую: " + ",".join(table for table, _ in TABLES))
+    parser.add_argument("--force-region", default="",
+                        help="с --update: номера ТК через запятую, у которых тарифный регион "
+                             "перезаписывается по JSON, даже если в базе уже заполнен (город не трогается)")
     args = parser.parse_args()
     only = [name.strip() for name in args.only.split(",") if name.strip()] or None
+    force_tk = {int(tk) for tk in args.force_region.replace(" ", "").split(",") if tk}
+    if force_tk and not args.update:
+        print("--force-region работает только вместе с --update")
+        return 1
 
     data = read_reference_files()
     if not data:
@@ -56,7 +64,8 @@ def main():
         return 1
     session = SessionLocal()
     try:
-        stats = seed_reference_data(session, data, update=args.update, only=only)
+        stats = seed_reference_data(session, data, update=args.update, only=only,
+                                    force={"stores": (force_tk, {"rate_region"})} if force_tk else None)
         session.commit()
     except ValueError as error:
         session.rollback()

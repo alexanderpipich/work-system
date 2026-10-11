@@ -268,6 +268,8 @@ class StatementExportTests(unittest.TestCase):
             item("Абазов Жанторо", "3ур_ММФ", 17, 10, 304),
             item("Абазов Жанторо", "2ур_Касса", 18, 8, 280),
             item("Борисова Вера", "3ур_ММФ", 16, 8, 304, other_amount=-500, manual_adjustments_amount=-500),
+            # смена без плана: часы не в табель и не в ИЧ, но ЛМК на ней — в «Мед»
+            item("Борисова Вера", "3ур_ММФ", 17, 5, 0, lmk_amount=300),
         ])
         s.add(AdvanceSelection(week_start=datetime.date(2026, 9, 14), employee_name="Абазов Жанторо"))
         s.commit()
@@ -286,8 +288,10 @@ class StatementExportTests(unittest.TestCase):
                           row["Итого к Выплате"], row["Номер карты"], row["Комментарии"]),
                          ("Абазов Жанторо", 29, 8624, 3399, 145, 8624 + 145 - 3399, "еженедельно", "еженедельно"))
         borisova = statement[1]
-        self.assertEqual((borisova["Штраф"], borisova["Премия"], borisova["Итого к Выплате"]),
-                         (500, None, 8 * 304 + 40 - 500))
+        self.assertEqual((borisova["ИЧ"], borisova["Штраф"], borisova["Мед"], borisova["Премия"]),
+                         (8, 500, 300, None))
+        self.assertEqual(borisova["Итого к Выплате"], 8 * 304 + 40 - 500 + 25 - 300)
+        self.assertEqual([r["ИЧ"] for r in tabel if r["ФИО сотрудника Исполнителя"] == "Борисова Вера"], [8])
         self.assertNotEqual(borisova["Номер карты"], "еженедельно")
 
         workbook = openpyxl.load_workbook(BytesIO(build_statement_xlsx(days, tabel, statement)))

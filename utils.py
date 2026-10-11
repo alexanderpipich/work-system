@@ -310,6 +310,13 @@ def repair_requisite(inn, account_number, bik):
     )
 
 
+# П4.5: форматы, которые в выгрузке приходят своим кодом, а ставку берут по ГМ/СМ
+# (как в ведомости коллег): Табакошоп, Зоомаркет — по МФ (СМ), Централизованное
+# производство — по ГМ. Только для подбора ставки (pick_rate): Shift.format и формат
+# ТК не меняются; ставка с точным форматом (если заведут) приоритетнее.
+RATE_FORMAT_ALIASES = {"ТШ": "СМ", "ЗМ": "СМ", "ЦП": "ГМ"}
+
+
 def normalize_format(value) -> str:
     if value is None:
         return ""
@@ -377,12 +384,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(str(password).strip())
 
-
-
-# Форматы, которые в выгрузке приходят своим кодом, а ставку берут по ГМ/СМ
-# (как в ведомости коллег): Табакошоп, Зоомаркет — по МФ (СМ), Централизованное
-# производство — по ГМ. Ставка с точным форматом (если заведут) приоритетнее.
-RATE_FORMAT_ALIASES = {"ТШ": "СМ", "ЗМ": "СМ", "ЦП": "ГМ"}
 
 
 def load_rates(session):
