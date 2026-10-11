@@ -74,7 +74,7 @@ class ReferenceDataTests(unittest.TestCase):
         target = _session()
         stats = seed_reference_data(target, self.data)
         target.commit()
-        self.assertEqual(stats["rates"], {"inserted": 3, "updated": 0, "skipped": 0})
+        self.assertEqual((stats["rates"]["inserted"], stats["rates"]["updated"], stats["rates"]["existing"]), (3, 0, 0))
         self.assertEqual(export_reference_data(target), self.data)
 
         rate = target.query(Rate).filter(Rate.store == "1234").one()
@@ -97,7 +97,7 @@ class ReferenceDataTests(unittest.TestCase):
         target.commit()
         self.data["stores"][0]["display_name"] = "Новое имя"
         self.data["referral_settings"][0]["bonus_amount"] = 4000
-        stats = seed_reference_data(target, self.data)
+        stats = seed_reference_data(target, self.data, update=True)
         target.commit()
         self.assertEqual(stats["stores"]["updated"], 1)
         self.assertEqual(target.query(Store).one().display_name, "Новое имя")
@@ -115,9 +115,14 @@ class CommittedReferenceFilesTests(unittest.TestCase):
         data = read_reference_files(REFERENCE_DIR)
         self.assertEqual(set(data), {table for table, _ in TABLES})
         target = _session()
-        seed_reference_data(target, data)
+        stats = seed_reference_data(target, data)
         target.commit()
-        self.assertEqual(export_reference_data(target), data)
+        # Контакты ТК, которых нет в stores.json, пропускаются с причиной, остальное — один в один.
+        tks = {store["tk_number"] for store in data["stores"]}
+        orphans = [c for c in data["store_contacts"] if c["tk_number"] not in tks]
+        self.assertEqual(stats["store_contacts"]["unresolved"], [f"нет ТК {c['tk_number']}" for c in orphans])
+        expected = dict(data, store_contacts=[c for c in data["store_contacts"] if c["tk_number"] in tks])
+        self.assertEqual(export_reference_data(target), expected)
 
 
 if __name__ == "__main__":

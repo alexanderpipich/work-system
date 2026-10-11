@@ -1,0 +1,4762 @@
+[
+  {
+    "tk_number": 1,
+    "email": "lenta1hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Тумановская Анна 8(812)4492039 доб 791",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 10,
+    "email": "lenta10hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Семенова Анастасия Михайловна 7 (969) 730-16-21",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 108,
+    "email": "lenta108hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Фридман Ольга Вячеславовна 89296873873",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 11,
+    "email": "lenta11hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ниманихина Александра 89819626343",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 116,
+    "email": "lenta116hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ускоева Лилия Рафаэльевна (929) 624-7808",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 12,
+    "email": "lenta12hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Синегаева Татьяна Сергеевна 9819629877, 9819629877, 9199451145",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 124,
+    "email": "lenta124hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Истомина Екатерина 7 (916) 534-12-46",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 128,
+    "email": "lenta128hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Максименкова Ирина Сергеевна (916) 533-7816",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 13,
+    "email": "lenta13hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Тулинова Юлия Фаритовна 9095188027",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 130,
+    "email": "lenta130hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Федотова Татьяна 916 530 91 98",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1309,
+    "email": "sm1309director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Тищенко Ольга Викторовна 79263890405",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1313,
+    "email": "sm1313director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Свиридова Наталия 8-985-285-03-72",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1313,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Свиридова Наталия 8-985-285-03-72",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1320,
+    "email": "sm1320director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Жусупова Элнура 7 926 082-80-04",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1320,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Жусупова Элнура 7 926 082-80-04",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1329,
+    "email": "andrey.belovintsev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Сидоренко Виктория 8-968-852-39-22",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1329,
+    "email": "sm1329director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Сидоренко Виктория 8-968-852-39-22",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1330,
+    "email": "marina.a.androsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Дергачев Валерий 8 915 171 94 50",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1330,
+    "email": "valery.dergachev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Дергачев Валерий 8 915 171 94 50",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1331,
+    "email": "ludmila.nikulina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Реженок Светлана 8-977-459-72-09",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1331,
+    "email": "sm1331director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Реженок Светлана 8-977-459-72-09",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1333,
+    "email": "ludmila.nikulina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Нагорная Мария 8-999-828-43-01",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1333,
+    "email": "sm1333director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Нагорная Мария 8-999-828-43-01",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1335,
+    "email": "sm1335director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шатрашанова Светлана 8-909-024-60-07",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1335,
+    "email": "tatyana.shkerina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шатрашанова Светлана 8-909-024-60-07",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1336,
+    "email": "andrey.belovintsev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ворокута Анастасия 7 (968) 939-12-14",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1336,
+    "email": "sm1336director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ворокута Анастасия 7 (968) 939-12-14",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1337,
+    "email": "aishat.gaziteeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кертбиев Руслан Абуевич 89855729231",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1337,
+    "email": "sm1337director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кертбиев Руслан Абуевич 89855729231",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1338,
+    "email": "igor.gavrikov@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Гавриков Игорь Александрович 79651802464",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1338,
+    "email": "yulia.sinitsyna@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Гавриков Игорь Александрович 79651802464",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1340,
+    "email": "darya.mironova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Рудько Наталия 7 980 738-29-65",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1340,
+    "email": "sm1340director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Рудько Наталия 7 980 738-29-65",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1342,
+    "email": "sm1342director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Воронин Олег 7 926 852-53-23",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1342,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Воронин Олег 7 926 852-53-23",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1344,
+    "email": "irina.tarakanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Акимова Татьяна 7 (969) 345-55-58",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1344,
+    "email": "sm1344director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Акимова Татьяна 7 (969) 345-55-58",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1346,
+    "email": "sm1346director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Киселева Наталия 7 926 580-11-31",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1346,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Киселева Наталия 7 926 580-11-31",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1352,
+    "email": "marina.a.androsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Хроменкова Наталья 8-985-639-55-44",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1352,
+    "email": "natalya.khromenkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Хроменкова Наталья 8-985-639-55-44",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1357,
+    "email": "lyudmila.laskovaya@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Саркисян Аксана Эгнатосовна 8-966-0142-111",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1357,
+    "email": "sm1357director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Саркисян Аксана Эгнатосовна 8-966-0142-111",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1360,
+    "email": "sm1360director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Урусова Альбина 8-903-527-97-67",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1360,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Урусова Альбина 8-903-527-97-67",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1361,
+    "email": "sm1361director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Набатчикова Светлана (новый директор) 89164689058",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1361,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Набатчикова Светлана (новый директор) 89164689058",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1362,
+    "email": "irina.tarakanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Жарова Анастасия Владимировна 8-926-319-88-08",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1362,
+    "email": "sm1362director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Жарова Анастасия Владимировна 8-926-319-88-08",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 137,
+    "email": "lenta137hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Сорокина Анастасия Игоревна 89136100827",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1375,
+    "email": "ludmila.nikulina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Колеватых Ирина Алексеевна 7 (916) 220-98-92",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1375,
+    "email": "sm1375director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Колеватых Ирина Алексеевна 7 (916) 220-98-92",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1377,
+    "email": "ludmila.nikulina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Варнавский Даниил Павлович 8-925-467-26-74",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1377,
+    "email": "sm1377director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Варнавский Даниил Павлович 8-925-467-26-74",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1378,
+    "email": "marina.a.androsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Амеличкина Юлия 8 995 505 04 86",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1378,
+    "email": "sm1378director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Амеличкина Юлия 8 995 505 04 86",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1380,
+    "email": "a.fedoseeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Яковлева Ирина 89267105494",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1380,
+    "email": "sm1380director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Яковлева Ирина 89267105494",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1381,
+    "email": "ludmila.nikulina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шландакова Алена 8-968-868-12-82",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1381,
+    "email": "sm1381director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шландакова Алена 8-968-868-12-82",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1392,
+    "email": "sm1392director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шангина Марина 8-917-653-91-11",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1392,
+    "email": "tatyana.shkerina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шангина Марина 8-917-653-91-11",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1395,
+    "email": "irina.tarakanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Канукова Валентина 7(903)293-99-85",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1395,
+    "email": "sm1395director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Канукова Валентина 7(903)293-99-85",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1397,
+    "email": "artem.inkin@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Инкин Артем 89254430332",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1397,
+    "email": "e.feoktistova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Инкин Артем 89254430332",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 140,
+    "email": "lenta140hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Чанчикова Инесса Юрьевна 89131802358",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1409,
+    "email": "sm1409director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Зимин Андрей 8-9104877038",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1409,
+    "email": "yulia.vaschenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Зимин Андрей 8-9104877038",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 141,
+    "email": "lenta141hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Скиданова Юлия Сергеевна 9133001658, 9617103353",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1410,
+    "email": "elena.n.perova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бобкова Кристина 8-919-139-89-03",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1410,
+    "email": "kristina.bobkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бобкова Кристина 8-919-139-89-03",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1413,
+    "email": "sm1413director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Дышлюк Анастасия 8-966-019-48-16",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1413,
+    "email": "tatyana.shkerina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Дышлюк Анастасия 8-966-019-48-16",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1414,
+    "email": "a.fedoseeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Фотьев Валерий 89268478079",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1414,
+    "email": "sm1414director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Фотьев Валерий 89268478079",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1415,
+    "email": "andrey.belovintsev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Птичкина Алла 7 (915) 252-34-60",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1415,
+    "email": "sm1415director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Птичкина Алла 7 (915) 252-34-60",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1416,
+    "email": "anna.kapitonova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Едельскова Наталья 8 977 570 80 30",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1416,
+    "email": "sm1416director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Едельскова Наталья 8 977 570 80 30",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1417,
+    "email": "aishat.gaziteeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кспоян Каринэ 7 905 518 48 26",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1417,
+    "email": "sm1417director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кспоян Каринэ 7 905 518 48 26",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1419,
+    "email": "aishat.gaziteeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кунина Анна 8 926 239 96 89",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1419,
+    "email": "sm1419director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кунина Анна 8 926 239 96 89",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 142,
+    "email": "lenta142hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Пилюгина Людмила Павловна (929) 909-3902",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1422,
+    "email": "lyudmila.laskovaya@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Илюхина Екатерина 8 9254518151",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1422,
+    "email": "sm1422director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Илюхина Екатерина 8 9254518151",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1424,
+    "email": "sm1424director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Киракосян Лилит",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1424,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Киракосян Лилит",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1425,
+    "email": "andrey.belovintsev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Озерова Марина Валериевна 8-915-383-80-02",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1425,
+    "email": "sm1425director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Озерова Марина Валериевна 8-915-383-80-02",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1435,
+    "email": "maria.krupen@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Замуруева Анастасия 8-968-818-09-83",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1435,
+    "email": "sm1435director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Замуруева Анастасия 8-968-818-09-83",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1445,
+    "email": "sm1445director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Карчаидзе Хатуна 89263648475",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1445,
+    "email": "yulia.vaschenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Карчаидзе Хатуна 89263648475",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1446,
+    "email": "sm1446director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Васькина Наталия 7 903 963-16-37",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1446,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Васькина Наталия 7 903 963-16-37",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1447,
+    "email": "sm1447director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Байрамян Ануш 89651816354",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1447,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Байрамян Ануш 89651816354",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1448,
+    "email": "ludmila.nikulina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Хизриева Бурлият Ибрагимовна 9-968-666-65-73",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1448,
+    "email": "sm1448director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Хизриева Бурлият Ибрагимовна 9-968-666-65-73",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1449,
+    "email": "e.feoktistova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кузьменкова Елена 8-985-171-69-59",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1449,
+    "email": "elena.kuzmenkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кузьменкова Елена 8-985-171-69-59",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1451,
+    "email": "e.feoktistova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ушакова Ирина Николаевна 8-926-135-00-44",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1451,
+    "email": "irina.ushakova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ушакова Ирина Николаевна 8-926-135-00-44",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1454,
+    "email": "a.fedoseeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Журова Светлана 7 996 666-70-25",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1454,
+    "email": "sm1454director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Журова Светлана 7 996 666-70-25",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1456,
+    "email": "natalia.v.vaskina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Имангулова Динара 8(977)354-01-71",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1456,
+    "email": "sm1456director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Имангулова Динара 8(977)354-01-71",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1457,
+    "email": "sm1457director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Брагина Светлана 7 906 760-06-10",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1457,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Брагина Светлана 7 906 760-06-10",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1458,
+    "email": "anna.kapitonova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Нурутдинова Гульнара 7 (919) 961-65-60",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1458,
+    "email": "sm1458director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Нурутдинова Гульнара 7 (919) 961-65-60",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1462,
+    "email": "sm1462director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Фролова Екатерина 7 (929) 624-80-26",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1462,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Фролова Екатерина 7 (929) 624-80-26",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1463,
+    "email": "irina.tarakanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Михалёва Евгения Геннадьевна (отпуск) Светлана 89683836896 Кристина 89101709247",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1463,
+    "email": "sm1463director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Михалёва Евгения Геннадьевна (отпуск) Светлана 89683836896 Кристина 89101709247",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1464,
+    "email": "sm1464director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Коновалова Виктория 8-980-489-22-34",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1464,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Коновалова Виктория 8-980-489-22-34",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1466,
+    "email": "a.fedoseeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Исмаилова Юлия Олеговна 7 910 050-06-11",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 1466,
+    "email": "sm1466director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Исмаилова Юлия Олеговна 7 910 050-06-11",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 15,
+    "email": "lenta15hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Фешина Анна Дмитриевна 7 981 963 41 28",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 150,
+    "email": "lenta150hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бабранова Наталия Сергеевна (929) 911-1914",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 153,
+    "email": "lenta153hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Симакова Екатерина 89233338165",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 160,
+    "email": "lenta160hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Илякова Екатерина (925) 182-4661",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 168,
+    "email": "lenta168hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Лисина Марина Николаевна (926) 991-2183",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 169,
+    "email": "lenta169hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Капран Наталья Вадимовна (916) 532-8740",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 17,
+    "email": "lenta17hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Родкина Наталия Анатольевна 79819634149",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 173,
+    "email": "lenta173hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Евгения Емельянова +7(383) 230-53-90",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 175,
+    "email": "lenta175hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Сергеева Татьяна (929) 687-3919",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 18,
+    "email": "lenta18hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Громыко Лана Григорьева (ЗДТК) 89112301620",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 182,
+    "email": "lenta182hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Гусева Алина Илдусовна 89801672310",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 183,
+    "email": "lenta183hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Иванова Анна Александровна 89166413597",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 19,
+    "email": "lenta19hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Громыко Лана Григорьева (ЗДТК) 8 981 240 03 68",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 196,
+    "email": "lenta196hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Сухова Марина 7 (929) 621-36-73",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2,
+    "email": "lenta2hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Федорова Ирина Геннадьевна 9819634361, 9213884098",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 20,
+    "email": "lenta20hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Лопарева Елена 8 911 085 58 05",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 201,
+    "email": "lenta201hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кукина Ирина Геннадьевна (929) 624-6942",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 210,
+    "email": "lenta210hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Тумановская Анна 7 (812) 449-20-39",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 214,
+    "email": "lenta214hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Коптина Юлия Владимировна 8(981)963-41-26; 8(812)309-02-33; 8(911)295-68-60",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 216,
+    "email": "lenta216hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Антонюк Юлия Валерьевна 7 (981) 710-80-17; 7(921)341-55-75",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 223,
+    "email": "lenta223hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Жукова Юлия Александровна 89131802710",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 224,
+    "email": "lenta224hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Степанова Елена Александровна 9819304473",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 233,
+    "email": "lenta233hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Юлия Акишина 8-951-185-3828",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 246,
+    "email": "lenta246hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Егорова Ирина Валерьевна 89031021702",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 247,
+    "email": "lenta247hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Губинская Марина Валерьевна 73912026990 доб. 791 или 798; 79333271406",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2500,
+    "email": "saida.glebova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Глебова Саида Олимжоновна 89819828384",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2502,
+    "email": "aleksandr.savushkin@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Савушкин Александр Павлович 89268080070",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2511,
+    "email": "saida.glebova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Глебова Саида Олимжоновна 89819828384",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2514,
+    "email": "varvara.menshikova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Меньшикова Варварав 89811984307",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2518,
+    "email": "valeria.dragunova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Драгунова Валерия Сергеевна 89520598880",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2520,
+    "email": "dmitry.zhigadlo@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Жигадло Дмитрий Александрович 89531431133",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2527,
+    "email": "olga.v.shanina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шанина Ольга Владимировна 89818537357",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2529,
+    "email": "e.plashkareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Плашкарева Екатерина Ивановна 89215807876",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2553,
+    "email": "olga.koshkina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кошкина Ольга Станиславовна 89214307797",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2558,
+    "email": "karina.tashkulova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ваганова Карина Суванкуловна 89110091858",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2591,
+    "email": "maria.poleschuk@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Полещук Мария Алексеевна 8-996-205-0065",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2592,
+    "email": "olga.lambreht@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Дубовая Ольга Евгеньевна 8-923-423-7114",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2597,
+    "email": "a.a.smirnova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Смирнова Анастасия Александровна 89218931613",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 260,
+    "email": "lenta260hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Калиненко Мария Александровна 8(926)798-15-72",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2603,
+    "email": "olga.koshkina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кошкина Ольга Станиславовна 89214307797",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2606,
+    "email": "a.a.smirnova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Смирнова Анастасия Александровна 89218931613",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2609,
+    "email": "elena.v.moiseeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Моисеева Елена Владимировна 89669846138",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 263,
+    "email": "lenta263hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Лебедева Вера 7 905 2753619",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 264,
+    "email": "lenta264hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Козырева Кристина Сергеевна 9217808017",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 265,
+    "email": "lenta265hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ненахова Яна 8-981-963-34-93",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 266,
+    "email": "lenta266hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Стрельникова Карина 8-981-963-45-24",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 267,
+    "email": "lenta267hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Такаева Юлия Алексеевна 8 (812) 385-09-33; : 8-911-296-00-28.",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2675,
+    "email": "sabina.lebedeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Лебедева Сабина Валерьевна 89157440364",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 268,
+    "email": "lenta268hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Буслова Наталья Владимировна 8 -911-112-73-05",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2682,
+    "email": "lubov.gutorova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Гуторова Любовь Юрьевна 89290883213",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 269,
+    "email": "lenta269hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Чецкая Светлана 7 (981) 963-34-70",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 27,
+    "email": "lenta27hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Алалина Наталия Вячеславовна (916) 533-1096",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 270,
+    "email": "lenta270hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бауер-Бимштейн Елена Валерьевна / Ткачева Оксана 9819634783, 9219753792, 7 (81369) 6-28-99",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 271,
+    "email": "lenta271hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кравчук Маргарита 8-981-788-86-46",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 272,
+    "email": "lenta272hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Андреева Мария 89819633429",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 273,
+    "email": "lenta273hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Андреева Мария Андреевна 9643339459, 9045540030",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 277,
+    "email": "lenta277hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ковалева Клавдия Александровна (929) 687-3899",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2802,
+    "email": "dmitry.zhigadlo@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Жигадло Дмитрий Александрович 89531431133",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2803,
+    "email": "dmitry.zhigadlo@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Жигадло Дмитрий Александрович 89531431133",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2867,
+    "email": "anton.s.ivanov@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Иванов Антон Сергеевич 89997141375",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2884,
+    "email": "a.kandrushina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кандрушина Александра Геннадьевна 89215922449",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2892,
+    "email": "n.borodinevskaya@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бородиневская Наталья Владимировна 89211816111",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2896,
+    "email": "a.a.smirnova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Смирнова Анастасия Александровна 89218931613",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2897,
+    "email": "saida.glebova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Глебова Саида Олимжоновна 89819828384",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 29,
+    "email": "lenta29hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Гусева Алина Илдусовна (916) 973-4845",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 291,
+    "email": "lenta291hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Устюжина Юлия 89299095688",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2919,
+    "email": "a.kandrushina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кандрушина Александра Геннадьевна 89215922449",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 292,
+    "email": "lenta292hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ляпина Альфия 7 929-909-56-01",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 293,
+    "email": "lenta293hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бабранова Наталия Сергеевна (929) 911-1914",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 295,
+    "email": "lenta295hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Маленкина Яна 8(926) 826-50-55",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 2953,
+    "email": "saida.glebova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Глебова Саида Олимжоновна 89819828384",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 296,
+    "email": "lenta296hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бородкина Светлана Леонидовна (929) 914-5362",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 298,
+    "email": "lenta298hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шмитова Марина 8 929 909 52 93",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3,
+    "email": "lenta3hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Рослякова Ирина Александровна 8-966 754 93 54",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3002,
+    "email": "maria.krupen@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Габдулина Зульфия 8-977-330-15-53",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3002,
+    "email": "sm3002director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Габдулина Зульфия 8-977-330-15-53",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3012,
+    "email": "kristina.bobkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бобкова Кристина 8-993-333-55-54",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3012,
+    "email": "sm3012director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бобкова Кристина 8-993-333-55-54",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 302,
+    "email": "lenta302hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Пястолова Марина (929) 909-5640",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3024,
+    "email": "elena.panichkina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Азизова Саадат 8 915 250 73 23",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3024,
+    "email": "sm3024director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Азизова Саадат 8 915 250 73 23",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3025,
+    "email": "kristina.bobkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бобкова Кристина 8-980-158-32-17",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3025,
+    "email": "sm3025director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бобкова Кристина 8-980-158-32-17",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3033,
+    "email": "sm30339director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Зарядина Татьяна 7 (985) 488-60-56",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3033,
+    "email": "yulia.vaschenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Зарядина Татьяна 7 (985) 488-60-56",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3037,
+    "email": "sm3037director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кораблева Светлана 8-905-594-56-83",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3037,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кораблева Светлана 8-905-594-56-83",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3038,
+    "email": "aishat.gaziteeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Галкина Александра 7 925 840-91-92",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3038,
+    "email": "aleksandra.galkina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Галкина Александра 7 925 840-91-92",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3039,
+    "email": "lyudmila.laskovaya@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бузак Алина 89773392784",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3039,
+    "email": "sm3039director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бузак Алина 89773392784",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 304,
+    "email": "lenta304hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Калинина Надежда Викторовна (985) 161-1541",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3044,
+    "email": "elena.panichkina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Жигунова Юлия 8-999-880-73-18",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3044,
+    "email": "sm3044director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Жигунова Юлия 8-999-880-73-18",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3063,
+    "email": "irina.varlamkina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Варламкина Ирина 8 963 607 20 05",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3063,
+    "email": "marina.a.androsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Варламкина Ирина 8 963 607 20 05",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3072,
+    "email": "lyudmila.laskovaya@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Набатчикова Светлана 8-916-468-90-58",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3072,
+    "email": "sm3072director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Набатчикова Светлана 8-916-468-90-58",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3088,
+    "email": "natalya.v.stepanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Щербакова Елена Владимировна 8 926 266-09-15",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3088,
+    "email": "sm3088director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Щербакова Елена Владимировна 8 926 266-09-15",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3090,
+    "email": "anna.mamonova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мамонова Анна 8-905-783-46-60",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3090,
+    "email": "tatyana.shkerina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мамонова Анна 8-905-783-46-60",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3091,
+    "email": "maria.krupen@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Плахова Анна 8-985-215-85-40",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3091,
+    "email": "sm3091director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Плахова Анна 8-985-215-85-40",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3119,
+    "email": "elena.panichkina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ушакова Наталья 7 953 319-99-46",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3119,
+    "email": "sm3119director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ушакова Наталья 7 953 319-99-46",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 312,
+    "email": "lenta312hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Титова Людмила Васильевна 9819633297, 9215521797",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3134,
+    "email": "sm3134director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Сухарева Валентина Владимировна 8 977 922 30 13",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3134,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Сухарева Валентина Владимировна 8 977 922 30 13",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3154,
+    "email": "sm3154director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Тукляева Анна 8(961) 9028588",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 316,
+    "email": "lenta316hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Лебедева Светлана 89118465252",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3168,
+    "email": "anna.kapitonova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Крамачёва Елена 7 (926) 284-16-53",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3168,
+    "email": "elena.kramacheva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Крамачёва Елена 7 (926) 284-16-53",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 318,
+    "email": "lenta318hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Веселова Ирина 7 (981) 963-29-86",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 319,
+    "email": "lenta319hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Олейникова Светлана 7 (911) 771-47-97",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3197,
+    "email": "elena.panichkina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мамедова Наталья 7 (900)-576-05-71",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 3197,
+    "email": "sm3197director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мамедова Наталья 7 (900)-576-05-71",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 344,
+    "email": "lenta344hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Федулову Ольгу Борисовну 89855201235",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 350,
+    "email": "lenta350hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бабанина Марина 79151300673",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 351,
+    "email": "lenta351hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кутикова Любовь 79036701949",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 355,
+    "email": "lenta355hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Медведева Кристина 89233177272",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 358,
+    "email": "lenta358hrmanager@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Герасимова Екатерина 318-34-92 доб 790 \\ 8-905-271-91-57",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 361,
+    "email": "lenta361hrmanager@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Редькина Екатерина 89052714360",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 363,
+    "email": "lenta363hrmanager@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Иванова Анна 7 981 870-73-43",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 366,
+    "email": "lenta366hrmanager@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Громова Ольга 89213971760",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 367,
+    "email": "lenta367hrmanager@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Калинина Татьяна 89675300647",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 372,
+    "email": "lenta372hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кухарева Марина 7 985 441-80-22",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 377,
+    "email": "irina.yankina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Янкина Ирина 79623430668",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 380,
+    "email": "ekaterina.e.nikitina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Никитина Екатерина 89819601140",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 381,
+    "email": "lenta381hrmanager@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Боярун Екатерина 7 965 037 47-31",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 382,
+    "email": "gm.oms.entuziastov_mku@okmarket.ru",
+    "role": "Отдел персонала",
+    "name": "РОП - Федорова Виктория МКУ - Шкуренко Юлия 8-923-674-44-93",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 382,
+    "email": "gm.oms.entuziastov_rop@okmarket.ru",
+    "role": "Отдел персонала",
+    "name": "РОП - Федорова Виктория МКУ - Шкуренко Юлия 8-923-674-44-93",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 4,
+    "email": "lenta4hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Житнова Светлана 7981-963-41-66",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 4000,
+    "email": "eugenia.kucherenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шишкин Константин 8 906 996 04 70",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 4000,
+    "email": "k.a.shishkin@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шишкин Константин 8 906 996 04 70",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 4007,
+    "email": "elena.lovenyak@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Елена Ловеньяк 79137169281",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 4007,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Елена Ловеньяк 79137169281",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 4025,
+    "email": "anastasia.yakimova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Якимова Анастасия 7 (812) 380-61-56",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 4025,
+    "email": "svetlana.kislenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Якимова Анастасия 7 (812) 380-61-56",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 4026,
+    "email": "galina.rodygina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Родыгина Галина 89832350614",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 4026,
+    "email": "svetlana.kislenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Родыгина Галина 89832350614",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 410,
+    "email": "lenta410hrmanager@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Фисюк Наталья 83832105608; 89607978835",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 48,
+    "email": "lenta48hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Немчина Ирина 79602878263",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 49,
+    "email": "lenta49hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Подковырина Дарья 7 (812) 336-7149 доб.: 791/790 7 (905) 213-25-96",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 5,
+    "email": "lenta5hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Сидорова Елена Николаевна Моб.: +7 (981) 905-00-13",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 509,
+    "email": "sm509director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Рожкова Евгения 89259005765",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 509,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Рожкова Евгения 89259005765",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 510,
+    "email": "kristina.bobkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Краева Вера 8-980-158-33-04",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 510,
+    "email": "sm510director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Краева Вера 8-980-158-33-04",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 512,
+    "email": "sm512director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ласковая Людмила 89935935299",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 513,
+    "email": "aishat.gaziteeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Атрасевич Олеся Анатольевна 8-977-962-54-14",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 513,
+    "email": "sm513director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Атрасевич Олеся Анатольевна 8-977-962-54-14",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 514,
+    "email": "e.feoktistova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Алфимова Мария 8-915-389-72-84",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 514,
+    "email": "maria.alfimova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Алфимова Мария 8-915-389-72-84",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 515,
+    "email": "a.fedoseeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Солина Ирина 8-927-840-34-95",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 515,
+    "email": "irina.solina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Солина Ирина 8-927-840-34-95",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 516,
+    "email": "andrey.belovintsev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Барбаянова Ольга 8-985-343-1573",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 516,
+    "email": "sm516director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Барбаянова Ольга 8-985-343-1573",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 517,
+    "email": "anna.kapitonova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Давданова Юлия 9-905-400-18-03",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 517,
+    "email": "sm517director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Давданова Юлия 9-905-400-18-03",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 520,
+    "email": "e.feoktistova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Диккайа Максим 8 926 040 55 70",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 520,
+    "email": "maksim.dikkaia@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Диккайа Максим 8 926 040 55 70",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 521,
+    "email": "sm521director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Токарева Анна Юрьевна 8-916-318-31-18",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 521,
+    "email": "tatyana.shkerina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Токарева Анна Юрьевна 8-916-318-31-18",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 522,
+    "email": "irina.tarakanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Исмонова Мерьем 8-963-629-96-67",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 522,
+    "email": "merem.ismonova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Исмонова Мерьем 8-963-629-96-67",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 525,
+    "email": "elena.vuivan@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Вуиван Елена Владимировна 8 991 223 14 77",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 525,
+    "email": "marina.a.androsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Вуиван Елена Владимировна 8 991 223 14 77",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 527,
+    "email": "e.feoktistova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шеременда Евгений 8-929-944-27-54",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 527,
+    "email": "eugeny.sheremenda@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шеременда Евгений 8-929-944-27-54",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 529,
+    "email": "natalya.v.stepanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Иванова Ольга Михайловна 7 977 644-01-79",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 529,
+    "email": "sm529director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Иванова Ольга Михайловна 7 977 644-01-79",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 534,
+    "email": "sm534director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бочкарева Светлана 8 985 682-33-80",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 534,
+    "email": "yulia.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бочкарева Светлана 8 985 682-33-80",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 535,
+    "email": "andrey.belovintsev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Медведева Тамара 7 (977) 593-81-20",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 535,
+    "email": "sm535director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Медведева Тамара 7 (977) 593-81-20",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 536,
+    "email": "natalya.v.stepanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Варчак Сергей 8 968 547 7477",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 537,
+    "email": "ekaterina.komarova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Комарова Екатерина 8-961-224-00-63",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 537,
+    "email": "tatyana.shkerina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Комарова Екатерина 8-961-224-00-63",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 539,
+    "email": "sm539director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Филиппов Евгений 8-968-730-72-63",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 545,
+    "email": "diana.drugova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Другова Диана 7 905 551 95 73",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 545,
+    "email": "natalya.v.stepanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Другова Диана 7 905 551 95 73",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 551,
+    "email": "kristina.bobkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Чидаткина Наталья 7-968-792-47-38",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 551,
+    "email": "sm551director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Чидаткина Наталья 7-968-792-47-38",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 554,
+    "email": "ludmila.nikulina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Зайцева Ольга Викторовна 8 968 772 51 14",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 554,
+    "email": "sm554director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Зайцева Ольга Викторовна 8 968 772 51 14",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 563,
+    "email": "anna.kapitonova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шаптала Анастасия 89804242134",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 563,
+    "email": "sm563director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шаптала Анастасия 89804242134",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 564,
+    "email": "kristina.bobkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бутина Надежда 8-910-968-44-52",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 564,
+    "email": "nadezhda.butina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бутина Надежда 8-910-968-44-52",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 567,
+    "email": "marina.a.androsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шпак Алия 89637768306",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 567,
+    "email": "sm567director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шпак Алия 89637768306",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 6,
+    "email": "lenta6hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Горбачева Наталья Александровна 981-963-41-56",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 6006,
+    "email": "natalia.gorbacheva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Горбачева Наталья Александровна 981-963-41-56",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 601,
+    "email": "ludmila.nikulina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Рысина Елена 8-925-586-10-87",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 601,
+    "email": "sm601director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Рысина Елена 8-925-586-10-87",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 605,
+    "email": "anna.kapitonova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кудасова Татьяна 7 965 257 78 31",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 605,
+    "email": "sm605director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кудасова Татьяна 7 965 257 78 31",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 606,
+    "email": "maria.krupen@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Лукьянченкова Ирина 8-926-700-02-90",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 606,
+    "email": "sm606director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Лукьянченкова Ирина 8-926-700-02-90",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 607,
+    "email": "anna.kapitonova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Косаковская Оксана 8-977-984-31-33",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 607,
+    "email": "oksana.kosakovskaya@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Косаковская Оксана 8-977-984-31-33",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 608,
+    "email": "e.feoktistova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Валинцова Вкитория 8-925-314-71-14",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 608,
+    "email": "victoria.valintsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Валинцова Вкитория 8-925-314-71-14",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 609,
+    "email": "maria.hahulina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Хахулина Мария 7 965 115-24-58",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 609,
+    "email": "natalya.v.stepanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Хахулина Мария 7 965 115-24-58",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 614,
+    "email": "sm614director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Давыдова Татьяна 7 (910) 480-04-78 +79013474015-здсм Тамара",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 615,
+    "email": "marina.a.androsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Забабурина Наталья Сергеевна 8 926 664 95 29",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 615,
+    "email": "natalia.zababurina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Забабурина Наталья Сергеевна 8 926 664 95 29",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 616,
+    "email": "marina.a.androsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Атрощенко Наталия 8 926 113 12 16",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 616,
+    "email": "natalia.atroschenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Атрощенко Наталия 8 926 113 12 16",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 6173,
+    "email": "lenta173hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Хайитбаева Ксения +7(383) 230-53-90",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 62,
+    "email": "lenta62hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Степанова Елена Александровна 7 (981) 930-44-73",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 621,
+    "email": "elena.lantsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ланцова Елена Федоровна 8 910 463 99 75",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 621,
+    "email": "marina.a.androsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ланцова Елена Федоровна 8 910 463 99 75",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 623,
+    "email": "kristina.bobkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бобкова Кристина 8-968-496-87-31",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 623,
+    "email": "sm623director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бобкова Кристина 8-968-496-87-31",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 626,
+    "email": "andrey.belovintsev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Колышкина Ирина Олеговна 8- 926-713-55-66",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 626,
+    "email": "sm626director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Колышкина Ирина Олеговна 8- 926-713-55-66",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 628,
+    "email": "anna.kapitonova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шрейдер Ольга 8-965-339-38-43",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 628,
+    "email": "sm628director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шрейдер Ольга 8-965-339-38-43",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 632,
+    "email": "kristina.bobkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Яковлева Юлия Юрьевна 8-967-187-60-93",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 632,
+    "email": "sm632director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Яковлева Юлия Юрьевна 8-967-187-60-93",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 639,
+    "email": "maria.krupen@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Виктория 8901-787-11-80",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 639,
+    "email": "sm639director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Виктория 8901-787-11-80",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 642,
+    "email": "elena.panichkina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Иванчихин Геннадий 8-977 304-38-36",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 642,
+    "email": "sm642director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Иванчихин Геннадий 8-977 304-38-36",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 643,
+    "email": "elena.panichkina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Богдановская Ольга 8-962-972-32-23",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 643,
+    "email": "sm643director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Богдановская Ольга 8-962-972-32-23",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 644,
+    "email": "elena.panichkina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мусинов Роман 8 (930) 842-81-90",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 644,
+    "email": "sm644director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мусинов Роман 8 (930) 842-81-90",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 647,
+    "email": "andrey.belovintsev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Карохова Светлана Петровна \\ Бобкова Кристина 8-929-911-43-06",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 647,
+    "email": "sm647director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Карохова Светлана Петровна \\ Бобкова Кристина 8-929-911-43-06",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 648,
+    "email": "sm648director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Петракова Варвара 7 (916) 873 31 71",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 648,
+    "email": "yulia.vaschenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Петракова Варвара 7 (916) 873 31 71",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 649,
+    "email": "natalya.v.stepanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мелокумова Виктория 8 929 955 12 78",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 649,
+    "email": "sm649director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мелокумова Виктория 8 929 955 12 78",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 651,
+    "email": "a.fedoseeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Зеленева Мария 8- 985- 572-72-69",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 651,
+    "email": "sm651director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Зеленева Мария 8- 985- 572-72-69",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 656,
+    "email": "aishat.gaziteeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Панина Светлана 7 903 665-37-92",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 656,
+    "email": "sm656director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Панина Светлана 7 903 665-37-92",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 660,
+    "email": "maria.krupen@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Суслов Владимир 8-926-991-37-89",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 660,
+    "email": "sm660director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Суслов Владимир 8-926-991-37-89",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 661,
+    "email": "sm661director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шишкин Павел 8-995-118-22-06",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 664,
+    "email": "lyudmila.laskovaya@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Захаров Андрей 8-926-990-20-50",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 664,
+    "email": "sm664director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Захаров Андрей 8-926-990-20-50",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 665,
+    "email": "sm665director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Цховребова Инна 01398-702",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 665,
+    "email": "yulia.vaschenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Цховребова Инна 01398-702",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 667,
+    "email": "anna.kapitonova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мехрякова Юлия 8 906 642 42 00",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 667,
+    "email": "sm667director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мехрякова Юлия 8 906 642 42 00",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 669,
+    "email": "marina.a.androsova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Павлова Ольга 8 925 482 60 23",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 669,
+    "email": "o.pavlova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Павлова Ольга 8 925 482 60 23",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 673,
+    "email": "natalya.v.stepanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мухина Эльмира Дамировна 8 926 167-63-27",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 673,
+    "email": "sm673director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мухина Эльмира Дамировна 8 926 167-63-27",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 675,
+    "email": "aishat.gaziteeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Березуев Иван 8 926 192 72 10",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 675,
+    "email": "ivan.berezuev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Березуев Иван 8 926 192 72 10",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 680,
+    "email": "sm680director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Вербова Ирина 9-977-857-87-89",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 680,
+    "email": "tatyana.shkerina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Вербова Ирина 9-977-857-87-89",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 683,
+    "email": "kristina.bobkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бобкова Кристина 8-965-119-37-13",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 683,
+    "email": "sm683director@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бобкова Кристина 8-965-119-37-13",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 7,
+    "email": "lenta7hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Семыкина Анна Викторовна 7 (981) 963-41-53",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 71,
+    "email": "lenta71hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ануфриева Марина 8(383)210-54-80 ; 9137205808",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 72,
+    "email": "lenta72hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шабалина Яна Владимировна 9139248813",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 73,
+    "email": "lenta73hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Енина Марина Викторовна 9137205840, 9237772461",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 75,
+    "email": "lenta75hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Васюнова Елена Михайловна 9331609659",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 76,
+    "email": "lenta76hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Васякина Мария Андреевна 9136100812",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 77,
+    "email": "lenta77hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Сухотерина Анастасия Николаевна 9137205846",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 78,
+    "email": "lenta78hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Гончарова Марина Олеговна 89136100816",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 79,
+    "email": "lenta79hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Усик Оксана Петровна 9136100818, 3812767682",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 8,
+    "email": "lenta8hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Рогаткина Екатерина 79819634517",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 80,
+    "email": "alexander.yatsenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Чусовкова Любовь Геннадьевна 9137304388",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 80,
+    "email": "denis.belanov@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Чусовкова Любовь Геннадьевна 9137304388",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 80,
+    "email": "ilya.n.kalashnikov@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Чусовкова Любовь Геннадьевна 9137304388",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 80,
+    "email": "konstantin.drayling@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Чусовкова Любовь Геннадьевна 9137304388",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 80,
+    "email": "lenta80hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Чусовкова Любовь Геннадьевна 9137304388",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 80,
+    "email": "lenta80productiondepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Чусовкова Любовь Геннадьевна 9137304388",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 802,
+    "email": "eugenia.kucherenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Сергеев Олег 8 929 382 14 35",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 802,
+    "email": "oleg.sergeev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Сергеев Олег 8 929 382 14 35",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 808,
+    "email": "lyubov.tsymbalist@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Исаева Наталья 8-961-220-55-56",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 808,
+    "email": "natalia.al.isaeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Исаева Наталья 8-961-220-55-56",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 809,
+    "email": "aleksandr.kozyrev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Козырев Александр 8 913 906 74 27",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 809,
+    "email": "lyubov.tsymbalist@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Козырев Александр 8 913 906 74 27",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 81,
+    "email": "lenta81hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Зимина Светлана Степановна 9136100819",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 812,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Грановская Марина 8 (913) 003-75-45",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 812,
+    "email": "marina.granovskaya@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Грановская Марина 8 (913) 003-75-45",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 816,
+    "email": "eugenia.kucherenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шихалева Ирина 8 913 715 88 95",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 816,
+    "email": "irina.shihaleva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шихалева Ирина 8 913 715 88 95",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 818,
+    "email": "irina.kurnosova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Курносова Ирина 79232200325",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 818,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Курносова Ирина 79232200325",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 82,
+    "email": "lenta82hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Полуэктова Евгения Борисовна 9136100822",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 821,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Боровкова Венера 8-923-223-98-13",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 821,
+    "email": "venera.borovkova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Боровкова Венера 8-923-223-98-13",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 823,
+    "email": "eugenia.kucherenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мелехина Ольга Александровна 89833191036",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 823,
+    "email": "olga.melehina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мелехина Ольга Александровна 89833191036",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 829,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Стародубцева Нина 79137204535",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 829,
+    "email": "nina.starodubtseva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Стародубцева Нина 79137204535",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 83,
+    "email": "lenta83hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Печеникова Галина 89836001511 и 89132136760",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 831,
+    "email": "eugenia.kucherenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Маталасова Кристина 8 913 986 34 95",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 831,
+    "email": "kristina.matalasova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Маталасова Кристина 8 913 986 34 95",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 833,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Дорогина Ольга 8 993 788 63 92",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 833,
+    "email": "lyubov.tsymbalist@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Дорогина Ольга 8 993 788 63 92",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 834,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Данилова Олеся 79293821357",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 834,
+    "email": "olesya.danilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Данилова Олеся 79293821357",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 835,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Рубежная Олеся 79913784720",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 835,
+    "email": "olesya.rubezhnaya@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Рубежная Олеся 79913784720",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 843,
+    "email": "l.pervutinskaya@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Первутинская Людмила 79635079500",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 843,
+    "email": "svetlana.kislenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Первутинская Людмила 79635079500",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 844,
+    "email": "svetlana.bondareva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бондарева Светлана 89130972038",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 844,
+    "email": "svetlana.kislenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Бондарева Светлана 89130972038",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 846,
+    "email": "elena.silina@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Силина Елена 7 (960) 936-80-98",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 846,
+    "email": "svetlana.kislenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Силина Елена 7 (960) 936-80-98",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 847,
+    "email": "irina.e.ershova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ершова Ирина 8913 783 30 18",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 847,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Ершова Ирина 8913 783 30 18",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 848,
+    "email": "svetlana.kislenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шарандин Вячеслав 89231600528",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 848,
+    "email": "vyacheslav.sharandin@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Шарандин Вячеслав 89231600528",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 849,
+    "email": "eugenia.kucherenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Абакумов Владимир 79231976540",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 849,
+    "email": "vladimir.abakumov@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Абакумов Владимир 79231976540",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 852,
+    "email": "elena.putintseva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Путинцева Елена 89089509308",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 852,
+    "email": "natalia.serbinenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Путинцева Елена 89089509308",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 853,
+    "email": "kristina.mitrofanova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Митрофанова Кристиина 9133307167",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 853,
+    "email": "svetlana.kislenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Митрофанова Кристиина 9133307167",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 854,
+    "email": "natalya.vinokurova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Винокурова Наталья 8-929-391-11-41",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 854,
+    "email": "svetlana.kislenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Винокурова Наталья 8-929-391-11-41",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 855,
+    "email": "eugenia.kucherenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Беляева Яна 8 965 823 90 68",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 855,
+    "email": "yana.belyaeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Беляева Яна 8 965 823 90 68",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 856,
+    "email": "ekaterina.kaschenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кащенко Екатерина 79137204389",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 856,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кащенко Екатерина 79137204389",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 857,
+    "email": "anna.a.merkulova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Меркулова Анна Александровна 89137964033",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 857,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Меркулова Анна Александровна 89137964033",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 859,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Полянская Наталья 79831212246",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 859,
+    "email": "natalya.polyanskaya@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Полянская Наталья 79831212246",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 86,
+    "email": "lenta86hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Богданова Юлия Александровна 9133006780, 9618634933",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 860,
+    "email": "alexandra.bykova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Быкова Александра ДСМ : 8 913 980 88 29",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 860,
+    "email": "lyubov.tsymbalist@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Быкова Александра ДСМ : 8 913 980 88 29",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 863,
+    "email": "natalia.serbinenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Воробьева Ольга 89960374697",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 863,
+    "email": "olga.vorobva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Воробьева Ольга 89960374697",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 865,
+    "email": "alexey.mamontov@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мамонтов Алексей 9234124988",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 865,
+    "email": "svetlana.kislenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Мамонтов Алексей 9234124988",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 868,
+    "email": "karina.novozhilova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Гапонова Юлия 952 949 41 35",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 868,
+    "email": "yulia.gaponova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Гапонова Юлия 952 949 41 35",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 87,
+    "email": "lenta87hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Обеднина Елена 9131802351; 8923-571-35-86",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 870,
+    "email": "lyubov.tsymbalist@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Наталия Андреева 79538595129",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 870,
+    "email": "natalia.e.andreeva@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Наталия Андреева 79538595129",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 871,
+    "email": "alena.borova@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Борова Алена 8913 921 18 60",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 871,
+    "email": "lyubov.tsymbalist@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Борова Алена 8913 921 18 60",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 872,
+    "email": "andrey.zverev@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Зверев Андрей 9627866540",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 872,
+    "email": "svetlana.kislenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Зверев Андрей 9627866540",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 873,
+    "email": "marina.tovt@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Товт Марина 8-929-396-9390",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 873,
+    "email": "svetlana.kislenko@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Товт Марина 8-929-396-9390",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 88,
+    "email": "lenta88hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Деменьшина Ольга 9131005924",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 9,
+    "email": "lenta9hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Петухова Светлана Юрьевна 981-963-41-50",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 95,
+    "email": "lenta95hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Стрелкова Кристина 89137945404",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 96,
+    "email": "lenta96hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Захарова Наталья Сергеевна 9131005925",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 97,
+    "email": "lenta97hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кисленко Светлана Юрьевна 9836001512",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  },
+  {
+    "tk_number": 99,
+    "email": "lenta99hrdepartment@lenta.com",
+    "role": "Отдел персонала",
+    "name": "Кузнецова Анастасия Михайловна 7 913 100-59-30; 3822289656",
+    "for_planning": true,
+    "for_reconciliation": true,
+    "for_unplanned": true,
+    "is_active": true
+  }
+]
