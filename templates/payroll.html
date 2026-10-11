@@ -356,6 +356,15 @@
                 </div>
             </div>
 
+            {% if period_links %}
+            <div class="row mt-14">
+                <span class="muted">Полмесяца:</span>
+                {% for label, p_from, p_to in period_links %}
+                <a class="btn btn-secondary btn-sm" href="/admin/payroll?date_from={{ p_from.isoformat() }}&date_to={{ p_to.isoformat() }}">{{ label }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <div class="stores-box">
                 <div class="stores-header">
                     <h3 class="stores-title">Магазины</h3>
@@ -384,6 +393,30 @@
                 </div>
             </div>
         </form>
+    </div>
+
+    <div class="card no-print">
+        <h2>Табель за период</h2>
+        {% if is_half_month_period %}
+        <p class="field-hint mt-0">
+            Табель по всем сменам периода. Смены, уже выплаченные еженедельным авансом,
+            попадут с вычетом выплаченного; черновик ничего не резервирует до фиксации.
+        </p>
+        <form method="post" action="/admin/payouts/period/create" class="mt-14">
+            <input type="hidden" name="date_from" value="{{ date_from }}">
+            <input type="hidden" name="date_to" value="{{ date_to }}">
+            <button type="submit" class="btn btn-primary">Сформировать табель за период</button>
+        </form>
+        {% else %}
+        <p class="field-hint mt-0">Табель за период формируется за 1–15 или 16–конец месяца — выберите полмесяца кнопками выше.</p>
+        {% endif %}
+        {% if period_runs %}
+        <ul class="mt-14">
+            {% for p_run in period_runs %}
+            <li><a href="/admin/payouts/period/{{ p_run.id }}">Табель №{{ p_run.id }}</a> — {{ {'draft': 'черновик', 'fixed': 'зафиксирован', 'sent': 'отправлен', 'closed': 'закрыт'}.get(p_run.status, p_run.status) }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
     </div>
 
     <div class="card no-print">

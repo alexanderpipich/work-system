@@ -12,8 +12,9 @@ from dependencies import RedirectException, current_user, get_db
 from file_storage import storage_response
 from models import PayrollRun, User
 from payouts_helpers import (advance_run_for_week, advance_week_rows, can_select, carry_over_selection,
-                             default_week, fix_advance, is_frozen, save_registry, save_week_deduction,
-                             set_selection, unfix_run, unsend_run, week_monday)
+                             create_period_draft, default_week, fix_advance, fix_period_run, is_frozen,
+                             period_summary, save_registry, save_week_deduction, set_selection, unfix_run,
+                             unsend_run, week_monday)
 from payroll_run_helpers import RUN_KIND_ADVANCE
 from rbac import ROLE_TM, canonical_role, has_permission
 from time_helpers import business_today
@@ -234,3 +235,79 @@ def run_registry(run_id: int, session: Session = Depends(get_db), user=Depends(c
         return RedirectResponse(_run_back_url(run, error="Реестр — только у зафиксированного прогона"), 302)
     key, filename = save_registry(session, run)
     return storage_response(key, filename=filename) or RedirectResponse(_run_back_url(run), 302)
+
+
+# ── Табель за период ─────────────────────────────────────────────────────────
+
+def require_payroll_manage(user=Depends(current_user)):
+    if not has_permission(user, "payroll.manage"):
+        raise RedirectException("/")
+    return user
+
+
+@router.post("/admin/payouts/period/create")
+def period_create(
+    request: Request,
+    date_from: str = Form(...),
+    date_to: str = Form(...),
+    comment: str = Form(default=""),
+    session: Session = Depends(get_db),
+    user=Depends(require_payroll_manage),
+):
+    from routers.payroll import payroll_redirect_url, period_comment_or_refusal
+
+    try:
+        start = datetime.strptime(date_from, "%Y-%m-%d").date()
+        end = datetime.strptime(date_to, "%Y-%m-%d").date()
+    except ValueError:
+        return RedirectResponse("/admin/payroll?message=" + quote("Некорректные даты"), 302)
+    comment, refusal = period_comment_or_refusal(user, start, end, comment)
+    if refusal:
+        return RedirectResponse(payroll_redirect_url("/admin/payroll", date_from, date_to, message=refusal), 302)
+    run = create_period_draft(session, request, user, start, end, comment)
+    return RedirectResponse(f"/admin/payouts/period/{run.id}", 302)
+
+
+@router.get("/admin/payouts/period/{run_id}", response_class=HTMLResponse)
+def period_page(
+    request: Request,
+    run_id: int,
+    message: str = "",
+    error: str = "",
+    session: Session = Depends(get_db),
+    user=Depends(require_payroll_manage),
+):
+    run = session.query(PayrollRun).filter(PayrollRun.id == run_id).first()
+    if not run or run.kind != "period":
+        return RedirectResponse("/admin/payouts", 302)
+    rows, totals = period_summary(session, run)
+    return templates.TemplateResponse(request, "payouts_period.html", {
+        "run": run,
+        "run_status": RUN_STATUS_LABELS.get(run.status, run.status),
+        "fixed_by_name": _user_name(session, run.fixed_by),
+        "rows": rows,
+        "totals": totals,
+        "perms": user_permissions(user),
+        "message": message or None,
+        "error": error or None,
+    })
+
+
+@router.post("/admin/payouts/period/{run_id}/rebuild")
+def period_rebuild(request: Request, run_id: int, session: Session = Depends(get_db),
+                   user=Depends(require_payroll_manage)):
+    run = _run_or_404(session, run_id)
+    if not run or run.kind != "period" or run.status != "draft":
+        return RedirectResponse(_run_back_url(run, error="Пересчитать можно только черновик"), 302)
+    create_period_draft(session, request, user, run.date_from, run.date_to, run.comment)
+    return RedirectResponse(_run_back_url(run, message="Черновик пересчитан"), 302)
+
+
+@router.post("/admin/payouts/period/{run_id}/fix")
+def period_fix(request: Request, run_id: int, session: Session = Depends(get_db),
+               user=Depends(require_payroll_manage)):
+    run = _run_or_404(session, run_id)
+    errors = fix_period_run(session, request, user, run)
+    if errors:
+        return RedirectResponse(_run_back_url(run, error="; ".join(errors[:10])), 302)
+    return RedirectResponse(_run_back_url(run, message="Табель зафиксирован"), 302)

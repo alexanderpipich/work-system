@@ -515,3 +515,121 @@ def save_registry(session, run):
     key = f"{REGISTRY_PREFIX}/{run.kind}/{run.id}/{stamp}_{filename}"
     storage_save(key, content, content_type=XLSX_CONTENT_TYPE)
     return key, filename
+
+
+# ── Табель за период (полмесяца) ─────────────────────────────────────────────
+
+def period_runs_for(session, date_from, date_to):
+    return (
+        session.query(PayrollRun)
+        .filter(PayrollRun.kind == RUN_KIND_PERIOD, PayrollRun.date_from == date_from,
+                PayrollRun.date_to == date_to)
+        .order_by(PayrollRun.id.desc())
+        .all()
+    )
+
+
+def _period_shifts(session, date_from, date_to):
+    return session.query(Shift).filter(
+        Shift.shift_date >= date_from, Shift.shift_date <= date_to,
+    ).order_by(Shift.employee.asc(), Shift.store.asc(), Shift.service.asc(), Shift.shift_date.asc()).all()
+
+
+def rebuild_period_items(session, run):
+    """Строки табеля за период: все смены периода, ЛМК, авто- и ручные корректировки
+    как в fix_payroll; уже выплаченное авансом — advanced_amount."""
+    session.query(PayrollRunItem).filter(PayrollRunItem.run_id == run.id).delete()
+    rates = load_rates(session)
+    resolve = build_service_resolver(session)
+    return build_run_items(
+        session, run, _period_shifts(session, run.date_from, run.date_to),
+        date_from=run.date_from, date_to=run.date_to, rates=rates, resolve=resolve,
+        apply_lmk=True, apply_auto=True, manual="store", link_paid=True,
+    )
+
+
+def create_period_draft(session, request, user, date_from, date_to, comment=None):
+    """«Сформировать табель за период»: черновик (draft ничего не резервирует).
+    Повторное нажатие пересчитывает уже существующий черновик этого периода."""
+    run = next((r for r in period_runs_for(session, date_from, date_to) if r.status == "draft"), None)
+    created = run is None
+    if created:
+        run = PayrollRun(kind=RUN_KIND_PERIOD, date_from=date_from, date_to=date_to, status="draft",
+                         created_by=user.id, created_at=now_utc(), comment=comment or None,
+                         legal_entity=default_legal_entity(session))
+        session.add(run)
+        session.flush()
+    items = rebuild_period_items(session, run)
+    create_audit_log(session, request, user, "payroll_run_draft_built", "payroll_run", run.id,
+                     f"{date_from} - {date_to}",
+                     new_value={"kind": run.kind, "created": created, "items_count": len(items)})
+    session.commit()
+    return run
+
+
+def fix_period_run(session, request, user, run):
+    """draft → fixed. Строки пересчитываются заново (аванс могли зафиксировать после
+    черновика); проверки — как у fix_payroll. Возвращает список ошибок."""
+    from referral_helpers import pending_payouts
+
+    if not run or run.kind != RUN_KIND_PERIOD or run.status != "draft":
+        return ["Зафиксировать можно только черновик табеля за период"]
+    items = rebuild_period_items(session, run)
+    errors = [f"{i.employee_name} / {i.store} / {i.shift_date:%d.%m.%Y} — не найдена ЧТС"
+              for i in items if i.comment == "Не найдена ЧТС"]
+    checked = set()
+    for item in items:
+        key = normalize_person_name(item.employee_name)
+        if key in checked:
+            continue
+        checked.add(key)
+        requisite = active_requisite(session, find_user_by_name(session, item.employee_name), item.employee_name)
+        if not requisite:
+            errors.append(f"{item.employee_name} — отсутствуют активные реквизиты")
+        elif not requisite.is_verified:
+            errors.append(f"{item.employee_name} — реквизиты не проверены")
+    if pending_payouts(session):
+        errors.append("Требуется решение по премиям АПД перед фиксацией")
+    if errors:
+        session.commit()  # черновик пересчитан — пусть видно актуальное
+        return errors
+    run.status = "fixed"
+    run.fixed_by = user.id
+    run.fixed_at = now_utc()
+    referral = apply_confirmed_payouts_to_run(session, request, user, run.id)
+    create_audit_log(session, request, user, "payroll_run_created", "payroll_run", run.id,
+                     f"{run.date_from} - {run.date_to}",
+                     new_value={"kind": run.kind, "status": run.status, "items_count": len(items),
+                                "referral_rows": referral})
+    session.commit()
+    return []
+
+
+def period_summary(session, run):
+    """Свёртка строк табеля по сотрудникам: начислено, корректировки, ЛМК,
+    авансировано, к выплате; строки — для раскрытия."""
+    items = session.query(PayrollRunItem).filter(PayrollRunItem.run_id == run.id).order_by(PayrollRunItem.id).all()
+    users = {u.employee_name_norm: u for u in session.query(User).all()}
+    tm_names = {u.id: u.employee_name for u in users.values()}
+    groups = OrderedDict()
+    for item in items:
+        key = normalize_person_name(item.employee_name)
+        group = groups.setdefault(key, {
+            "employee_name": item.employee_name, "items": [], "hours": 0.0, "accrued": 0.0,
+            "adjustments": 0.0, "lmk": 0.0, "advanced": 0.0, "total": 0.0,
+        })
+        user = users.get(key)
+        group["tm_name"] = tm_names.get(user.tm_id, "") if user and user.tm_id else ""
+        group["items"].append(item)
+        group["hours"] += item.hours or 0
+        group["accrued"] += item.amount or 0
+        group["adjustments"] += (item.other_amount or 0) + (item.auto_adjustments_amount or 0)
+        group["lmk"] += item.lmk_amount or 0
+        group["advanced"] += item.advanced_amount or 0
+        group["total"] += item.total_amount or 0
+    rows = sorted(groups.values(), key=lambda g: normalize_person_name(g["employee_name"]))
+    for row in rows:
+        row["overpaid"] = round(row["total"], 2) < 0
+        row["has_negative_item"] = any(round(i.total_amount or 0, 2) < 0 for i in row["items"])
+    totals = {k: sum(r[k] for r in rows) for k in ("hours", "accrued", "adjustments", "lmk", "advanced", "total")}
+    return rows, totals

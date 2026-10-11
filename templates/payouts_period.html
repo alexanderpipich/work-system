@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{# Табель за период (П3): свёртка по сотрудникам. Уже выплаченное авансом —
+   «Авансировано»; если после аванса часы уменьшились, итог строки < 0. #}
+{% set can_manage = 'payroll.manage' in perms %}
+{% set can_export = 'payouts.export' in perms %}
+{% set can_send = 'payroll.send' in perms %}
+
+{% block title %}Табель за период{% endblock %}
+{% block brand_title %}Табель {{ run.date_from.strftime('%d.%m.%Y') }} — {{ run.date_to.strftime('%d.%m.%Y') }}{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Табель №{{ run.id }} · {{ run_status }}{% if run.fixed_at %} {{ run.fixed_at.strftime('%d.%m.%Y %H:%M') }}{% endif %}{% if fixed_by_name %}, {{ fixed_by_name }}{% endif %}</p>{% endblock %}
+
+{% block topbar_actions %}
+<a class="back-link" href="/admin/payroll?date_from={{ run.date_from.isoformat() }}&date_to={{ run.date_to.isoformat() }}">Выплатной табель</a>
+<a class="back-link" href="/admin/payouts">Выплаты</a>
+{% endblock %}
+
+{% block head %}
+<style>
+    /* специфика страницы: свёртка по сотрудникам, раскрытие смен */
+    .period-table td.num, .period-table th.num { text-align: right; white-space: nowrap; }
+    .period-table tr.row-attention td { background: var(--error-bg); }
+    .period-table tr.row-attention .total { color: var(--error-text); }
+    .period-table details summary { cursor: pointer; font-weight: 700; color: var(--brand-blue); }
+    .period-shifts { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+    .period-shifts li { margin: 2px 0; }
+    .period-shifts .is-negative { color: var(--error-text); font-weight: 700; }
+    .period-table .total { font-weight: 800; color: var(--brand-blue); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top page-wide">
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
+
+    <div class="card">
+        <div class="row">
+            {% if run.status == 'draft' and can_manage %}
+            <form method="post" action="/admin/payouts/period/{{ run.id }}/rebuild">
+                <button type="submit" class="btn btn-secondary">Пересчитать черновик</button>
+            </form>
+            <form method="post" action="/admin/payouts/period/{{ run.id }}/fix"
+                  onsubmit="return confirm('Зафиксировать табель? Строки будут пересчитаны на текущих данных.');">
+                <button type="submit" class="btn btn-peach">Зафиксировать табель</button>
+            </form>
+            {% endif %}
+            {% if run.status == 'fixed' and can_manage %}
+            <form method="post" action="/admin/payouts/runs/{{ run.id }}/unfix"
+                  onsubmit="return confirm('Расфиксировать табель? Строки будут удалены, черновик можно пересчитать.');">
+                <button type="submit" class="btn btn-danger">Расфиксировать</button>
+            </form>
+            {% endif %}
+            {% if run.status == 'fixed' and can_send %}
+            <form method="post" action="/admin/payroll/runs/send">
+                <input type="hidden" name="run_id" value="{{ run.id }}">
+                <input type="hidden" name="return_to" value="/admin/payouts/period/{{ run.id }}">
+                <button type="submit" class="btn btn-secondary">Отправить в оплату</button>
+            </form>
+            {% endif %}
+            {% if run.status == 'sent' and can_manage %}
+            <form method="post" action="/admin/payouts/runs/{{ run.id }}/unsend">
+                <button type="submit" class="btn btn-secondary">Вернуть в «зафиксирован»</button>
+            </form>
+            {% endif %}
+            {% if run.status in ('fixed', 'sent', 'closed') and can_export %}
+            <a class="btn btn-secondary" href="/admin/payouts/runs/{{ run.id }}/registry">Реестр xlsx</a>
+            {% endif %}
+            {% if run.status != 'draft' %}
+            <a class="btn btn-secondary" href="/admin/payroll/runs/{{ run.id }}">Строки табеля №{{ run.id }}</a>
+            {% endif %}
+        </div>
+        {% if run.status == 'draft' %}
+        <p class="field-hint">Черновик ничего не резервирует: при фиксации строки пересчитываются, уже выплаченное авансом вычитается.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="table-wrap is-tall period-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Сотрудник</th>
+                        <th>ТМ</th>
+                        <th class="num">Часы</th>
+                        <th class="num">Начислено</th>
+                        <th class="num">Корректировки</th>
+                        <th class="num">ЛМК</th>
+                        <th class="num">Авансировано</th>
+                        <th class="num">К выплате</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in rows %}
+                    <tr class="{% if row.overpaid or row.has_negative_item %}row-attention{% endif %}">
+                        <td>
+                            <details>
+                                <summary>{{ row.employee_name }}</summary>
+                                <ul class="period-shifts">
+                                {% for item in row['items'] %}
+                                    <li class="{% if (item.total_amount or 0) < 0 %}is-negative{% endif %}">
+                                        {% if item.shift_date %}{{ item.shift_date.strftime('%d.%m') }} · {{ item.store }} · {% endif %}{{ item.service }} ·
+                                        {{ '%g' % (item.hours or 0) }} ч × {{ '%g' % (item.rate or 0) }} = {{ '%.2f' % (item.amount or 0) }}
+                                        {% if item.advanced_amount %} · аванс №{{ item.paid_by_run_id }}: −{{ '%.2f' % item.advanced_amount }}{% endif %}
+                                        → {{ '%.2f' % (item.total_amount or 0) }}
+                                        {% if item.comment %}— {{ item.comment }}{% endif %}
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </details>
+                            {% if row.overpaid %}<span class="pill pill-danger">переплата по авансу</span>{% endif %}
+                        </td>
+                        <td>{{ row.tm_name or '—' }}</td>
+                        <td class="num">{{ '%g' % row.hours }}</td>
+                        <td class="num">{{ '%.2f' % row.accrued }}</td>
+                        <td class="num">{{ '%.2f' % row.adjustments }}</td>
+                        <td class="num">{{ '%.2f' % row.lmk }}</td>
+                        <td class="num">{{ '%.2f' % row.advanced }}</td>
+                        <td class="num total">{{ '%.2f' % row.total }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8" class="muted">Строк нет{% if run.status == 'draft' %} — пересчитайте черновик{% endif %}</td></tr>
+                {% endfor %}
+                </tbody>
+                {% if rows %}
+                <tfoot>
+                    <tr>
+                        <th>Итого</th><th></th>
+                        <th class="num">{{ '%g' % totals.hours }}</th>
+                        <th class="num">{{ '%.2f' % totals.accrued }}</th>
+                        <th class="num">{{ '%.2f' % totals.adjustments }}</th>
+                        <th class="num">{{ '%.2f' % totals.lmk }}</th>
+                        <th class="num">{{ '%.2f' % totals.advanced }}</th>
+                        <th class="num">{{ '%.2f' % totals.total }}</th>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

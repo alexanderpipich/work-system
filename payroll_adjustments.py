@@ -64,8 +64,11 @@ def reconcile_sent_payroll_runs(session):
 
     rates = load_rates(session)
     resolve = build_service_resolver(session)
+    # П3: только табели за период — аванс покрывает часть сотрудников и недель,
+    # разницу по нему покажет следующий табель за период (advanced_amount).
     sent_runs = session.query(PayrollRun).filter(
-        PayrollRun.status == "sent"
+        PayrollRun.status == "sent",
+        PayrollRun.kind != "advance",
     ).all()
 
     for run in sent_runs:

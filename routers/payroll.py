@@ -16,7 +16,8 @@ from manual_adjustments import (
     save_manual_adjustments,
 )
 from models import PayrollRun, Requisite, Shift
-from payroll_run_helpers import build_run_items, is_half_month
+from payouts_helpers import period_runs_for
+from payroll_run_helpers import build_run_items, half_month_bounds, is_half_month
 from payroll_adjustments import apply_auto_adjustments_to_rows
 from referral_helpers import apply_confirmed_payouts_to_run, pending_payouts
 from schedule_grid import build_payroll_rows, days_between
@@ -54,6 +55,17 @@ def period_comment_or_refusal(user, start_date, end_date, comment):
     if is_superadmin(user):
         return ("[произвольный период] " + comment).strip(), None
     return comment, PERIOD_REFUSAL
+
+
+def half_month_links(day):
+    """Кнопки «01–15 / 16–конец»: прошлый и текущий месяц относительно `day`."""
+    previous_month_last = day.replace(day=1) - timedelta(days=1)
+    anchors = (previous_month_last.replace(day=1), previous_month_last, day.replace(day=1), day.replace(day=16))
+    links = []
+    for anchor in anchors:
+        start, end = half_month_bounds(anchor)
+        links.append((f"{start:%d}–{end:%d.%m}", start, end))
+    return links
 
 
 def payroll_redirect_url(base_path, date_from, date_to, employee_name="", stores=None, message=""):
@@ -675,6 +687,10 @@ def admin_payroll(
         request,
         "payroll.html",
         {
+            # П3: кнопки полумесяцев и табели за выбранный период.
+            "period_links": half_month_links(start_date),
+            "is_half_month_period": is_half_month(start_date, end_date),
+            "period_runs": period_runs_for(session, start_date, end_date),
             "rows": rows,
             "days": days,
             "date_from": date_from,
