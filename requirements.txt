@@ -32,3 +32,4 @@ typing_extensions==4.15.0
 tzdata==2025.3
 uvicorn==0.42.0
 itsdangerous==2.2.0
+python-docx==1.2.0
