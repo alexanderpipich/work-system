@@ -163,6 +163,10 @@ class RoutesTests(unittest.TestCase):
         self.assertEqual(html.count('class="uitem"'), 100)
         self.assertEqual(self.client.get("/admin/users?page=2").text.count('class="uitem"'), 32)
         self.assertEqual(self.client.get("/admin/users?tm=1").text.count('class="uitem"'), 5)
+        for bad in ("", "0", "abc"):  # старые закладки с tm= и мусор — «все ТМ», а не 422
+            response = self.client.get(f"/admin/users?tm={bad}")
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("всего 132", response.text)
         self.assertEqual(self.client.get("/admin/users?role=employee&no_cabinet=1").text.count('class="uitem"'), 100)
         no_req = self.client.get("/admin/users?role=employee&no_requisites=1&page=2").text
         self.assertIn("всего 129", no_req)
