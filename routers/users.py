@@ -531,7 +531,7 @@ def admin_users(
     phone: str = "",
     employee_name: str = "",
     role: str = "",
-    tm: int = 0,
+    tm: str = "0",
     no_cabinet: str = "",
     no_requisites: str = "",
     page: int = 1,
@@ -562,7 +562,11 @@ def admin_users(
         roles = TM_ROLE_VALUES if role_clean == "tm" else (role_clean,)
         query = query.filter(User.role.in_(roles))
 
-    # П4.2: фильтры для списка ~600 человек.
+    # П4.2: фильтры для списка ~600 человек. Старые закладки несут tm= (пусто) — это «все ТМ».
+    try:
+        tm = int(tm.strip() or 0)
+    except ValueError:
+        tm = 0
     if tm:
         query = query.filter(User.tm_id == tm)
     if no_cabinet:

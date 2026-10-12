@@ -122,7 +122,7 @@
                 <div class="field">
                     <label>ТМ</label>
                     <select name="tm">
-                        <option value="">Все ТМ</option>
+                        <option value="0">Все ТМ</option>
                         {% for tm in tm_users %}<option value="{{ tm.id }}" {% if filters and filters.tm == tm.id %}selected{% endif %}>{{ tm.employee_name }}</option>{% endfor %}
                     </select>
                 </div>
