@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{# Еженедельный отчёт по сменам (П4.6): табель за завершившуюся неделю Пн–Вс,
-   строки — weekly_report.weekly_report (общий построитель timesheet). Справочный,
-   с авансами и фиксацией не связан. #}
+{# «Еженедельный отчёт» (П4.6) — рабочий экран ТМ по понедельникам: ставки, закрепление
+   за ТМ, «ЧТС проверено», подача на аванс. Данные — weekly_report, действия — weekly_actions.
+   Красная ячейка — смена без плана (0), розовая строка — нет реквизитов для выплаты. #}
 
 {% block title %}Еженедельный отчёт{% endblock %}
 {% block brand_title %}Еженедельный отчёт{% endblock %}
@@ -14,21 +14,57 @@
 <style>
     .week-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .week-nav .week-title { font-size: 17px; font-weight: 800; color: var(--brand-blue); }
+    .wr-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 13px; }
+    .wr-checks .is-off { color: #9ca3af; }
+    .wr-table table { font-size: 13px; }
     .wr-table td.num, .wr-table th.num { text-align: right; white-space: nowrap; }
-    .wr-table td.day, .wr-table th.day { text-align: center; white-space: nowrap; }
+    .wr-table td.day, .wr-table th.day { text-align: center; white-space: nowrap; min-width: 34px; }
+    .wr-table td.np { background: #FF0000; color: #fff; font-weight: 700; }
+    .wr-table tr.noreq td:not(.np) { background: #FFC7CE; }
     .wr-table .no-rate { color: #b91c1c; font-weight: 700; }
+    .wr-table .cell-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--brand-blue);
+                          cursor: pointer; text-decoration: underline dotted; }
+    .wr-table .cell-btn:disabled { color: inherit; text-decoration: none; cursor: default; }
+    .wr-table .ind { color: #b45309; font-weight: 800; margin-left: 2px; }
+    .wr-table .tm-empty { color: #b91c1c; font-weight: 700; }
+    .wr-table select.tm-select { height: 30px; font-size: 12.5px; max-width: 170px; }
+    .wr-table .adv-amount { display: block; font-size: 12px; color: var(--muted); }
     .wr-table tr.wr-total td { font-weight: 800; color: var(--brand-blue); }
+    .wr-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="page page-pad-top page-wide">
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
+
+    {% if tm_requests %}
+    <div class="alert alert-warn mt-0 mb-20">
+        <b>Запросы на смену ТМ: {{ tm_requests|length }}</b>
+        <ul class="mt-8">
+        {% for r in tm_requests %}
+            <li>
+                {{ r.employee }}: {{ r.from_tm }} → <b>{{ r.to_tm }}</b> <span class="muted">{{ r.created_at }}</span>
+                <form method="post" action="/admin/payouts/weekly/tm-requests/{{ r.id }}/accept" class="inline">
+                    <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
+                    <button type="submit" class="btn btn-primary btn-sm">Принять</button>
+                </form>
+                <form method="post" action="/admin/payouts/weekly/tm-requests/{{ r.id }}/reject" class="inline">
+                    <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
+                    <button type="submit" class="btn btn-secondary btn-sm">Отклонить</button>
+                </form>
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     {% if no_rate.shifts %}
     <div class="alert alert-warn mt-0 mb-20">
         ⚠ Без ЧТС: <b>{{ no_rate.shifts }}</b> смен, <b>{{ '%g' % no_rate.hours }}</b> ч — в ФОТ идут нулём.
         По услугам:
         {% for item in no_rate.by_service %}«{{ item.service }}» — {{ item.shifts }} смен, {{ '%g' % item.hours }} ч{% if not loop.last %}; {% endif %}{% endfor %}.
-        Ставки — на <a href="/admin/rates">/admin/rates</a>.
     </div>
     {% endif %}
 
@@ -41,8 +77,61 @@
             {% else %}
             <button type="button" class="btn btn-secondary btn-sm" disabled title="Неделя ещё не завершилась">След. неделя →</button>
             {% endif %}
+            {% if closed %}
+            <span class="pill pill-success" title="{{ CLOSED_HINT }}">закрыто для коррекций{% if closed_at %} {{ closed_at }}{% endif %}{% if closed_by_name %}, {{ closed_by_name }}{% endif %}</span>
+            {% else %}
+            <span class="pill pill-neutral">открыто для коррекций</span>
+            {% endif %}
+            {% if frozen %}<span class="pill pill-info">аванс зафиксирован</span>{% endif %}
             {% if can_export %}
             <a class="btn btn-primary btn-sm" href="/admin/payouts/weekly.xlsx?week={{ week_start.isoformat() }}">Скачать xlsx</a>
+            {% endif %}
+        </div>
+
+        <div class="wr-checks">
+            <span><b>ЧТС проверено:</b></span>
+            {% for tm in tm_status %}
+            <span class="{% if not tm.checked_at %}is-off{% endif %}">
+                ТМ {{ tm.name }} {% if tm.checked_at %}{{ tm.checked_at }}{% else %}— не проверено{% endif %}{% if tm.submitted_at %} · авансы поданы {{ tm.submitted_at }}{% endif %}
+            </span>
+            {% endfor %}
+        </div>
+
+        <div class="wr-actions">
+            {% if can_edit_own %}
+            <form method="post" action="/admin/payouts/weekly/check">
+                <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
+                <button type="submit" class="btn {% if my_check and my_check.checked_at %}btn-secondary{% else %}btn-primary{% endif %}"
+                        {% if closed %}disabled title="{{ CLOSED_HINT }}"{% endif %}>
+                    {% if my_check and my_check.checked_at %}Снять «ЧТС проверено»{% else %}ЧТС проверено{% endif %}
+                </button>
+            </form>
+            <form method="post" action="/admin/payouts/weekly/submit">
+                <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
+                <button type="submit" class="btn btn-secondary" {% if closed %}disabled title="{{ CLOSED_HINT }}"{% endif %}>
+                    {% if my_check and my_check.advances_submitted_at %}Вернуть на правку{% else %}Зафиксировать авансы{% endif %}
+                </button>
+            </form>
+            {% if is_tm and filters.tm == user.id %}
+            {% for checked, label in (('1', 'Выбрать всех'), ('0', 'Снять всех')) %}
+            <form method="post" action="/admin/payouts/weekly/advance-all">
+                <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
+                <input type="hidden" name="checked" value="{{ checked }}">
+                <input type="hidden" name="tm" value="{{ filters.tm }}">
+                <button type="submit" class="btn btn-secondary" {% if advance_locked or frozen %}disabled title="{{ advance_locked or 'аванс зафиксирован' }}"{% endif %}>{{ label }}</button>
+            </form>
+            {% endfor %}
+            {% endif %}
+            {% endif %}
+            {% if can_manage %}
+            <form method="post" action="/admin/payouts/weekly/close"
+                  onsubmit="return confirm('{{ 'Открыть неделю для коррекций ТМ?' if closed else 'Закрыть неделю для коррекций ТМ?' }}');">
+                <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
+                <input type="hidden" name="closed" value="{{ '0' if closed else '1' }}">
+                <button type="submit" class="btn {% if closed %}btn-secondary{% else %}btn-primary{% endif %}">
+                    {% if closed %}Открыть для коррекций{% else %}Закрыто для коррекций{% endif %}
+                </button>
+            </form>
             {% endif %}
         </div>
 
@@ -57,57 +146,105 @@
                 <select name="tm">
                     <option value="0">Все ТМ</option>
                     {% for tm_id, tm_name in tm_options %}
-                    <option value="{{ tm_id }}" {% if filters.tm == tm_id %}selected{% endif %}>{{ tm_name }}</option>
+                    <option value="{{ tm_id }}" {% if filters.tm == tm_id %}selected{% endif %}>{% if tm_id == user.id %}Мои ({{ tm_name }}){% else %}{{ tm_name }}{% endif %}</option>
                     {% endfor %}
                 </select>
             </div>
+            <div class="field">
+                <label class="check"><input type="checkbox" name="no_tm" value="1" {% if filters.no_tm %}checked{% endif %}> без ТМ</label>
+                <label class="check"><input type="checkbox" name="no_requisites" value="1" {% if filters.no_requisites %}checked{% endif %}> без реквизитов</label>
+                <label class="check"><input type="checkbox" name="no_rate" value="1" {% if filters.no_rate %}checked{% endif %}> без ЧТС</label>
+            </div>
             <div class="field"><button type="submit" class="btn btn-primary">Показать</button></div>
         </form>
-        <p class="field-hint">xlsx — по всем сотрудникам, без учёта фильтров.</p>
     </div>
 
     <div class="card">
-        <div class="table-wrap is-tall wr-table">
+        <div class="table-wrap is-tall wr-table" id="weekly-table" data-week="{{ week_start.isoformat() }}">
             <table>
                 <thead>
                     <tr>
-                        <th>ФИО</th>
-                        <th>№</th>
+                        <th>ФИО сотрудника Исполнителя</th>
+                        <th>Номер ТК</th>
                         <th>Город</th>
                         <th>Тип</th>
                         <th>Услуга</th>
-                        {% for day in days %}<th class="day">{{ day }}</th>{% endfor %}
+                        {% for day in days %}<th class="day">{{ day.day }}</th>{% endfor %}
                         <th class="num">ИЧ</th>
                         <th>ТМ</th>
                         <th class="num">Ставка</th>
+                        <th class="num">Акция</th>
                         <th class="num">ФОТ</th>
+                        <th>Аванс</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for row in rows %}
-                    <tr>
-                        <td>{{ row['ФИО сотрудника Исполнителя'] }}</td>
-                        <td>{{ row['№'] }}</td>
-                        <td>{{ row['Город'] }}</td>
-                        <td>{{ row['Тип'] }}</td>
-                        <td>{{ row['Услуга'] }}</td>
-                        {% for day in days %}<td class="day">{% if row[day] is not none %}{{ '%g' % row[day] }}{% endif %}</td>{% endfor %}
-                        <td class="num">{{ '%g' % row['ИЧ'] }}</td>
-                        <td>{{ row['ТМ'] }}</td>
-                        {% if row['Ставка'] is number %}
-                        <td class="num">{{ '%g' % row['Ставка'] }}</td>
-                        {% else %}
-                        <td class="num no-rate">{{ row['Ставка'] }}</td>
-                        {% endif %}
-                        <td class="num">{{ '{:,.2f}'.format(row['ФОТ']).replace(',', ' ') }}</td>
+                    {% set own = row.tm_id == user.id %}
+                    {% set rate_editable = can_manage or (can_edit_own and own and not closed) %}
+                    <tr class="{% if not row.has_requisites %}noreq{% endif %}" {% if not row.has_requisites %}title="{{ NO_REQUISITES_HINT }}"{% endif %}>
+                        <td>{{ row.name }}</td>
+                        <td>{{ row.tk }}</td>
+                        <td>{{ row.city }}</td>
+                        <td>{{ row.format }}</td>
+                        <td>{{ row.service }}</td>
+                        {% for value in row.days %}
+                        <td class="day{% if row.no_plan_days[loop.index0] %} np{% endif %}" {% if row.no_plan_days[loop.index0] %}title="Смена без плана — не оплачивается"{% endif %}>{% if value is not none %}{{ '%g' % value }}{% endif %}</td>
+                        {% endfor %}
+                        <td class="num">{{ '%g' % row.hours }}</td>
+                        <td>
+                            {% if can_manage %}
+                            <select class="tm-select" data-tm-set="{{ row.name }}">
+                                <option value="0" {% if not row.tm_id %}selected{% endif %}>{{ NO_TM }}</option>
+                                {% for tm_id, tm_name in tm_options %}<option value="{{ tm_id }}" {% if row.tm_id == tm_id %}selected{% endif %}>{{ tm_name }}</option>{% endfor %}
+                            </select>
+                            {% elif can_edit_own %}
+                                {% if not row.tm_id %}
+                                <button type="button" class="cell-btn tm-empty" data-tm-action="take" data-employee="{{ row.name }}" {% if closed %}disabled title="{{ CLOSED_HINT }}"{% else %}title="Закрепить за собой"{% endif %}>{{ NO_TM }}</button>
+                                {% elif own %}
+                                <button type="button" class="cell-btn" data-tm-action="release" data-employee="{{ row.name }}" {% if closed %}disabled title="{{ CLOSED_HINT }}"{% endif %}>{{ row.tm }}</button>
+                                {% else %}
+                                <button type="button" class="cell-btn" data-tm-action="request" data-employee="{{ row.name }}" data-tm="{{ row.tm }}" {% if closed %}disabled title="{{ CLOSED_HINT }}"{% endif %}>{{ row.tm }}</button>
+                                {% endif %}
+                            {% else %}
+                            <span class="{% if not row.tm_id %}tm-empty{% endif %}">{{ row.tm }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="num">
+                            {% set rate_text = ('%g' % row.rate) if row.rate else 'НЕТ' %}
+                            {% if rate_editable %}
+                            <button type="button" class="cell-btn {% if not row.rate %}no-rate{% endif %}" data-rate-employee="{{ row.name }}" data-rate-service="{{ row.service }}" data-rate-value="{{ ('%g' % row.rate) if row.rate else '' }}">{{ rate_text }}</button>
+                            {% else %}
+                            <span class="{% if not row.rate %}no-rate{% endif %}" {% if can_edit_own and own and closed %}title="{{ CLOSED_HINT }}"{% endif %}>{{ rate_text }}</span>
+                            {% endif %}
+                            {% if row.rate_individual %}<span class="ind" title="{{ row.rate_note }}">★</span>{% endif %}
+                        </td>
+                        <td class="num">{{ '{:,.2f}'.format(row.bonus).replace(',', ' ') if row.bonus else '' }}</td>
+                        <td class="num">{{ '{:,.2f}'.format(row.fot).replace(',', ' ') }}</td>
+                        <td>
+                            {% if row.first %}
+                            {% set person = people[row.key] %}
+                            {% set sel = selection.get(row.key) %}
+                            {% set may_select = can_select_any or (can_edit_own and own) %}
+                            {% set hint = 'аванс зафиксирован' if frozen else (advance_locked or ('' if person.has_requisites else NO_REQUISITES_HINT) or ('' if may_select else 'не ваш сотрудник')) %}
+                            <label title="{{ hint }}">
+                                <input type="checkbox" data-advance="{{ row.name }}" data-fot="{{ '%.2f' % person.fot }}"
+                                       {% if sel %}checked{% endif %} {% if hint and not (sel and not frozen and not advance_locked and may_select) %}disabled{% endif %}>
+                            </label>
+                            {% if sel %}<span class="adv-amount">{% if sel.amount %}{{ '{:,.2f}'.format(sel.amount).replace(',', ' ') }} (частично){% else %}весь ФОТ{% endif %}</span>{% endif %}
+                            {% endif %}
+                        </td>
                     </tr>
                 {% else %}
-                    <tr><td colspan="{{ 9 + days|length }}" class="muted">Нет смен за неделю</td></tr>
+                    <tr><td colspan="{{ 11 + days|length }}" class="muted">Нет смен за неделю</td></tr>
                 {% endfor %}
                 {% if rows %}
                     <tr class="wr-total">
-                        <td colspan="{{ 8 + days|length }}">ИТОГО · строк: {{ rows|length }}</td>
-                        <td class="num">{{ '{:,.2f}'.format(total).replace(',', ' ') }}</td>
+                        <td colspan="{{ 5 + days|length }}">Итог · строк: {{ rows|length }}</td>
+                        <td class="num">{{ '%g' % total_hours }}</td>
+                        <td colspan="3"></td>
+                        <td class="num">{{ '{:,.2f}'.format(total_fot).replace(',', ' ') }}</td>
+                        <td></td>
                     </tr>
                 {% endif %}
                 </tbody>
@@ -115,4 +252,79 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var table = document.getElementById('weekly-table');
+    if (!table) { return; }
+    var week = table.getAttribute('data-week');
+
+    function post(url, fields) {
+        var data = new FormData();
+        data.append('week', week);
+        Object.keys(fields).forEach(function (k) { data.append(k, fields[k]); });
+        return fetch(url, { method: 'POST', body: data, credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (!res.ok) { alert(res.error || 'Не сохранено'); return false; }
+                if (res.message) { alert(res.message); }
+                location.reload();
+                return true;
+            })
+            .catch(function () { alert('Нет связи — не сохранено'); return false; });
+    }
+
+    table.addEventListener('click', function (e) {
+        var el = e.target.closest('button');
+        if (!el || el.disabled) { return; }
+        var name = el.getAttribute('data-employee');
+        if (el.hasAttribute('data-rate-employee')) {
+            var current = el.getAttribute('data-rate-value');
+            var value = prompt('Ставка (ЧТС) для ' + el.getAttribute('data-rate-employee') +
+                               ' — станет индивидуальной с понедельника этой недели.\nПусто — вернуть к сетке.', current);
+            if (value === null) { return; }
+            post('/admin/payouts/weekly/rate', {employee_name: el.getAttribute('data-rate-employee'),
+                                                service: el.getAttribute('data-rate-service'), value: value.trim()});
+            return;
+        }
+        var action = el.getAttribute('data-tm-action');
+        if (action === 'take') {
+            if (confirm('Закрепить ' + name + ' за собой?')) { post('/admin/payouts/weekly/tm', {employee_name: name, action: 'take'}); }
+        } else if (action === 'release') {
+            if (confirm('Открепить ' + name + '?') && confirm('Точно открепить?')) {
+                post('/admin/payouts/weekly/tm', {employee_name: name, action: 'release'});
+            }
+        } else if (action === 'request') {
+            if (confirm('Это мой сотрудник! (сейчас у ТМ ' + el.getAttribute('data-tm') + ')') &&
+                confirm('Бро, это точно твой сотрудник?')) {
+                post('/admin/payouts/weekly/tm', {employee_name: name, action: 'request'});
+            }
+        }
+    });
+
+    table.addEventListener('change', function (e) {
+        var el = e.target;
+        if (el.hasAttribute('data-tm-set')) {
+            post('/admin/payouts/weekly/tm', {employee_name: el.getAttribute('data-tm-set'), action: 'set', tm_id: el.value});
+            return;
+        }
+        if (el.hasAttribute('data-advance')) {
+            var name = el.getAttribute('data-advance');
+            if (!el.checked) {
+                post('/admin/payouts/weekly/advance', {employee_name: name, checked: ''}).then(function (ok) { if (!ok) { el.checked = true; } });
+                return;
+            }
+            var amount = '';
+            if (!confirm('Весь ФОТ в аванс? (' + el.getAttribute('data-fot') + ')\nОК — весь ФОТ, Отмена — указать сумму')) {
+                amount = prompt('Сумма аванса (не больше ' + el.getAttribute('data-fot') + ')', '');
+                if (amount === null || !amount.trim()) { el.checked = false; return; }
+            }
+            post('/admin/payouts/weekly/advance', {employee_name: name, checked: '1', amount: amount.trim()})
+                .then(function (ok) { if (!ok) { el.checked = false; } });
+        }
+    });
+})();
+</script>
 {% endblock %}
