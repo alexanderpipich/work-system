@@ -71,6 +71,8 @@ h1, h2, h3, h4 { letter-spacing: -.2px; text-wrap: pretty; }
 }
 .page-narrow { --page-max: 1040px; }
 .page-wide   { --page-max: 1600px; }
+/* Во всю ширину экрана (широкие таблицы, напр. недельный отчёт); прокрутка — только на узких. */
+.page-full   { --page-max: none; }
 
 /* Топбар и quicknav — соседи .page, а не потомки: модификатор ширины со .page
    до них не докатывается, и лого уезжает от левого края контента. Поднимаем
@@ -79,6 +81,7 @@ h1, h2, h3, h4 { letter-spacing: -.2px; text-wrap: pretty; }
    и в новых страницах достаточно поставить класс на .page, как раньше. */
 body:has(.page-narrow) { --page-max: 1040px; }
 body:has(.page-wide)   { --page-max: 1600px; }
+body:has(.page-full)   { --page-max: none; }
 
 /* ── Топбар ───────────────────────────────────────────────────────────── */
 .topbar {
