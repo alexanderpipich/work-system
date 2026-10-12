@@ -17,6 +17,7 @@ from inn_sync import set_employee_inn
 from rbac import ROLE_CHOICES, ROLE_LABELS, TM_ROLE_VALUES, canonical_role, has_permission, require_permission
 from legal_entity_helpers import active_legal_entities
 from models import JOB_TITLES, Country, Requisite, Shift, TimebookEmployee, User
+from tm_assignment import set_employee_tm, tm_users
 from utils import (
     find_user_by_name,
     normalize_person_name,
@@ -65,12 +66,6 @@ def _default_city_scope(session, role, raw_scope):
 
 
 USERS_PAGE_SIZE = 100  # П4.2: /admin/users — по 100 на страницу
-
-
-def tm_users(session):
-    """Пользователи, которых можно закрепить ТМ за сотрудником (П1-Б)."""
-    users = session.query(User).filter(User.role.in_(TM_ROLE_VALUES)).all()
-    return sorted(users, key=lambda u: normalize_text(u.employee_name).lower())
 
 
 def pending_employees(session):
@@ -723,9 +718,8 @@ def update_user(
         email_clean = normalize_text(email).lower()
         user.email = email_clean if "@" in email_clean else None
 
-    # ТМ: только пользователь с ролью ТМ и не сам сотрудник; иначе — снять.
-    tm_ids = {tm.id for tm in tm_users(session)}
-    user.tm_id = tm_id if tm_id in tm_ids and tm_id != user.id else None
+    # ТМ: только пользователь с ролью ТМ и не сам сотрудник; иначе — снять (общий helper П4.6).
+    set_employee_tm(session, request, admin, user, tm_id, comment="/admin/users")
 
     inn_clean = normalize_text(inn)
     if inn_clean:
