@@ -146,6 +146,20 @@ def bonus_per_hour(bonuses, day):
                if b.active_from <= day and (b.active_to is None or day <= b.active_to))
 
 
+def price_shift(shift, rates, resolve, bonuses):
+    """(Rate | None, ставка, сумма, надбавка) смены — общий расчёт build_run_items и табеля.
+
+    Смена без плана — ставка в строке 0 и сумма 0; надбавка — только к смене с суммой.
+    """
+    rate = pick_rate(rates, shift, resolve=resolve)
+    rate_value = rate.hourly_rate if rate else 0
+    amount = 0 if is_no_plan_shift(shift) else shift.hours * rate_value
+    bonus_amount = 0
+    if amount and bonuses and shift.shift_date:
+        bonus_amount = shift.hours * bonus_per_hour(bonuses, shift.shift_date)
+    return rate, rate_value, amount, bonus_amount
+
+
 def payable_shifts(shifts, resolve):
     """Смены, которые оплачиваются из timebook: без услуг с Service.excluded_from_payroll
     (комплектация — по другому отчёту). Резолвер — из build_service_resolver."""
@@ -188,13 +202,8 @@ def build_run_items(
     bonuses = load_hourly_bonuses(session)
 
     for shift in shifts:
-        rate = pick_rate(rates, shift, resolve=resolve)
-        rate_value = rate.hourly_rate if rate else 0
-        amount = 0 if is_no_plan_shift(shift) else shift.hours * rate_value
         # Надбавка — только к оплачиваемой смене со ставкой (без плана и без ЧТС — 0).
-        bonus_amount = 0
-        if amount and bonuses and shift.shift_date:
-            bonus_amount = shift.hours * bonus_per_hour(bonuses, shift.shift_date)
+        rate, rate_value, amount, bonus_amount = price_shift(shift, rates, resolve, bonuses)
         manual_key = (normalize_text(shift.employee), normalize_text(shift.store))
         other_amount = 0
         auto_amount = 0

@@ -23,7 +23,8 @@ from models import AdvanceSelection, PayrollRunItem, Shift, Store, User
 from payouts_helpers import REFERRAL_SERVICES, REGISTRY_PREFIX, XLSX_CONTENT_TYPE, requisite_fields
 from store_helpers import extract_tk_number
 from time_helpers import now_utc
-from utils import normalize_city, normalize_format, normalize_person_name, normalize_text
+from timesheet import build_timesheet_rows, date_range, item_lines
+from utils import normalize_city, normalize_format, normalize_person_name
 
 TABEL_SHEET = "Табель"
 STATEMENT_SHEET = "Ведомость"
@@ -47,14 +48,6 @@ def is_no_plan_item(item):
 
 def _money(value):
     return round(value or 0, 2)
-
-
-def _period_days(run):
-    day, days = run.date_from, []
-    while day <= run.date_to:
-        days.append(day)
-        day += timedelta(days=1)
-    return days
 
 
 def _store_info(session, run):
@@ -91,13 +84,12 @@ def statement_rows(session, run):
     tm_names = {u.id: u.employee_name for u in users.values()}
     stores = _store_info(session, run)
     weekly = weekly_names(session, run)
-    days = _period_days(run)
+    days = date_range(run.date_from, run.date_to)
 
     def tm_of(key):
         user = users.get(key)
         return tm_names.get(user.tm_id, "") if user and user.tm_id else ""
 
-    tabel = OrderedDict()
     people = OrderedDict()
     for item in items:
         if item.shift_date is None and (item.service or "") in REFERRAL_SERVICES:
@@ -119,28 +111,19 @@ def statement_rows(session, run):
         person["bonus"] += item.bonus_amount or 0
         person["fine" if adjustments < 0 else "premium"] += abs(adjustments)
         person["total"] += item.total_amount or 0
-        if item.shift_date is None or no_plan:
-            continue
-        tk, region, fmt = stores.get(item.store, (extract_tk_number(item.store), None, None))
-        line = tabel.setdefault((key, normalize_text(item.store), normalize_text(item.service)), {
-            "name": item.employee_name, "tk": tk if tk is not None else item.store, "region": region or "",
-            "format": fmt or "", "service": item.service or "", "days": {}, "hours": 0.0, "rate": 0.0, "fot": 0.0,
-        })
-        line["days"][item.shift_date] = line["days"].get(item.shift_date, 0) + (item.hours or 0)
-        line["hours"] += item.hours or 0
-        line["fot"] += item.amount or 0
-        if item.rate and not line["rate"]:
-            line["rate"] = item.rate
 
+    # «Табель» — общий построитель (timesheet), что и у еженедельного отчёта; здесь — по строкам
+    # прогона, с тарифным регионом и форматом ТК, ставкой первой смены и ФОТ без надбавки.
     day_titles = [str(day.day) for day in days]
     tabel_rows = []
-    for (key, _store, _service), line in sorted(tabel.items(),
-                                                key=lambda pair: (pair[0][0], str(pair[1]["tk"]), pair[0][2])):
-        row = {"ФИО сотрудника Исполнителя": line["name"], "Номер ТК": line["tk"], "Город": line["region"],
-               "Тип": line["format"], "Услуга": line["service"]}
+    for line in build_timesheet_rows(session, run.date_from, run.date_to,
+                                     lines=item_lines(items, is_no_plan_item)):
+        _tk, region, fmt = stores.get(line["store"], (None, None, None))
+        row = {"ФИО сотрудника Исполнителя": line["name"], "Номер ТК": line["tk"], "Город": region or "",
+               "Тип": fmt or "", "Услуга": line["service"]}
         for day, title in zip(days, day_titles):
             row[title] = line["days"].get(day) or None
-        row.update({"ИЧ": line["hours"], "ТМ": tm_of(key), "Ставка": line["rate"] or None,
+        row.update({"ИЧ": line["hours"], "ТМ": line["tm"], "Ставка": line["rate_first"] or None,
                     "ФОТ": _money(line["fot"])})
         tabel_rows.append(row)
 

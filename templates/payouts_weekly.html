@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{# Еженедельный отчёт по сменам (П4.6): табель за завершившуюся неделю Пн–Вс,
+   строки — weekly_report.weekly_report (общий построитель timesheet). Справочный,
+   с авансами и фиксацией не связан. #}
+
+{% block title %}Еженедельный отчёт{% endblock %}
+{% block brand_title %}Еженедельный отчёт{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Неделя {{ week_start.strftime('%d.%m.%Y') }} — {{ week_end.strftime('%d.%m.%Y') }}</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="/admin/payouts">Выплаты</a>{% endblock %}
+
+{% block head %}
+<style>
+    .week-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .week-nav .week-title { font-size: 17px; font-weight: 800; color: var(--brand-blue); }
+    .wr-table td.num, .wr-table th.num { text-align: right; white-space: nowrap; }
+    .wr-table td.day, .wr-table th.day { text-align: center; white-space: nowrap; }
+    .wr-table .no-rate { color: #b91c1c; font-weight: 700; }
+    .wr-table tr.wr-total td { font-weight: 800; color: var(--brand-blue); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-pad-top page-wide">
+    {% if no_rate.shifts %}
+    <div class="alert alert-warn mt-0 mb-20">
+        ⚠ Без ЧТС: <b>{{ no_rate.shifts }}</b> смен, <b>{{ '%g' % no_rate.hours }}</b> ч — в ФОТ идут нулём.
+        По услугам:
+        {% for item in no_rate.by_service %}«{{ item.service }}» — {{ item.shifts }} смен, {{ '%g' % item.hours }} ч{% if not loop.last %}; {% endif %}{% endfor %}.
+        Ставки — на <a href="/admin/rates">/admin/rates</a>.
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="week-nav">
+            <a class="btn btn-secondary btn-sm" href="?week={{ prev_week.isoformat() }}">← Пред. неделя</a>
+            <span class="week-title">{{ week_start.strftime('%d.%m.%Y') }} — {{ week_end.strftime('%d.%m.%Y') }}</span>
+            {% if next_week %}
+            <a class="btn btn-secondary btn-sm" href="?week={{ next_week.isoformat() }}">След. неделя →</a>
+            {% else %}
+            <button type="button" class="btn btn-secondary btn-sm" disabled title="Неделя ещё не завершилась">След. неделя →</button>
+            {% endif %}
+            {% if can_export %}
+            <a class="btn btn-primary btn-sm" href="/admin/payouts/weekly.xlsx?week={{ week_start.isoformat() }}">Скачать xlsx</a>
+            {% endif %}
+        </div>
+
+        <form method="get" class="form-grid align-end mt-14">
+            <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
+            <div class="field">
+                <label>Поиск по ФИО</label>
+                <input type="text" name="q" value="{{ filters.q }}" placeholder="Фамилия">
+            </div>
+            <div class="field">
+                <label>ТМ</label>
+                <select name="tm">
+                    <option value="0">Все ТМ</option>
+                    {% for tm_id, tm_name in tm_options %}
+                    <option value="{{ tm_id }}" {% if filters.tm == tm_id %}selected{% endif %}>{{ tm_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field"><button type="submit" class="btn btn-primary">Показать</button></div>
+        </form>
+        <p class="field-hint">xlsx — по всем сотрудникам, без учёта фильтров.</p>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap is-tall wr-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ФИО</th>
+                        <th>№</th>
+                        <th>Город</th>
+                        <th>Тип</th>
+                        <th>Услуга</th>
+                        {% for day in days %}<th class="day">{{ day }}</th>{% endfor %}
+                        <th class="num">ИЧ</th>
+                        <th>ТМ</th>
+                        <th class="num">Ставка</th>
+                        <th class="num">ФОТ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td>{{ row['ФИО сотрудника Исполнителя'] }}</td>
+                        <td>{{ row['№'] }}</td>
+                        <td>{{ row['Город'] }}</td>
+                        <td>{{ row['Тип'] }}</td>
+                        <td>{{ row['Услуга'] }}</td>
+                        {% for day in days %}<td class="day">{% if row[day] is not none %}{{ '%g' % row[day] }}{% endif %}</td>{% endfor %}
+                        <td class="num">{{ '%g' % row['ИЧ'] }}</td>
+                        <td>{{ row['ТМ'] }}</td>
+                        {% if row['Ставка'] is number %}
+                        <td class="num">{{ '%g' % row['Ставка'] }}</td>
+                        {% else %}
+                        <td class="num no-rate">{{ row['Ставка'] }}</td>
+                        {% endif %}
+                        <td class="num">{{ '{:,.2f}'.format(row['ФОТ']).replace(',', ' ') }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="{{ 9 + days|length }}" class="muted">Нет смен за неделю</td></tr>
+                {% endfor %}
+                {% if rows %}
+                    <tr class="wr-total">
+                        <td colspan="{{ 8 + days|length }}">ИТОГО · строк: {{ rows|length }}</td>
+                        <td class="num">{{ '{:,.2f}'.format(total).replace(',', ' ') }}</td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
