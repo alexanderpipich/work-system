@@ -107,6 +107,31 @@ class BuildNavigationTests(unittest.TestCase):
         self.assertEqual(set(ROLE_LABELS), set(ROLES))
 
 
+class CommunicationsGroupTests(unittest.TestCase):
+    """П4.7: группа «Коммуникации» — три заглушки с текстом модалки."""
+
+    KEYS = ["messages", "vacancies", "ai_assistant"]
+
+    def test_group_last_with_three_coming_soon_cards(self):
+        for role in ("superadmin", "tm", "hr_clerk", "economist", "hr_lead"):
+            nav = build_navigation(_user(role))
+            with self.subTest(role=role):
+                group = nav[-1]
+                self.assertEqual((group["key"], group["title"]), ("communications", "Коммуникации"))
+                self.assertEqual([c["key"] for c in group["cards"]], self.KEYS)
+                for card in group["cards"]:
+                    self.assertFalse(card["available"])
+                    self.assertTrue(card["coming_soon"])
+                    self.assertEqual(card["url"], "#")
+                    self.assertTrue(card["locked_message"].startswith(f"«{card['title']}» появится после запуска"))
+
+    def test_messages_moved_out_of_planning(self):
+        planning = next(g for g in build_navigation(_user("superadmin")) if g["key"] == "planning")
+        self.assertNotIn("messages", [c["key"] for c in planning["cards"]])
+        self.assertEqual(len(planning["cards"]), 6)
+        self.assertEqual(sum(1 for c in all_cards() if c["key"] == "messages"), 1)
+
+
 class HrefsExistTests(unittest.TestCase):
     """Каждый адрес реестра — существующий GET-маршрут приложения."""
 
@@ -195,6 +220,16 @@ class DashboardRendersTests(unittest.TestCase):
         self._as("tm")
         html = self.client.get("/admin").text
         self.assertIn('data-title="Audit Log" data-roles="Суперадмин"', html)
+
+    def test_communications_cards_rendered_locked_with_message(self):
+        for role in ("superadmin", "tm"):
+            self._as(role)
+            with self.subTest(role=role):
+                html = self.client.get("/admin").text
+                self.assertIn("Коммуникации", html)
+                for title in ("Сообщения", "Вакансии", "ИИ-помощник менеджера"):
+                    self.assertRegex(html, rf'data-title="{title}" data-roles=""\s*data-coming-soon="1"'
+                                           rf'\s*data-message="«{title}» появится после запуска')
 
     def test_subdashboards(self):
         self._as("tm")
