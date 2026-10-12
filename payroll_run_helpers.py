@@ -74,6 +74,9 @@ def ensure_payroll_run_closing_columns():
         connection.execute(text(
             "ALTER TABLE payroll_run_items ADD COLUMN IF NOT EXISTS bonus_amount DOUBLE PRECISION DEFAULT 0"
         ))
+        # П4.6: частичный аванс в отметке.
+        connection.execute(text("ALTER TABLE advance_selections ADD COLUMN IF NOT EXISTS amount DOUBLE PRECISION"))
+        connection.execute(text("ALTER TABLE advance_selections ADD COLUMN IF NOT EXISTS comment TEXT"))
 
 
 # ── Расчёт строк прогона (П3) ────────────────────────────────────────────────
