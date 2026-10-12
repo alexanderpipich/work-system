@@ -77,13 +77,15 @@ def item_lines(items, is_no_plan_item):
 
 
 def tm_lookup(session):
-    """ФИО → имя ТМ сотрудника ("" — нет ТМ или сотрудник не найден)."""
+    """ФИО → (id ТМ, имя ТМ) сотрудника; (None, "") — нет ТМ или сотрудник не найден."""
     users = {u.employee_name_norm: u for u in session.query(User).all()}
     tm_names = {u.id: u.employee_name for u in users.values()}
 
     def tm_of(name):
         user = users.get(normalize_person_name(name))
-        return tm_names.get(user.tm_id, "") if user and user.tm_id else ""
+        if not user or not user.tm_id:
+            return None, ""
+        return user.tm_id, tm_names.get(user.tm_id, "")
     return tm_of
 
 
@@ -93,7 +95,7 @@ def build_timesheet_rows(session, date_from, date_to, lines=None):
 
     Строка: name, store, tk, city, format, service, days {date: часы}, hours, rate_first/rate_last
     (ЧТС первой/последней смены со ставкой), bonus_last (надбавка за час последней такой смены),
-    fot (Σ часы × ЧТС), bonus (Σ надбавок), no_rate (есть смена без ЧТС), tm. Порядок — ФИО без учёта регистра, затем ТК, затем услуга.
+    fot (Σ часы × ЧТС), bonus (Σ надбавок), no_rate (есть смена без ЧТС), tm_id, tm. Порядок — ФИО без учёта регистра, затем ТК, затем услуга.
     """
     if lines is None:
         lines = shift_lines(session, date_from, date_to)
@@ -123,5 +125,5 @@ def build_timesheet_rows(session, date_from, date_to, lines=None):
             row["no_rate"] = True
     result = sorted(rows.items(), key=lambda pair: (pair[0][0], str(pair[1]["tk"]), pair[0][2]))
     for _key, row in result:
-        row["tm"] = tm_of(row["name"])
+        row["tm_id"], row["tm"] = tm_of(row["name"])
     return [row for _key, row in result]

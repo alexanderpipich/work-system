@@ -1,4 +1,5 @@
-"""Выплаты (П3): еженедельные авансы и табель за период, реестр выплат xlsx; надбавки к часу (П4.4)."""
+"""Выплаты (П3): еженедельные авансы и табель за период, реестр выплат xlsx; надбавки к часу (П4.4);
+еженедельный отчёт по сменам (П4.6)."""
 
 from datetime import date, datetime, timedelta
 from urllib.parse import quote, urlencode
@@ -22,6 +23,7 @@ from statement_export import save_statement
 from rbac import ROLE_TM, canonical_role, has_permission, require_permission
 from time_helpers import business_today
 from utils import find_user_by_name, format_card_number, normalize_person_name, normalize_text
+from weekly_report import last_complete_week, resolve_week, save_weekly, weekly_report
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -122,6 +124,63 @@ def advances_page(
         "message": message or None,
         "error": error or None,
     })
+
+
+WEEKLY_URL = "/admin/payouts/weekly"
+
+
+def _parse_tm(value):
+    """tm из формы: «Все ТМ» = 0; пусто и мусор — тоже 0 (старые закладки)."""
+    try:
+        return int((value or "").strip() or 0)
+    except ValueError:
+        return 0
+
+
+@router.get(WEEKLY_URL, response_class=HTMLResponse)
+def weekly_page(
+    request: Request,
+    week: str = "",
+    tm: str = "0",
+    q: str = "",
+    session: Session = Depends(get_db),
+    user=Depends(require_advances_access),
+):
+    """Еженедельный отчёт (П4.6): видят все с доступом к авансам, все сотрудники; скачивание — payouts.export."""
+    week_start = resolve_week(week, business_today())
+    report = weekly_report(session, week_start)
+    rows = report["rows"]
+    tm_options = sorted({(r["tm_id"], r["ТМ"]) for r in rows if r["tm_id"]}, key=lambda item: item[1])
+    tm_id = _parse_tm(tm)
+    if tm_id:
+        rows = [r for r in rows if r["tm_id"] == tm_id]
+    if normalize_text(q):
+        needle = normalize_person_name(q)
+        rows = [r for r in rows if needle in normalize_person_name(r["ФИО сотрудника Исполнителя"])]
+    next_week = week_start + timedelta(days=7)
+    return templates.TemplateResponse(request, "payouts_weekly.html", {
+        "user": user,
+        "week_start": week_start,
+        "week_end": week_start + timedelta(days=6),
+        "prev_week": week_start - timedelta(days=7),
+        "next_week": next_week if next_week <= last_complete_week(business_today()) else None,
+        "days": report["days"],
+        "rows": rows,
+        "total": round(sum(r["ФОТ"] for r in rows), 2),
+        "no_rate": report["no_rate"],
+        "filters": {"tm": tm_id, "q": q},
+        "tm_options": tm_options,
+        "can_export": has_permission(user, "payouts.export"),
+    })
+
+
+@router.get(WEEKLY_URL + ".xlsx")
+def weekly_xlsx(week: str = "", session: Session = Depends(get_db), user=Depends(current_user)):
+    week_start = resolve_week(week, business_today())
+    if not has_permission(user, "payouts.export"):
+        return RedirectResponse(f"{WEEKLY_URL}?week={week_start.isoformat()}", 302)
+    key, filename = save_weekly(session, week_start)
+    return storage_response(key, filename=filename) or RedirectResponse(f"{WEEKLY_URL}?week={week_start.isoformat()}", 302)
 
 
 @router.post("/admin/payouts/advances/select")
