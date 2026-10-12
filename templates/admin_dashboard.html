@@ -27,6 +27,10 @@
         <span class="hero-count">{{ cards_total }} разделов</span>
     </div>
 
+    {% for notice in notices %}
+    <div class="alert alert-warn mt-0 mb-20"><a href="{{ notice.url }}">{{ notice.text }}</a></div>
+    {% endfor %}
+
     {{ nav_groups(groups) }}
 </div>
 

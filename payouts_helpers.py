@@ -31,6 +31,7 @@ from utils import (PAYOUT_CARD, PAYOUT_CARD_PHONE, PAYOUT_CASH, card_number_issu
 
 REFERRAL_SERVICE_ADVANCE = "Приведи друга"
 REFERRAL_SERVICES = {REFERRAL_SERVICE_ADVANCE, "Премия АПД"}
+PARTIAL_ADVANCE_SERVICE = "Аванс (частично)"  # П4.6: строка частичного аванса без смены
 CARRY_OVER_ACTION = "advance.selection.carry_over"
 XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 REGISTRY_PREFIX = "generated_files/payouts"
@@ -267,7 +268,10 @@ def advance_week_rows(session, week_start):
 
     result = list(rows.values())
     for row in result:
-        row["to_pay"] = row["calc"] + row["deduction"]
+        # П4.6: частичный аванс из «Еженедельного отчёта» — к выплате сумма отметки, а не весь расчёт.
+        selected = selection.get(normalize_person_name(row["employee_name"]))
+        row["advance_amount"] = selected.amount if selected is not None and selected.amount else None
+        row["to_pay"] = (row["advance_amount"] if row["advance_amount"] is not None else row["calc"]) + row["deduction"]
         row["no_rate"] = any(item["no_rate"] for item in row["shifts"])
     result.sort(key=lambda r: normalize_person_name(r["employee_name"]))
     return result
@@ -338,7 +342,9 @@ def fix_advance(session, request, user, week_start):
         return run, ["Аванс за эту неделю уже зафиксирован"]
 
     selection = week_selection(session, week_start)
-    names = [row.employee_name for row in selection.values()]
+    # П4.6: отметка с суммой — частичный аванс одной строкой, смены не оплачиваются.
+    partial = {key: row for key, row in selection.items() if row.amount}
+    names = [row.employee_name for key, row in selection.items() if key not in partial]
     shifts = _week_shifts(session, week_start, names)
     twins = paid_shift_twins(session, shifts, exclude_run_id=run.id if run else None)
     shifts = [s for s in shifts
@@ -371,6 +377,7 @@ def fix_advance(session, request, user, week_start):
         date_from=run.date_from, date_to=run.date_to, rates=rates, resolve=resolve,
         apply_lmk=False, apply_auto=False, manual="employee", link_paid=False,
     )
+    items += partial_advance_items(session, run, partial)
     # Вычеты, попавшие в строки, — применены этим авансом (при расфиксации вернутся).
     applied_names = {normalize_text(item.employee_name) for item in items}
     for adjustment in session.query(ManualPayrollAdjustment).filter(
@@ -394,6 +401,59 @@ def fix_advance(session, request, user, week_start):
                                 "employees": len(applied_names), "referral_rows": referral})
     session.commit()
     return run, []
+
+
+def partial_advance_label(date_from, date_to):
+    return f"аванс {date_from:%d.%m}–{date_to:%d.%m} (частично)"
+
+
+def partial_advance_items(session, run, partial):
+    """Строки аванса с частичной суммой (П4.6): одна на сотрудника, без смены (shift_date NULL) —
+    поэтому смены недели не помечаются оплаченными. Вычет аванса недели (сотрудник, «*»)
+    ложится на эту строку, как на первую строку сотрудника в build_run_items."""
+    deductions = week_deductions(session, run.date_from)
+    items = []
+    for key, selection in partial.items():
+        deduction = deductions.get(key)
+        other = deduction.amount if deduction is not None else 0
+        item = PayrollRunItem(
+            run_id=run.id, employee_name=selection.employee_name, store=ALL_STORES,
+            service=PARTIAL_ADVANCE_SERVICE, shift_date=None, hours=0, rate=0, amount=selection.amount,
+            other_amount=other, auto_adjustments_amount=0, manual_adjustments_amount=other, lmk_amount=0,
+            advanced_amount=0, bonus_amount=0, total_amount=selection.amount + other,
+            comment=partial_advance_label(run.date_from, run.date_to),
+        )
+        session.add(item)
+        items.append(item)
+    return items
+
+
+def partial_advance_deductions(session, run):
+    """Табель за период: частичные авансы зафиксированных недель (по понедельнику недели
+    в периоде) вычитаются из итога сотрудника одной строкой «аванс dd.mm–dd.mm (частично)»;
+    строки смен остаются полными."""
+    advance_items = (
+        session.query(PayrollRunItem, PayrollRun)
+        .join(PayrollRun, PayrollRun.id == PayrollRunItem.run_id)
+        .filter(PayrollRun.kind == RUN_KIND_ADVANCE, PayrollRun.status.in_(PAID_RUN_STATUSES),
+                PayrollRun.date_from >= run.date_from, PayrollRun.date_from <= run.date_to,
+                PayrollRunItem.service == PARTIAL_ADVANCE_SERVICE)
+        .order_by(PayrollRun.date_from, PayrollRunItem.id)
+        .all()
+    )
+    items = []
+    for advance_item, advance_run in advance_items:
+        item = PayrollRunItem(
+            run_id=run.id, employee_name=advance_item.employee_name, store=ALL_STORES,
+            service=PARTIAL_ADVANCE_SERVICE, shift_date=None, hours=0, rate=0, amount=0, other_amount=0,
+            auto_adjustments_amount=0, manual_adjustments_amount=0, lmk_amount=0,
+            paid_by_run_id=advance_run.id, advanced_amount=advance_item.amount or 0, bonus_amount=0,
+            total_amount=-(advance_item.amount or 0),
+            comment=partial_advance_label(advance_run.date_from, advance_run.date_to),
+        )
+        session.add(item)
+        items.append(item)
+    return items
 
 
 def unfix_run(session, request, user, run):
@@ -583,11 +643,12 @@ def rebuild_period_items(session, run):
     session.query(PayrollRunItem).filter(PayrollRunItem.run_id == run.id).delete()
     rates = load_rates(session)
     resolve = build_service_resolver(session)
-    return build_run_items(
+    items = build_run_items(
         session, run, _period_shifts(session, run.date_from, run.date_to),
         date_from=run.date_from, date_to=run.date_to, rates=rates, resolve=resolve,
         apply_lmk=True, apply_auto=True, manual="store", link_paid=True,
     )
+    return items + partial_advance_deductions(session, run)
 
 
 def create_period_draft(session, request, user, date_from, date_to, comment=None):

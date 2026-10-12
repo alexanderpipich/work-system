@@ -244,6 +244,9 @@ NAV_GROUPS = [
 # Поддашборд «Выплаты» (/admin/payouts).
 PAYOUTS_GROUPS = [
     {"key": "payouts", "title": "Выплаты", "cards": [
+        card("weekly_report", "Еженедельный отчёт",
+             "Понедельник ТМ: часы прошлой недели, ставки, закрепление, «ЧТС проверено», подача на аванс.",
+             [("/admin/payouts/weekly", "weekly.view", None)]),
         card("payroll", "Выплатной табель",
              "Расчёт недельных выплат по сменам и ЧТС с фильтрами по сотрудникам и магазинам.",
              [("/admin/payroll", "payroll.manage", SA),
@@ -254,11 +257,6 @@ PAYOUTS_GROUPS = [
              [("/admin/payouts/advances", "payouts.advances.select_any", None),
               ("/admin/payouts/advances", "payouts.advances.fix", None),
               ("/admin/payouts/advances", "payouts.advances.select_own", None)]),
-        card("weekly_report", "Еженедельный отчёт",
-             "Часы по дням за прошедшую неделю Пн–Вс по всем сотрудникам: ставка, ФОТ, xlsx для рассылки.",
-             [("/admin/payouts/weekly", "payouts.advances.select_any", None),
-              ("/admin/payouts/weekly", "payouts.advances.fix", None),
-              ("/admin/payouts/weekly", "payouts.advances.select_own", None)]),
         card("bonuses", "Надбавки к часу",
              "«Акция» сверх ЧТС: сумма за час, срок действия. Входит в аванс и табель.",
              [("/admin/payouts/bonuses", "payroll.manage", None)]),

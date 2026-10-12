@@ -35,6 +35,7 @@ from routers.maintenance import router as maintenance_router
 from routers.payroll import router as payroll_router
 from routers.payroll_runs import router as payroll_runs_router
 from routers.payouts import router as payouts_router
+from routers.weekly import router as weekly_router
 from routers.regions import router as regions_router
 from routers.contracts import router as contracts_router
 from routers.document_alerts import router as document_alerts_router
@@ -115,6 +116,7 @@ app.include_router(qr_router)
 app.include_router(payroll_router)
 app.include_router(payroll_runs_router)
 app.include_router(payouts_router)
+app.include_router(weekly_router)
 app.include_router(regions_router)
 app.include_router(contracts_router)
 app.include_router(document_alerts_router)

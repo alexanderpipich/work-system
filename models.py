@@ -319,6 +319,49 @@ class AdvanceSelection(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     selected_by = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=now_utc)
+    # П4.6: частичный аванс — NULL = весь ФОТ недели; сумма действует на одну неделю
+    # (carry-over копирует отметку без суммы).
+    amount = Column(Float, nullable=True)
+    comment = Column(Text, nullable=True)
+
+
+class WeeklyReview(Base):
+    """Неделя еженедельного отчёта закрыта для коррекций ТМ (П4.6). Нет строки — открыта."""
+    __tablename__ = "weekly_reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    week_start = Column(Date, nullable=False, unique=True)
+    closed_by = Column(Integer, nullable=True)
+    closed_at = Column(DateTime, nullable=True)
+
+
+class WeeklyTmCheck(Base):
+    """Отметки ТМ за неделю (П4.6): «ЧТС проверено» и «Зафиксировать авансы» (подал своих)."""
+    __tablename__ = "weekly_tm_checks"
+    __table_args__ = (UniqueConstraint("week_start", "tm_id", name="uq_weekly_tm_check_week_tm"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    week_start = Column(Date, nullable=False, index=True)
+    tm_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    checked_at = Column(DateTime, nullable=True)
+    advances_submitted_at = Column(DateTime, nullable=True)
+
+
+class TmChangeRequest(Base):
+    """Запрос ТМ «это мой сотрудник» на сотрудника другого ТМ (П4.6): решает экономист/руководитель."""
+    __tablename__ = "tm_change_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    from_tm_id = Column(Integer, nullable=True)
+    to_tm_id = Column(Integer, nullable=False)
+    requested_by = Column(Integer, nullable=True)
+    week_start = Column(Date, nullable=True)
+    status = Column(String, nullable=False, default="pending")  # pending / accepted / rejected
+    decided_by = Column(Integer, nullable=True)
+    decided_at = Column(DateTime, nullable=True)
+    comment = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=now_utc)
 
 
 class MedicalBookCharge(Base):

@@ -65,6 +65,7 @@ PERMISSIONS = {
         "stores.directory.view", "stores.contacts.view", "contracts.view", "users.view",
         "payouts.advances.select_any", "payouts.advances.fix", "payouts.export",
         "regions.manage", "contracts.manage", "planning.manage",
+        "weekly.view", "weekly.manage",
     },
     ROLE_TM: {
         "employees.view", "employees.manage", "documents.view", "documents.manage",
@@ -72,6 +73,7 @@ PERMISSIONS = {
         "rates.view", "lmk.view", "password.reset_limited", "schedules.view",
         "stores.directory.view", "stores.contacts.view", "users.view",
         "payouts.advances.select_own", "contracts.view", "planning.manage",
+        "weekly.view", "weekly.edit_own",
     },
     # Кадровик: документы, гражданства, типы документов, мониторинг сотрудников,
     # справочники. Без выплат, ставок, реквизитов и рассылок.
@@ -88,6 +90,7 @@ PERMISSIONS = {
         "legal_entities.manage", "economist.dashboard",
         "stores.directory.view", "stores.contacts.view", "services.view", "users.view",
         "payouts.advances.select_any", "payouts.advances.fix", "payouts.export",
+        "weekly.view", "weekly.manage",
     },
     ROLE_BRIGADIER: {"schedules.view", "stores.directory.view", "stores.contacts.view"},
     # Минимальный набор под кабинет-заглушку: доступ к своему дашборду + справочник магазинов.

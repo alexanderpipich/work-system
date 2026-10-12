@@ -1,5 +1,5 @@
-"""Выплаты (П3): еженедельные авансы и табель за период, реестр выплат xlsx; надбавки к часу (П4.4);
-еженедельный отчёт по сменам (П4.6)."""
+"""Выплаты (П3): еженедельные авансы и табель за период, реестр выплат xlsx; надбавки к часу (П4.4).
+Еженедельный отчёт (П4.6) — routers/weekly.py."""
 
 from datetime import date, datetime, timedelta
 from urllib.parse import quote, urlencode
@@ -23,7 +23,7 @@ from statement_export import save_statement
 from rbac import ROLE_TM, canonical_role, has_permission, require_permission
 from time_helpers import business_today
 from utils import find_user_by_name, format_card_number, normalize_person_name, normalize_text
-from weekly_report import last_complete_week, resolve_week, save_weekly, weekly_report
+from weekly_actions import advances_locked_for
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -104,6 +104,14 @@ def advances_page(
     tm_options = sorted({(r["tm_id"], r["tm_name"]) for r in advance_week_rows(session, week_start) if r["tm_id"]},
                         key=lambda item: item[1])
     selected = [r for r in rows if r["selected"]]
+    # П4.6: кто из ТМ подал своих в «Еженедельном отчёте».
+    from tm_assignment import tm_users
+    from weekly_report import is_week_closed, tm_checks
+
+    checks = tm_checks(session, week_start)
+    tm_submissions = [{"name": tm.employee_name,
+                       "submitted_at": checks[tm.id].advances_submitted_at if tm.id in checks else None}
+                      for tm in tm_users(session)]
     return templates.TemplateResponse(request, "payouts_advances.html", {
         "user": user,
         "week_start": week_start,
@@ -121,66 +129,12 @@ def advances_page(
         "filters": {"mine": only_mine, "tm": tm, "q": q},
         "tm_options": tm_options,
         "no_rate": no_rate,
+        "tm_submissions": tm_submissions,
+        "week_closed": is_week_closed(session, week_start),
+        "advance_locked": advances_locked_for(session, user, week_start),
         "message": message or None,
         "error": error or None,
     })
-
-
-WEEKLY_URL = "/admin/payouts/weekly"
-
-
-def _parse_tm(value):
-    """tm из формы: «Все ТМ» = 0; пусто и мусор — тоже 0 (старые закладки)."""
-    try:
-        return int((value or "").strip() or 0)
-    except ValueError:
-        return 0
-
-
-@router.get(WEEKLY_URL, response_class=HTMLResponse)
-def weekly_page(
-    request: Request,
-    week: str = "",
-    tm: str = "0",
-    q: str = "",
-    session: Session = Depends(get_db),
-    user=Depends(require_advances_access),
-):
-    """Еженедельный отчёт (П4.6): видят все с доступом к авансам, все сотрудники; скачивание — payouts.export."""
-    week_start = resolve_week(week, business_today())
-    report = weekly_report(session, week_start)
-    rows = report["rows"]
-    tm_options = sorted({(r["tm_id"], r["ТМ"]) for r in rows if r["tm_id"]}, key=lambda item: item[1])
-    tm_id = _parse_tm(tm)
-    if tm_id:
-        rows = [r for r in rows if r["tm_id"] == tm_id]
-    if normalize_text(q):
-        needle = normalize_person_name(q)
-        rows = [r for r in rows if needle in normalize_person_name(r["ФИО сотрудника Исполнителя"])]
-    next_week = week_start + timedelta(days=7)
-    return templates.TemplateResponse(request, "payouts_weekly.html", {
-        "user": user,
-        "week_start": week_start,
-        "week_end": week_start + timedelta(days=6),
-        "prev_week": week_start - timedelta(days=7),
-        "next_week": next_week if next_week <= last_complete_week(business_today()) else None,
-        "days": report["days"],
-        "rows": rows,
-        "total": round(sum(r["ФОТ"] for r in rows), 2),
-        "no_rate": report["no_rate"],
-        "filters": {"tm": tm_id, "q": q},
-        "tm_options": tm_options,
-        "can_export": has_permission(user, "payouts.export"),
-    })
-
-
-@router.get(WEEKLY_URL + ".xlsx")
-def weekly_xlsx(week: str = "", session: Session = Depends(get_db), user=Depends(current_user)):
-    week_start = resolve_week(week, business_today())
-    if not has_permission(user, "payouts.export"):
-        return RedirectResponse(f"{WEEKLY_URL}?week={week_start.isoformat()}", 302)
-    key, filename = save_weekly(session, week_start)
-    return storage_response(key, filename=filename) or RedirectResponse(f"{WEEKLY_URL}?week={week_start.isoformat()}", 302)
 
 
 @router.post("/admin/payouts/advances/select")
@@ -196,6 +150,9 @@ def advances_select(
     week_start = _parse_week(week)
     if is_frozen(advance_run_for_week(session, week_start)):
         return JSONResponse({"ok": False, "error": "Аванс зафиксирован — расфиксируйте для правки"}, status_code=409)
+    locked = advances_locked_for(session, user, week_start)
+    if locked:
+        return JSONResponse({"ok": False, "error": locked}, status_code=403)
     employee_user = find_user_by_name(session, employee_name)
     if not can_select(user, employee_user, user_permissions(user)):
         return JSONResponse({"ok": False, "error": "Можно отмечать только своих сотрудников"}, status_code=403)
@@ -218,6 +175,9 @@ async def advances_save(
         return RedirectResponse(_week_url(week_start, error="Аванс зафиксирован — расфиксируйте для правки", **back), 302)
 
     perms = user_permissions(user)
+    locked = advances_locked_for(session, user, week_start)
+    if locked:
+        return RedirectResponse(_week_url(week_start, error=locked, **back), 302)
     checked = set(form.getlist("selected"))
     errors = []
     for index, name in enumerate(form.getlist("names")):
