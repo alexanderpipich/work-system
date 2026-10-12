@@ -56,6 +56,13 @@
             </span>
         </div>
 
+        <p class="field-hint mt-14">
+            <b>Подали авансы (еженедельный отчёт):</b>
+            {% for tm in tm_submissions %}<span class="{% if not tm.submitted_at %}muted{% endif %}">{{ tm.name }} — {% if tm.submitted_at %}подал{% else %}не подал{% endif %}</span>{% if not loop.last %}; {% endif %}{% endfor %}
+            {% if week_closed %} · <b>неделя закрыта для коррекций ТМ</b>{% endif %}
+            {% if advance_locked %} · {{ advance_locked }}{% endif %}
+        </p>
+
         <form method="get" class="form-grid align-end mt-14">
             <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
             <div class="field">
@@ -111,7 +118,7 @@
                                 <input type="checkbox" name="selected" value="{{ row.employee_name }}"
                                        data-adv-select="{{ row.employee_name }}"
                                        {% if row.selected %}checked{% endif %}
-                                       {% if frozen or not row.can_select %}disabled{% endif %}>
+                                       {% if frozen or not row.can_select or advance_locked %}disabled{% endif %}>
                             </td>
                             <td>
                                 {% if row.shifts %}
@@ -147,7 +154,7 @@
                                 {% if row.deduction %}{{ '%.2f' % row.deduction }} <span class="muted">{{ row.deduction_comment }}</span>{% else %}—{% endif %}
                                 {% endif %}
                             </td>
-                            <td class="num adv-total">{{ '%.2f' % row.to_pay }}</td>
+                            <td class="num adv-total">{{ '%.2f' % row.to_pay }}{% if row.advance_amount is not none %}<br><small class="muted" title="Сумма из «Еженедельного отчёта»">частично</small>{% endif %}</td>
                             <td>
                                 {% if row.has_card %}<span class="pill pill-success">ок</span>
                                 {% else %}<span class="pill pill-danger">нет карты</span>{% endif %}
