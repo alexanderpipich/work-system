@@ -58,6 +58,8 @@ ICONS = {
     "email_planning": ("indigo", '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="14" height="11" rx="2"/><path d="M3.6 7l6.4 4.6L15 8.6"/><path d="M15 14h5v6h-5z"/></svg>'),
     "email_reconciliation": ("teal", '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="14" height="11" rx="2"/><path d="M3.6 7l6.4 4.6L15 8.6"/><path d="M15.5 20v-3M18 20v-5M20.5 20v-2"/></svg>'),
     "messages": ("slate", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H9l-4 3.5V6.5A2.5 2.5 0 0 1 7.5 4h10A2.5 2.5 0 0 1 20 6.5z"/><path d="M9 9h8M9 12.5h5"/></svg>'),
+    "vacancies": ("lime", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.8-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.2-6.5 11-6.5 11z"/><path d="M12 7.5v5M9.5 10h5"/></svg>'),
+    "ai_assistant": ("violet", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H9l-4 3.5V6.5A2.5 2.5 0 0 1 7.5 4H12"/><path d="M17.5 3l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z"/><path d="M9 11h6"/></svg>'),
     "reports": ("lime", '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 15v-3M12 15v-6M16 15v-4"/></svg>'),
     "analytics": ("amber", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M5 15l4.5-5 3.5 3.5L19 6"/><circle cx="19" cy="6" r="1.4"/></svg>'),
     "audit": ("slate", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6z"/><path d="M9 8.5h6M9 12h6M9 15.5h4"/><path d="M6 4v16" stroke-width="2.4"/></svg>'),
@@ -83,9 +85,10 @@ ICONS.update({
 })
 
 
-def card(key, title, desc, variants=(), icon=None, coming_soon=False, hidden_for=()):
+def card(key, title, desc, variants=(), icon=None, coming_soon=False, hidden_for=(), locked_message=None):
     """Карточка. `variants` — [(href, permission, roles|None)], канонический первым.
-    hidden_for — роли, которым карточка не показывается вовсе (дубль другого раздела)."""
+    hidden_for — роли, которым карточка не показывается вовсе (дубль другого раздела).
+    locked_message — текст модалки недоступной карточки (иначе ui.js собирает свой)."""
     variants = [tuple(v) for v in variants]
     return {
         "key": key,
@@ -97,7 +100,14 @@ def card(key, title, desc, variants=(), icon=None, coming_soon=False, hidden_for
         "icon": icon or key,
         "coming_soon": coming_soon,
         "hidden_for": frozenset(hidden_for),
+        "locked_message": locked_message,
     }
+
+
+def soon_message(title):
+    """Текст модалки заглушек раздела «Коммуникации» (П4.7)."""
+    return (f"«{title}» появится после запуска: сообщения сотрудникам из кабинета, вакансии с картой "
+            "и ИИ-помощник менеджера. Сейчас раздел показан, чтобы было видно, куда развивается система.")
 
 
 NAV_GROUPS = [
@@ -221,9 +231,6 @@ NAV_GROUPS = [
         card("email_reconciliation", "Рассылка: сверки",
              "Предпросмотр и ручная отправка XLS-сверки отработанных часов (тип A 01-15 / тип B весь месяц).",
              [("/admin/email/reconciliation", "email.manage", None)]),
-        card("messages", "Сообщения",
-             "Будущий модуль обмена сообщениями между администрацией, бригадирами и сотрудниками.",
-             coming_soon=True),
     ]},
     {"key": "reports", "title": "Отчётность", "cards": [
         card("reports", "Отчеты",
@@ -238,6 +245,22 @@ NAV_GROUPS = [
         card("audit", "Audit Log",
              "История действий пользователей: табели, корректировки, документы, ставки, реквизиты и справочники.",
              [("/admin/audit-log", "audit.view", None)]),
+    ]},
+    # П4.7: куда растёт система — общение с сотрудниками. Пока только заглушки (coming_soon),
+    # видны всем офисным ролям; группа последняя.
+    {"key": "communications", "title": "Коммуникации", "cards": [
+        card("messages", "Сообщения",
+             "Переписка ТМ и офиса с сотрудниками прямо в кабинете: уведомления о выплатах и документах, "
+             "ответы на вопросы, история по каждому человеку.",
+             coming_soon=True, locked_message=soon_message("Сообщения")),
+        card("vacancies", "Вакансии",
+             "Открытые смены и вакансии по магазинам из таблицы заказчика — с картой в кабинете сотрудника "
+             "и откликом в один клик.",
+             coming_soon=True, locked_message=soon_message("Вакансии")),
+        card("ai_assistant", "ИИ-помощник менеджера",
+             "Ассистент, который берёт на себя рутинную часть общения с сотрудниками: напоминания о документах, "
+             "ответы по выплатам и сменам, подготовка сообщений для ТМ.",
+             coming_soon=True, locked_message=soon_message("ИИ-помощник менеджера")),
     ]},
 ]
 
