@@ -16,9 +16,14 @@
     .week-nav .week-title { font-size: 17px; font-weight: 800; color: var(--brand-blue); }
     .wr-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 13px; }
     .wr-checks .is-off { color: #9ca3af; }
-    .wr-table table { font-size: 13px; }
+    /* На десктопе таблица во всю ширину экрана без прокрутки; уже ~1180px — прокрутка вбок. */
+    .wr-table table { font-size: 13px; min-width: 1180px; }
+    .wr-table th, .wr-table td { padding: 7px 8px; font-size: 13px; }
+    .wr-table th { white-space: normal; line-height: 1.2; }
+    .wr-table td.name { min-width: 150px; }
+    .wr-table td.service { min-width: 160px; }
     .wr-table td.num, .wr-table th.num { text-align: right; white-space: nowrap; }
-    .wr-table td.day, .wr-table th.day { text-align: center; white-space: nowrap; min-width: 34px; }
+    .wr-table td.day, .wr-table th.day { text-align: center; white-space: nowrap; min-width: 28px; }
     .wr-table td.np { background: #FF0000; color: #fff; font-weight: 700; }
     .wr-table tr.noreq td:not(.np) { background: #FFC7CE; }
     .wr-table .no-rate { color: #b91c1c; font-weight: 700; }
@@ -27,7 +32,7 @@
     .wr-table .cell-btn:disabled { color: inherit; text-decoration: none; cursor: default; }
     .wr-table .ind { color: #b45309; font-weight: 800; margin-left: 2px; }
     .wr-table .tm-empty { color: #b91c1c; font-weight: 700; }
-    .wr-table select.tm-select { height: 30px; font-size: 12.5px; max-width: 170px; }
+    .wr-table select.tm-select { height: 30px; font-size: 12.5px; max-width: 150px; }
     .wr-table .adv-amount { display: block; font-size: 12px; color: var(--muted); }
     .wr-table tr.wr-total td { font-weight: 800; color: var(--brand-blue); }
     .wr-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
@@ -35,7 +40,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page page-pad-top page-wide">
+<div class="page page-pad-top page-full">
     {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
     {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
 
@@ -183,11 +188,11 @@
                     {% set own = row.tm_id == user.id %}
                     {% set rate_editable = can_manage or (can_edit_own and own and not closed) %}
                     <tr class="{% if not row.has_requisites %}noreq{% endif %}" {% if not row.has_requisites %}title="{{ NO_REQUISITES_HINT }}"{% endif %}>
-                        <td>{{ row.name }}</td>
+                        <td class="name">{{ row.name }}</td>
                         <td>{{ row.tk }}</td>
                         <td>{{ row.city }}</td>
                         <td>{{ row.format }}</td>
-                        <td>{{ row.service }}</td>
+                        <td class="service">{{ row.service }}</td>
                         {% for value in row.days %}
                         <td class="day{% if row.no_plan_days[loop.index0] %} np{% endif %}" {% if row.no_plan_days[loop.index0] %}title="Смена без плана — не оплачивается"{% endif %}>{% if value is not none %}{{ '%g' % value }}{% endif %}</td>
                         {% endfor %}
