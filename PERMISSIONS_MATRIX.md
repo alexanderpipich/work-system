@@ -350,4 +350,5 @@ is_active
 - П4: `contracts.view` (hr_lead, tm, hr_clerk), `contracts.manage` (hr_lead, hr_clerk) — «Договоры»; `regions.manage` (hr_lead, hr_clerk) — справочник регионов.
 - П4.2: `planning.manage` (hr_lead, tm) — бланк планирования `/admin/planning-bp`: закрепления (добавить / убрать из БП), рекомендации, PDF. Пороги мониторинга — по-прежнему только суперадмин (`admin.settings`). БП и сверки — только для формата ГМ.
 - П4.4: надбавки к часу `/admin/payouts/bonuses` — `payroll.manage`; ведомость xlsx табеля за период (`/admin/payouts/runs/{id}/statement`) — `payouts.export`, как реестр. Тарифный регион ТК правится в карточке ТК (права `/admin/stores`, без изменений).
+- П4.6: еженедельный отчёт `/admin/payouts/weekly` — те же роли, что экран авансов (`select_own`/`select_any`/`fix`), все видят всех сотрудников; xlsx `/admin/payouts/weekly.xlsx` — `payouts.export` (у `tm` нет — кнопки нет, прямая ссылка уводит на страницу).
 
