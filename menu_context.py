@@ -28,7 +28,7 @@ def _path_matches(path, prefix):
 def mark_current(menu, path, query=""):
     """Подсветка текущего раздела вне дашборда: подраздел, чей `url` (для этого
     пользователя — он уже такой в build_menu) — самое длинное совпадение с началом
-    пути; при равных путях выигрывает тот, чьи параметры запроса совпали. Его группа
+    пути; при равных путях — тот, чьи параметры все есть в запросе (больше — лучше). Его группа
     становится активной. Ничего не нашлось — ничего не подсвечено."""
     params = set(parse_qsl(query))
     best, best_score = None, None
@@ -40,7 +40,9 @@ def mark_current(menu, path, query=""):
             if not _path_matches(path, url.path):
                 continue
             item_params = set(parse_qsl(url.query))
-            score = (len(url.path.rstrip("/")), item_params <= params, -len(item_params - params))
+            # Длиннее путь; при равном — параметры подраздела все есть в запросе, и их больше.
+            matched = item_params <= params
+            score = (len(url.path.rstrip("/")), matched, len(item_params) if matched else -len(item_params))
             if best_score is None or score > best_score:
                 best, best_score = (group, item), score
     for group in menu:
