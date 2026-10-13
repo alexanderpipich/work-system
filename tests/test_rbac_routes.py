@@ -48,8 +48,8 @@ ROUTE_PERMISSION_MATRIX = [
 
     # bypass-only: audit log, shift upload
     ("audit.view",
-        ["superadmin"],
-        ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
+        ["superadmin", "hr_lead"],
+        ["economist", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("shifts.upload",
         ["superadmin"],
         ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),

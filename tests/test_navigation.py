@@ -219,7 +219,7 @@ class DashboardRendersTests(unittest.TestCase):
     def test_locked_card_carries_roles(self):
         self._as("tm")
         html = self.client.get("/admin").text
-        self.assertIn('data-title="Audit Log" data-roles="Суперадмин"', html)
+        self.assertIn('data-title="Audit Log" data-roles="Суперадмин, HR-руководитель"', html)
 
     def test_communications_cards_rendered_locked_with_message(self):
         for role in ("superadmin", "tm"):

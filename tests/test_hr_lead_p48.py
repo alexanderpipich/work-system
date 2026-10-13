@@ -25,7 +25,7 @@ SUPERADMIN = SimpleNamespace(id=1, role="superadmin", is_admin=True, employee_na
 # Права кабинетов сотрудника и рекрутера — не «функции», а вход в свой кабинет.
 CABINET_ONLY = {"profile.own", "documents.own", "schedules.own", "headhunter.dashboard"}
 SUPERADMIN_ONLY = {"shifts.upload", "upload.auto", "admin.settings", "system.technical", "system.maintenance",
-                   "audit.view", "payroll.close", "payroll.delete", "rates.hard_delete",
+                   "payroll.close", "payroll.delete", "rates.hard_delete",
                    "legal_entities.hard_delete"}
 
 
@@ -42,7 +42,8 @@ class HrLeadPermissionTests(unittest.TestCase):
     def test_extra_permissions(self):
         for permission in ("users.manage", "users.hard_delete", "rates.manage", "payroll.manage", "payroll.send",
                            "adjustments.manage", "lmk.manage", "legal_entities.manage", "email.manage",
-                           "weekly.manage", "upload.view", "hr_team.manage", "audit.hr_view"):
+                           "weekly.manage", "upload.view", "hr_team.manage", "audit.hr_view",
+                           "audit.view", "stores.view", "stores.manage"):
             with self.subTest(permission=permission):
                 self.assertTrue(has_permission(HR_LEAD, permission))
 
@@ -69,11 +70,11 @@ class HrLeadPermissionTests(unittest.TestCase):
                          ("lmk", "/admin/lmk"), ("legal_entities", "/admin/legal-entities"),
                          ("email", "/admin/email/test"), ("upload", "/admin/upload"),
                          ("payroll_runs", "/admin/payroll/runs"), ("reports", "/admin/reports"),
-                         ("analytics", "/admin/analytics"), ("employees", "/hr/employees")):
+                         ("analytics", "/admin/analytics"), ("employees", "/hr/employees"),
+                         ("audit", "/admin/audit-log"), ("stores", "/admin/stores")):
             with self.subTest(card=key):
                 self.assertTrue(cards[key]["available"])
                 self.assertEqual(cards[key]["url"], url)
-        self.assertFalse(cards["audit"]["available"])
 
 
 class HrLeadRoutesTests(unittest.TestCase):
