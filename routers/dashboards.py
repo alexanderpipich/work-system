@@ -4,8 +4,8 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from dependencies import current_user, get_db
-from navigation import PAYOUTS_GROUPS, build_navigation
-from rbac import canonical_role, has_permission, require_permission, role_label
+from navigation import PAYOUTS_GROUPS, build_menu, build_navigation
+from rbac import ROLE_EMPLOYEE, canonical_role, has_permission, require_permission, role_label
 
 
 router = APIRouter()
@@ -49,6 +49,8 @@ def render_dashboard(request, user, session=None):
             "role_label": role_label(role),
             "groups": groups,
             "cards_total": sum(len(group["cards"]) for group in groups),
+            # П4.9: боковое меню из того же реестра; сотруднику не показывается.
+            "menu": build_menu(groups) if role != ROLE_EMPLOYEE else [],
             "notices": dashboard_notices(session, user) if session is not None else [],
         },
     )

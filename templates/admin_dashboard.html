@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_nav_card.html" import nav_groups, nav_lock_modal %}
+{% from "_sidebar.html" import sidebar %}
 
 {# Один дашборд для всех ролей (П2): /admin, /hr, /economist. Карточки — из
    navigation.NAV_GROUPS; недоступные приглушены и объясняют, кому открыты. #}
@@ -9,8 +10,10 @@
 {% block brand_title %}{{ 'Админ-панель' if is_superadmin else 'Рабочий стол' }}{% endblock %}
 {% block brand_subtitle %}<p class="brand-subtitle">Добро пожаловать, {{ user.employee_name }}{% if not is_superadmin %} · {{ role_label }}{% endif %}</p>{% endblock %}
 
+{% block sidebar %}{% if menu %}{{ sidebar(menu, user, role_label) }}{% endif %}{% endblock %}
+
 {% block content %}
-<div class="page">
+<div class="page dash">
     <div class="hero">
         <div>
             <h2>{{ 'Управление системой' if is_superadmin else 'Разделы системы' }}</h2>

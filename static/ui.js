@@ -266,7 +266,65 @@
         });
     }
 
-    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); }
+    /* ── Боковая полоса рабочего стола (П4.9) ──────────────────────────────
+       Клик по группе — плавная прокрутка к её секции; при прокрутке активная
+       группа подсвечивается (IntersectionObserver). Подразделы — обычные ссылки. */
+    function initRail() {
+        var rail = document.querySelector('.rail');
+        if (!rail) { return; }
+        var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var behavior = reduced ? 'auto' : 'smooth';
+        var groups = {};
+
+        rail.addEventListener('click', function (e) {
+            var top = e.target.closest ? e.target.closest('[data-rail-top]') : null;
+            if (top) {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: behavior });
+                return;
+            }
+            var link = e.target.closest ? e.target.closest('[data-rail-anchor]') : null;
+            if (!link) { return; }
+            var id = link.getAttribute('data-rail-anchor');
+            var section = document.getElementById(id);
+            if (!section) { return; }
+            e.preventDefault();
+            section.scrollIntoView({ behavior: behavior, block: 'start' });
+            if (window.history && history.replaceState) { history.replaceState(null, '', '#' + id); }
+        });
+
+        var items = rail.querySelectorAll('[data-rail-group]');
+        for (var i = 0; i < items.length; i++) {
+            groups[items[i].getAttribute('data-rail-group')] = items[i];
+        }
+        if (!('IntersectionObserver' in window)) { return; }
+
+        var sections = [];
+        var visible = {};
+        Object.keys(groups).forEach(function (id) {
+            var section = document.getElementById(id);
+            if (section) { sections.push(section); }
+        });
+
+        function mark() {
+            var active = null;
+            for (var j = 0; j < sections.length; j++) {
+                if (visible[sections[j].id]) { active = sections[j].id; break; }
+            }
+            if (!active) { return; }
+            Object.keys(groups).forEach(function (id) {
+                groups[id].classList.toggle('is-active', id === active);
+            });
+        }
+
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) { visible[entry.target.id] = entry.isIntersecting; });
+            mark();
+        }, { rootMargin: '-15% 0px -60% 0px' });
+        sections.forEach(function (section) { observer.observe(section); });
+    }
+
+    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); initRail(); }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
