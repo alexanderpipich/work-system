@@ -110,10 +110,12 @@
                                      <button type="submit" class="btn btn-primary btn-sm">Передано в оплату</button>
                                  </form>
 
+                                 {% if can_delete_runs %}
                                  <form method="post" action="/admin/payroll/runs/delete" onsubmit="return confirm('Удалить зафиксированный табель?');">
                                      <input type="hidden" name="run_id" value="{{ row.run.id }}">
                                      <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
                                  </form>
+                                 {% endif %}
                              {% elif request.url.path.startswith('/admin') and row.run.status == "sent" %}
                                  <form method="post" action="/admin/payroll/runs/close" onsubmit="return confirm('Закрыть период окончательно?');">
                                      <input type="hidden" name="run_id" value="{{ row.run.id }}">

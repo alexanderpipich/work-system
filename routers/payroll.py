@@ -25,7 +25,7 @@ from schedule_grid import build_payroll_rows, days_between
 from service_catalog import build_service_resolver
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today, now_utc
-from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, is_superadmin, require_permission
+from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, has_permission, require_permission
 from utils import load_rates, normalize_text, pick_rate
 
 
@@ -48,12 +48,12 @@ PERIOD_REFUSAL = (
 
 
 def period_comment_or_refusal(user, start_date, end_date, comment):
-    """П3: табель — только полмесяца. (комментарий, отказ). Суперадмину произвольный
-    период разрешён, в комментарии остаётся пометка."""
+    """П3: табель — только полмесяца. (комментарий, отказ). С правом payroll.any_period
+    (суперадмин, HR-руководитель) произвольный период разрешён, в комментарии остаётся пометка."""
     comment = normalize_text(comment)
     if is_half_month(start_date, end_date):
         return comment, None
-    if is_superadmin(user):
+    if has_permission(user, "payroll.any_period"):
         return ("[произвольный период] " + comment).strip(), None
     return comment, PERIOD_REFUSAL
 
@@ -698,6 +698,7 @@ def admin_payroll(
             # П3: кнопки полумесяцев и табели за выбранный период.
             "period_links": half_month_links(start_date),
             "is_half_month_period": is_half_month(start_date, end_date),
+            "can_any_period": has_permission(user, "payroll.any_period"),
             "period_runs": period_runs_for(session, start_date, end_date),
             "rows": rows,
             "days": days,

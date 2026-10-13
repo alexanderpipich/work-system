@@ -393,7 +393,10 @@
 
     <div class="card no-print">
         <h2>Табель за период</h2>
-        {% if is_half_month_period %}
+        {% if is_half_month_period or can_any_period %}
+        {% if not is_half_month_period %}
+        <p class="field-hint mt-0">Произвольный период — в комментарии табеля будет пометка «[произвольный период]».</p>
+        {% endif %}
         <p class="field-hint mt-0">
             Табель по всем сменам периода. Смены, уже выплаченные еженедельным авансом,
             попадут с вычетом выплаченного; черновик ничего не резервирует до фиксации.
