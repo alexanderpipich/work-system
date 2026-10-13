@@ -425,7 +425,30 @@
         });
     }
 
-    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); initRail(); initDrawer(); initRoleFields(); }
+    /* ── Перепроверка формы договора (/admin/contracts/…) ────────────────
+       Смена <select data-recheck="le|region"> отправляет форму с action=check: сервер
+       перерисует её с реквизитами нового юрлица/региона, введённое уходит тем же POST.
+       Поля «ввести на месте» старого юрлица (fix:le:) / региона (fix:region:) не
+       отправляются — иначе записались бы в новое. */
+    function recheckForm(select) {
+        var form = select.form;
+        if (!form) { return; }
+        var prefix = 'fix:' + select.getAttribute('data-recheck') + ':';
+        Array.prototype.forEach.call(form.elements, function (field) {
+            if (field.name && field.name.indexOf(prefix) === 0) { field.disabled = true; }
+        });
+        var action = document.createElement('input');
+        action.type = 'hidden'; action.name = 'action'; action.value = 'check';
+        form.appendChild(action);
+        form.submit();
+    }
+    function initRecheck() {
+        Array.prototype.forEach.call(document.querySelectorAll('form[data-recheck-form] select[data-recheck]'), function (select) {
+            select.addEventListener('change', function () { recheckForm(select); });
+        });
+    }
+
+    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); initRail(); initDrawer(); initRoleFields(); initRecheck(); }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

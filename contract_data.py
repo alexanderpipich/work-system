@@ -45,6 +45,12 @@ CONTRACT_LE_KEYS = {"le_full_name", "le_short_name", "le_director_title", "le_di
                     "le_bank_account", "le_bank_name", "le_bik", "le_corr_account"}
 PETITION_LE_KEYS = {"le_full_name", "le_ogrn", "le_kpp", "le_inn", "le_legal_address", "le_actual_address",
                     "le_director_name"}
+RECOMMENDATION_LE_KEYS = {"le_full_name", "le_short_name", "le_ogrn", "le_kpp", "le_inn", "le_actual_address",
+                          "le_director_title", "le_director_name"}
+# Должность руководителя хранится в род. падеже («генерального директора», для договора);
+# в подписи письма нужен именительный — по словарю частых слов, без склонений.
+_TITLE_NOMINATIVE = {"генерального": "генеральный", "исполнительного": "исполнительный",
+                     "управляющего": "управляющий", "директора": "директор"}
 
 
 def needs_patent(session, profile):
@@ -155,12 +161,16 @@ def contract_fields(session, profile, entity, region, form):
         _field("city", "Город договора", form.get("city") or "", SOURCE_FORM, ("form", "city")),
     ]
 
-    # Срок: бессрочный или до даты; с патентом — не позже его окончания.
+    # Срок: бессрочный или до даты; с патентом — только срочный и не позже окончания патента.
     term_until = form.get("term_until")
     patent_expiry = profile["patent_expiry"] if with_patent else None
+    if with_patent and form.get("term_indefinite"):
+        errors.append("При патенте договор срочный — бессрочный не заключается")
+    elif with_patent and not term_until:
+        errors.append("При патенте договор срочный — укажите дату окончания")
     if with_patent and patent_expiry and term_until and term_until > patent_expiry:
         errors.append(f"Срок договора не может быть позже окончания патента {fmt_short(patent_expiry)}")
-    if form.get("term_indefinite") or not term_until:
+    if (form.get("term_indefinite") and not with_patent) or not term_until:
         term = "на неопределенный срок."
     else:
         term = f"на срок до {fmt_day(term_until)}."
@@ -225,6 +235,37 @@ def petition_fields(session, profile, entity, region, form):
         "patent_period": f"с {fmt_short(profile['patent_issue_date']) or NO_DATA} по {fmt_short(profile['patent_expiry']) or NO_DATA}",
         "patent_issue_date": fmt_short(profile["patent_issue_date"]),
         "petition_date": fmt_quoted(petition_date),
+    })
+    return fields, values
+
+
+def signer_title(director_title):
+    """«генерального директора» → «Генеральный директор» (подпись рекомендательного письма)."""
+    words = [_TITLE_NOMINATIVE.get(w, w) for w in normalize_text(director_title).lower().split()] or ["директор"]
+    return " ".join(words).capitalize()
+
+
+def recommendation_position(session, profile, form):
+    """Должность в письме: введённая, иначе из патента, иначе из карточки."""
+    patent = profile["patent_profession"] if needs_patent(session, profile) else ""
+    return form.get("position") or patent or profile["job_title"]
+
+
+def recommendation_fields(session, profile, entity, form):
+    """Рекомендательное письмо (П4.11): юрлицо, ФИО, город и должность; тело безличное."""
+    issue_date = form.get("recommendation_date") or date.today()
+    position = recommendation_position(session, profile, form)
+    fields = [_field("fio", "ФИО", profile["fio"], SOURCE_USER)]
+    fields += _le_fields(entity, RECOMMENDATION_LE_KEYS)
+    fields += [
+        _field("city", "Город работы", form.get("city") or "", SOURCE_FORM, ("form", "city")),
+        _field("position", "Должность", position, SOURCE_FORM if form.get("position") else SOURCE_DOC, ("form", "position")),
+    ]
+    values = {f["key"]: f["value"] for f in fields}
+    short_name = values.get("le_short_name", "")
+    values.update({
+        "signer": f"{signer_title(values.get('le_director_title'))} {short_name}" if short_name else "",
+        "recommendation_date": fmt_quoted(issue_date),
     })
     return fields, values
 
@@ -317,11 +358,3 @@ def suggest_contract_number(session, contract_date):
 
 def regions(session):
     return session.query(Region).filter(Region.is_active == True).order_by(Region.name).all()  # noqa: E712
-
-
-def patent_default_until(profile, contract_date):
-    """Срок договора по умолчанию — окончание действующего патента."""
-    expiry = profile["patent_expiry"]
-    if expiry and expiry >= contract_date:
-        return expiry
-    return None

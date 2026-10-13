@@ -10,7 +10,7 @@
 {% block brand_title %}{{ 'Админ-панель' if is_superadmin else 'Рабочий стол' }}{% endblock %}
 {% block brand_subtitle %}<p class="brand-subtitle">Добро пожаловать, {{ user.employee_name }}{% if not is_superadmin %} · {{ role_label }}{% endif %}</p>{% endblock %}
 
-{% block sidebar %}{% if menu %}{{ sidebar(menu, user, role_label) }}{% endif %}{% endblock %}
+{% block sidebar %}{% if menu %}{{ sidebar(menu, user, role_label, dashboard=request.url.path) }}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="page dash{% if menu %} has-menu{% endif %}">

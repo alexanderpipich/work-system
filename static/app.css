@@ -104,6 +104,7 @@ body:has(.page-full)   { --page-max: none; }
 
 .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .brand > div { display: flex; flex-direction: column; justify-content: center; }
+.brand-home { display: flex; flex: none; border-radius: 12px; } /* логотип → рабочий стол (П4.11) */
 
 .brand img {
     width: 42px;

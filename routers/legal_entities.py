@@ -369,6 +369,13 @@ def delete_legal_entity(
     admin=Depends(_le_manage),
 ):
     if hard_delete == "1":
+        # legal_entities.manage есть у HR-руководителя и экономиста; безвозвратно — только суперадмин.
+        if not has_permission(admin, "legal_entities.hard_delete"):
+            record_denied_action(session, request, admin, "legal_entities.hard_delete")
+            return _redirect(
+                "/admin/legal-entities",
+                error="Физическое удаление доступно только суперадминистратору",
+            )
         return _remove_entity(session, request, admin, "/admin/legal-entities", entity_id)
     return _set_entity_active(session, request, admin, "/admin/legal-entities", entity_id, False)
 

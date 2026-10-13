@@ -76,6 +76,7 @@ def build_menu_context(user, path, query=""):
         "role_label": role_label(canonical_role(user)),
         # Клик по группе: на дашборде — прокрутка к секции, вне его — на свой дашборд к якорю.
         "home": "" if on_dashboard else dashboard_url(user),
+        "dashboard": dashboard_url(user),  # логотип ведёт на рабочий стол (П4.11 B1)
         "on_dashboard": on_dashboard,
         "quick": quick_links(user, groups),
         "open_key": "payouts" if has_permission(user, "weekly.view") else None,

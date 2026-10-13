@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
-{# Форма договора / ходатайства (П4) с проверкой полноты. Недостающее вводится на
-   месте и сохраняется в источник (сотрудник, документ, юрлицо, регион). #}
+{# Форма договора / ходатайства / рекомендательного письма (П4, П4.11) с проверкой полноты.
+   Недостающее вводится на месте и сохраняется в источник (сотрудник, документ, юрлицо, регион).
+   Смена юрлица или региона перерисовывает форму сервером (action=check, ui.js). #}
 {% set is_contract = kind == 'contract' %}
-{% set title = 'Трудовой договор' if is_contract else 'Ходатайство' %}
+{% set title = {'contract': 'Трудовой договор', 'petition': 'Ходатайство', 'recommendation': 'Рекомендательное письмо'}[kind] %}
 
 {% macro fix_input(f) -%}
 {% set t = f.target %}
@@ -43,22 +44,24 @@
     {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
     {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
 
-    <form method="post" action="/admin/contracts/{{ kind }}/{{ employee.id }}">
+    <form method="post" action="/admin/contracts/{{ kind }}/{{ employee.id }}" data-recheck-form>
         <div class="card">
             <h2>Параметры</h2>
             <div class="form-grid align-end">
                 <div class="field"><label>Юрлицо</label>
-                    <select name="legal_entity_id">
+                    <select name="legal_entity_id" data-recheck="le">
                         <option value="0">— выберите —</option>
                         {% for e in legal_entities %}<option value="{{ e.id }}" {% if entity and entity.id == e.id %}selected{% endif %}>{{ e.name }}</option>{% endfor %}
                     </select>
                 </div>
+                {% if kind != 'recommendation' %}
                 <div class="field"><label>Регион{% if profile.region and region and region.id == profile.region.id %} <span class="pill pill-info">по последним сменам</span>{% endif %}</label>
-                    <select name="region_id">
+                    <select name="region_id" data-recheck="region">
                         <option value="0">— выберите —</option>
                         {% for r in regions %}<option value="{{ r.id }}" {% if region and region.id == r.id %}selected{% endif %}>{{ r.name }}</option>{% endfor %}
                     </select>
                 </div>
+                {% endif %}
                 {% if is_contract %}
                 <div class="field"><label>Номер договора</label><input type="text" name="contract_number" value="{{ form.contract_number }}"></div>
                 <div class="field"><label>Дата договора</label><input type="date" name="contract_date" value="{{ form.contract_date.isoformat() }}"></div>
@@ -68,12 +71,21 @@
                 <div class="field"><label>Должность</label><input type="text" name="position" value="{{ form.position or values.position }}" placeholder="{{ 'из патента' if with_patent else 'подсобный рабочий' }}"></div>
                 <div class="field"><label>Ставка за час, ₽</label><input type="text" name="rate" value="{{ form.rate }}" placeholder="232,18"></div>
                 <div class="field"><label>Срок</label>
+                    {% if with_patent %}
+                    {# При патенте договор только срочный — «бессрочный» не предлагается (П4.11 A1). #}
+                    <span class="bulk-check">Срочный, до даты</span>
+                    {% else %}
                     <label class="bulk-check"><input type="radio" name="term_indefinite" value="1" {% if form.term_indefinite %}checked{% endif %}> бессрочный</label>
                     <label class="bulk-check"><input type="radio" name="term_indefinite" value="0" {% if not form.term_indefinite %}checked{% endif %}> до даты</label>
+                    {% endif %}
                     <input type="date" name="term_until" value="{{ form.term_until.isoformat() if form.term_until else '' }}"
                            {% if with_patent and profile.patent_expiry %}max="{{ profile.patent_expiry.isoformat() }}"{% endif %}>
                     {% if with_patent and profile.patent_expiry %}<span class="field-hint">Не позже окончания патента {{ profile.patent_expiry.strftime('%d.%m.%Y') }}</span>{% endif %}
                 </div>
+                {% elif kind == 'recommendation' %}
+                <div class="field"><label>Город работы</label><input type="text" name="city" value="{{ form.city }}" placeholder="г. Санкт-Петербург"></div>
+                <div class="field"><label>Должность</label><input type="text" name="position" value="{{ form.position or values.position }}" placeholder="работник торгового зала"></div>
+                <div class="field"><label>Дата письма</label><input type="date" name="recommendation_date" value="{{ form.recommendation_date.isoformat() }}"></div>
                 {% else %}
                 <div class="field"><label>Дата ходатайства</label><input type="date" name="petition_date" value="{{ form.petition_date.isoformat() }}"></div>
                 {% endif %}

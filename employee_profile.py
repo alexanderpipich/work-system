@@ -24,6 +24,7 @@ DOC_SNILS = "СНИЛС"
 DOC_PATENT = "ПАТЕНТ"
 DOC_CONTRACT = "ТРУДОВОЙ ДОГОВОР"
 DOC_PETITION = "ХОДАТАЙСТВО"
+DOC_RECOMMENDATION = "РЕКОМЕНДАТЕЛЬНОЕ ПИСЬМО"
 INACTIVE_DOC_STATUSES = {"archived", "rejected"}
 
 MALE_ENDINGS = ("вич", "ич", "угли", "оглы", "ули", "уулу")
