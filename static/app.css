@@ -46,6 +46,8 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
     --page-max: 1240px;
+    /* Слой модалок; боковая полоса (П4.10) — ниже него, чтобы модалки и тур её перекрывали. */
+    --z-overlay: 100;
 }
 
 /* ── База ─────────────────────────────────────────────────────────────── */
@@ -736,7 +738,7 @@ body:has(.page-full)   { --page-max: none; }
     align-items: center;
     justify-content: center;
     padding: 20px;
-    z-index: 100;
+    z-index: var(--z-overlay);
 }
 /* Открыть модалку можно двумя способами: классом (предпочтительно) или
    инлайновым display:flex — так делает карусель QR в кабинете. Оба должны
@@ -1049,7 +1051,7 @@ body:has(.page-full)   { --page-max: none; }
     flex: 0 0 64px;
     width: 64px;
     align-self: stretch;
-    z-index: 30;
+    z-index: calc(var(--z-overlay) - 70);
 }
 .rail-panel {
     position: absolute;
@@ -1124,6 +1126,8 @@ body:has(.page-full)   { --page-max: none; }
 .rail-icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.85; stroke-linecap: round; stroke-linejoin: round; }
 .rail-group.is-active .rail-head { color: var(--brand-peach); }
 .rail-group.is-active .rail-icon { background: rgba(245, 138, 101, .16); }
+/* П4.10: текущий раздел вне дашборда — та же персиковая подсветка. */
+.rail-items .menu-item.is-current { color: var(--brand-peach); background: rgba(245, 138, 101, .16); font-weight: 600; }
 
 .rail-items { list-style: none; margin: 0 0 6px; padding: 0 0 0 56px; }
 .rail-items .menu-item {
@@ -1172,8 +1176,16 @@ body:has(.page-full)   { --page-max: none; }
 /* Секции дашборда — цели прокрутки из полосы. */
 .dash .group[id] { scroll-margin-top: 16px; }
 
+/* Esc сворачивает полосу, даже если курсор над ней (до ухода мыши). */
+.rail.is-collapsed .rail-panel { width: 64px; box-shadow: none; }
+.rail.is-collapsed .rail-label { display: none; }
+
 @media (max-width: 720px) {
     .rail { display: none; }
+}
+
+@media print {
+    .rail, .burger, .drawer { display: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1303,6 +1315,7 @@ body:has(.page-full)   { --page-max: none; }
 }
 .mmenu-items .menu-item:active { background: var(--brand-blue-soft); }
 .mmenu-items .menu-item.is-locked { color: var(--muted); opacity: .7; }
+.mmenu-items .menu-item.is-current { color: var(--brand-blue); background: rgba(245, 138, 101, .16); font-weight: 700; box-shadow: inset 3px 0 0 var(--brand-peach); }
 .mmenu-items .menu-item.is-locked .menu-note { color: var(--muted); }
 
 @media (max-width: 720px) {
@@ -1315,4 +1328,69 @@ body:has(.page-full)   { --page-max: none; }
 
 @media (prefers-reduced-motion: reduce) {
     .mmenu-chev { transition: none; }
+}
+
+/* ── П4.10: выдвижное меню на телефоне (страницы кроме рабочего стола) ── */
+.burger { display: none; }
+.drawer[hidden] { display: none; }
+html.drawer-open, html.drawer-open body { overflow: hidden; }
+
+@media (max-width: 720px) {
+    .burger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+        margin-right: -4px;
+        padding: 0;
+        border: 0;
+        border-radius: var(--radius-sm);
+        background: var(--brand-blue-soft);
+        color: var(--brand-blue);
+        cursor: pointer;
+    }
+    .burger svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+    .burger:focus-visible { outline: 2px solid var(--brand-peach); outline-offset: 2px; }
+
+    .drawer { position: fixed; inset: 0; z-index: var(--z-overlay); }
+    .drawer-backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, .5); animation: ovIn .14s ease; }
+    .drawer-panel {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: min(340px, 88vw);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: var(--bg);
+        box-shadow: var(--shadow-modal);
+        padding: 12px 12px 24px;
+        animation: drawerIn .2s cubic-bezier(.2, .8, .3, 1);
+    }
+    .drawer-panel:focus { outline: none; }
+    .drawer-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        margin: 0 0 8px auto;
+        padding: 0;
+        border: 0;
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--text-soft);
+        cursor: pointer;
+    }
+    .drawer-close svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+    .drawer .mmenu-items .menu-item { padding-left: 62px; }
+}
+/* Без мобильной ширины панель не показывается, даже если осталась открытой. */
+@media (min-width: 721px) { .drawer { display: none !important; } }
+@keyframes drawerIn { from { transform: translateX(-100%); } to { transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .drawer-backdrop, .drawer-panel { animation: none; }
 }
