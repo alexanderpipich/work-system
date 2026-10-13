@@ -13,10 +13,10 @@
 {% block sidebar %}{% if menu %}{{ sidebar(menu, user, role_label) }}{% endif %}{% endblock %}
 
 {% block content %}
-<div class="page dash">
+<div class="page dash{% if menu %} has-menu{% endif %}">
     {# П4.9: плашки — над сводкой; сводка недели — под шапкой, над «Управление системой». #}
     {% if notices %}
-    <div class="dash-top">
+    <div class="dash-top{% if quick_links %} has-quick{% endif %}">
     {% for notice in notices %}
     <div class="alert alert-warn mt-0 mb-20"><a href="{{ notice.url }}">{{ notice.text }}</a></div>
     {% endfor %}
@@ -85,6 +85,14 @@
     </section>
     {% endif %}
 
+    {# П4.9 D: на телефоне вместо сетки карточек — меню (тот же _sidebar.html). #}
+    {% if menu %}
+    <div class="dash-mobile">
+        {{ sidebar(menu, user, role_label, mode='mobile', quick=quick_links, open_key=menu_open) }}
+    </div>
+    {% endif %}
+
+    <div class="dash-desktop">
     <div class="hero">
         <div>
             <h2>{{ 'Управление системой' if is_superadmin else 'Разделы системы' }}</h2>
@@ -102,6 +110,7 @@
     </div>
 
     {{ nav_groups(groups) }}
+    </div>
 </div>
 
 {{ nav_lock_modal() }}

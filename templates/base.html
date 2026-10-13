@@ -15,6 +15,10 @@
 </head>
 <body class="{% block body_class %}{% endblock %}">
 
+{# П4.9: необязательная боковая полоса слева от шапки и контента (пока только на рабочем столе). #}
+{% set has_sidebar = self.sidebar() | trim | length > 0 %}
+{% if has_sidebar %}<div class="with-rail">{% block sidebar %}{% endblock %}<div class="rail-main">{% endif %}
+
 {% block topbar %}
 <header class="topbar {% block topbar_class %}{% endblock %}">
     <div class="topbar-inner">
@@ -37,12 +41,8 @@
 
 {% block before_content %}{% endblock %}
 
-{# П4.9: необязательная боковая полоса слева от контента (пока только на рабочем столе). #}
-{% set has_sidebar = self.sidebar() | trim | length > 0 %}
-{% if has_sidebar %}<div class="with-rail">{% endif %}
-{% block sidebar %}{% endblock %}
 {% block content %}{% endblock %}
-{% if has_sidebar %}</div>{% endif %}
+{% if has_sidebar %}</div></div>{% endif %}
 
 <script src="/static/ui.js?v=6" defer></script>
 {% block scripts %}{% endblock %}
