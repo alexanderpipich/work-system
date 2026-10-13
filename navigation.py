@@ -15,6 +15,7 @@
 """
 
 from rbac import (
+    HR_CABINET_ROLES,
     ROLE_BRIGADIER,
     ROLE_ECONOMIST,
     ROLE_HR_CLERK,
@@ -385,6 +386,23 @@ def build_navigation(user, groups=None):
                        "icon_color": ICONS[icon][0] if icon in ICONS else "slate",
                        "icon_svg": ICONS[icon][1] if icon in ICONS else ""})
     return result
+
+
+# П4.10: адреса единого дашборда (admin_dashboard.html) — на них группы меню прокручивают.
+DASHBOARD_PATHS = {"/admin", "/hr", "/economist"}
+
+
+def dashboard_url(user):
+    """Свой дашборд пользователя — тот, куда ведёт вход (routers/auth.py); роли без
+    своего (бригадир, рекрутер) идут на /admin — он открыт любому вошедшему."""
+    role = canonical_role(user)
+    if role == ROLE_SUPERADMIN:
+        return "/admin"
+    if role in HR_CABINET_ROLES:
+        return "/hr"
+    if role == ROLE_ECONOMIST:
+        return "/economist"
+    return "/admin"
 
 
 def build_menu(nav):

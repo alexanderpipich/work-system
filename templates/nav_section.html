@@ -19,5 +19,5 @@
     {% endfor %}
 </div>
 
-{{ nav_lock_modal() }}
+{% if not nav %}{{ nav_lock_modal() }}{% endif %}{# П4.10: при меню модалка уже в base.html #}
 {% endblock %}

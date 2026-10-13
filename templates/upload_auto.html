@@ -15,5 +15,5 @@
 {% block coming_soon_extra %}
     <a href="#" class="btn btn-primary mt-14" data-locked="1" data-title="Настройка автозагрузки"
        {% if can_configure %}data-coming-soon="1"{% else %}data-message="Настройка доступна только суперадмину."{% endif %}>Настроить</a>
-    {{ nav_lock_modal() }}
+    {% if not nav %}{{ nav_lock_modal() }}{% endif %}{# П4.10: при меню модалка уже в base.html #}
 {% endblock %}
