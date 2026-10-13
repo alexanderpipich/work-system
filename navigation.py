@@ -113,8 +113,33 @@ def soon_message(title):
             "и ИИ-помощник менеджера. Сейчас раздел показан, чтобы было видно, куда развивается система.")
 
 
+# Группа «Выплаты»: поддашборд /admin/payouts и (П4.9) отдельная группа главного дашборда.
+PAYOUTS_GROUP = {"key": "payouts", "title": "Выплаты", "icon": "advances", "cards": [
+    card("weekly_report", "Еженедельный отчёт",
+         "Понедельник ТМ: часы прошлой недели, ставки, закрепление, «ЧТС проверено», подача на аванс.",
+         [("/admin/payouts/weekly", "weekly.view", None)]),
+    card("payroll", "Выплатной табель",
+         "Расчёт недельных выплат по сменам и ЧТС с фильтрами по сотрудникам и магазинам.",
+         [("/admin/payroll", "payroll.manage", ADMIN),
+          ("/economist/payroll", "payroll.view", ECON),
+          ("/hr/payroll", "payroll.view", HR_VIEW)]),
+    card("advances", "Еженедельные авансы",
+         "Отметки ТМ, вычеты, фиксация недели и реестр выплат на карты.",
+         [("/admin/payouts/advances", "payouts.advances.select_any", None),
+          ("/admin/payouts/advances", "payouts.advances.fix", None),
+          ("/admin/payouts/advances", "payouts.advances.select_own", None)]),
+    card("bonuses", "Надбавки к часу",
+         "«Акция» сверх ЧТС: сумма за час, срок действия. Входит в аванс и табель.",
+         [("/admin/payouts/bonuses", "payroll.manage", None)]),
+    card("payroll_runs", "История выплат",
+         "Просмотр и экспорт зафиксированных табелей.",
+         [("/admin/payroll/runs", "payroll.manage", ADMIN),
+          ("/economist/payroll/runs", "payroll.view", ECON),
+          ("/hr/payroll/runs", "payroll.view", HR_VIEW)]),
+]}
+
 NAV_GROUPS = [
-    {"key": "people", "title": "Сотрудники и доступ", "cards": [
+    {"key": "people", "title": "Сотрудники и доступ", "icon": "employees", "cards": [
         card("employees", "Сотрудники",
              "Линейный персонал: список сотрудников и сверки часов по магазинам.",
              [("/admin/employees", "employees.view", SA),
@@ -138,7 +163,7 @@ NAV_GROUPS = [
              [("/hr/access", "password.reset_limited", HR_VIEW)],
              hidden_for={ROLE_SUPERADMIN}),
     ]},
-    {"key": "money", "title": "Время, ставки и выплаты", "cards": [
+    {"key": "money", "title": "Время, ставки и выплаты", "icon": "payroll", "cards": [
         card("rates", "ЧТС",
              "Ставки по услугам, форматам, магазинам и индивидуальным сотрудникам.",
              [("/admin/rates", "rates.manage", ADMIN),
@@ -172,7 +197,8 @@ NAV_GROUPS = [
              [("/admin/referral", "payroll.manage", ADMIN),
               ("/economist/referral", "payroll.manage", ECON)]),
     ]},
-    {"key": "documents", "title": "Документы, Кадры и комплаенс", "cards": [
+    PAYOUTS_GROUP,  # П4.9: на главном — отдельной группой; поддашборд /admin/payouts остаётся
+    {"key": "documents", "title": "Документы, Кадры и комплаенс", "icon": "document_types", "cards": [
         card("documents", "Документы",
              "Реестр документов сотрудников: загрузка, проверка, отклонение, архив и контроль отсутствующих документов.",
              [("/admin/documents", "documents.manage", SA),
@@ -195,7 +221,7 @@ NAV_GROUPS = [
              "Договоры с сотрудниками. Раздел появится в П4.",
              [("/admin/contracts", "contracts.view", None)]),
     ]},
-    {"key": "directories", "title": "Справочники", "cards": [
+    {"key": "directories", "title": "Справочники", "icon": "services", "cards": [
         card("legal_entities", "Юрлица",
              "Единый список юридических лиц для сотрудников и фиксации выплатных табелей.",
              [("/admin/legal-entities", "legal_entities.manage", ADMIN),
@@ -213,7 +239,7 @@ NAV_GROUPS = [
              "Справочник услуг и уровней: матрица по городам и форматам.",
              [("/admin/services", "services.view", None)]),
     ]},
-    {"key": "planning", "title": "Планирование и рассылки", "cards": [
+    {"key": "planning", "title": "Планирование и рассылки", "icon": "email", "cards": [
         card("planning_bp", "Бланк планирования",
              "Формирование PDF-бланка планирования по магазину (по образцу БП-007) и скачивание.",
              [("/admin/planning-bp", "planning.manage", None)]),
@@ -235,7 +261,7 @@ NAV_GROUPS = [
              "Предпросмотр и ручная отправка XLS-сверки отработанных часов (тип A 01-15 / тип B весь месяц).",
              [("/admin/email/reconciliation", "email.manage", None)]),
     ]},
-    {"key": "reports", "title": "Отчётность", "cards": [
+    {"key": "reports", "title": "Отчётность", "icon": "analytics", "cards": [
         card("reports", "Отчеты",
              "Управленческие таблицы по часам, выплатам, корректировкам, ЛМК и документам.",
              [("/admin/reports", "reports.view", ADMIN),
@@ -251,7 +277,7 @@ NAV_GROUPS = [
     ]},
     # П4.7: куда растёт система — общение с сотрудниками. Пока только заглушки (coming_soon),
     # видны всем офисным ролям; группа последняя.
-    {"key": "communications", "title": "Коммуникации", "cards": [
+    {"key": "communications", "title": "Коммуникации", "icon": "messages", "cards": [
         card("messages", "Сообщения",
              "Переписка ТМ и офиса с сотрудниками прямо в кабинете: уведомления о выплатах и документах, "
              "ответы на вопросы, история по каждому человеку.",
@@ -267,32 +293,10 @@ NAV_GROUPS = [
     ]},
 ]
 
+
+
 # Поддашборд «Выплаты» (/admin/payouts).
-PAYOUTS_GROUPS = [
-    {"key": "payouts", "title": "Выплаты", "cards": [
-        card("weekly_report", "Еженедельный отчёт",
-             "Понедельник ТМ: часы прошлой недели, ставки, закрепление, «ЧТС проверено», подача на аванс.",
-             [("/admin/payouts/weekly", "weekly.view", None)]),
-        card("payroll", "Выплатной табель",
-             "Расчёт недельных выплат по сменам и ЧТС с фильтрами по сотрудникам и магазинам.",
-             [("/admin/payroll", "payroll.manage", ADMIN),
-              ("/economist/payroll", "payroll.view", ECON),
-              ("/hr/payroll", "payroll.view", HR_VIEW)]),
-        card("advances", "Еженедельные авансы",
-             "Отметки ТМ, вычеты, фиксация недели и реестр выплат на карты.",
-             [("/admin/payouts/advances", "payouts.advances.select_any", None),
-              ("/admin/payouts/advances", "payouts.advances.fix", None),
-              ("/admin/payouts/advances", "payouts.advances.select_own", None)]),
-        card("bonuses", "Надбавки к часу",
-             "«Акция» сверх ЧТС: сумма за час, срок действия. Входит в аванс и табель.",
-             [("/admin/payouts/bonuses", "payroll.manage", None)]),
-        card("payroll_runs", "История выплат",
-             "Просмотр и экспорт зафиксированных табелей.",
-             [("/admin/payroll/runs", "payroll.manage", ADMIN),
-              ("/economist/payroll/runs", "payroll.view", ECON),
-              ("/hr/payroll/runs", "payroll.view", HR_VIEW)]),
-    ]},
-]
+PAYOUTS_GROUPS = [PAYOUTS_GROUP]
 
 
 def employees_groups(base_path):
@@ -374,8 +378,35 @@ def build_navigation(user, groups=None):
                 "icon_color": ICONS[entry["icon"]][0],
                 "icon_svg": ICONS[entry["icon"]][1],
             })
-        result.append({"key": group["key"], "title": group["title"], "cards": cards})
+        icon = group.get("icon") or group["key"]
+        result.append({"key": group["key"], "title": group["title"], "cards": cards,
+                       # П4.9: якорь секции дашборда и иконка группы в боковом меню.
+                       "anchor": group.get("anchor") or group["key"],
+                       "icon_color": ICONS[icon][0] if icon in ICONS else "slate",
+                       "icon_svg": ICONS[icon][1] if icon in ICONS else ""})
     return result
+
+
+def build_menu(nav):
+    """Боковое меню дашборда (П4.9) из результата build_navigation — тот же реестр, без
+    второго списка разделов: группа с якорем и иконкой, подразделы — её карточки с `url`
+    для этого пользователя; недоступные остаются в списке с `available=False`."""
+    return [{
+        "key": group["key"],
+        "title": group["title"],
+        "anchor": group["anchor"],
+        "icon_color": group["icon_color"],
+        "icon_svg": group["icon_svg"],
+        "items": [{
+            "key": card["key"],
+            "title": card["title"],
+            "url": card["url"],
+            "available": card["available"],
+            "coming_soon": card["coming_soon"],
+            "roles_label": card["roles_label"],
+            "locked_message": card["locked_message"],
+        } for card in group["cards"]],
+    } for group in nav]
 
 
 def all_cards(groups=None):

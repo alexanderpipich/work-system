@@ -9,11 +9,15 @@
     <link rel="shortcut icon" href="/static/favicon.ico?v=2">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=2">
 
-    <link rel="stylesheet" href="/static/app.css?v=10">
+    <link rel="stylesheet" href="/static/app.css?v=11">
 
     {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
+
+{# П4.9: необязательная боковая полоса слева от шапки и контента (пока только на рабочем столе). #}
+{% set has_sidebar = self.sidebar() | trim | length > 0 %}
+{% if has_sidebar %}<div class="with-rail">{% block sidebar %}{% endblock %}<div class="rail-main">{% endif %}
 
 {% block topbar %}
 <header class="topbar {% block topbar_class %}{% endblock %}">
@@ -38,8 +42,9 @@
 {% block before_content %}{% endblock %}
 
 {% block content %}{% endblock %}
+{% if has_sidebar %}</div></div>{% endif %}
 
-<script src="/static/ui.js?v=5" defer></script>
+<script src="/static/ui.js?v=6" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

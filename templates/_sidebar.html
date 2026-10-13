@@ -1,0 +1,90 @@
+{# Меню рабочего стола (П4.9) — из того же реестра, что и карточки (navigation.build_menu).
+   mode='rail'   — десктоп: полоса 64 px слева, по наведению/фокусу раскрывается поверх контента;
+                   клик по группе прокручивает к её секции дашборда (static/ui.js, initRail).
+   mode='mobile' — ≤ 720 px: шапка с быстрыми кнопками и группы-<details> вместо сетки карточек.
+   Недоступный подраздел — как карточка: data-locked → модалка «нет доступа / скоро» (initLockedNav). #}
+
+{% macro menu_item(item) -%}
+{% if item.available %}
+<a href="{{ item.url }}" class="menu-item">{{ item.title }}</a>
+{% else %}
+<a href="{{ item.url }}" class="menu-item is-locked" aria-disabled="true" data-locked="1"
+   data-title="{{ item.title }}" data-roles="{{ item.roles_label }}"
+   {%- if item.coming_soon %} data-coming-soon="1"{% endif %}
+   {%- if item.locked_message %} data-message="{{ item.locked_message }}"{% endif %}>{{ item.title }}<span class="menu-note">{{ 'скоро' if item.coming_soon else 'нет доступа' }}</span></a>
+{% endif %}
+{%- endmacro %}
+
+{% macro initials(user) -%}
+{% set parts = (user.employee_name or '').split() %}{{ ((parts[0][:1] if parts else '') ~ (parts[1][:1] if parts | length > 1 else '')) | upper }}
+{%- endmacro %}
+
+{% macro sidebar(menu, user, role_label, mode='rail', quick=(), open_key=None) -%}
+{% if mode == 'rail' %}
+<aside class="rail" aria-label="Разделы">
+    <div class="rail-panel">
+        <div class="rail-inner">
+            <a href="#" class="rail-brand" data-rail-top>
+                <img src="/static/logo-alex.jpg" alt="">
+                <span class="rail-label">work-system</span>
+            </a>
+            <nav class="rail-groups">
+            {% for group in menu %}
+                <div class="rail-group" data-rail-group="{{ group.anchor }}">
+                    <a href="#{{ group.anchor }}" class="rail-head" data-rail-anchor="{{ group.anchor }}" title="{{ group.title }}">
+                        <span class="rail-icon">{{ group.icon_svg | safe }}</span>
+                        <span class="rail-label">{{ group.title }}</span>
+                    </a>
+                    <ul class="rail-items rail-label">
+                    {% for item in group['items'] %}
+                        <li>{{ menu_item(item) }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+            </nav>
+            <div class="rail-user">
+                <span class="rail-avatar" aria-hidden="true">{{ initials(user) }}</span>
+                <span class="rail-label rail-user-text">
+                    <b>{{ user.employee_name }}</b>
+                    <small>{{ role_label }}</small>
+                    <a href="/logout">выйти</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</aside>
+{% else %}
+<nav class="mmenu" aria-label="Разделы">
+    <div class="mmenu-head">
+        <span class="rail-avatar" aria-hidden="true">{{ initials(user) }}</span>
+        <div class="mmenu-who">
+            <b>{{ user.employee_name }}</b>
+            <small>{{ role_label }}</small>
+        </div>
+        {% if quick %}
+        <div class="mmenu-quick">
+            {% for link in quick %}
+            <a href="{{ link.url }}" class="mmenu-btn">{{ link.text }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% for group in menu %}
+    <details class="mmenu-group"{% if group.key == open_key %} open{% endif %}>
+        <summary>
+            <span class="icon {{ group.icon_color }}">{{ group.icon_svg | safe }}</span>
+            <span class="mmenu-title">{{ group.title }}</span>
+            <span class="group-count">{{ group['items'] | length }}</span>
+            <svg class="mmenu-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <ul class="mmenu-items">
+        {% for item in group['items'] %}
+            <li>{{ menu_item(item) }}</li>
+        {% endfor %}
+        </ul>
+    </details>
+    {% endfor %}
+</nav>
+{% endif %}
+{%- endmacro %}
