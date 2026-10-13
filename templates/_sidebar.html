@@ -5,7 +5,8 @@
    Недоступный подраздел — как карточка: data-locked → модалка «нет доступа / скоро» (initLockedNav).
    П4.10: полоса на всех страницах офисных ролей. home — дашборд пользователя: вне дашборда группа
    ведёт на home#якорь, на дашборде home пустой — прокрутка. Текущий раздел (item.current) — с
-   aria-current="page", его группа (group.active) подсвечена. drawer — выдвижная панель (≤ 720 px). #}
+   aria-current="page", его группа (group.active) подсвечена. drawer — выдвижная панель (≤ 720 px).
+   П4.11: логотип — ссылка на dashboard (рабочий стол роли); на самом дашборде — прокрутка наверх. #}
 
 {% macro menu_item(item) -%}
 {% if item.available %}
@@ -22,12 +23,12 @@
 {% set parts = (user.employee_name or '').split() %}{{ ((parts[0][:1] if parts else '') ~ (parts[1][:1] if parts | length > 1 else '')) | upper }}
 {%- endmacro %}
 
-{% macro sidebar(menu, user, role_label, mode='rail', quick=(), open_key=None, home='') -%}
+{% macro sidebar(menu, user, role_label, mode='rail', quick=(), open_key=None, home='', dashboard='') -%}
 {% if mode == 'rail' %}
 <aside class="rail" aria-label="Разделы">
     <div class="rail-panel">
         <div class="rail-inner">
-            <a href="#" class="rail-brand" data-rail-top>
+            <a href="{{ dashboard or '#' }}" class="rail-brand"{% if not home %} data-rail-top{% endif %} title="Рабочий стол">
                 <img src="/static/logo-alex.jpg" alt="">
                 <span class="rail-label">work-system</span>
             </a>

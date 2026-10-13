@@ -7,6 +7,44 @@
 {% set can_export = 'payouts.export' in perms %}
 {% set can_send = 'payroll.send' in perms %}
 
+{# Действия по прогону аванса — вверху (рядом со статусом) и под таблицей (П4.11 B4).
+   Один макрос — одни условия, копии не расходятся. #}
+{% macro run_actions(place, can_fix, can_send, can_export) -%}
+<div class="row{% if place == 'top' %} mt-14{% endif %}" data-run-actions="{{ place }}">
+    {% if not frozen and can_fix %}
+    <form method="post" action="/admin/payouts/advances/fix"
+          onsubmit="return confirm('Зафиксировать аванс за неделю? Отметки будут заморожены.');">
+        <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
+        <button type="submit" class="btn btn-primary">Зафиксировать аванс</button>
+    </form>
+    {% endif %}
+    {% if run and run.status == 'fixed' and can_fix %}
+    <form method="post" action="/admin/payouts/runs/{{ run.id }}/unfix"
+          onsubmit="return confirm('Расфиксировать аванс? Строки табеля будут удалены.');">
+        <button type="submit" class="btn btn-danger">Расфиксировать</button>
+    </form>
+    {% endif %}
+    {% if run and run.status == 'fixed' and can_send %}
+    <form method="post" action="/admin/payroll/runs/send">
+        <input type="hidden" name="run_id" value="{{ run.id }}">
+        <input type="hidden" name="return_to" value="/admin/payouts/advances?week={{ week_start.isoformat() }}">
+        <button type="submit" class="btn btn-secondary">Отправить в оплату</button>
+    </form>
+    {% endif %}
+    {% if run and run.status == 'sent' and can_fix %}
+    <form method="post" action="/admin/payouts/runs/{{ run.id }}/unsend">
+        <button type="submit" class="btn btn-secondary">Вернуть в «зафиксирован»</button>
+    </form>
+    {% endif %}
+    {% if frozen and can_export %}
+    <a class="btn btn-secondary" href="/admin/payouts/runs/{{ run.id }}/registry">Реестр xlsx</a>
+    {% endif %}
+    {% if frozen %}
+    <a class="btn btn-secondary" href="/admin/payroll/runs/{{ run.id }}">Строки табеля №{{ run.id }}</a>
+    {% endif %}
+</div>
+{%- endmacro %}
+
 {% block title %}Еженедельные авансы{% endblock %}
 {% block brand_title %}Еженедельные авансы{% endblock %}
 {% block brand_subtitle %}<p class="brand-subtitle">Неделя {{ week_start.strftime('%d.%m.%Y') }} — {{ week_end.strftime('%d.%m.%Y') }}</p>{% endblock %}
@@ -55,6 +93,7 @@
                 {% else %}не зафиксирован{% endif %}
             </span>
         </div>
+        {{ run_actions('top', can_fix, can_send, can_export) }}
 
         <p class="field-hint mt-14">
             <b>Подали авансы (еженедельный отчёт):</b>
@@ -180,39 +219,7 @@
     </form>
 
     <div class="card">
-        <div class="row">
-            {% if not frozen and can_fix %}
-            <form method="post" action="/admin/payouts/advances/fix"
-                  onsubmit="return confirm('Зафиксировать аванс за неделю? Отметки будут заморожены.');">
-                <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
-                <button type="submit" class="btn btn-primary">Зафиксировать аванс</button>
-            </form>
-            {% endif %}
-            {% if run and run.status == 'fixed' and can_fix %}
-            <form method="post" action="/admin/payouts/runs/{{ run.id }}/unfix"
-                  onsubmit="return confirm('Расфиксировать аванс? Строки табеля будут удалены.');">
-                <button type="submit" class="btn btn-danger">Расфиксировать</button>
-            </form>
-            {% endif %}
-            {% if run and run.status == 'fixed' and can_send %}
-            <form method="post" action="/admin/payroll/runs/send">
-                <input type="hidden" name="run_id" value="{{ run.id }}">
-                <input type="hidden" name="return_to" value="/admin/payouts/advances?week={{ week_start.isoformat() }}">
-                <button type="submit" class="btn btn-secondary">Отправить в оплату</button>
-            </form>
-            {% endif %}
-            {% if run and run.status == 'sent' and can_fix %}
-            <form method="post" action="/admin/payouts/runs/{{ run.id }}/unsend">
-                <button type="submit" class="btn btn-secondary">Вернуть в «зафиксирован»</button>
-            </form>
-            {% endif %}
-            {% if frozen and can_export %}
-            <a class="btn btn-secondary" href="/admin/payouts/runs/{{ run.id }}/registry">Реестр xlsx</a>
-            {% endif %}
-            {% if frozen %}
-            <a class="btn btn-secondary" href="/admin/payroll/runs/{{ run.id }}">Строки табеля №{{ run.id }}</a>
-            {% endif %}
-        </div>
+        {{ run_actions('bottom', can_fix, can_send, can_export) }}
         {% if frozen %}<p class="field-hint">Аванс зафиксирован — отметки и вычеты заморожены. Для правки расфиксируйте.</p>{% endif %}
     </div>
 </div>
