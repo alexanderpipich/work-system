@@ -55,8 +55,9 @@ ROLE_LABELS = {
 #   shifts.upload — загрузка timebook (POST /admin/upload); страницу открывает upload.view
 #   upload.auto — настройка автозагрузки смен из timebook (П2, вкладка на /admin/upload)
 #   admin.settings, system.* — настройки и служебные инструменты
-#   schedules.admin_view, payroll.close/delete,
+#   schedules.admin_view, payroll.delete,
 #   rates.hard_delete, legal_entities.hard_delete
+#   payroll.close, payroll.any_period (табель не за полмесяца) — суперадмин и HR-руководитель
 # Роли superadmin и hr_lead создаёт, назначает, удаляет и сбрасывает им пароль только
 # суперадмин — can_manage_role (П4.8).
 
@@ -104,6 +105,8 @@ HR_LEAD_OWN_PERMISSIONS = {
     "weekly.manage", "upload.view",
     # Владелец 13.10.2026: на дашборде HR-руководителя открыты Audit Log и Классификатор магазинов.
     "audit.view", "stores.view", "stores.manage",
+    # Владелец 13.10.2026: закрытие периода и табель за произвольный период; удаления — суперадмину.
+    "payroll.close", "payroll.any_period",
 }
 # Права «свой участок» ТМ: у HR-руководителя вместо них *_any / *.manage, иначе экран
 # недельного отчёта и авансов считал бы его рядовым ТМ со своими сотрудниками.

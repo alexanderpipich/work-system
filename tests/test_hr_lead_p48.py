@@ -1,6 +1,7 @@
 """П4.8 A: роль hr_lead — «HR-руководитель»: все права, кроме технических суперадмина;
 роли superadmin/hr_lead трогает только суперадмин."""
 
+import datetime
 import os
 import unittest
 from types import SimpleNamespace
@@ -15,7 +16,7 @@ from sqlalchemy.pool import StaticPool
 
 from database import Base
 from dependencies import current_user, get_db
-from models import AuditLog, CitizenshipRegime, Country, User
+from models import AuditLog, CitizenshipRegime, Country, PayrollRun, User
 from navigation import PAYOUTS_GROUPS, build_navigation
 from rbac import (HR_LEAD_EXCLUDED, PERMISSIONS, ROLE_LABELS, can_manage_role, has_permission,
                   role_choices_for)
@@ -25,7 +26,7 @@ SUPERADMIN = SimpleNamespace(id=1, role="superadmin", is_admin=True, employee_na
 # Права кабинетов сотрудника и рекрутера — не «функции», а вход в свой кабинет.
 CABINET_ONLY = {"profile.own", "documents.own", "schedules.own", "headhunter.dashboard"}
 SUPERADMIN_ONLY = {"shifts.upload", "upload.auto", "admin.settings", "system.technical", "system.maintenance",
-                   "payroll.close", "payroll.delete", "rates.hard_delete",
+                   "payroll.delete", "rates.hard_delete",
                    "legal_entities.hard_delete"}
 
 
@@ -43,7 +44,8 @@ class HrLeadPermissionTests(unittest.TestCase):
         for permission in ("users.manage", "users.hard_delete", "rates.manage", "payroll.manage", "payroll.send",
                            "adjustments.manage", "lmk.manage", "legal_entities.manage", "email.manage",
                            "weekly.manage", "upload.view", "hr_team.manage", "audit.hr_view",
-                           "audit.view", "stores.view", "stores.manage"):
+                           "audit.view", "stores.view", "stores.manage",
+                           "payroll.close", "payroll.any_period"):
             with self.subTest(permission=permission):
                 self.assertTrue(has_permission(HR_LEAD, permission))
 
@@ -51,6 +53,16 @@ class HrLeadPermissionTests(unittest.TestCase):
         for permission in sorted(SUPERADMIN_ONLY | HR_LEAD_EXCLUDED):
             with self.subTest(permission=permission):
                 self.assertFalse(has_permission(HR_LEAD, permission))
+
+    def test_any_period_for_hr_lead_not_economist(self):
+        from routers.payroll import PERIOD_REFUSAL, period_comment_or_refusal
+
+        start, end = datetime.date(2026, 10, 1), datetime.date(2026, 10, 7)
+        for user in (HR_LEAD, SUPERADMIN):
+            with self.subTest(role=user.role):
+                self.assertEqual(period_comment_or_refusal(user, start, end, "к"), ("[произвольный период] к", None))
+        economist = SimpleNamespace(id=5, role="economist", is_admin=False)
+        self.assertEqual(period_comment_or_refusal(economist, start, end, "к"), ("к", PERIOD_REFUSAL))
 
     def test_protected_roles(self):
         self.assertFalse(can_manage_role(HR_LEAD, "superadmin"))
@@ -116,6 +128,26 @@ class HrLeadRoutesTests(unittest.TestCase):
 
     def _denied(self):
         return self.Session().query(AuditLog).filter(AuditLog.action == "users.denied").count()
+
+    def test_runs_close_open_delete_hidden(self):
+        session = self.Session()
+        session.add(PayrollRun(id=10, kind="period", status="fixed", date_from=datetime.date(2026, 9, 16),
+                               date_to=datetime.date(2026, 9, 30)))
+        session.add(PayrollRun(id=11, kind="period", status="sent", date_from=datetime.date(2026, 9, 1),
+                               date_to=datetime.date(2026, 9, 15)))
+        session.commit()
+        session.close()
+        page = self.client.get("/admin/payroll/runs").text
+        self.assertIn("Закрыть период", page)
+        self.assertNotIn("/admin/payroll/runs/delete", page)
+        response = self.client.post("/admin/payroll/runs/delete", data={"run_id": "10"}, follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertIsNotNone(self.Session().query(PayrollRun).filter(PayrollRun.id == 10).first())
+        response = self.client.post("/admin/payroll/runs/close", data={"run_id": "11"}, follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.Session().query(PayrollRun).filter(PayrollRun.id == 11).first().status, "closed")
+        self.app.dependency_overrides[current_user] = lambda: SUPERADMIN
+        self.assertIn("/admin/payroll/runs/delete", self.client.get("/admin/payroll/runs").text)
 
     def test_upload_page_open_but_button_disabled(self):
         response = self.client.get("/admin/upload")

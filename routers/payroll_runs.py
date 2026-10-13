@@ -474,6 +474,7 @@ def payroll_runs_page(
         "payroll_runs.html",
         {
             "run_rows": build_run_rows(session),
+            "can_delete_runs": has_permission(user, "payroll.delete"),
             "error": error or None,
             "message": message or None
         }
