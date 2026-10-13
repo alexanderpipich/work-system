@@ -1043,7 +1043,7 @@ body:has(.page-full)   { --page-max: none; }
 .summary-line b { color: var(--text); font-weight: 700; }
 
 /* ── Рабочий стол (П4.9): боковая полоса-меню ─────────────────────────── */
-.with-rail { display: flex; align-items: stretch; }
+.with-rail { display: flex; align-items: stretch; min-height: 100vh; }
 .with-rail > .rail-main { flex: 1 1 auto; min-width: 0; }
 
 .rail {
@@ -1059,17 +1059,19 @@ body:has(.page-full)   { --page-max: none; }
     left: 0;
     bottom: 0;
     width: 64px;
-    background: var(--brand-blue);
-    color: #fff;
     transition: width .18s ease, box-shadow .18s ease;
 }
 .rail:hover .rail-panel,
 .rail:focus-within .rail-panel { width: 284px; box-shadow: var(--shadow-hover); }
 
+/* Панель — только ширина и тень; фон — на липкой .rail-inner (100vh): на коротких страницах
+   высота панели = высота контента, и фон на ней обрывался (П4.10). */
 .rail-inner {
     position: sticky;
     top: 0;
     height: 100vh;
+    background: var(--brand-blue);
+    color: #fff;
     display: flex;
     flex-direction: column;
     padding: 12px 10px;
@@ -1097,9 +1099,17 @@ body:has(.page-full)   { --page-max: none; }
     white-space: nowrap;
 }
 .rail-brand:hover { color: #fff; }
-.rail-brand img { width: 44px; height: 44px; border-radius: 10px; background: #fff; object-fit: contain; flex-shrink: 0; }
+.rail-brand img { width: 32px; height: 32px; margin: 0 6px; border-radius: 8px; background: #fff; object-fit: contain; flex-shrink: 0; }
 
-.rail-groups { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
+/* Прокрутка групп без системного скроллбара поверх подписей: в свёрнутой полосе скрыт,
+   в раскрытой — тонкий полупрозрачный. */
+.rail-groups { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.rail-groups::-webkit-scrollbar { width: 0; height: 0; }
+.rail:hover .rail-groups,
+.rail:focus-within .rail-groups { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .25) transparent; }
+.rail:hover .rail-groups::-webkit-scrollbar,
+.rail:focus-within .rail-groups::-webkit-scrollbar { width: 6px; }
+.rail-groups::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .25); border-radius: 3px; }
 .rail-group { margin-bottom: 2px; }
 
 .rail-head {
@@ -1179,6 +1189,8 @@ body:has(.page-full)   { --page-max: none; }
 /* Esc сворачивает полосу, даже если курсор над ней (до ухода мыши). */
 .rail.is-collapsed .rail-panel { width: 64px; box-shadow: none; }
 .rail.is-collapsed .rail-label { display: none; }
+.rail.is-collapsed .rail-groups { scrollbar-width: none; }
+.rail.is-collapsed .rail-groups::-webkit-scrollbar { width: 0; }
 
 @media (max-width: 720px) {
     .rail { display: none; }
