@@ -271,14 +271,23 @@
         data.append('week', week);
         Object.keys(fields).forEach(function (k) { data.append(k, fields[k]); });
         return fetch(url, { method: 'POST', body: data, credentials: 'same-origin' })
-            .then(function (r) { return r.json(); })
-            .then(function (res) {
-                if (!res.ok) { alert(res.error || 'Не сохранено'); return false; }
-                if (res.message) { alert(res.message); }
-                location.reload();
-                return true;
-            })
-            .catch(function () { alert('Нет связи — не сохранено'); return false; });
+            .then(function (r) {
+                return r.text().then(function (text) {
+                    var res;
+                    try { res = JSON.parse(text); } catch (err) {
+                        // Не JSON (500, страница входа после переадресации и т. п.) — показать как есть,
+                        // а не «Нет связи»: иначе серверная ошибка маскируется под сетевую.
+                        alert('Не сохранено: сервер ответил не JSON (HTTP ' + r.status +
+                              (r.redirected ? ', переадресация на ' + r.url : '') + ')\n\n' +
+                              text.replace(/\s+/g, ' ').trim().slice(0, 200));
+                        return false;
+                    }
+                    if (!res.ok) { alert(res.error || ('Не сохранено (HTTP ' + r.status + ')')); return false; }
+                    if (res.message) { alert(res.message); }
+                    location.reload();
+                    return true;
+                });
+            }, function () { alert('Нет связи — не сохранено'); return false; });
     }
 
     table.addEventListener('click', function (e) {
