@@ -161,6 +161,10 @@ class HrLeadRoutesTests(unittest.TestCase):
         self.assertEqual(self._user(3).role, "economist")
         self.assertEqual(self._denied(), 2)
 
+    def test_email_page_renders(self):
+        # Шаблон падал на {{ log.status }} в CSS-комментарии (с волны дизайна 1).
+        self.assertEqual(self.client.get("/admin/email/test").status_code, 200)
+
     def test_password_reset_of_superadmin_denied(self):
         response = self.client.post("/admin/change-password", data={"user_id": 1, "new_password": "secret1"},
                                     follow_redirects=False)
