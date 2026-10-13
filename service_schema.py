@@ -24,3 +24,8 @@ def ensure_service_columns():
         connection.execute(text(
             "ALTER TABLE stores ADD COLUMN IF NOT EXISTS rate_region VARCHAR"
         ))
+        # Ставка без формата — на все форматы (так её создаёт недельный отчёт, П4.6), модель
+        # давно nullable; в старых базах колонка осталась NOT NULL, и вставка падала 500-кой.
+        connection.execute(text(
+            "ALTER TABLE rates ALTER COLUMN format DROP NOT NULL"
+        ))

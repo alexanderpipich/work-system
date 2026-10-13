@@ -305,6 +305,45 @@ class WeeklyRouteTests(unittest.TestCase):
         response = self.client.get("/admin/payouts/weekly", follow_redirects=False)
         self.assertEqual((response.status_code, response.headers["location"]), (302, "/"))
 
+    def test_page_shows_non_json_answer_instead_of_no_connection(self):
+        # Прод: 500 text/plain на сохранении ставки показывался как «Нет связи». Теперь — статус и
+        # начало тела; «Нет связи» — только когда fetch не дошёл до сервера.
+        self._as(10)
+        html = self.client.get("/admin/payouts/weekly").text
+        self.assertIn("сервер ответил не JSON (HTTP ' + r.status", html)
+        self.assertIn(".slice(0, 200)", html)
+        self.assertIn("}, function () { alert('Нет связи — не сохранено'); return false; });", html)
+
+    def test_filter_checkboxes_inline(self):
+        # Флажки «без ТМ / без реквизитов / без ЧТС» — в строку, 16 px (без стилей .field их растягивал).
+        self._as(10)
+        html = self.client.get("/admin/payouts/weekly").text
+        block = html[html.index('class="field wr-filter-checks"'):]
+        block = block[:block.index("</div>")]
+        for name in ("no_tm", "no_requisites", "no_rate"):
+            self.assertIn(f'name="{name}"', block)
+        self.assertIn(".wr-filter-checks .check { display: inline-flex; align-items: center; gap: 8px;", html)
+        self.assertIn(".wr-filter-checks .check input { flex: none; width: 16px; height: 16px;", html)
+
+
+class RateFormatNullableMigrationTests(unittest.TestCase):
+    """Прод: rates.format в старой базе NOT NULL, модель — nullable; индивидуальная ставка недельного
+    отчёта (без формата = на все форматы) падала NotNullViolation → 500 «Нет связи»."""
+
+    def test_migration_drops_not_null_on_rates_format(self):
+        import service_schema
+
+        connection = mock.MagicMock()
+        engine = mock.MagicMock()
+        engine.begin.return_value.__enter__.return_value = connection
+        with mock.patch.object(service_schema, "engine", engine):
+            service_schema.ensure_service_columns()
+        executed = [str(call.args[0]) for call in connection.execute.call_args_list]
+        self.assertIn("ALTER TABLE rates ALTER COLUMN format DROP NOT NULL", executed)
+
+    def test_model_keeps_format_nullable(self):
+        self.assertTrue(Rate.__table__.c.format.nullable)
+
 
 if __name__ == "__main__":
     unittest.main()
