@@ -28,6 +28,7 @@ from docx.text.run import Run
 TEMPLATES_DIR = Path(__file__).resolve().parent / "data" / "templates"
 CONTRACT_TEMPLATE = TEMPLATES_DIR / "contract_template.docx"
 PETITION_TEMPLATE = TEMPLATES_DIR / "petition_template.docx"
+RECOMMENDATION_TEMPLATE = TEMPLATES_DIR / "recommendation_template.docx"
 
 HIGHLIGHT = WD_COLOR_INDEX.YELLOW
 NO_DATA = "НЕТ ДАННЫХ"
@@ -335,6 +336,27 @@ PETITION_SUBS = [
 ]
 
 
+# ── Карта подстановок: рекомендательное письмо (П4.11) ──────────────────────
+# Шапка и подпись — юрлицо, в теле — ФИО (им. падеж, один раз), город и должность.
+# Тело безличное: без имени и местоимений по полу, склонений нет.
+
+RECOMMENDATION_SUBS = [
+    Sub("Общество с ограниченной ответственностью", 'Общество с ограниченной ответственностью ООО УК "АЛЬЯНС"',
+        "le_full_name"),
+    Sub("ОГРН ", "1197746013068", "le_ogrn"),
+    Sub("ОГРН ", "770301001", "le_kpp"),
+    Sub("ОГРН ", "7727404143", "le_inn"),
+    Sub("Дальневосточный", "193313, г. Санкт-Петербург, пр-кт. Дальневосточный, д. 16, к. 1", "le_actual_address"),
+    Sub("Настоящим подтверждаем", "Иванов Иван Иванович", "fio"),
+    Sub("Настоящим подтверждаем", "г. Санкт-Петербург", "city"),
+    Sub("Настоящим подтверждаем", "работник торгового зала", "position"),
+    Sub("Директор ООО", 'Директор ООО УК "АЛЬЯНС"', "signer"),
+    # Дата раньше ФИО директора: якорь — ФИО из шаблона.
+    Sub("Шестак Сергей Николаевич", "«13» октября 2026 г", "recommendation_date"),
+    Sub("Шестак Сергей Николаевич", "Шестак Сергей Николаевич", "le_director_name"),
+]
+
+
 def generate_contract(values, allow_missing=False, template_path=CONTRACT_TEMPLATE, with_patent=True):
     """bytes .docx трудового договора и список недостающих ключей."""
     subs = CONTRACT_SUBS if with_patent else [s for s in CONTRACT_SUBS if s.key != "patent_line"]
@@ -346,6 +368,10 @@ def generate_contract(values, allow_missing=False, template_path=CONTRACT_TEMPLA
 
 def generate_petition(values, allow_missing=False, template_path=PETITION_TEMPLATE):
     return render(Path(template_path), PETITION_SUBS, values, allow_missing=allow_missing)
+
+
+def generate_recommendation(values, allow_missing=False, template_path=RECOMMENDATION_TEMPLATE):
+    return render(Path(template_path), RECOMMENDATION_SUBS, values, allow_missing=allow_missing)
 
 
 def today():

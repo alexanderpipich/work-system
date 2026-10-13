@@ -1,8 +1,11 @@
-"""Договоры (П4): список сотрудников с договорами и патентами, создание договора
-и ходатайства по шаблонам с проверкой полноты данных."""
+"""Договоры (П4): список сотрудников с договорами и патентами, создание договора,
+ходатайства и рекомендательного письма (П4.11) по шаблонам с проверкой полноты данных."""
 
+import json
 import re
 from datetime import datetime
+
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -12,11 +15,12 @@ from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
 from contract_data import (contract_document_type, contract_fields, default_legal_entity, needs_patent,
-                           patent_default_until, petition_fields, regions, save_fixes, suggest_contract_number)
-from contract_generator import TemplateMismatch, generate_contract, generate_petition
+                           petition_fields, recommendation_fields, regions, save_fixes, suggest_contract_number)
+from contract_generator import TemplateMismatch, generate_contract, generate_petition, generate_recommendation
 from dependencies import RedirectException, current_user, get_db
 from document_helpers import preview_kind
-from employee_profile import DOC_CONTRACT, DOC_PATENT, DOC_PETITION, employee_profile, patent_expiry
+from employee_profile import (DOC_CONTRACT, DOC_PATENT, DOC_PETITION, DOC_RECOMMENDATION, employee_profile,
+                              patent_expiry)
 from file_storage import storage_response, storage_save
 from models import Country, DocumentType, EmployeeDocument, LegalEntity, Region, Shift, User
 from rbac import ROLE_EMPLOYEE, TM_ROLE_VALUES, has_permission
@@ -30,6 +34,10 @@ templates.env.globals["preview_kind"] = preview_kind
 DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 EXPIRING_DAYS = 30
 INACTIVE = {"archived", "rejected"}
+KINDS = {"contract", "petition", "recommendation"}
+DOC_TYPES = {"contract": DOC_CONTRACT, "petition": DOC_PETITION, "recommendation": DOC_RECOMMENDATION}
+TITLES = {"contract": "Договор", "petition": "Ходатайство", "recommendation": "Рекомендация"}
+DOCUMENT_TYPES_FILE = Path(__file__).resolve().parent.parent / "data" / "reference" / "document_types.json"
 
 
 def require_contracts_view(user=Depends(current_user)):
@@ -179,6 +187,7 @@ def _form_values(source):
         "city": normalize_text(get("city")),
         "position": normalize_text(get("position")),
         "petition_date": _date(get("petition_date")),
+        "recommendation_date": _date(get("recommendation_date")),
         "legal_entity_id": int(get("legal_entity_id") or 0),
         "region_id": int(get("region_id") or 0),
     }
@@ -190,23 +199,28 @@ def _context(session, employee, kind, form):
     region = session.get(Region, form["region_id"]) if form["region_id"] else profile["region"]
     today = business_today()
     errors = []
+    if kind != "petition" and not form["city"] and region and region.patent_territory:
+        form["city"] = region.patent_territory
     if kind == "petition":
         form["petition_date"] = form["petition_date"] or today
         fields, values = petition_fields(session, profile, entity, region, form)
         with_patent = True
+    elif kind == "recommendation":
+        form["recommendation_date"] = form["recommendation_date"] or today
+        fields, values = recommendation_fields(session, profile, entity, form)
+        with_patent = needs_patent(session, profile)
     else:
         form["contract_date"] = form["contract_date"] or today
         form["contract_number"] = form["contract_number"] or suggest_contract_number(session, form["contract_date"])
-        if not form["city"] and region and region.patent_territory:
-            form["city"] = region.patent_territory
         with_patent = needs_patent(session, profile)
-        default_until = patent_default_until(profile, form["contract_date"]) if with_patent else None
-        if not form["term_until"] and not form["term_indefinite"]:
-            if default_until:
-                form["term_until"] = default_until
-            else:
-                form["term_indefinite"] = True
+        # При патенте договор только срочный: срок по умолчанию — окончание патента (П4.11 A1).
+        if with_patent:
+            form["term_until"] = form["term_until"] or profile["patent_expiry"]
+        elif not form["term_until"] and not form["term_indefinite"]:
+            form["term_indefinite"] = True
         fields, values, errors, with_patent = contract_fields(session, profile, entity, region, form)
+        if with_patent:
+            form["term_indefinite"] = False
     return {
         "profile": profile,
         "entity": entity,
@@ -233,9 +247,21 @@ def _render_form(request, session, employee, kind, form, message="", error=""):
 def contract_form(request: Request, kind: str, user_id: int, session: Session = Depends(get_db),
                   user=Depends(require_contracts_manage)):
     employee = session.get(User, user_id)
-    if kind not in {"contract", "petition"} or employee is None:
+    if kind not in KINDS or employee is None:
         return RedirectResponse("/admin/contracts?error=" + "Сотрудник не найден", 302)
     return _render_form(request, session, employee, kind, _form_values(request.query_params))
+
+
+def _document_type(session, type_name):
+    """Тип документа; рекомендательное письмо (П4.11) заводится сам — из справочника
+    data/reference/document_types.json, чтобы на проде не ждать прогона seed."""
+    doc_type = contract_document_type(session, type_name)
+    if doc_type is None and type_name == DOC_RECOMMENDATION:
+        spec = next(t for t in json.loads(DOCUMENT_TYPES_FILE.read_text(encoding="utf-8")) if t["name"] == type_name)
+        doc_type = DocumentType(**{key: value for key, value in spec.items() if hasattr(DocumentType, key)})
+        session.add(doc_type)
+        session.flush()
+    return doc_type
 
 
 def _safe_filename(text):
@@ -246,7 +272,7 @@ def _safe_filename(text):
 async def contract_submit(request: Request, kind: str, user_id: int, session: Session = Depends(get_db),
                           user=Depends(require_contracts_manage)):
     employee = session.get(User, user_id)
-    if kind not in {"contract", "petition"} or employee is None:
+    if kind not in KINDS or employee is None:
         return RedirectResponse("/admin/contracts", 302)
     raw = await request.form()
     form = _form_values(raw)
@@ -271,18 +297,20 @@ async def contract_submit(request: Request, kind: str, user_id: int, session: Se
     try:
         if kind == "petition":
             content, missing = generate_petition(context["values"], allow_missing=True)
+        elif kind == "recommendation":
+            content, missing = generate_recommendation(context["values"], allow_missing=True)
         else:
             content, missing = generate_contract(context["values"], allow_missing=True, with_patent=context["with_patent"])
     except TemplateMismatch as exc:
         return _render_form(request, session, employee, kind, form, error=f"Шаблон не совпал с картой подстановок: {exc}")
 
-    doc_date = form["petition_date"] if kind == "petition" else form["contract_date"]
-    type_name = DOC_PETITION if kind == "petition" else DOC_CONTRACT
-    doc_type = contract_document_type(session, type_name)
+    doc_date = {"petition": form["petition_date"], "recommendation": form["recommendation_date"]}.get(kind, form["contract_date"])
+    type_name = DOC_TYPES[kind]
+    doc_type = _document_type(session, type_name)
     if doc_type is None:
         return _render_form(request, session, employee, kind, form,
                             error=f"Нет типа документа «{type_name}» — загрузите справочники (seed_reference_data.py)")
-    title = "Ходатайство" if kind == "petition" else "Договор"
+    title = TITLES[kind]
     filename = f"{title}_{doc_date:%Y-%m-%d}_{_safe_filename(employee.employee_name)}.docx"
     key = storage_save(f"generated_files/contracts/{employee.id}/{now_utc():%Y%m%d-%H%M%S}_{filename}",
                        content, content_type=DOCX_CONTENT_TYPE)
@@ -292,9 +320,9 @@ async def contract_submit(request: Request, kind: str, user_id: int, session: Se
         document_type_id=doc_type.id,
         document_number=form["contract_number"] if kind == "contract" else None,
         issue_date=doc_date,
-        expiry_date=None if kind == "petition" or form["term_indefinite"] else form["term_until"],
+        expiry_date=form["term_until"] if kind == "contract" and not form["term_indefinite"] else None,
         is_permanent=kind == "contract" and form["term_indefinite"],
-        extra_field_1_value=context["entity"].name if kind == "contract" and context["entity"] else None,
+        extra_field_1_value=context["entity"].name if kind != "petition" and context["entity"] else None,
         extra_field_2_value=context["values"].get("position") if kind == "contract" else None,
         file_path=key,
         original_filename=filename,
@@ -305,7 +333,7 @@ async def contract_submit(request: Request, kind: str, user_id: int, session: Se
     )
     session.add(document)
     session.flush()
-    create_audit_log(session, request, user, "contract.generated" if kind == "contract" else "petition.generated",
+    create_audit_log(session, request, user, f"{kind}.generated",
                      "employee_document", document.id, employee.employee_name,
                      new_value={"type": type_name, "number": document.document_number, "missing": missing,
                                 "legal_entity": document.extra_field_1_value,

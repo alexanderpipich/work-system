@@ -153,6 +153,23 @@
     "alert_days": "30,14,7,0"
   },
   {
+    "name": "РЕКОМЕНДАТЕЛЬНОЕ ПИСЬМО",
+    "sort_order": 17,
+    "description": "Рекомендательное письмо работодателя (по просьбе сотрудника).",
+    "help_text": null,
+    "citizenship_filter": null,
+    "requires_number": false,
+    "requires_issue_date": true,
+    "requires_expiry_date": false,
+    "allow_permanent": true,
+    "extra_field_1_label": "Юрлицо",
+    "extra_field_2_label": null,
+    "is_required": false,
+    "is_active": true,
+    "is_student_doc": false,
+    "alert_days": null
+  },
+  {
     "name": "СНИЛС",
     "sort_order": 5,
     "description": null,

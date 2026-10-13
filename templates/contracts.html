@@ -74,6 +74,7 @@
                                 {% if can_manage %}
                                 <a class="btn btn-primary btn-sm" href="/admin/contracts/contract/{{ row.user.id }}">Создать договор</a>
                                 {% if row.patent %}<a class="btn btn-secondary btn-sm" href="/admin/contracts/petition/{{ row.user.id }}">Создать ходатайство</a>{% endif %}
+                                <a class="btn btn-secondary btn-sm" href="/admin/contracts/recommendation/{{ row.user.id }}">Создать рекомендацию</a>
                                 {% endif %}
                                 {% if row.contract and row.contract.file_path %}
                                 {{ preview_link('/documents/preview/%s' % row.contract.id, '/documents/files/%s' % row.contract.id, preview_kind(row.contract.file_path), 'Договор — ' ~ row.user.employee_name, css_class='btn btn-secondary btn-sm') }}
