@@ -403,7 +403,29 @@
         }
     }
 
-    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); initRail(); initDrawer(); }
+    /* ── Поля по роли (/admin/users, /admin/create-user) ──────────────────
+       В форме с <select data-role-select> блок [data-role-fields="employee brigadier"] виден
+       только при выбранной роли из списка; скрытые поля выключены (disabled) и не уходят
+       на сервер. Без перезагрузки страницы. */
+    function applyRoleFields(form, role) {
+        Array.prototype.forEach.call(form.querySelectorAll('[data-role-fields]'), function (block) {
+            var show = block.getAttribute('data-role-fields').split(/\s+/).indexOf(role) !== -1;
+            block.hidden = !show;
+            Array.prototype.forEach.call(block.querySelectorAll('input, select, textarea'), function (field) {
+                field.disabled = !show;
+            });
+        });
+    }
+    function initRoleFields() {
+        Array.prototype.forEach.call(document.querySelectorAll('select[data-role-select]'), function (select) {
+            var form = select.form;
+            if (!form) { return; }
+            select.addEventListener('change', function () { applyRoleFields(form, select.value); });
+            applyRoleFields(form, select.value);
+        });
+    }
+
+    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); initRail(); initDrawer(); initRoleFields(); }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

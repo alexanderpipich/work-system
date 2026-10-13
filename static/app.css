@@ -400,6 +400,8 @@ body:has(.page-full)   { --page-max: none; }
     box-shadow: 0 0 0 3px rgba(11, 20, 117, .08);
 }
 
+/* Поля по роли (/admin/users): скрытый блок не показывать, даже если у него свой display. */
+[data-role-fields][hidden] { display: none !important; }
 .field-hint { margin: 7px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
 
 .toolbar {
