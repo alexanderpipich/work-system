@@ -64,31 +64,70 @@
             <div class="field">
                 <label>Роль</label>
 
-                <select name="role" id="role-select">
+                <select name="role" id="role-select" data-role-select>
                     {% for code, label in role_choices or ROLE_CHOICES %}
                     <option value="{{ code }}" {% if code == 'employee' %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
 
-            <div class="field" id="brigadier-store-field" style="display:none;">
+            {# Поля по роли (ui.js, initRoleFields): по умолчанию выбран сотрудник. Скрытые поля
+               выключены (disabled) и не отправляются; сервер их по роли и так не трогает. #}
+            {% set line_roles = LINE_STAFF_ROLES | join(' ') %}
+            <div class="field" id="brigadier-store-field" data-role-fields="brigadier" hidden>
                 <label>Магазин бригадира</label>
 
                 <input
                     type="text"
                     name="brigadier_store"
                     placeholder="Например: Лента-318"
+                    disabled
                 >
             </div>
 
-            <div class="field" id="economist-cities-field" style="display:none;">
+            <div class="field" id="economist-cities-field" data-role-fields="economist tm" hidden>
                 <label>Доступные города</label>
 
                 <input
                     type="text"
                     name="scope_cities"
                     placeholder="Москва, Санкт-Петербург"
+                    disabled
                 >
+            </div>
+
+            <div class="field" data-role-fields="{{ line_roles }}">
+                <label for="job_title">Должность</label>
+                <select id="job_title" name="job_title">
+                    <option value="">— не выбрано —</option>
+                    {% for jt in job_titles %}
+                    <option value="{{ jt }}">{{ jt }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field" data-role-fields="{{ line_roles }}">
+                <label for="tm_id">Закреплённый ТМ</label>
+                <select id="tm_id" name="tm_id">
+                    <option value="0">— не закреплён —</option>
+                    {% for tm in tm_users %}
+                    <option value="{{ tm.id }}">{{ tm.employee_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field" data-role-fields="{{ line_roles }}">
+                <label for="birth_date">Дата рождения</label>
+                <input id="birth_date" type="date" name="birth_date">
+            </div>
+
+            <div class="field" data-role-fields="{{ line_roles }}">
+                <label for="gender">Пол</label>
+                <select id="gender" name="gender">
+                    <option value="">— не указан —</option>
+                    <option value="m">мужской</option>
+                    <option value="f">женский</option>
+                </select>
             </div>
 
             <div class="field">
@@ -105,31 +144,4 @@
         </form>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-const roleSelect = document.getElementById("role-select");
-
-const brigadierField = document.getElementById("brigadier-store-field");
-const economistField = document.getElementById("economist-cities-field");
-
-function updateRoleFields() {
-
-    brigadierField.style.display = "none";
-    economistField.style.display = "none";
-
-    if (roleSelect.value === "brigadier") {
-        brigadierField.style.display = "block";
-    }
-
-    if (["economist", "tm"].includes(roleSelect.value)) {
-        economistField.style.display = "block";
-    }
-}
-
-roleSelect.addEventListener("change", updateRoleFields);
-
-updateRoleFields();
-</script>
 {% endblock %}

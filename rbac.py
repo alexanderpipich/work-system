@@ -39,6 +39,11 @@ TM_ROLE_VALUES = (ROLE_TM, "hr_manager")
 # решают права (payroll.view и т.п.): кадровик в выплаты не попадает.
 HR_CABINET_ROLES = frozenset({ROLE_HR_LEAD, ROLE_TM, ROLE_HR_CLERK})
 
+# Линейный персонал: у них в карточке /admin/users есть должность, закреплённый ТМ, дата
+# рождения и пол (бригадир — из линейного состава). Офисным ролям эти поля не показываются,
+# а при сохранении не трогаются — старые значения из импорта остаются в базе.
+LINE_STAFF_ROLES = (ROLE_EMPLOYEE, ROLE_BRIGADIER)
+
 # Подписи ролей в интерфейсе. Ключи — канонические роли.
 ROLE_LABELS = {
     ROLE_SUPERADMIN: "Суперадмин",

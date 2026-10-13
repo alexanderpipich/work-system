@@ -173,9 +173,14 @@
                 </summary>
 
                 {% set editable = can_manage and user.id in manageable %}
+                {# Должность, ТМ, дата рождения, пол — только линейному персоналу; магазин — бригадиру.
+                   Офисным ролям не показываем (старые значения из импорта остаются в базе). #}
+                {% set crole = canonical_role(user) %}
+                {% set line_staff = crole in LINE_STAFF_ROLES %}
                 <div class="ucard">
                     <div class="summary-line">
-                        <span>Должность: <b>{{ user.job_title or '—' }}</b></span>
+                        {% if line_staff %}<span>Должность: <b>{{ user.job_title or '—' }}</b></span>{% endif %}
+                        {% if crole == 'brigadier' %}<span>Магазин бригадира: <b>{{ user.brigadier_store or '—' }}</b></span>{% endif %}
                         <span>Гражданство: <b>{{ user.citizenship_country or '—' }}</b></span>
                         <span>ИНН: <b>{{ user.inn or '—' }}</b></span>
                         <span>Студент: <b>{{ 'да' if user.is_student else 'нет' }}</b></span>
@@ -183,8 +188,11 @@
                         {% if user.economist_stores %}<span>Магазины: <b>{{ user.economist_stores }}</b></span>{% endif %}
                         {% if not editable %}
                         <span>Телефон: <b>{{ user.phone or '—' }}</b></span>
+                        {% if line_staff %}
                         <span>Дата рождения: <b>{{ user.birth_date.strftime('%d.%m.%Y') if user.birth_date else '—' }}</b></span>
+                        <span>Пол: <b>{{ {'m': 'мужской', 'f': 'женский'}.get(user.gender, '—') }}</b></span>
                         <span>ТМ: <b>{{ tm_names.get(user.tm_id, '—') if user.tm_id else '—' }}</b></span>
+                        {% endif %}
                         <span>Кабинет: <b>{{ 'есть' if user.password_hash else 'нет' }}</b></span>
                         {% endif %}
                     </div>
@@ -216,17 +224,16 @@
 
                                 <div class="field">
                                     <label>Роль</label>
-                                    <select name="role">
-                                        {% set crole = canonical_role(user) %}
+                                    <select name="role" data-role-select>
                                         {% for code, label in role_choices %}
                                         <option value="{{ code }}" {% if crole == code %}selected{% endif %}>{{ label }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
 
-                                <div class="field">
+                                <div class="field" data-role-fields="brigadier"{% if crole != 'brigadier' %} hidden{% endif %}>
                                     <label>Магазин бригадира</label>
-                                    <input type="text" name="brigadier_store" value="{{ user.brigadier_store or '' }}" placeholder="Магазин бригадира">
+                                    <input type="text" name="brigadier_store" value="{{ user.brigadier_store or '' }}" placeholder="Магазин бригадира"{% if crole != 'brigadier' %} disabled{% endif %}>
                                 </div>
 
                                 <div class="field field-full">
@@ -250,9 +257,9 @@
                                     </select>
                                 </div>
 
-                                <div class="field">
+                                <div class="field" data-role-fields="{{ LINE_STAFF_ROLES | join(' ') }}"{% if not line_staff %} hidden{% endif %}>
                                     <label>Должность</label>
-                                    <select name="job_title">
+                                    <select name="job_title"{% if not line_staff %} disabled{% endif %}>
                                         <option value="">— не выбрано —</option>
                                         {% for jt in job_titles %}
                                         <option value="{{ jt }}" {% if user.job_title == jt %}selected{% endif %}>{{ jt }}</option>
@@ -265,14 +272,23 @@
                                     <input type="email" name="email" value="{{ user.email or '' }}" placeholder="name@example.com">
                                 </div>
 
-                                <div class="field">
+                                <div class="field" data-role-fields="{{ LINE_STAFF_ROLES | join(' ') }}"{% if not line_staff %} hidden{% endif %}>
                                     <label>Дата рождения</label>
-                                    <input type="date" name="birth_date" value="{{ user.birth_date.isoformat() if user.birth_date else '' }}">
+                                    <input type="date" name="birth_date" value="{{ user.birth_date.isoformat() if user.birth_date else '' }}"{% if not line_staff %} disabled{% endif %}>
                                 </div>
 
-                                <div class="field">
+                                <div class="field" data-role-fields="{{ LINE_STAFF_ROLES | join(' ') }}"{% if not line_staff %} hidden{% endif %}>
+                                    <label>Пол</label>
+                                    <select name="gender"{% if not line_staff %} disabled{% endif %}>
+                                        <option value="">— не указан —</option>
+                                        <option value="m" {% if user.gender == 'm' %}selected{% endif %}>мужской</option>
+                                        <option value="f" {% if user.gender == 'f' %}selected{% endif %}>женский</option>
+                                    </select>
+                                </div>
+
+                                <div class="field" data-role-fields="{{ LINE_STAFF_ROLES | join(' ') }}"{% if not line_staff %} hidden{% endif %}>
                                     <label>Закреплённый ТМ</label>
-                                    <select name="tm_id">
+                                    <select name="tm_id"{% if not line_staff %} disabled{% endif %}>
                                         <option value="0">— не закреплён —</option>
                                         {% for tm in tm_users %}
                                         {% if tm.id != user.id %}

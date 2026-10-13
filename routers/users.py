@@ -14,8 +14,8 @@ from access_scope_helpers import active_scope_values, sync_access_scopes
 from country_helpers import build_country_matcher
 from dependencies import get_db
 from inn_sync import set_employee_inn
-from rbac import (ROLE_CHOICES, ROLE_LABELS, TM_ROLE_VALUES, can_manage_role, can_manage_user, canonical_role,
-                  has_permission, require_permission, role_choices_for)
+from rbac import (LINE_STAFF_ROLES, ROLE_BRIGADIER, ROLE_CHOICES, ROLE_LABELS, TM_ROLE_VALUES, can_manage_role,
+                  can_manage_user, canonical_role, has_permission, require_permission, role_choices_for)
 from legal_entity_helpers import active_legal_entities
 from models import JOB_TITLES, Country, Requisite, Shift, TimebookEmployee, User
 from tm_assignment import set_employee_tm, tm_users
@@ -32,7 +32,8 @@ from utils import (
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 # Подписи ролей — только из rbac.ROLE_LABELS (П2).
-templates.env.globals.update(ROLE_LABELS=ROLE_LABELS, ROLE_CHOICES=ROLE_CHOICES, canonical_role=canonical_role)
+templates.env.globals.update(ROLE_LABELS=ROLE_LABELS, ROLE_CHOICES=ROLE_CHOICES, canonical_role=canonical_role,
+                             LINE_STAFF_ROLES=LINE_STAFF_ROLES)
 require_user_management = require_permission("users.manage", audit_denied=True)
 # Просмотр списка пользователей (П2): служебные роли видят карточки только для чтения.
 require_user_view = require_permission("users.view", audit_denied=True)
@@ -67,9 +68,53 @@ def _user_payload(user):
         "job_title": getattr(user, "job_title", None),
         "birth_date": user.birth_date.isoformat() if getattr(user, "birth_date", None) else None,
         "tm_id": getattr(user, "tm_id", None),
+        "gender": getattr(user, "gender", None),
         "email": getattr(user, "email", None),
     }
 
+
+
+def _apply_role_fields(session, request, admin, user, role, *, brigadier_store, job_title, birth_date, gender,
+                       tm_id, keep_empty=False):
+    """Поля карточки, зависящие от роли. «Магазин бригадира» — только бригадиру; должность,
+    дата рождения, пол и закреплённый ТМ — линейному персоналу (LINE_STAFF_ROLES). Другим ролям
+    эти поля не показываются и здесь не трогаются: старые значения (tm_id, должность от прошлого
+    импорта) остаются в базе. keep_empty — пустое поле не очищает значение (форма создания
+    для сотрудника, уже заведённого без кабинета); gender=None — поля не было в форме."""
+    if role == ROLE_BRIGADIER:
+        store = normalize_text(brigadier_store)
+        if store or not keep_empty:
+            user.brigadier_store = store or None
+    if role not in LINE_STAFF_ROLES:
+        return
+
+    # Должность: пустое ИЛИ одно из фиксированного списка; иначе не меняем.
+    job_title_clean = normalize_text(job_title)
+    if not job_title_clean:
+        if not keep_empty:
+            user.job_title = None
+    elif job_title_clean in JOB_TITLES:
+        user.job_title = job_title_clean
+
+    birth_date_clean = normalize_text(birth_date)
+    if not birth_date_clean:
+        if not keep_empty:
+            user.birth_date = None
+    else:
+        try:
+            user.birth_date = date.fromisoformat(birth_date_clean)
+        except ValueError:
+            pass  # кривая дата из формы — не меняем
+
+    if gender is not None:
+        if gender in {"m", "f"}:
+            user.gender = gender
+        elif not keep_empty:
+            user.gender = None
+
+    # ТМ: только пользователь с ролью ТМ и не сам сотрудник; иначе — снять (общий helper П4.6).
+    if tm_id or not keep_empty:
+        set_employee_tm(session, request, admin, user, tm_id, comment="/admin/users")
 
 
 def _default_city_scope(session, role, raw_scope):
@@ -140,6 +185,18 @@ def render_users(request: Request, session, message=None, error=None, filters=No
     return RedirectResponse("/admin/users" + (f"?{urlencode(params)}" if params else ""), status_code=302)
 
 
+def _create_context(session, admin, message=None, error=None):
+    return {
+        "message": message,
+        "error": error,
+        "legal_entities": active_legal_entities(session),
+        "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
+        "role_choices": role_choices_for(admin),
+        "job_titles": JOB_TITLES,
+        "tm_users": tm_users(session),
+    }
+
+
 @router.get("/admin/create-user", response_class=HTMLResponse)
 def create_user_page(
     request: Request,
@@ -149,13 +206,7 @@ def create_user_page(
     return templates.TemplateResponse(
         request,
         "create_user.html",
-        {
-            "message": None,
-            "error": None,
-            "legal_entities": active_legal_entities(session),
-            "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
-            "role_choices": role_choices_for(admin),
-        }
+        _create_context(session, admin)
     )
 
 
@@ -172,6 +223,10 @@ def create_user_submit(
     citizenship_country_id: int = Form(0),
     is_student: str = Form(""),
     legal_entity: str = Form(default=""),
+    job_title: str = Form(default=""),
+    birth_date: str = Form(default=""),
+    gender: str = Form(default=""),
+    tm_id: int = Form(0),
     session: Session = Depends(get_db),
     admin=Depends(require_user_management),
 ):
@@ -188,13 +243,7 @@ def create_user_submit(
         return templates.TemplateResponse(
             request,
             "create_user.html",
-            {
-                "error": "Выберите страну гражданства",
-                "message": None,
-                "legal_entities": active_legal_entities(session),
-                "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
-                "role_choices": role_choices_for(admin),
-            },
+            _create_context(session, admin, error="Выберите страну гражданства"),
             status_code=400,
         )
 
@@ -202,13 +251,7 @@ def create_user_submit(
         return templates.TemplateResponse(
             request,
             "create_user.html",
-            {
-                "error": error,
-                "message": None,
-                "legal_entities": active_legal_entities(session),
-                "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
-                "role_choices": role_choices_for(admin),
-            }
+            _create_context(session, admin, error=error)
         )
 
     # Кабинет выдаётся парой «телефон + пароль»; без обоих — сотрудник без кабинета.
@@ -232,7 +275,6 @@ def create_user_submit(
         session.add(user)
     user.role = role_clean
     user.is_admin = role_clean in {"admin", "superadmin"}
-    user.brigadier_store = normalize_text(brigadier_store) or None
     user.economist_stores = scope_value or None
     user.citizenship_country_id = citizenship_country_id
     user.is_student = bool(is_student)
@@ -243,6 +285,8 @@ def create_user_submit(
         user.password_is_temporary = True  # админ задал пароль — сотруднику предложить сменить
 
     session.flush()
+    _apply_role_fields(session, request, admin, user, role_clean, brigadier_store=brigadier_store,
+                       job_title=job_title, birth_date=birth_date, gender=gender, tm_id=tm_id, keep_empty=True)
     sync_access_scopes(session, request, admin, user, "city", scope_value)
     create_audit_log(
         session,
@@ -261,13 +305,7 @@ def create_user_submit(
     return templates.TemplateResponse(
         request,
         "create_user.html",
-        {
-            "message": "Сотруднику выдан кабинет" if old_value else "Пользователь создан",
-            "error": None,
-            "legal_entities": active_legal_entities(session),
-            "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
-            "role_choices": role_choices_for(admin),
-        }
+        _create_context(session, admin, message="Сотруднику выдан кабинет" if old_value else "Пользователь создан")
     )
 
 
@@ -661,6 +699,7 @@ def update_user(
     job_title: str = Form(default=""),
     birth_date: str = Form(default=""),
     tm_id: int = Form(0),
+    gender: str | None = Form(default=None),
     email: str | None = Form(default=None),
     f_user_id: str = Form(default=""),
     f_phone: str = Form(default=""),
@@ -730,35 +769,19 @@ def update_user(
         user.phone = phone_clean
     user.role = role_clean
     user.is_admin = role_clean in {"admin", "superadmin"}
-    user.brigadier_store = normalize_text(brigadier_store) or None
     city_values = sync_access_scopes(session, request, admin, user, "city", scope_value)
     user.economist_stores = ", ".join(city_values) or None
     user.citizenship_country_id = citizenship_country_id or None
     user.is_student = bool(is_student)
     user.legal_entity = normalize_text(legal_entity) or None
-    # Должность: пустое ИЛИ одно из фиксированного списка; иначе не меняем.
-    job_title_clean = normalize_text(job_title)
-    if not job_title_clean:
-        user.job_title = None
-    elif job_title_clean in JOB_TITLES:
-        user.job_title = job_title_clean
-
-    birth_date_clean = normalize_text(birth_date)
-    if not birth_date_clean:
-        user.birth_date = None
-    else:
-        try:
-            user.birth_date = date.fromisoformat(birth_date_clean)
-        except ValueError:
-            pass  # кривая дата из формы — не меняем
+    # Магазин бригадира, должность, дата рождения, пол, ТМ — по роли; скрытые не трогаем.
+    _apply_role_fields(session, request, admin, user, role_clean, brigadier_store=brigadier_store,
+                       job_title=job_title, birth_date=birth_date, gender=gender, tm_id=tm_id)
 
     # П4: почта для уведомлений о сроках документов (None — поля не было в форме).
     if email is not None:
         email_clean = normalize_text(email).lower()
         user.email = email_clean if "@" in email_clean else None
-
-    # ТМ: только пользователь с ролью ТМ и не сам сотрудник; иначе — снять (общий helper П4.6).
-    set_employee_tm(session, request, admin, user, tm_id, comment="/admin/users")
 
     inn_clean = normalize_text(inn)
     if inn_clean:
