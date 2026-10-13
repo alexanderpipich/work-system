@@ -17,7 +17,7 @@ from sqlalchemy.pool import StaticPool
 from database import Base
 from dependencies import current_user, get_db
 from models import AuditLog, CitizenshipRegime, Country, PayrollRun, User
-from navigation import PAYOUTS_GROUPS, build_navigation
+from navigation import build_navigation
 from rbac import (HR_LEAD_EXCLUDED, PERMISSIONS, ROLE_LABELS, can_manage_role, has_permission,
                   role_choices_for)
 
@@ -76,7 +76,7 @@ class HrLeadPermissionTests(unittest.TestCase):
         self.assertIn("economist", codes)
 
     def test_navigation(self):
-        groups = build_navigation(HR_LEAD) + build_navigation(HR_LEAD, PAYOUTS_GROUPS)
+        groups = build_navigation(HR_LEAD)  # П4.9: «Выплаты» — группа главного дашборда
         cards = {c["key"]: c for g in groups for c in g["cards"]}
         for key, url in (("users", "/admin/users"), ("rates", "/admin/rates"), ("adjustments", "/admin/adjustments"),
                          ("lmk", "/admin/lmk"), ("legal_entities", "/admin/legal-entities"),

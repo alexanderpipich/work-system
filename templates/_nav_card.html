@@ -23,7 +23,7 @@
 
 {% macro nav_groups(groups) -%}
 {% for group in groups %}
-    <section class="group">
+    <section class="group"{% if group.anchor %} id="{{ group.anchor }}"{% endif %}>
         <div class="group-hdr">
             <h2 class="group-title">{{ group.title }}</h2>
             <span class="group-count">{{ group.cards | length }}</span>
