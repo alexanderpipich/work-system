@@ -1,38 +1,54 @@
 {% extends "base.html" %}
 
-{% block title %}Команда HR{% endblock %}
-{% block brand_title %}Команда HR{% endblock %}
+{# /hr/team (П4.8): компактный блок на ТМ — ФИО, логин, кабинет, сотрудники (по tm_id), магазины
+   по сменам его сотрудников за 4 недели. Стрелка раскрывает под блоком прежнюю форму области
+   доступа (POST /hr/team/scopes без изменений); ?open={id} раскрывает блок после сохранения. #}
+
+{% block title %}Команда ТМ{% endblock %}
+{% block brand_title %}Команда ТМ{% endblock %}
 {% block brand_subtitle %}<p class="brand-subtitle">Назначение городов и отдельных магазинов ТМ</p>{% endblock %}
 
 {% block topbar_actions %}<a class="back-link" href="/hr">HR кабинет</a>{% endblock %}
 
 {% block head %}
 <style>
-    /* специфика страницы: сетка флажков области доступа и группировка магазинов по городам */
+    .tm-list { display: flex; flex-direction: column; gap: 10px; }
+    .tm-block { border: 1px solid var(--border); border-radius: var(--radius); background: #fff; overflow: hidden; }
+    .tm-block[open] { box-shadow: var(--shadow-hover); }
+    .tm-row {
+        list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px 18px;
+        flex-wrap: wrap; padding: 13px 16px; font-size: 13.5px;
+    }
+    .tm-row::-webkit-details-marker { display: none; }
+    .tm-block[open] > .tm-row { border-bottom: 1px solid var(--border); background: var(--surface-muted); }
+    .tm-row .tm-name { font-weight: 800; color: var(--brand-blue); font-size: 14.5px; min-width: 220px; }
+    .tm-row .tm-meta { color: var(--muted); }
+    .tm-row .tm-meta b { color: var(--text); }
+    .tm-row .no-cab { color: #b42318; }
+    .tm-row .tm-chev { margin-left: auto; color: #9ca3af; font-size: 18px; transition: transform .15s; }
+    .tm-block[open] > .tm-row .tm-chev { transform: rotate(180deg); }
+    .tm-body { padding: 14px 16px; }
+
+    /* форма области доступа: города и магазины по городам */
     .scope-form h3 { margin: 16px 0 8px; font-size: 14px; color: var(--brand-blue); }
     .scope-form h3:first-of-type { margin-top: 0; }
-
-    .scope-grid { display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 8px; }
-
+    .scope-grid { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 8px; }
     .scope-option {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        padding: 7px 9px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        background: #fff;
-        font-size: 13px;
-        cursor: pointer;
+        display: flex; align-items: center; gap: 7px; padding: 7px 9px; border: 1px solid var(--border);
+        border-radius: var(--radius-sm); background: #fff; font-size: 13px; cursor: pointer;
     }
     .scope-option:hover { background: #f7f8fa; }
     .scope-option input { width: auto; margin: 0; }
-
-    .folder { border-left: 3px solid #d8def4; padding: 8px 0 8px 14px; margin: 10px 0; }
-    .folder h4 { margin: 0 0 8px; color: var(--brand-blue); font-size: 13.5px; }
+    .scope-option[hidden] { display: none; }
+    .folder { border-left: 3px solid #d8def4; margin: 8px 0; }
+    .folder > summary { cursor: pointer; padding: 6px 12px; color: var(--brand-blue); font-weight: 700; font-size: 13.5px; }
+    .folder > .scope-grid { padding: 4px 0 8px 14px; }
+    .folder .count { color: var(--muted); font-weight: 400; }
+    .store-search { max-width: 260px; margin-bottom: 8px; }
+    .scope-actions { display: flex; gap: 8px; margin-top: 14px; }
 
     @media (max-width: 1000px) { .scope-grid { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 650px) { .scope-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 650px) { .scope-grid { grid-template-columns: 1fr; } .tm-row .tm-name { min-width: 0; } }
 </style>
 {% endblock %}
 
@@ -40,41 +56,76 @@
 <div class="page page-pad-top">
 
     {% if message %}<div class="alert alert-success mb-20">{{ message }}</div>{% endif %}
+    {% if not scopes_enabled %}
+    <div class="alert alert-warn mb-20">Области доступа сейчас выключены (<code>SCOPES_ENABLED</code>); закрепление сотрудников за ТМ — в еженедельном отчёте и карточке сотрудника.</div>
+    {% endif %}
 
-    <div class="card">
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr><th>ТМ</th><th>Телефон</th><th>Область доступа</th><th>Действие</th></tr>
-                </thead>
-                <tbody>
-                    {% for manager in managers %}{% set selected_cities = city_scopes.get(manager.id, []) or [] %}{% set selected_stores = store_scopes.get(manager.id, []) or [] %}
-                    <tr>
-                        <td>{{ manager.employee_name }}</td>
-                        <td>{{ manager.phone }}</td>
-                        <td>
-                            <form id="scope-{{ manager.id }}" method="post" action="/hr/team/scopes" class="scope-form">
-                                <input type="hidden" name="user_id" value="{{ manager.id }}">
+    <div class="tm-list">
+        {% for manager in managers %}
+        {% set selected_cities = city_scopes.get(manager.id, []) or [] %}
+        {% set selected_stores = store_scopes.get(manager.id, []) or [] %}
+        {% set employees_count, stores_count = counters.get(manager.id, (0, 0)) %}
+        <details class="tm-block" id="tm-{{ manager.id }}" {% if open_id == manager.id %}open{% endif %}>
+            <summary class="tm-row">
+                <span class="tm-name">{{ manager.employee_name }}</span>
+                <span class="tm-meta">{{ manager.phone or 'без логина' }}</span>
+                <span class="tm-meta {% if not manager.password_hash %}no-cab{% endif %}">{{ 'есть кабинет' if manager.password_hash else 'нет кабинета' }}</span>
+                <span class="tm-meta">сотрудников: <b>{{ employees_count }}</b></span>
+                <span class="tm-meta" title="Разные ТК в сменах его сотрудников за {{ team_store_days }} дней">магазинов за 4 недели: <b>{{ stores_count }}</b></span>
+                <span class="tm-chev" aria-hidden="true">▾</span>
+            </summary>
+            <div class="tm-body">
+                <form method="post" action="/hr/team/scopes" class="scope-form">
+                    <input type="hidden" name="user_id" value="{{ manager.id }}">
 
-                                <h3>Города</h3>
-                                <div class="scope-grid">{% for city in available_cities %}<label class="scope-option"><input type="checkbox" name="scope_cities" value="{{ city }}" {% if city in selected_cities %}checked{% endif %}><span>{{ city }}</span></label>{% endfor %}</div>
+                    <h3>Города</h3>
+                    <div class="scope-grid">{% for city in available_cities %}<label class="scope-option"><input type="checkbox" name="scope_cities" value="{{ city }}" {% if city in selected_cities %}checked{% endif %}><span>{{ city }}</span></label>{% endfor %}</div>
 
-                                <h3>Конкретные магазины <span class="muted">(не выбирать = все магазины выбранных городов)</span></h3>
-                                {% for city in available_cities %}
-                                <div class="folder">
-                                    <h4>{{ city }}</h4>
-                                    <div class="scope-grid">{% for store in stores_by_city.get(city, []) %}<label class="scope-option"><input type="checkbox" name="scope_stores" value="{{ store }}" {% if store in selected_stores %}checked{% endif %}><span>{{ store }}</span></label>{% endfor %}</div>
-                                </div>
-                                {% endfor %}
-                            </form>
-                        </td>
-                        <td><button form="scope-{{ manager.id }}" class="btn btn-primary btn-sm">Сохранить</button></td>
-                    </tr>
+                    <h3>Конкретные магазины <span class="muted">(не выбирать = все магазины выбранных городов)</span></h3>
+                    <input type="search" class="store-search" placeholder="Поиск по номеру ТК" data-store-search>
+                    {% for city in available_cities %}
+                    {% set city_stores = stores_by_city.get(city, []) %}
+                    {% set ns = namespace(picked=0) %}
+                    {% for store in city_stores %}{% if store in selected_stores %}{% set ns.picked = ns.picked + 1 %}{% endif %}{% endfor %}
+                    <details class="folder" {% if ns.picked %}open{% endif %}>
+                        <summary>{{ city }} <span class="count">· {{ city_stores | length }}{% if ns.picked %}, выбрано {{ ns.picked }}{% endif %}</span></summary>
+                        <div class="scope-grid">{% for store in city_stores %}<label class="scope-option"><input type="checkbox" name="scope_stores" value="{{ store }}" {% if store in selected_stores %}checked{% endif %}><span>{{ store }}</span></label>{% endfor %}</div>
+                    </details>
                     {% endfor %}
-                    {% if not managers %}<tr><td colspan="4" class="muted">ТМ пока не созданы</td></tr>{% endif %}
-                </tbody>
-            </table>
-        </div>
+
+                    <div class="scope-actions"><button type="submit" class="btn btn-primary btn-sm">Сохранить</button></div>
+                </form>
+            </div>
+        </details>
+        {% else %}
+        <div class="card muted">ТМ пока не созданы</div>
+        {% endfor %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    // Поиск по номеру ТК внутри раскрытой формы: прячет лишние магазины, раскрывает города с совпадениями.
+    document.querySelectorAll('[data-store-search]').forEach(function (input) {
+        var form = input.closest('form');
+        input.addEventListener('input', function () {
+            var needle = input.value.trim().toLowerCase();
+            form.querySelectorAll('details.folder').forEach(function (folder) {
+                var hits = 0;
+                folder.querySelectorAll('.scope-option').forEach(function (option) {
+                    var match = !needle || option.textContent.toLowerCase().indexOf(needle) !== -1;
+                    option.hidden = !match;
+                    if (match) { hits += 1; }
+                });
+                folder.hidden = needle && !hits;
+                if (needle && hits) { folder.open = true; }
+            });
+        });
+    });
+    var opened = document.querySelector('details.tm-block[open]');
+    if (opened) { opened.scrollIntoView({ block: 'start' }); }
+})();
+</script>
 {% endblock %}

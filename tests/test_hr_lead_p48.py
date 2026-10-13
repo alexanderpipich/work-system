@@ -178,5 +178,79 @@ class HrLeadRoutesTests(unittest.TestCase):
         self.assertEqual(html.count('value="hr_lead"'), 1)
 
 
+class HrTeamPageTests(unittest.TestCase):
+    """П4.8 B: /hr/team — компактные блоки ТМ, область раскрывается стрелкой, ?open= после сохранения."""
+
+    def setUp(self):
+        import main
+        from datetime import timedelta
+
+        from models import Shift
+        from time_helpers import business_today
+
+        engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+        Base.metadata.create_all(engine)
+        self.Session = sessionmaker(bind=engine)
+        session = self.Session()
+        session.add(User(id=10, employee_name="Альфа ТМ", phone="71110000010", password_hash="x", role="tm"))
+        session.add(User(id=11, employee_name="Бета ТМ", role="hr_manager"))  # без кабинета, старая роль
+        session.add(User(id=20, employee_name="Иванов Иван", role="employee", tm_id=10))
+        session.add(User(id=21, employee_name="Петров Пётр", role="employee", tm_id=10))
+        session.add(User(id=22, employee_name="Сидоров Сидор", role="employee", tm_id=11))
+        today = business_today()
+        for employee, store, days_ago in (("Иванов Иван", "ТК 1", 1), ("ИВАНОВ ИВАН", "ТК 2", 3),
+                                          ("Петров Петр", "ТК 2", 5), ("Петров Пётр", "ТК 3", 40),
+                                          ("Сидоров Сидор", "ТК 9", 2)):
+            session.add(Shift(employee=employee, store=store, city="Москва", format="ГМ", service="Пекарь",
+                              shift_date=today - timedelta(days=days_ago), hours=8,
+                              request_type="Основные заказы"))
+        session.commit()
+        session.close()
+
+        def override_db():
+            db = self.Session()
+            try:
+                yield db
+            finally:
+                db.close()
+
+        self.app = main.app
+        self.app.dependency_overrides[get_db] = override_db
+        self.app.dependency_overrides[current_user] = lambda: HR_LEAD
+        self.client = TestClient(self.app)
+
+    def tearDown(self):
+        self.app.dependency_overrides.pop(get_db, None)
+        self.app.dependency_overrides.pop(current_user, None)
+
+    def test_blocks_collapsed_with_counters(self):
+        html = self.client.get("/hr/team").text
+        self.assertEqual(html.count('class="tm-block"'), 2)
+        self.assertNotRegex(html, r'class="tm-block"[^>]*\bopen\b')
+        self.assertIn("Области доступа сейчас выключены", html)
+        alpha = html[html.index('id="tm-10"'):html.index('id="tm-11"')]
+        self.assertIn("есть кабинет", alpha)
+        self.assertIn("сотрудников: <b>2</b>", alpha)
+        self.assertIn("магазинов за 4 недели: <b>2</b>", alpha)  # ТК 1, ТК 2; ТК 3 — старше 28 дней
+        beta = html[html.index('id="tm-11"'):]
+        self.assertIn("нет кабинета", beta)
+        self.assertIn("сотрудников: <b>1</b>", beta)
+        self.assertIn("магазинов за 4 недели: <b>1</b>", beta)
+
+    def test_open_param_and_redirect_after_save(self):
+        html = self.client.get("/hr/team?open=11").text
+        self.assertRegex(html, r'<details class="tm-block" id="tm-11" open>')
+        self.assertRegex(html, r'<details class="tm-block" id="tm-10" >')
+        response = self.client.post("/hr/team/scopes", data={"user_id": 11, "scope_cities": ["Москва"],
+                                                             "scope_stores": ["ТК 9"]}, follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("open=11", response.headers["location"])
+        html = self.client.get(response.headers["location"]).text
+        self.assertIn("Область ТМ обновлена", html)
+        block = html[html.index('id="tm-11"'):]
+        self.assertRegex(block, r'<details class="folder" open>\s*<summary>Москва')
+        self.assertIn("выбрано 1", block)
+
+
 if __name__ == "__main__":
     unittest.main()
