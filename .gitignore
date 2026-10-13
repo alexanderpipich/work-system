@@ -9,3 +9,8 @@ temp_*.xlsx
 p-word list.xlsx
 generated_files/
 *.sql
+data/private
+# Выгрузки и отчёты Excel в docs/ — локальные, не для GitHub.
+docs/*.xlsx
+# Пометки Windows о скачанных файлах.
+*:Zone.Identifier
