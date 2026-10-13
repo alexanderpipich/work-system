@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
@@ -227,6 +228,42 @@ def _labels_values(rows, label_attr, value_attr):
     }
 
 
+def hours_by_city(session, date_from, date_to, allowed_cities=None, limit=10, region_of=None):
+    """Часы смен по городам за период, по убыванию: строки (city, hours).
+
+    region_of(shift) — П4.9, сводка рабочего стола: группировать по тарифному региону
+    магазина (service_catalog.build_rate_region_resolver) вместо Shift.city."""
+    if region_of is not None:
+        query = session.query(
+            Shift.store.label("store"),
+            Shift.city.label("city"),
+            func.coalesce(func.sum(Shift.hours), 0).label("hours"),
+        ).filter(Shift.shift_date >= date_from, Shift.shift_date <= date_to)
+        totals = {}
+        for row in _scope_shift_query(query, allowed_cities).group_by(Shift.store, Shift.city):
+            label = region_of(row) or "Не указано"
+            totals[label] = totals.get(label, 0) + float(row.hours or 0)
+        ranked = sorted(totals.items(), key=lambda item: (-item[1], item[0]))
+        rows = [SimpleNamespace(city=city, hours=hours) for city, hours in ranked]
+        return rows[:limit] if limit else rows
+    query = session.query(
+        func.coalesce(Shift.city, "Не указано").label("city"),
+        func.coalesce(func.sum(Shift.hours), 0).label("hours"),
+    ).filter(Shift.shift_date >= date_from, Shift.shift_date <= date_to)
+    query = _scope_shift_query(query, allowed_cities).group_by(Shift.city).order_by(func.sum(Shift.hours).desc())
+    return (query.limit(limit) if limit else query).all()
+
+
+def top_stores(session, date_from, date_to, allowed_cities=None, limit=10):
+    """Часы смен по магазинам (строка Shift.store) за период, по убыванию: (store, hours)."""
+    query = session.query(
+        Shift.store.label("store"),
+        func.coalesce(func.sum(Shift.hours), 0).label("hours"),
+    ).filter(Shift.shift_date >= date_from, Shift.shift_date <= date_to)
+    query = _scope_shift_query(query, allowed_cities).group_by(Shift.store).order_by(func.sum(Shift.hours).desc())
+    return (query.limit(limit) if limit else query).all()
+
+
 def _charts(session, filters, allowed_cities, employees):
     payroll_week_expr = func.date_trunc("week", PayrollRunItem.shift_date)
     payroll_week_query = session.query(
@@ -239,23 +276,8 @@ def _charts(session, filters, allowed_cities, employees):
     payroll_week_query = _scope_payroll_query(payroll_week_query, allowed_cities).group_by(payroll_week_expr).order_by(payroll_week_expr.asc())
     payroll_weeks = payroll_week_query.all()
 
-    city_query = session.query(
-        func.coalesce(Shift.city, "Не указано").label("city"),
-        func.coalesce(func.sum(Shift.hours), 0).label("hours"),
-    ).filter(
-        Shift.shift_date >= filters["date_from"],
-        Shift.shift_date <= filters["date_to"],
-    )
-    city_rows = _scope_shift_query(city_query, allowed_cities).group_by(Shift.city).order_by(func.sum(Shift.hours).desc()).limit(10).all()
-
-    store_query = session.query(
-        Shift.store.label("store"),
-        func.coalesce(func.sum(Shift.hours), 0).label("hours"),
-    ).filter(
-        Shift.shift_date >= filters["date_from"],
-        Shift.shift_date <= filters["date_to"],
-    )
-    store_rows = _scope_shift_query(store_query, allowed_cities).group_by(Shift.store).order_by(func.sum(Shift.hours).desc()).limit(10).all()
+    city_rows = hours_by_city(session, filters["date_from"], filters["date_to"], allowed_cities)
+    store_rows = top_stores(session, filters["date_from"], filters["date_to"], allowed_cities)
 
     employee_query = session.query(
         PayrollRunItem.employee_name.label("employee"),

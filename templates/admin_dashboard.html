@@ -14,6 +14,77 @@
 
 {% block content %}
 <div class="page dash">
+    {# П4.9: плашки — над сводкой; сводка недели — под шапкой, над «Управление системой». #}
+    {% if notices %}
+    <div class="dash-top">
+    {% for notice in notices %}
+    <div class="alert alert-warn mt-0 mb-20"><a href="{{ notice.url }}">{{ notice.text }}</a></div>
+    {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if summary %}
+    <section class="dash-summary dash-desktop" aria-label="Сводка">
+        <div class="widget">
+            <div class="widget-hdr">
+                <h3>Часы по городам</h3>
+                {% if summary_links.analytics %}<a href="{{ summary_links.analytics }}">аналитика →</a>{% endif %}
+            </div>
+            {% if summary.cities %}
+            <ul class="bars">
+                {% for row in summary.cities %}
+                <li>
+                    <span class="bar-label" title="{{ row.label }}">{{ row.label }}</span>
+                    <span class="bar-track"><span class="bar bar-peach" style="width: {{ row.pct }}%"></span></span>
+                    <span class="bar-value">{{ row.text }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="widget-empty">Смен за неделю нет.</p>
+            {% endif %}
+        </div>
+        <div class="widget">
+            <div class="widget-hdr">
+                <h3>Топ магазинов</h3>
+                {% if summary_links.analytics %}<a href="{{ summary_links.analytics }}">все →</a>{% endif %}
+            </div>
+            {% if summary.stores %}
+            <ul class="bars">
+                {% for row in summary.stores %}
+                <li>
+                    <span class="bar-label">{{ row.label }}</span>
+                    <span class="bar-track"><span class="bar bar-blue" style="width: {{ row.pct }}%"></span></span>
+                    <span class="bar-value">{{ row.text }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="widget-empty">Смен за неделю нет.</p>
+            {% endif %}
+        </div>
+        <div class="widget widget-week">
+            <div class="widget-hdr">
+                <h3>Последняя полная неделя</h3>
+                {% if summary_links.weekly_report %}<a href="{{ summary_links.weekly_report }}">отчёт →</a>{% endif %}
+            </div>
+            <div class="week-dates">{{ summary.week_start.strftime('%d.%m.%Y') }} — {{ summary.week_end.strftime('%d.%m.%Y') }}</div>
+            <div class="week-stats">
+                <div><b>{{ summary.hours_text }}</b><span>часов за неделю</span></div>
+                <div><b>{{ summary.employees }}</b><span>активных сотрудников</span></div>
+            </div>
+            <div class="week-dynamics">
+                {% if summary.dynamics %}
+                <b class="{{ 'is-up' if summary.dynamics_up else 'is-down' }}">{{ summary.dynamics }}</b>
+                <span>к неделе {{ summary.previous_start.strftime('%d.%m') }} — {{ summary.previous_end.strftime('%d.%m') }}</span>
+                {% else %}
+                <span>нет данных за прошлую неделю</span>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
     <div class="hero">
         <div>
             <h2>{{ 'Управление системой' if is_superadmin else 'Разделы системы' }}</h2>
@@ -29,10 +100,6 @@
         </div>
         <span class="hero-count">{{ cards_total }} разделов</span>
     </div>
-
-    {% for notice in notices %}
-    <div class="alert alert-warn mt-0 mb-20"><a href="{{ notice.url }}">{{ notice.text }}</a></div>
-    {% endfor %}
 
     {{ nav_groups(groups) }}
 </div>
