@@ -314,6 +314,17 @@ class WeeklyRouteTests(unittest.TestCase):
         self.assertIn(".slice(0, 200)", html)
         self.assertIn("}, function () { alert('Нет связи — не сохранено'); return false; });", html)
 
+    def test_filter_checkboxes_inline(self):
+        # Флажки «без ТМ / без реквизитов / без ЧТС» — в строку, 16 px (без стилей .field их растягивал).
+        self._as(10)
+        html = self.client.get("/admin/payouts/weekly").text
+        block = html[html.index('class="field wr-filter-checks"'):]
+        block = block[:block.index("</div>")]
+        for name in ("no_tm", "no_requisites", "no_rate"):
+            self.assertIn(f'name="{name}"', block)
+        self.assertIn(".wr-filter-checks .check { display: inline-flex; align-items: center; gap: 8px;", html)
+        self.assertIn(".wr-filter-checks .check input { flex: none; width: 16px; height: 16px;", html)
+
 
 class RateFormatNullableMigrationTests(unittest.TestCase):
     """Прод: rates.format в старой базе NOT NULL, модель — nullable; индивидуальная ставка недельного

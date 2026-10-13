@@ -16,6 +16,12 @@
     .week-nav .week-title { font-size: 17px; font-weight: 800; color: var(--brand-blue); }
     .wr-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 13px; }
     .wr-checks .is-off { color: #9ca3af; }
+    /* Флажки фильтра — в строку в общем ряду с «Поиск по ФИО» и «ТМ», высота как у полей;
+       подпись — как у флажков /admin/users. Без этого .field label/input растягивали их в блоки. */
+    .wr-filter-checks { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; min-height: 42px; }
+    .wr-filter-checks .check { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 13px;
+                               font-weight: 700; color: var(--brand-blue); white-space: nowrap; cursor: pointer; }
+    .wr-filter-checks .check input { flex: none; width: 16px; height: 16px; margin: 0; padding: 0; cursor: pointer; }
     /* На десктопе таблица во всю ширину экрана без прокрутки; уже ~1180px — прокрутка вбок. */
     .wr-table table { font-size: 13px; min-width: 1180px; }
     .wr-table th, .wr-table td { padding: 7px 8px; font-size: 13px; }
@@ -155,7 +161,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="field">
+            <div class="field wr-filter-checks">
                 <label class="check"><input type="checkbox" name="no_tm" value="1" {% if filters.no_tm %}checked{% endif %}> без ТМ</label>
                 <label class="check"><input type="checkbox" name="no_requisites" value="1" {% if filters.no_requisites %}checked{% endif %}> без реквизитов</label>
                 <label class="check"><input type="checkbox" name="no_rate" value="1" {% if filters.no_rate %}checked{% endif %}> без ЧТС</label>
