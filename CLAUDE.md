@@ -35,7 +35,7 @@ Never write generated files to disk — build them in a `BytesIO` and hand the b
 
 ## Role System
 
-Roles: `superadmin`, `hr_lead`, `tm` (территориальный менеджер; legacy DB value `hr_manager` is an alias until `scripts/migrate_role_tm.py`), `hr_clerk` (кадровик), `economist`, `brigadier`, `headhunter`, `employee`. The legacy `is_admin = True` flag maps to `superadmin` via `canonical_role()` in `rbac.py`. UI labels: `rbac.ROLE_LABELS`. Roles allowed into the `/hr` cabinet: `rbac.HR_CABINET_ROLES`.
+Roles: `superadmin`, `hr_lead` (HR-руководитель, П4.8: union of tm + hr_clerk + economist permissions plus users/finance, minus superadmin-only technical ones; only a superadmin may create, change, delete or reset the password of a `superadmin`/`hr_lead` user — `rbac.can_manage_role` / `can_manage_user`), `tm` (территориальный менеджер; legacy DB value `hr_manager` is an alias until `scripts/migrate_role_tm.py`), `hr_clerk` (кадровик), `economist`, `brigadier`, `headhunter`, `employee`. The legacy `is_admin = True` flag maps to `superadmin` via `canonical_role()` in `rbac.py`. UI labels: `rbac.ROLE_LABELS`. Roles allowed into the `/hr` cabinet: `rbac.HR_CABINET_ROLES`.
 
 **Three-layer access model:**
 

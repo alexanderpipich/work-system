@@ -2,7 +2,7 @@
 и запросы на смену ТМ, статусы недели («ЧТС проверено», «Закрыто для коррекций»,
 «Зафиксировать авансы»), отметка «Подать на аванс» с частичной суммой.
 
-Права: weekly.manage (экономист, руководитель ТМ, суперадмин) — всё и всегда;
+Права: weekly.manage (экономист, HR-руководитель, суперадмин) — всё и всегда;
 weekly.edit_own (ТМ) — только свои сотрудники и пока неделя не закрыта.
 Каждое действие пишет аудит; коммит — на вызывающем.
 """
@@ -15,11 +15,14 @@ from email_engine import send_email
 from manual_adjustments import parse_money
 from models import Rate, TmChangeRequest, User, WeeklyReview, WeeklyTmCheck
 from payouts_helpers import advance_run_for_week, is_frozen, set_selection, week_selection
-from rbac import ROLE_ECONOMIST, ROLE_HR_LEAD, has_permission
+from rbac import ROLE_ECONOMIST, ROLE_HR_LEAD, ROLE_LABELS, has_permission
 from time_helpers import now_utc
 from tm_assignment import ensure_employee_user, set_employee_tm, tm_users
 from utils import find_user_by_name, normalize_person_name, normalize_text
 from weekly_report import CLOSED_HINT, NO_REQUISITES_HINT, is_week_closed, week_review
+
+# Кто решает вопросы недели (weekly.manage); подпись роли — из ROLE_LABELS.
+MANAGERS = f"экономист или {ROLE_LABELS[ROLE_HR_LEAD]}"
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +141,7 @@ def release_employee(session, request, user, week_start, employee_name):
 def set_tm_directly(session, request, user, employee_name, tm_id):
     """weekly.manage: выбрать ТМ в ячейке без запросов (0 — открепить)."""
     if not can_manage(user):
-        raise WeeklyError("Менять ТМ напрямую может экономист или руководитель ТМ", 403)
+        raise WeeklyError(f"Менять ТМ напрямую может {MANAGERS}", 403)
     employee, _created = ensure_employee_user(session, request, user, employee_name,
                                               comment="Еженедельный отчёт: назначение ТМ")
     if tm_id and tm_id not in {tm.id for tm in tm_users(session)}:
@@ -186,7 +189,7 @@ def request_tm_change(session, request, user, week_start, employee_name, comment
 
 def decide_tm_request(session, request, user, request_id, accept):
     if not can_manage(user):
-        raise WeeklyError("Запросы на смену ТМ решает экономист или руководитель ТМ", 403)
+        raise WeeklyError(f"Запросы на смену ТМ решает {MANAGERS}", 403)
     change = session.get(TmChangeRequest, request_id)
     if change is None or change.status != "pending":
         raise WeeklyError("Запрос уже решён или не найден", 404)
@@ -243,7 +246,7 @@ def toggle_advances_submitted(session, request, user, week_start):
 def set_week_closed(session, request, user, week_start, closed):
     """«Закрыто для коррекций» / «Открыть для коррекций» — weekly.manage. Не фиксирует аванс."""
     if not can_manage(user):
-        raise WeeklyError("Закрывать неделю может экономист или руководитель ТМ", 403)
+        raise WeeklyError(f"Закрывать неделю может {MANAGERS}", 403)
     review = week_review(session, week_start)
     if review is None:
         review = WeeklyReview(week_start=week_start)

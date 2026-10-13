@@ -248,7 +248,8 @@ class DashboardRendersTests(unittest.TestCase):
                 self.assertEqual(response.headers["location"], "/admin/planning-bp")
 
     def test_users_list_read_only_for_staff(self):
-        for role in ("hr_lead", "tm", "hr_clerk", "economist"):
+        # HR-руководитель (П4.8) управляет пользователями — tests/test_hr_lead_p48.py.
+        for role in ("tm", "hr_clerk", "economist"):
             self._as(role)
             with self.subTest(role=role):
                 response = self.client.get("/admin/users", follow_redirects=False)
@@ -282,10 +283,10 @@ class DashboardRendersTests(unittest.TestCase):
     def test_upload_auto_locked_for_non_superadmin(self):
         self._as("tm")
         html = self.client.get("/admin/upload/auto").text
-        self.assertIn("Доступно только системному суперадмину", html)
+        self.assertIn("Настройка доступна только суперадмину", html)
         self._as("superadmin")
         html = self.client.get("/admin/upload/auto").text
-        self.assertNotIn("Доступно только системному суперадмину", html)
+        self.assertNotIn("Настройка доступна только суперадмину", html)
         self.assertIn("Настройка автозагрузки", self.client.get("/admin/upload").text)
 
 

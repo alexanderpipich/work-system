@@ -65,7 +65,7 @@
                 <label>Роль</label>
 
                 <select name="role" id="role-select">
-                    {% for code, label in ROLE_CHOICES %}
+                    {% for code, label in role_choices or ROLE_CHOICES %}
                     <option value="{{ code }}" {% if code == 'employee' %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>

@@ -1,0 +1,182 @@
+"""П4.8 A: роль hr_lead — «HR-руководитель»: все права, кроме технических суперадмина;
+роли superadmin/hr_lead трогает только суперадмин."""
+
+import os
+import unittest
+from types import SimpleNamespace
+
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+os.environ.setdefault("SECRET_KEY", "test-secret")
+
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from database import Base
+from dependencies import current_user, get_db
+from models import AuditLog, CitizenshipRegime, Country, User
+from navigation import PAYOUTS_GROUPS, build_navigation
+from rbac import (HR_LEAD_EXCLUDED, PERMISSIONS, ROLE_LABELS, can_manage_role, has_permission,
+                  role_choices_for)
+
+HR_LEAD = SimpleNamespace(id=2, role="hr_lead", is_admin=False, employee_name="Петрова HR", phone="70000000002")
+SUPERADMIN = SimpleNamespace(id=1, role="superadmin", is_admin=True, employee_name="Админ", phone="70000000001")
+# Права кабинетов сотрудника и рекрутера — не «функции», а вход в свой кабинет.
+CABINET_ONLY = {"profile.own", "documents.own", "schedules.own", "headhunter.dashboard"}
+SUPERADMIN_ONLY = {"shifts.upload", "upload.auto", "admin.settings", "system.technical", "system.maintenance",
+                   "audit.view", "payroll.close", "payroll.delete", "rates.hard_delete",
+                   "legal_entities.hard_delete"}
+
+
+class HrLeadPermissionTests(unittest.TestCase):
+    def test_label(self):
+        self.assertEqual(ROLE_LABELS["hr_lead"], "HR-руководитель")
+
+    def test_has_every_role_permission_except_own_and_cabinets(self):
+        everything = set().union(*(perms for role, perms in PERMISSIONS.items() if role != "hr_lead"))
+        for permission in sorted(everything - HR_LEAD_EXCLUDED - CABINET_ONLY):
+            with self.subTest(permission=permission):
+                self.assertTrue(has_permission(HR_LEAD, permission))
+
+    def test_extra_permissions(self):
+        for permission in ("users.manage", "users.hard_delete", "rates.manage", "payroll.manage", "payroll.send",
+                           "adjustments.manage", "lmk.manage", "legal_entities.manage", "email.manage",
+                           "weekly.manage", "upload.view", "hr_team.manage", "audit.hr_view"):
+            with self.subTest(permission=permission):
+                self.assertTrue(has_permission(HR_LEAD, permission))
+
+    def test_superadmin_only_stays(self):
+        for permission in sorted(SUPERADMIN_ONLY | HR_LEAD_EXCLUDED):
+            with self.subTest(permission=permission):
+                self.assertFalse(has_permission(HR_LEAD, permission))
+
+    def test_protected_roles(self):
+        self.assertFalse(can_manage_role(HR_LEAD, "superadmin"))
+        self.assertFalse(can_manage_role(HR_LEAD, "admin"))
+        self.assertFalse(can_manage_role(HR_LEAD, "hr_lead"))
+        self.assertTrue(can_manage_role(HR_LEAD, "tm"))
+        self.assertTrue(can_manage_role(SUPERADMIN, "hr_lead"))
+        codes = [code for code, _ in role_choices_for(HR_LEAD)]
+        self.assertNotIn("superadmin", codes)
+        self.assertNotIn("hr_lead", codes)
+        self.assertIn("economist", codes)
+
+    def test_navigation(self):
+        groups = build_navigation(HR_LEAD) + build_navigation(HR_LEAD, PAYOUTS_GROUPS)
+        cards = {c["key"]: c for g in groups for c in g["cards"]}
+        for key, url in (("users", "/admin/users"), ("rates", "/admin/rates"), ("adjustments", "/admin/adjustments"),
+                         ("lmk", "/admin/lmk"), ("legal_entities", "/admin/legal-entities"),
+                         ("email", "/admin/email/test"), ("upload", "/admin/upload"),
+                         ("payroll_runs", "/admin/payroll/runs"), ("reports", "/admin/reports"),
+                         ("analytics", "/admin/analytics"), ("employees", "/hr/employees")):
+            with self.subTest(card=key):
+                self.assertTrue(cards[key]["available"])
+                self.assertEqual(cards[key]["url"], url)
+        self.assertFalse(cards["audit"]["available"])
+
+
+class HrLeadRoutesTests(unittest.TestCase):
+    def setUp(self):
+        import main
+
+        engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+        Base.metadata.create_all(engine)
+        self.Session = sessionmaker(bind=engine)
+        session = self.Session()
+        session.add(CitizenshipRegime(id=1, code="rf", name="РФ"))
+        session.add(Country(id=1, name="Россия", regime_id=1, is_active=True))
+        session.add(User(id=1, employee_name="Админ", phone="70000000001", password_hash="x", role="superadmin",
+                         is_admin=True))
+        session.add(User(id=2, employee_name="Петрова HR", phone="70000000002", password_hash="x", role="hr_lead"))
+        session.add(User(id=3, employee_name="Сидоров ТМ", phone="70000000003", password_hash="x", role="tm"))
+        session.add(User(id=4, employee_name="Второй HR", phone="70000000004", password_hash="x", role="hr_lead"))
+        session.commit()
+        session.close()
+
+        def override_db():
+            db = self.Session()
+            try:
+                yield db
+            finally:
+                db.close()
+
+        self.app = main.app
+        self.app.dependency_overrides[get_db] = override_db
+        self.app.dependency_overrides[current_user] = lambda: HR_LEAD
+        self.client = TestClient(self.app)
+
+    def tearDown(self):
+        self.app.dependency_overrides.pop(get_db, None)
+        self.app.dependency_overrides.pop(current_user, None)
+
+    def _user(self, user_id):
+        return self.Session().query(User).filter(User.id == user_id).first()
+
+    def _denied(self):
+        return self.Session().query(AuditLog).filter(AuditLog.action == "users.denied").count()
+
+    def test_upload_page_open_but_button_disabled(self):
+        response = self.client.get("/admin/upload")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Загрузка timebook — право суперадмина", response.text)
+        self.assertRegex(response.text, r'<button type="submit" class="btn btn-primary mt-14" disabled')
+        response = self.client.post("/admin/upload", files={"file": ("t.xlsx", b"x")})
+        self.assertEqual(response.status_code, 403)
+        self.app.dependency_overrides[current_user] = lambda: SUPERADMIN
+        self.assertNotIn("право суперадмина", self.client.get("/admin/upload").text)
+
+    def test_create_user_page_and_protected_roles(self):
+        page = self.client.get("/admin/create-user")
+        self.assertEqual(page.status_code, 200)
+        self.assertNotIn('value="superadmin"', page.text)
+        self.assertNotIn('value="hr_lead"', page.text)
+        form = {"employee_name": "Новый Админ", "role": "superadmin", "citizenship_country_id": "1"}
+        self.assertEqual(self.client.post("/admin/create-user", data=form).status_code, 403)
+        self.assertEqual(self._denied(), 1)
+        form.update(employee_name="Новый ТМ", role="tm")
+        self.assertIn("Пользователь создан", self.client.post("/admin/create-user", data=form).text)
+
+    def test_delete(self):
+        response = self.client.post("/admin/delete-user", data={"user_id": 4}, follow_redirects=False)
+        self.assertEqual(response.status_code, 403)
+        self.assertIsNotNone(self._user(4))
+        response = self.client.post("/admin/delete-user", data={"user_id": 3}, follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertIsNone(self._user(3))
+
+    def test_role_change(self):
+        base = {"citizenship_country_id": "1"}
+        response = self.client.post("/admin/update-user", data={**base, "user_id": 3, "role": "hr_lead"},
+                                    follow_redirects=False)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self._user(3).role, "tm")
+        response = self.client.post("/admin/update-user", data={**base, "user_id": 2, "role": "economist"},
+                                    follow_redirects=False)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self._user(2).role, "hr_lead")
+        response = self.client.post("/admin/update-user", data={**base, "user_id": 3, "role": "economist"},
+                                    follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self._user(3).role, "economist")
+        self.assertEqual(self._denied(), 2)
+
+    def test_password_reset_of_superadmin_denied(self):
+        response = self.client.post("/admin/change-password", data={"user_id": 1, "new_password": "secret1"},
+                                    follow_redirects=False)
+        self.assertEqual(response.status_code, 403)
+
+    def test_users_list_protected_cards_read_only(self):
+        html = self.client.get("/admin/users").text
+        self.assertIn('href="/admin/create-user"', html)
+        # Формы правки — только у ТМ (#3); суперадмин, оба HR-руководителя — просмотр.
+        self.assertEqual(html.count('action="/admin/update-user"'), 1)
+        self.assertEqual(html.count('action="/admin/delete-user"'), 1)
+        self.assertEqual(html.count("— только суперадмин."), 3)
+        # superadmin/hr_lead в выпадающем списке — только в фильтре.
+        self.assertEqual(html.count('value="superadmin"'), 1)
+        self.assertEqual(html.count('value="hr_lead"'), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

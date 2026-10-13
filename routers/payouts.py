@@ -45,7 +45,7 @@ def user_permissions(user):
 
 
 def require_advances_access(user=Depends(current_user)):
-    """Экран авансов: ТМ (свои), экономист, руководитель ТМ, суперадмин."""
+    """Экран авансов: ТМ (свои), экономист, HR-руководитель, суперадмин."""
     perms = user_permissions(user)
     if not perms & {"payouts.advances.select_own", "payouts.advances.select_any", "payouts.advances.fix"}:
         raise RedirectException("/")

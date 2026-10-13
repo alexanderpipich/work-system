@@ -28,6 +28,9 @@ from rbac import (
 )
 
 SA = {ROLE_SUPERADMIN}
+# П4.8: HR-руководитель с правом раздела идёт на канонический /admin-вариант. Сотрудники,
+# документы и мониторинг на /admin пускают только суперадмина (проверка пути) — там он в /hr.
+ADMIN = {ROLE_SUPERADMIN, ROLE_HR_LEAD}
 ECON = {ROLE_ECONOMIST}
 HR_VIEW = {ROLE_HR_LEAD, ROLE_TM}  # /hr-разделы выплат, ставок, ЛМК, отчётов, графиков
 HR_CAB = {ROLE_HR_LEAD, ROLE_TM, ROLE_HR_CLERK}  # /hr-разделы сотрудников и документов
@@ -125,7 +128,7 @@ NAV_GROUPS = [
              [("/admin/upload-users", "users.manage", None)]),
         card("upload", "Загрузка смен",
              "Загрузка Excel со сменами. Учитываются магазин, город, формат, услуга, сотрудник и часы.",
-             [("/admin/upload", "shifts.upload", None)]),
+             [("/admin/upload", "upload.view", None)]),
         card("hr_team", "Команда ТМ",
              "Назначение регионов территориальным менеджерам.",
              [("/hr/team", "hr_team.manage", None)]),
@@ -138,7 +141,7 @@ NAV_GROUPS = [
     {"key": "money", "title": "Время, ставки и выплаты", "cards": [
         card("rates", "ЧТС",
              "Ставки по услугам, форматам, магазинам и индивидуальным сотрудникам.",
-             [("/admin/rates", "rates.manage", SA),
+             [("/admin/rates", "rates.manage", ADMIN),
               ("/economist/rates", "rates.view", ECON),
               ("/hr/rates", "rates.view", HR_VIEW)]),
         card("payouts", "Выплаты",
@@ -152,21 +155,21 @@ NAV_GROUPS = [
               ("/brigadier", "schedules.view", {ROLE_BRIGADIER})]),
         card("requisites", "Реквизиты",
              "Реквизиты сотрудников: карта, телефон для выплаты, банк, ИНН, счёт и БИК.",
-             [("/admin/requisites", "requisites.manage", SA),
+             [("/admin/requisites", "requisites.manage", ADMIN),
               ("/hr/requisites", "requisites.view", HR_VIEW),
               ("/economist/requisites", "requisites.view", ECON)]),
         card("lmk", "ЛМК",
              "Удержания за личные медицинские книжки: сумма, период списания, остаток и статус.",
-             [("/admin/lmk", "lmk.manage", SA),
+             [("/admin/lmk", "lmk.manage", ADMIN),
               ("/economist/lmk", "lmk.manage", ECON),
               ("/hr/lmk", "lmk.view", HR_VIEW)]),
         card("adjustments", "МОНИТОРИНГ ИЗМЕНЕНИЙ",
              "Контроль и подтверждение автоматических корректировок по табелям.",
-             [("/admin/adjustments", "adjustments.manage", SA),
+             [("/admin/adjustments", "adjustments.manage", ADMIN),
               ("/economist/adjustments", "adjustments.manage", ECON)]),
         card("referral", "Акции",
              "Реферальная программа: приглашения сотрудников, начисления и выплаты бонусов за приведённых кандидатов.",
-             [("/admin/referral", "payroll.manage", SA),
+             [("/admin/referral", "payroll.manage", ADMIN),
               ("/economist/referral", "payroll.manage", ECON)]),
     ]},
     {"key": "documents", "title": "Документы, Кадры и комплаенс", "cards": [
@@ -195,7 +198,7 @@ NAV_GROUPS = [
     {"key": "directories", "title": "Справочники", "cards": [
         card("legal_entities", "Юрлица",
              "Единый список юридических лиц для сотрудников и фиксации выплатных табелей.",
-             [("/admin/legal-entities", "legal_entities.manage", SA),
+             [("/admin/legal-entities", "legal_entities.manage", ADMIN),
               ("/economist/legal-entities", "legal_entities.manage", ECON)]),
         card("stores", "Классификатор магазинов",
              "Торговые точки, адреса объектов, контакты по сценариям (планирование, сверки, уведомления).",
@@ -235,12 +238,12 @@ NAV_GROUPS = [
     {"key": "reports", "title": "Отчётность", "cards": [
         card("reports", "Отчеты",
              "Управленческие таблицы по часам, выплатам, корректировкам, ЛМК и документам.",
-             [("/admin/reports", "reports.view", SA),
+             [("/admin/reports", "reports.view", ADMIN),
               ("/economist/reports", "reports.view", ECON),
               ("/hr/reports", "reports.view", HR_VIEW)]),
         card("analytics", "Аналитика",
              "KPI, предупреждения, динамика часов, выплат, документов, корректировок и ЛМК.",
-             [("/admin/analytics", "reports.view", SA),
+             [("/admin/analytics", "reports.view", ADMIN),
               ("/economist/analytics", "reports.view", ECON)]),
         card("audit", "Audit Log",
              "История действий пользователей: табели, корректировки, документы, ставки, реквизиты и справочники.",
@@ -272,7 +275,7 @@ PAYOUTS_GROUPS = [
              [("/admin/payouts/weekly", "weekly.view", None)]),
         card("payroll", "Выплатной табель",
              "Расчёт недельных выплат по сменам и ЧТС с фильтрами по сотрудникам и магазинам.",
-             [("/admin/payroll", "payroll.manage", SA),
+             [("/admin/payroll", "payroll.manage", ADMIN),
               ("/economist/payroll", "payroll.view", ECON),
               ("/hr/payroll", "payroll.view", HR_VIEW)]),
         card("advances", "Еженедельные авансы",
@@ -285,7 +288,7 @@ PAYOUTS_GROUPS = [
              [("/admin/payouts/bonuses", "payroll.manage", None)]),
         card("payroll_runs", "История выплат",
              "Просмотр и экспорт зафиксированных табелей.",
-             [("/admin/payroll/runs", "payroll.manage", SA),
+             [("/admin/payroll/runs", "payroll.manage", ADMIN),
               ("/economist/payroll/runs", "payroll.view", ECON),
               ("/hr/payroll/runs", "payroll.view", HR_VIEW)]),
     ]},

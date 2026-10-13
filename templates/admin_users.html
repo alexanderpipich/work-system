@@ -172,6 +172,7 @@
                     <span class="u-chev" aria-hidden="true">▾</span>
                 </summary>
 
+                {% set editable = can_manage and user.id in manageable %}
                 <div class="ucard">
                     <div class="summary-line">
                         <span>Должность: <b>{{ user.job_title or '—' }}</b></span>
@@ -180,7 +181,7 @@
                         <span>Студент: <b>{{ 'да' if user.is_student else 'нет' }}</b></span>
                         <span>Юрлицо: <b>{{ user.legal_entity or '—' }}</b></span>
                         {% if user.economist_stores %}<span>Магазины: <b>{{ user.economist_stores }}</b></span>{% endif %}
-                        {% if not can_manage %}
+                        {% if not editable %}
                         <span>Телефон: <b>{{ user.phone or '—' }}</b></span>
                         <span>Дата рождения: <b>{{ user.birth_date.strftime('%d.%m.%Y') if user.birth_date else '—' }}</b></span>
                         <span>ТМ: <b>{{ tm_names.get(user.tm_id, '—') if user.tm_id else '—' }}</b></span>
@@ -188,7 +189,10 @@
                         {% endif %}
                     </div>
 
-                    {% if can_manage %}
+                    {% if can_manage and not editable %}
+                    <p class="muted mt-8">Правка, смена роли, пароль и удаление — {{ PROTECTED_HINT }}.</p>
+                    {% endif %}
+                    {% if editable %}
                     <div class="form-block">
                         <h4>Телефон · роль · магазины · гражданство · юрлицо</h4>
                         <form method="post" action="/admin/update-user">
@@ -214,7 +218,7 @@
                                     <label>Роль</label>
                                     <select name="role">
                                         {% set crole = canonical_role(user) %}
-                                        {% for code, label in ROLE_CHOICES %}
+                                        {% for code, label in role_choices %}
                                         <option value="{{ code }}" {% if crole == code %}selected{% endif %}>{{ label }}</option>
                                         {% endfor %}
                                     </select>

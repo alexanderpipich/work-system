@@ -56,21 +56,21 @@ ROUTE_PERMISSION_MATRIX = [
 
     # lmk
     ("lmk.manage",
-        ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
+        ["superadmin", "hr_lead", "economist"],
+        ["hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("lmk.view",
         ["superadmin", "hr_lead", "hr_manager", "tm"],
         ["economist", "brigadier", "employee", "hr_clerk"]),
 
     # adjustments
     ("adjustments.manage",
-        ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
+        ["superadmin", "hr_lead", "economist"],
+        ["hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
 
     # legal entities
     ("legal_entities.manage",
-        ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
+        ["superadmin", "hr_lead", "economist"],
+        ["hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
 
     # documents
     # documents.manage goes to hr_lead/hr_manager; economist gets verify-only
@@ -78,22 +78,22 @@ ROUTE_PERMISSION_MATRIX = [
         ["superadmin", "hr_lead", "hr_manager", "tm", "hr_clerk"],
         ["economist", "brigadier", "employee"]),
     ("documents.verify",
-        ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
+        ["superadmin", "hr_lead", "economist"],
+        ["hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
 
     # payroll
     # payroll.manage: economist can create/fix runs (not just view)
     ("payroll.manage",
-        ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
+        ["superadmin", "hr_lead", "economist"],
+        ["hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("payroll.view",
         ["superadmin", "hr_lead", "hr_manager", "tm", "economist"],
         ["brigadier", "employee", "hr_clerk"]),
 
     # rates
     ("rates.manage",
-        ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
+        ["superadmin", "hr_lead", "economist"],
+        ["hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("rates.view",
         ["superadmin", "hr_lead", "hr_manager", "tm", "economist"],
         ["brigadier", "employee", "hr_clerk"]),
@@ -108,8 +108,8 @@ ROUTE_PERMISSION_MATRIX = [
         ["superadmin"],
         ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("economist.dashboard",
-        ["superadmin", "economist"],
-        ["hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
+        ["superadmin", "hr_lead", "economist"],
+        ["hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
     ("headhunter.dashboard",
         ["superadmin", "headhunter"],
         ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee", "hr_clerk"]),
@@ -123,11 +123,11 @@ ROUTE_PERMISSION_MATRIX = [
         ["employee"]),
     # П1-В: гражданства и просмотр услуг — кадровик; суперадмин — по bypass
     ("citizenship.manage",
-        ["superadmin", "hr_clerk"],
-        ["economist", "hr_lead", "hr_manager", "tm", "brigadier", "employee"]),
+        ["superadmin", "hr_lead", "hr_clerk"],
+        ["economist", "hr_manager", "tm", "brigadier", "employee"]),
     ("services.view",
-        ["superadmin", "economist", "hr_clerk"],
-        ["hr_lead", "hr_manager", "tm", "brigadier", "employee"]),
+        ["superadmin", "hr_lead", "economist", "hr_clerk"],
+        ["hr_manager", "tm", "brigadier", "employee"]),
     ("employees.view",
         ["superadmin", "hr_lead", "hr_manager", "tm", "economist", "hr_clerk"],
         ["brigadier", "employee"]),
@@ -222,18 +222,18 @@ class EconomistBoundaryTests(unittest.TestCase):
 
 
 class HrPayrollBoundaryTests(unittest.TestCase):
-    """HR-роли видят выплаты, но не управляют ими."""
+    """ТМ видят выплаты, но не управляют ими; HR-руководитель (П4.8) — управляет."""
 
-    def test_hr_lead_has_payroll_view_not_manage(self):
+    def test_hr_lead_manages_payroll(self):
         self.assertTrue(_allowed("payroll.view", "hr_lead"))
-        self.assertFalse(_allowed("payroll.manage", "hr_lead"))
+        self.assertTrue(_allowed("payroll.manage", "hr_lead"))
 
     def test_hr_manager_has_payroll_view_not_manage(self):
         self.assertTrue(_allowed("payroll.view", "hr_manager"))
         self.assertFalse(_allowed("payroll.manage", "hr_manager"))
 
     def test_hr_roles_have_lmk_view_not_manage(self):
-        for role in ("hr_lead", "hr_manager", "tm"):
+        for role in ("hr_manager", "tm"):
             with self.subTest(role=role):
                 self.assertTrue(_allowed("lmk.view", role))
                 self.assertFalse(_allowed("lmk.manage", role))
