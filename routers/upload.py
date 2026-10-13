@@ -2,7 +2,7 @@ import logging
 import re
 
 import pandas as pd
-from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -11,13 +11,25 @@ from audit_helpers import create_audit_log
 from dependencies import current_user, get_db
 from models import Shift, TimebookEmployee, UploadLog
 from payroll_adjustments import reconcile_sent_payroll_runs
-from rbac import has_permission, require_permission
+from rbac import has_permission, record_denied_action, require_permission
 from service_catalog import diagnose_uploaded_services
 from store_helpers import extract_tk_number, store_city_by_tk, timebook_cities
 from time_helpers import business_today, is_editable_month, now_utc, previous_month
 from utils import normalize_city, normalize_format, normalize_phone, normalize_text
 
-_require_upload = require_permission("shifts.upload")
+# П4.8: журнал загрузок открывает upload.view (HR-руководитель), сама загрузка timebook —
+# shifts.upload, только суперадмин; отказ на POST — 403 с аудитом.
+_require_upload_view = require_permission("upload.view")
+UPLOAD_LOCKED_HINT = "Загрузка timebook — право суперадмина"
+
+
+def _require_upload(request: Request, session: Session = Depends(get_db), user=Depends(current_user)):
+    if not has_permission(user, "shifts.upload"):
+        if has_permission(user, "upload.view"):
+            record_denied_action(session, request, user, "shifts.upload")
+            raise HTTPException(status_code=403, detail=UPLOAD_LOCKED_HINT)
+        return require_permission("shifts.upload")(request, session, user)
+    return user
 
 
 router = APIRouter()
@@ -412,12 +424,14 @@ def _write_upload_log(session, request, admin, filename, result=None, error=None
 def admin_upload_page(
     request: Request,
     session: Session = Depends(get_db),
-    admin=Depends(_require_upload),
+    admin=Depends(_require_upload_view),
 ):
     return templates.TemplateResponse(
         request,
         "admin_upload.html",
         {
+            "can_upload": has_permission(admin, "shifts.upload"),
+            "upload_locked_hint": UPLOAD_LOCKED_HINT,
             "logs": recent_upload_logs(session),
             "message": None,
             "error": None,

@@ -348,7 +348,7 @@ class WeeklyTmCheck(Base):
 
 
 class TmChangeRequest(Base):
-    """Запрос ТМ «это мой сотрудник» на сотрудника другого ТМ (П4.6): решает экономист/руководитель."""
+    """Запрос ТМ «это мой сотрудник» на сотрудника другого ТМ (П4.6): решает экономист/HR-руководитель."""
     __tablename__ = "tm_change_requests"
 
     id = Column(Integer, primary_key=True, index=True)

@@ -39,11 +39,13 @@
     <div class="card">
         <h2>Загрузить Excel</h2>
 
+        {% set upload_locked = can_upload is defined and not can_upload %}
         <form method="post" action="/admin/upload" enctype="multipart/form-data">
             <div class="field upload-field">
-                <input type="file" name="file" accept=".xlsx" required>
+                <input type="file" name="file" accept=".xlsx" required {% if upload_locked %}disabled{% endif %}>
             </div>
-            <button type="submit" class="btn btn-primary mt-14">Загрузить</button>
+            <button type="submit" class="btn btn-primary mt-14" {% if upload_locked %}disabled title="{{ upload_locked_hint }}"{% endif %}>Загрузить</button>
+            {% if upload_locked %}<p class="field-hint">{{ upload_locked_hint }}</p>{% endif %}
         </form>
 
         <p class="field-hint">

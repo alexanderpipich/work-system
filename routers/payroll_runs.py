@@ -14,7 +14,7 @@ from document_helpers import citizenship_display
 from dependencies import current_user, get_db
 from models import PayrollRun, PayrollRunItem, Requisite, Shift, User
 from payroll_closing import close_payroll_run as close_payroll_run_financials
-from rbac import ROLE_HR_LEAD, ROLE_TM, canonical_role, has_permission, is_superadmin, require_permission
+from rbac import ROLE_HR_LEAD, ROLE_SUPERADMIN, ROLE_TM, canonical_role, has_permission, is_superadmin, require_permission
 from schedule_grid import days_between
 from time_helpers import now_utc
 from utils import normalize_text, safe_return_to
@@ -614,7 +614,8 @@ def send_payroll_run(
     session: Session = Depends(get_db),
     user=Depends(current_user),
 ):
-    return_url = "/admin/payroll/runs" if is_superadmin(user) else "/economist/payroll/runs"
+    admin_view = canonical_role(user) in {ROLE_SUPERADMIN, ROLE_HR_LEAD}  # П4.8: HR-руководитель — в /admin
+    return_url = "/admin/payroll/runs" if admin_view else "/economist/payroll/runs"
     # П3: экран выплат отправляет прогон сюда же и просит вернуть его обратно.
     return_url = safe_return_to(return_to, return_url)
 
@@ -628,7 +629,7 @@ def send_payroll_run(
     if not run:
         return RedirectResponse(url=return_url, status_code=302)
 
-    if not is_superadmin(user):
+    if not admin_view:
         items = session.query(PayrollRunItem).filter(PayrollRunItem.run_id == run.id).all()
         allowed_cities = get_economist_cities(user)
         if allowed_cities is not None and not _all_items_accessible_to_cities(session, items, allowed_cities):

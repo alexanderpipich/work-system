@@ -14,7 +14,8 @@ from access_scope_helpers import active_scope_values, sync_access_scopes
 from country_helpers import build_country_matcher
 from dependencies import get_db
 from inn_sync import set_employee_inn
-from rbac import ROLE_CHOICES, ROLE_LABELS, TM_ROLE_VALUES, canonical_role, has_permission, require_permission
+from rbac import (ROLE_CHOICES, ROLE_LABELS, TM_ROLE_VALUES, can_manage_role, can_manage_user, canonical_role,
+                  has_permission, require_permission, role_choices_for)
 from legal_entity_helpers import active_legal_entities
 from models import JOB_TITLES, Country, Requisite, Shift, TimebookEmployee, User
 from tm_assignment import set_employee_tm, tm_users
@@ -36,6 +37,20 @@ require_user_management = require_permission("users.manage", audit_denied=True)
 # Просмотр списка пользователей (П2): служебные роли видят карточки только для чтения.
 require_user_view = require_permission("users.view", audit_denied=True)
 require_user_hard_delete = require_permission("users.hard_delete", audit_denied=True)
+# П4.8: роли «Суперадмин» и «HR-руководитель» — только суперадмину (rbac.can_manage_role).
+PROTECTED_HINT = "только суперадмин"
+PROTECTED_ERROR = ("Создавать, менять, удалять суперадмина и HR-руководителя и сбрасывать им пароль "
+                   "может только суперадмин")
+
+
+def _deny_protected(session, request, admin, action, target=None, role=None, name=None):
+    """403 + аудит users.denied: актор пытался тронуть защищённую роль."""
+    create_audit_log(session, request, admin, "users.denied", "user",
+                     target.id if target else None, target.employee_name if target else name,
+                     new_value={"action": action, "role": role or (target.role if target else None)},
+                     comment=PROTECTED_ERROR)
+    session.commit()
+    return HTMLResponse(PROTECTED_ERROR, status_code=403)
 
 
 def _user_payload(user):
@@ -125,6 +140,7 @@ def render_users(request: Request, session, message=None, error=None, filters=No
     return RedirectResponse("/admin/users" + (f"?{urlencode(params)}" if params else ""), status_code=302)
 
 
+@router.get("/admin/create-user", response_class=HTMLResponse)
 def create_user_page(
     request: Request,
     session: Session = Depends(get_db),
@@ -138,6 +154,7 @@ def create_user_page(
             "error": None,
             "legal_entities": active_legal_entities(session),
             "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
+            "role_choices": role_choices_for(admin),
         }
     )
 
@@ -164,6 +181,9 @@ def create_user_submit(
     role_clean = normalize_role(role)
     scope_value = _default_city_scope(session, role_clean, scope_cities or economist_stores)
 
+    if not can_manage_role(admin, role_clean):
+        return _deny_protected(session, request, admin, "create", role=role_clean, name=employee_name_clean)
+
     if not citizenship_country_id:
         return templates.TemplateResponse(
             request,
@@ -173,6 +193,7 @@ def create_user_submit(
                 "message": None,
                 "legal_entities": active_legal_entities(session),
                 "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
+                "role_choices": role_choices_for(admin),
             },
             status_code=400,
         )
@@ -186,6 +207,7 @@ def create_user_submit(
                 "message": None,
                 "legal_entities": active_legal_entities(session),
                 "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
+                "role_choices": role_choices_for(admin),
             }
         )
 
@@ -199,6 +221,8 @@ def create_user_submit(
     # Контракт по ФИО: тот же человек без кабинета — выдать кабинет и обновить
     # поля формы; с кабинетом — отказ (иначе молча перехватили бы чужой логин).
     user = find_user_by_name(session, employee_name_clean)
+    if user and not can_manage_user(admin, user):
+        return _deny_protected(session, request, admin, "create", target=user, role=role_clean)
     if user and user.password_hash:
         return refuse("Сотрудник «%s» уже есть (ID %s) и у него есть кабинет" % (user.employee_name, user.id))
 
@@ -242,6 +266,7 @@ def create_user_submit(
             "error": None,
             "legal_entities": active_legal_entities(session),
             "countries": session.query(Country).filter(Country.is_active == True).order_by(Country.name).all(),
+            "role_choices": role_choices_for(admin),
         }
     )
 
@@ -368,6 +393,12 @@ async def upload_users_submit(
                     continue
                 # Сотрудник без кабинета: строка таблицы выдаёт ему кабинет.
                 existing = by_name
+
+            # П4.8: суперадминов и HR-руководителей заводит и правит только суперадмин.
+            if not can_manage_role(admin, role_clean or "employee") or (
+                    existing and not can_manage_user(admin, existing)):
+                conflicts.append({"name": name_clean or existing.employee_name, "reason": PROTECTED_ERROR})
+                continue
 
             if existing:
                 # Обновление существующего: непустые ячейки обновляют, пустые не затирают.
@@ -601,6 +632,10 @@ def admin_users(
             "tm_names": {tm.id: tm.employee_name for tm in tm_users(session)},
             "pending_count": len(pending_employees(session)) if can_manage else 0,
             "can_manage": can_manage,
+            # П4.8: карточки суперадминов и HR-руководителей — только просмотр не для суперадмина.
+            "manageable": {u.id for u in users if can_manage and can_manage_user(admin, u)},
+            "role_choices": role_choices_for(admin),
+            "PROTECTED_HINT": PROTECTED_HINT,
             "message": message or None,
             "error": error or None,
             "city_scopes": {user.id: active_scope_values(session, user.id, "city") for user in users},
@@ -646,6 +681,10 @@ def update_user(
 
     if not user:
         return RedirectResponse(url=redirect_base, status_code=302)
+
+    # П4.8: защищённые роли (и своя роль HR-руководителя) — только суперадмин; и исходная, и целевая.
+    if not can_manage_user(admin, user) or not can_manage_role(admin, normalize_role(role)):
+        return _deny_protected(session, request, admin, "update", target=user, role=normalize_role(role))
 
     # Телефон — это ЛОГИН: сменить его значит сменить учётные данные входа.
     # Пустое поле не затирает текущий номер (форма не всегда предзаполнена),
@@ -956,6 +995,9 @@ def delete_user(
             error="Пользователь не найден"
         )
 
+    if not can_manage_user(admin, user):
+        return _deny_protected(session, request, admin, "delete", target=user)
+
     create_audit_log(
         session,
         request,
@@ -992,6 +1034,9 @@ def change_password(
             session,
             error="Пользователь не найден"
         )
+
+    if not can_manage_user(admin, user):
+        return _deny_protected(session, request, admin, "password", target=user)
 
     new_password_clean = str(new_password).strip()
     if not new_password_clean:

@@ -13,11 +13,11 @@ from rbac import canonical_role, has_permission
 
 
 class HrRbacTests(unittest.TestCase):
-    def test_hr_lead_permissions_exclude_financial_and_technical_actions(self):
+    def test_hr_lead_permissions_exclude_technical_actions(self):
         user = SimpleNamespace(role="hr_lead", is_admin=False)
         self.assertTrue(has_permission(user, "employees.manage"))
         self.assertTrue(has_permission(user, "hr_team.manage"))
-        self.assertFalse(has_permission(user, "payroll.manage"))
+        self.assertTrue(has_permission(user, "payroll.manage"))  # П4.8
         self.assertFalse(has_permission(user, "system.technical"))
 
     def test_hr_manager_permissions_are_regional_hr_only(self):
