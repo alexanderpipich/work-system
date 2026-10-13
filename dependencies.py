@@ -33,6 +33,8 @@ def current_user(request: Request, db: Session = Depends(get_db)):
     if not user:
         raise RedirectException("/login")
 
+    # П4.10: боковое меню в base.html строится от пользователя запроса (menu_context).
+    request.state.user = user
     return user
 
 

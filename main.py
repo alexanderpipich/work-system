@@ -1,5 +1,6 @@
 ﻿import logging
 import os
+import sys
 
 from env_loader import load_project_env
 
@@ -12,6 +13,7 @@ from audit_helpers import ensure_audit_log_table
 from citizenship_schema import ensure_citizenship_columns
 from database import Base, SessionLocal, engine
 from dependencies import RedirectException, redirect_exception_response
+from menu_context import install_menu_globals
 from document_helpers import ensure_document_tables
 from legal_entity_helpers import ensure_legal_entities_table
 from payroll_run_helpers import ensure_payroll_run_closing_columns
@@ -134,6 +136,9 @@ app.include_router(services_router)
 app.include_router(system_router)
 app.include_router(upload_router)
 app.include_router(users_router)
+
+# П4.10: боковое меню на всех страницах — глобал menu_context в окружении Jinja каждого роутера.
+install_menu_globals(module for name, module in list(sys.modules.items()) if name.startswith("routers."))
 
 Base.metadata.create_all(bind=engine)
 # Догоняющие миграции старых баз — Postgres-специфичный SQL (ADD COLUMN IF NOT

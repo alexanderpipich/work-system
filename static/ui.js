@@ -269,12 +269,20 @@
     /* ── Боковая полоса рабочего стола (П4.9) ──────────────────────────────
        Клик по группе — плавная прокрутка к её секции; при прокрутке активная
        группа подсвечивается (IntersectionObserver). Подразделы — обычные ссылки. */
+    // Секция рабочего стола — цель прокрутки из полосы. Вне дашборда элемент с тем же id
+    // может оказаться чем угодно, поэтому считаем только группы карточек дашборда.
+    function dashSection(id) {
+        var el = id ? document.getElementById(id) : null;
+        return el && el.closest && el.closest('.dash') ? el : null;
+    }
+
     function initRail() {
         var rail = document.querySelector('.rail');
         if (!rail) { return; }
         var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         var behavior = reduced ? 'auto' : 'smooth';
         var groups = {};
+        var lastOutside = null;
 
         rail.addEventListener('click', function (e) {
             var top = e.target.closest ? e.target.closest('[data-rail-top]') : null;
@@ -286,12 +294,30 @@
             var link = e.target.closest ? e.target.closest('[data-rail-anchor]') : null;
             if (!link) { return; }
             var id = link.getAttribute('data-rail-anchor');
-            var section = document.getElementById(id);
+            var section = dashSection(id);
+            // Вне дашборда ссылка ведёт на свой дашборд к якорю (/hr#payouts) — обычный переход.
             if (!section) { return; }
             e.preventDefault();
             section.scrollIntoView({ behavior: behavior, block: 'start' });
             if (window.history && history.replaceState) { history.replaceState(null, '', '#' + id); }
         });
+
+        // Клавиатура (П4.10): Tab в полосу раскрывает её (:focus-within), Esc сворачивает
+        // и возвращает фокус туда, где он был до входа в полосу.
+        document.addEventListener('focusin', function (e) {
+            if (!rail.contains(e.target)) { lastOutside = e.target; }
+            else { rail.classList.remove('is-collapsed'); }
+        });
+        rail.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape' && e.key !== 'Esc') { return; }
+            rail.classList.add('is-collapsed');
+            if (lastOutside && document.contains(lastOutside) && lastOutside.focus) {
+                lastOutside.focus();
+            } else if (document.activeElement && document.activeElement.blur) {
+                document.activeElement.blur();
+            }
+        });
+        rail.addEventListener('mouseleave', function () { rail.classList.remove('is-collapsed'); });
 
         var items = rail.querySelectorAll('[data-rail-group]');
         for (var i = 0; i < items.length; i++) {
@@ -302,9 +328,11 @@
         var sections = [];
         var visible = {};
         Object.keys(groups).forEach(function (id) {
-            var section = document.getElementById(id);
+            var section = dashSection(id);
             if (section) { sections.push(section); }
         });
+        // Вне дашборда секций нет — подсветку ставит сервер по текущему пути.
+        if (!sections.length) { return; }
 
         function mark() {
             var active = null;
@@ -324,7 +352,58 @@
         sections.forEach(function (section) { observer.observe(section); });
     }
 
-    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); initRail(); }
+    // Выдвижное меню на телефоне (П4.10): кнопка в шапке, закрытие крестиком, по фону и Esc;
+    // фокус уходит в панель и возвращается на кнопку.
+    function initDrawer() {
+        var drawer = document.getElementById('nav-drawer');
+        var button = document.querySelector('[data-drawer-open]');
+        if (!drawer || !button) { return; }
+        var panel = drawer.querySelector('.drawer-panel');
+
+        function open() {
+            drawer.hidden = false;
+            button.setAttribute('aria-expanded', 'true');
+            document.documentElement.classList.add('drawer-open');
+            var current = panel.querySelector('[aria-current="page"]');
+            (current || panel).focus();
+        }
+        function close() {
+            if (drawer.hidden) { return; }
+            drawer.hidden = true;
+            button.setAttribute('aria-expanded', 'false');
+            document.documentElement.classList.remove('drawer-open');
+            button.focus();
+        }
+
+        button.addEventListener('click', open);
+        drawer.addEventListener('click', function (e) {
+            if (e.target.closest && e.target.closest('[data-drawer-close]')) { close(); }
+        });
+        // Фаза перехвата: пока поверх панели открыта модалка («нет доступа / скоро»),
+        // Esc и Tab принадлежат ей — панель остаётся открытой.
+        document.addEventListener('keydown', function (e) {
+            if (drawer.hidden || document.querySelector('.overlay.open')) { return; }
+            if (e.key === 'Escape' || e.key === 'Esc') { close(); return; }
+            if (e.key !== 'Tab') { return; }
+            // Фокус не выходит из открытой панели.
+            var focusable = panel.querySelectorAll('a[href], button, summary, [tabindex]:not([tabindex="-1"])');
+            if (!focusable.length) { return; }
+            var first = focusable[0];
+            var last = focusable[focusable.length - 1];
+            if (e.shiftKey && (document.activeElement === first || document.activeElement === panel)) {
+                e.preventDefault(); last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault(); first.focus();
+            }
+        }, true);
+        if (window.matchMedia) {
+            var wide = window.matchMedia('(min-width: 721px)');
+            var onWide = function () { if (wide.matches) { close(); } };
+            if (wide.addEventListener) { wide.addEventListener('change', onWide); } else if (wide.addListener) { wide.addListener(onWide); }
+        }
+    }
+
+    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); initRail(); initDrawer(); }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
