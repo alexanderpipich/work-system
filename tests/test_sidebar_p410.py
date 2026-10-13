@@ -92,6 +92,27 @@ class PageTests(unittest.TestCase):
             self._as(_user(role))
             self.assertIn(RAIL, self._get("/hr/employees"))
 
+    def test_short_page_rail_background(self):
+        # Короткая страница: фон полосы — на липкой .rail-inner (100vh), а не на .rail-panel
+        # (её высота = высота контента, фон обрывался и список шёл белым по белому).
+        self._as(_user("hr_lead"))
+        html = self._get("/admin/payouts")
+        self.assertRegex(html, r'<aside class="rail"[^>]*>\s*<div class="rail-panel">\s*<div class="rail-inner">')
+        with open(os.path.join(os.path.dirname(__file__), "..", "static", "app.css"), encoding="utf-8") as f:
+            css = f.read()
+
+        def rule(selector):
+            match = re.search(r"(?m)^" + re.escape(selector) + r" \{([^}]*)\}", css)
+            self.assertIsNotNone(match, selector)
+            return match.group(1)
+
+        self.assertIn("background: var(--brand-blue)", rule(".rail-inner"))
+        self.assertIn("height: 100vh", rule(".rail-inner"))
+        self.assertNotIn("background", rule(".rail-panel"))
+        self.assertIn("min-height: 100vh", rule(".with-rail"))
+        self.assertIn("width: 32px; height: 32px", rule(".rail-brand img"))
+        self.assertIn("scrollbar-width: none", rule(".rail-groups"))
+
     def test_no_rail_in_cabinet_and_login(self):
         self._as(_user("hr_lead"))
         for path in ("/cabinet", "/cabinet/password"):
