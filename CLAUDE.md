@@ -102,4 +102,6 @@ Use FastAPI's `Depends(get_db)` from `dependencies.py` — it yields a `SessionL
 
 ## Template Conventions
 
-Templates use CSS variables (`--brand-blue`, `--brand-peach`) and a consistent context shape: user info, data lists, error/message banners. Role-conditional rendering is done with Jinja2 `{% if user.role == ... %}` checks inside templates.
+Templates use CSS variables (`--brand-blue`, `--brand-peach`) and a consistent context shape: user info, data lists, error/message banners.
+
+**Dashboard (П4.9).** `/admin`, `/hr`, `/economist` render one `admin_dashboard.html`. Cards and the side menu both come from `navigation.NAV_GROUPS` — `build_navigation` (cards, each group with `anchor` and icon) → `build_menu` (menu) — never add a second list of sections. The «Выплаты» group (`PAYOUTS_GROUP`) is both a main-dashboard group and the `/admin/payouts` sub-dashboard. `templates/_sidebar.html` renders the same menu as the desktop rail (`base.html` block `sidebar`, dashboard only) and as the mobile main screen (≤ 720 px). The weekly summary is `routers/dashboards.dashboard_summary` (last complete Mon–Sun week, tariff region of the store, in-process cache 10 min; shown with `reports.view` or `weekly.view`); it reuses `routers/analytics.hours_by_city` / `top_stores`. Role-conditional rendering is done with Jinja2 `{% if user.role == ... %}` checks inside templates.
