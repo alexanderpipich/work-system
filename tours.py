@@ -43,6 +43,32 @@ def demo_employee():
     return normalize_text(" ".join((os.getenv("TOUR_DEMO_EMPLOYEE") or "").split()))
 
 
+def tour_settings(session=None):
+    """Что приложение видит в переменных тура — для проверки на проде (/tour/data, лог запуска).
+    Пустое `TOUR_AUTOSTART` даёт `first`, пустое `TOUR_DEMO_EMPLOYEE` выбрасывает шаг
+    «Документы сотрудника» (26 шагов вместо 27)."""
+    raw = os.getenv("TOUR_AUTOSTART")
+    demo = demo_employee()
+    result = {
+        "TOUR_AUTOSTART": raw if raw is not None else None,
+        "autostart": autostart_mode(),
+        "TOUR_DEMO_EMPLOYEE": demo or None,
+    }
+    if session is not None and demo:
+        from models import User
+
+        needle = normalize_person_name(demo)
+        result["demo_employee_found"] = any(
+            normalize_person_name(name) == needle for (name,) in session.query(User.employee_name).all())
+    return result
+
+
+def log_tour_settings():
+    import logging
+
+    logging.getLogger("uvicorn.error").info("tour settings: %s", json.dumps(tour_settings(), ensure_ascii=False))
+
+
 def load_tour(tour_id):
     if tour_id not in TOUR_IDS:
         return None

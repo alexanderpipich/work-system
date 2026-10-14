@@ -20,6 +20,9 @@
 {% from "_sidebar.html" import sidebar, drawer %}
 {% from "_nav_card.html" import nav_lock_modal %}
 {% from "_tour.html" import tour_help, tour_assets %}
+{# Тур — в начале body, без defer: на тяжёлых страницах (реестр документов, договоры, недельный
+   отчёт) карточка появляется вместе с верхом страницы, а не после загрузки всей таблицы. #}
+{{ tour_assets(tour, request.url.path if request is defined and request else '') }}
 
 {# П4.9–П4.10: боковая полоса слева от шапки и контента на каждой странице офисной роли.
    Меню — menu_context(request) (menu_context.py, один расчёт на запрос); сотруднику, в кабинете
@@ -68,7 +71,6 @@
 {% if nav %}{{ nav_lock_modal() }}{% endif %}
 
 <script src="/static/ui.js?v=9" defer></script>
-{{ tour_assets(tour, request.url.path if request is defined and request else '') }}
 {% block scripts %}{% endblock %}
 </body>
 </html>

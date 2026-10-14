@@ -16,7 +16,8 @@ from fastapi import Request
 from sqlalchemy.orm import sessionmaker
 
 from document_alerts import run_document_expiry_alerts
-from models import AuditLog, DocumentExpiryAlert, DocumentType, EmployeeDocument, EmployeeQr, Shift, User
+from models import (AuditLog, CitizenshipRegime, Country, DocumentExpiryAlert, DocumentType, EmployeeDocument,
+                    EmployeeQr, RegimeDocumentRule, Shift, User)
 from rbac import ROLE_LABELS
 from utils import get_password_hash
 from test_payouts import A, WEEK, _engine, _shift, seed as seed_payouts
@@ -100,8 +101,8 @@ class TourDataTests(unittest.TestCase):
         shown = [s for s in steps if s["type"] != "navigate"]
         self.assertEqual(len(shown), 26)  # 0a–0c + шаги 1–23; без демо-сотрудника — как раньше
         self.assertEqual([s["url"] for s in steps if s["type"] == "navigate"], [
-            "/admin/payouts/weekly", "/admin/payouts/advances", "/hr/documents", "/admin/contracts", "/hr/team",
-            "/hr"])
+            "/admin/payouts/weekly", "/admin/payouts/advances", "/hr/documents?status=all&document_type_id=0",
+            "/admin/contracts", "/hr/team", "/hr"])
         self.assertNotIn("Документы сотрудника", [s["title"] for s in shown])
         self.assertFalse(any("requires" in s or "url_demo" in s for s in steps))
         self.assertEqual(len(shown[1]["tiles"]), 7)
@@ -229,6 +230,43 @@ class TourPagesTests(_Client):
         self._check_anchors("hr_lead", {"/admin/payouts/weekly": week, "/admin/payouts/advances": week})
         with patch.dict(os.environ, {"TOUR_DEMO_EMPLOYEE": A}):
             self._check_anchors("hr_lead", {"/admin/payouts/weekly": week, "/admin/payouts/advances": week})
+
+    # Признак «в таблице есть строка данных» по страницам переходов тура руководителя.
+    DATA_ROWS = {
+        "/admin/payouts/weekly": (r'<tr class="(noreq)?" data-tour="weekly-row"|<tr class="(noreq)?"\s', "Нет смен за неделю"),
+        "/admin/payouts/advances": (r'name="employee_names"|<tr>\s*<td', "Нет сотрудников со сменами за неделю"),
+        "/hr/documents": (r'data-tour="docs-table"(?:(?!</tbody>).)*?<tr>\s*<td>', "Нет строк по выбранным фильтрам"),
+        "/admin/contracts": (r'href="/admin/contracts/contract/\d+"', "Нет сотрудников по фильтрам"),
+        "/hr/team": (r'class="tm-block"', None),
+    }
+
+    def test_hr_lead_navigate_pages_not_empty(self):
+        """Каждый переход тура руководителя открывает страницу, где есть хотя бы одна строка данных:
+        реестр документов — со всеми статусами и типами, а не с фильтром «на проверке» по умолчанию."""
+        db = self.Session()  # как на демо-копии: у сотрудника гражданство с обязательными документами
+        db.add(CitizenshipRegime(id=900, code="patent", name="Патент"))
+        db.add(Country(id=900, name="Узбекистан", regime_id=900))
+        db.add_all([RegimeDocumentRule(regime_id=900, document_type_id=type_id) for type_id in (101, 102, 103)])
+        db.get(User, 1).citizenship_country_id = 900
+        db.commit()
+        self._as(30)
+        week = f"week={WEEK.isoformat()}"  # посев — в фиксированной неделе; на проде — прошлая полная
+        for demo in ("", A):
+            with patch.dict(os.environ, {"TOUR_DEMO_EMPLOYEE": demo}):
+                urls = [s["url"] for s in tour_for_user(HR_LEAD)["steps"] if s["type"] == "navigate"]
+            self.assertEqual(urls[-1], "/hr")  # возврат на рабочий стол — без таблицы
+            for url in urls[:-1]:
+                path = url.split("?")[0]
+                with self.subTest(demo=demo, url=url):
+                    if path.startswith("/admin/payouts/"):
+                        url += ("&" if "?" in url else "?") + week
+                    html = self._page(url)
+                    rows, empty = self.DATA_ROWS[path]
+                    self.assertRegex(html, re.compile(rows, re.S))
+                    if empty:
+                        self.assertNotIn(empty, html)
+        # голый реестр (фильтр по умолчанию «на проверке») в посеве пуст — поэтому переход с параметрами
+        self.assertIn("Нет строк по выбранным фильтрам", self._page("/hr/documents"))
 
     def test_demo_employee_pages(self):
         self._as(30)
