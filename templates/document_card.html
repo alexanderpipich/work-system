@@ -54,8 +54,17 @@
             <input type="hidden" name="back" value="{{ back_param }}">
             <fieldset {% if not can_edit %}disabled{% endif %} style="border:0;padding:0;margin:0">
             <div class="form-grid">
+                {% if patent is not none %}
+                {# Патент: номер хранится строкой «78 №2600131320 / ПР 8408114» — здесь по частям. #}
+                <input type="hidden" name="patent_parts" value="1">
+                <div class="field"><label>Серия патента</label><input name="patent_series" value="{{ patent.series }}" placeholder="78"></div>
+                <div class="field"><label>Номер патента</label><input name="patent_number" value="{{ patent.number }}" placeholder="2600131320"></div>
+                <div class="field"><label>Серия бланка патента</label><input name="patent_blank_series" value="{{ patent.blank_series }}" placeholder="ПР"></div>
+                <div class="field"><label>Номер бланка патента</label><input name="patent_blank_number" value="{{ patent.blank_number }}" placeholder="8408114"></div>
+                {% else %}
                 <div class="field"><label>Номер{% if type and type.requires_number %} <span class="muted">(обязателен)</span>{% endif %}</label>
                     <input name="document_number" value="{{ document.document_number or '' }}"></div>
+                {% endif %}
                 <div class="field"><label>Дата выдачи</label>
                     <input type="date" name="issue_date" value="{{ document.issue_date.isoformat() if document.issue_date else '' }}"></div>
                 <div class="field"><label>Срок действия</label>

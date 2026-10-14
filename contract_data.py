@@ -6,13 +6,13 @@
 источник (save_fixes), а не только в документ.
 """
 
-from datetime import date
+from datetime import date, timedelta
 
 from audit_helpers import create_audit_log
 from contract_generator import NO_DATA, fmt_day, fmt_long, fmt_quoted, fmt_short, rubles_phrase
 from employee_profile import (DOC_PASSPORT, DOC_PATENT, DOC_SNILS, format_patent_number, latest_document,
                               parse_patent_number)
-from models import DocumentType, EmployeeDocument, LegalEntity, Region, RegimeDocumentRule
+from models import DocumentType, EmployeeDocument, LegalEntity, Region, RegimeDocumentRule, Shift, Store
 from time_helpers import now_utc
 from utils import normalize_text
 
@@ -21,6 +21,11 @@ SOURCE_DOC = "документ"
 SOURCE_LE = "юрлицо"
 SOURCE_REGION = "регион"
 SOURCE_FORM = "ввод"
+SOURCE_STORE = "магазин"
+SOURCE_SHIFTS = "смены за 14 дней"
+SOURCE_DEFAULT = "по умолчанию"
+DEFAULT_POSITION = "подсобный рабочий"  # без патента и без должности в карточке
+RECENT_DAYS = 14
 
 LE_FIELDS = [
     ("le_full_name", "full_name", "Полное наименование юрлица"),
@@ -88,6 +93,107 @@ def document_legal_entities(session):
         LegalEntity.is_default.desc(), LegalEntity.name).all()
 
 
+def _shifts_word(n):
+    if n % 10 == 1 and n % 100 != 11:
+        return "смена"
+    if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14:
+        return "смены"
+    return "смен"
+
+
+def _of_shifts_word(n):
+    """После «из N»: «из 1 смены», «из 2 смен», «из 21 смены»."""
+    return "смены" if n % 10 == 1 and n % 100 != 11 else "смен"
+
+
+def format_rate(value):
+    """ЧТС для договора: 333 → «333,00»."""
+    return f"{value:.2f}".replace(".", ",")
+
+
+def _rate_short(value):
+    return f"{value:g}".replace(".", ",")
+
+
+def recent_work(session, user, today, days=RECENT_DAYS):
+    """Где и по какой ЧТС сотрудник работал последние `days` дней (по сменам timebook).
+
+    Основной магазин — больше смен; при равенстве — больше часов, затем самая поздняя смена.
+    Ставка — ЧТС через price_shift, как в выплатах (индивидуальные ставки, регион ТК), без «Акции»:
+    наиболее частая по числу смен, при равенстве — по часам; смены без ЧТС не считаются.
+    Смены без плана и услуги «не из timebook» не учитываются. Смен нет — None."""
+    from payroll_run_helpers import payable_shifts, price_shift
+    from service_catalog import build_service_resolver
+    from shift_helpers import is_no_plan_shift
+    from store_helpers import extract_tk_number
+    from utils import load_rates
+
+    shifts = session.query(Shift).filter(
+        Shift.employee == normalize_text(user.employee_name),
+        Shift.shift_date >= today - timedelta(days=days - 1),
+        Shift.shift_date <= today,
+    ).all()
+    resolve = build_service_resolver(session)
+    shifts = [s for s in payable_shifts(shifts, resolve) if not is_no_plan_shift(s) and (s.hours or 0) > 0]
+    if not shifts:
+        return None
+
+    stores = {}
+    for shift in shifts:
+        row = stores.setdefault(normalize_text(shift.store), {"store": shift.store, "count": 0, "hours": 0, "last": None})
+        row["count"] += 1
+        row["hours"] += shift.hours or 0
+        row["last"] = max(filter(None, [row["last"], shift.shift_date]))
+    ranked = sorted(stores.values(), key=lambda r: (r["count"], r["hours"], r["last"]), reverse=True)
+
+    def label(row):
+        tk = extract_tk_number(row["store"])
+        return f"ТК {tk}" if tk is not None else row["store"]
+
+    main = ranked[0]
+    tk = extract_tk_number(main["store"])
+    store = session.query(Store).filter(Store.tk_number == tk).first() if tk is not None else None
+    total = len(shifts)
+    address_hint = f"{label(main)}, {main['count']} из {total} {_of_shifts_word(total)}"
+    if len(ranked) > 1:
+        address_hint += "; также " + ", ".join(
+            f"{label(r)}, {r['count']} {_shifts_word(r['count'])}" for r in ranked[1:])
+
+    rates_by_value = {}
+    rates = load_rates(session)
+    for shift in shifts:
+        _, rate_value, _, _ = price_shift(shift, rates, resolve, None)  # без надбавок: «Акция» временная
+        if not rate_value:
+            continue
+        row = rates_by_value.setdefault(round(rate_value, 2), {"count": 0, "hours": 0})
+        row["count"] += 1
+        row["hours"] += shift.hours or 0
+    rate = rate_hint = None
+    if rates_by_value:
+        ranked_rates = sorted(rates_by_value.items(), key=lambda item: (item[1]["count"], item[1]["hours"]),
+                              reverse=True)
+        rate, top = ranked_rates[0]
+        counted = sum(r["count"] for r in rates_by_value.values())
+        rate_hint = f"ЧТС по {top['count']} из {counted} {_of_shifts_word(counted)}"
+        if len(ranked_rates) > 1:
+            rate_hint += "; также " + ", ".join(
+                f"{_rate_short(value)} — {r['count']} {_shifts_word(r['count'])}" for value, r in ranked_rates[1:])
+    return {"store": store, "store_label": label(main), "address": normalize_text(store.object_address) if store else "",
+            "address_hint": address_hint, "rate": rate, "rate_hint": rate_hint}
+
+
+def contract_position(profile, with_patent, form):
+    """Должность договора: введённая → профессия по патенту (при патенте) → должность из карточки →
+    «подсобный рабочий». Возвращает (должность, источник)."""
+    if form.get("position"):
+        return form["position"], SOURCE_FORM
+    if with_patent:
+        return profile["patent_profession"], SOURCE_DOC
+    if profile["job_title"]:
+        return profile["job_title"], SOURCE_USER
+    return DEFAULT_POSITION, SOURCE_DEFAULT
+
+
 def citizen_word(gender):
     return {"m": "гражданин", "f": "гражданка"}.get(gender, "гражданин(ка)")
 
@@ -141,8 +247,9 @@ def _patent_fields(profile, region):
     ]
 
 
-def contract_fields(session, profile, entity, region, form):
-    """(поля проверки полноты, значения для генератора, ошибки формы)."""
+def contract_fields(session, profile, entity, region, form, work=None):
+    """(поля проверки полноты, значения для генератора, ошибки формы). work — recent_work():
+    адрес места работы из магазина, где сотрудник чаще выходил за 14 дней (иначе — из юрлица)."""
     contract_date = form.get("contract_date") or date.today()
     with_patent = needs_patent(session, profile)
     errors = []
@@ -161,13 +268,23 @@ def contract_fields(session, profile, entity, region, form):
     ]
     if with_patent:
         fields += _patent_fields(profile, region)
-    fields += _le_fields(entity, CONTRACT_LE_KEYS)
+    store = work["store"] if work else None
+    fields += _le_fields(entity, CONTRACT_LE_KEYS - {"work_address"} if store else CONTRACT_LE_KEYS)
+    if store:
+        # Адрес — магазина, где сотрудник чаще выходил; «заполнить на месте» — в карточку магазина.
+        address = _field("work_address", "Адрес места работы (п. 1.3)", work["address"], SOURCE_STORE,
+                         ("store", store.id, "object_address"))
+        address["hint"] = work["address_hint"]
+        fields.append(address)
 
-    position = form.get("position") or (profile["patent_profession"] if with_patent else "")
+    position, position_source = contract_position(profile, with_patent, form)
+    rate_field = _field("rate", "Ставка за час, ₽", form.get("rate") or "", SOURCE_FORM, ("form", "rate"))
+    if work and work["rate_hint"] and form.get("rate") == format_rate(work["rate"]):
+        rate_field.update(source=SOURCE_SHIFTS, hint=work["rate_hint"])
     fields += [
         _field("contract_number", "Номер договора", form.get("contract_number"), SOURCE_FORM, ("form", "contract_number")),
-        _field("position", "Должность", position, SOURCE_FORM if form.get("position") else SOURCE_DOC, ("form", "position")),
-        _field("rate", "Ставка за час, ₽", form.get("rate") or "", SOURCE_FORM, ("form", "rate")),
+        _field("position", "Должность", position, position_source, ("form", "position")),
+        rate_field,
         _field("city", "Город договора", form.get("city") or "", SOURCE_FORM, ("form", "city")),
     ]
 
@@ -334,6 +451,14 @@ def save_fixes(session, request, actor, user, entity, region, fixes):
         elif kind == "region" and region is not None:
             setattr(region, rest, value)
             saved += 1
+        elif kind == "store":
+            # Адрес места работы — в карточку магазина (Store.object_address), не в юрлицо.
+            store_id, _, attr = rest.partition(":")
+            store = session.get(Store, int(store_id)) if store_id.isdigit() else None
+            if store is not None and attr == "object_address":
+                store.object_address = value
+                store.updated_at = now_utc()
+                saved += 1
     if patent_parts:
         document = _document(session, user, DOC_PATENT)
         if document is not None:

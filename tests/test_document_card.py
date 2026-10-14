@@ -77,7 +77,11 @@ class DocumentCardTests(_Client):
 
     def test_card_shows_data(self):
         html = self.client.get(self.card + "?back=/hr/documents%3Fstatus%3Dall").text
-        self.assertIn("78 №2600131320 / ПР 8408114", html)
+        # патент — по частям: серия, номер, серия и номер бланка
+        for name, value in (("patent_series", "78"), ("patent_number", "2600131320"),
+                            ("patent_blank_series", "ПР"), ("patent_blank_number", "8408114")):
+            self.assertIn(f'name="{name}" value="{value}"', html)
+        self.assertNotIn('name="document_number"', html)
         self.assertIn('value="2026-08-18"', html)
         self.assertIn("подсобный рабочий", html)
         self.assertIn("патент.png", html)
@@ -98,6 +102,15 @@ class DocumentCardTests(_Client):
         self.assertIn("подсобный рабочий", log.old_value)
         self.assertIn("грузчик", log.new_value)
         self.assertNotIn("document_number", log.new_value)  # в аудите только изменённые поля
+
+    def test_patent_blank_fields_saved(self):
+        """001: серия и номер бланка патента — отдельные поля, собираются в номер документа."""
+        self._save(patent_parts="1", patent_series="78", patent_number="2600131320", patent_blank_series="пр",
+                   patent_blank_number="9990001")
+        self.assertEqual(self._doc().document_number, "78 №2600131320 / ПР 9990001")
+        self._save(patent_parts="1", patent_series="", patent_number="", patent_blank_series="",
+                   patent_blank_number="")
+        self.assertIsNone(self._doc().document_number)
 
     def test_no_changes(self):
         self.assertIn("message=%D0%98%D0%B7%D0%BC%D0%B5%D0%BD%D0%B5%D0%BD%D0%B8%D0%B9", self._save().headers["location"])

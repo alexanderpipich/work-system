@@ -13,6 +13,7 @@
 {% elif t[0] == 'patent' %}{% set name = 'fix:patent:' ~ t[1] %}
 {% elif t[0] == 'le' %}{% set name = 'fix:le:' ~ t[1] %}
 {% elif t[0] == 'region' %}{% set name = 'fix:region:' ~ t[1] %}
+{% elif t[0] == 'store' %}{% set name = 'fix:store:' ~ t[1] ~ ':' ~ t[2] %}
 {% endif %}
 {% if t[0] == 'user' and t[1] == 'gender' %}
 <select name="{{ name }}"><option value="">—</option><option value="m">мужской</option><option value="f">женский</option></select>
@@ -68,8 +69,12 @@
                 <div class="field"><label>Город</label><input type="text" name="city" value="{{ form.city }}" placeholder="г. Санкт-Петербург"></div>
                 <div class="field"><label>Вступает в силу</label><input type="date" name="effective_date" value="{{ form.effective_date.isoformat() if form.effective_date else '' }}" placeholder="= дата договора"></div>
                 <div class="field"><label>Начало работы</label><input type="date" name="start_date" value="{{ form.start_date.isoformat() if form.start_date else '' }}"></div>
-                <div class="field"><label>Должность</label><input type="text" name="position" value="{{ form.position or values.position }}" placeholder="{{ 'из патента' if with_patent else 'подсобный рабочий' }}"></div>
-                <div class="field"><label>Ставка за час, ₽</label><input type="text" name="rate" value="{{ form.rate }}" placeholder="232,18"></div>
+                {% set position_field = fields | selectattr('key', 'equalto', 'position') | first %}
+                {% set rate_field = fields | selectattr('key', 'equalto', 'rate') | first %}
+                <div class="field"><label>Должность</label><input type="text" name="position" value="{{ form.position or values.position }}" placeholder="{{ 'из патента' if with_patent else 'подсобный рабочий' }}">
+                    {% if not form.position and position_field %}<span class="field-hint">{{ {'документ': 'профессия по патенту', 'сотрудник': 'из карточки сотрудника', 'по умолчанию': 'в карточке должности нет — по умолчанию'}.get(position_field.source, '') }}</span>{% endif %}</div>
+                <div class="field"><label>Ставка за час, ₽</label><input type="text" name="rate" value="{{ form.rate }}" placeholder="232,18">
+                    {% if rate_field and rate_field.hint %}<span class="field-hint">{{ rate_field.hint }}</span>{% elif not form.rate %}<span class="field-hint">Смен со ставкой за 14 дней нет — введите вручную</span>{% endif %}</div>
                 <div class="field"><label>Срок</label>
                     {% if with_patent %}
                     {# При патенте договор только срочный — «бессрочный» не предлагается (П4.11 A1). #}
@@ -102,7 +107,7 @@
                         {% if f.target and f.target[0] != 'form' or f.missing %}
                         <tr class="{% if f.missing %}is-missing{% endif %}">
                             <td class="fill-label">{{ f.label }}</td>
-                            <td>{{ f.value or '—' }}</td>
+                            <td>{{ f.value or '—' }}{% if f.hint %}<div class="field-hint">{{ f.hint }}</div>{% endif %}</td>
                             <td class="muted">{{ f.source }}</td>
                             <td>{% if f.missing and f.target and f.target[0] != 'form' %}{{ fix_input(f) }}{% elif f.missing %}<span class="muted">в параметрах выше</span>{% endif %}</td>
                         </tr>
@@ -111,7 +116,7 @@
                     </tbody>
                 </table>
             </div>
-            <p class="field-hint">Введённое сохраняется туда, откуда поле берётся: в карточку сотрудника, его документ, юрлицо или регион.</p>
+            <p class="field-hint">Введённое сохраняется туда, откуда поле берётся: в карточку сотрудника, его документ, юрлицо, регион или магазин.</p>
         </div>
 
         <div class="card">
