@@ -37,6 +37,10 @@ def ensure_legal_entities_table():
         connection.execute(text("ALTER TABLE legal_entities ADD COLUMN IF NOT EXISTS director_title VARCHAR"))
         connection.execute(text("ALTER TABLE legal_entities ADD COLUMN IF NOT EXISTS work_address TEXT"))
         connection.execute(text("ALTER TABLE legal_entities ADD COLUMN IF NOT EXISTS actual_address TEXT"))
+        # Юрлицо по умолчанию для бланков.
+        connection.execute(text(
+            "ALTER TABLE legal_entities ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT FALSE"
+        ))
 
 
 def active_legal_entities(session):

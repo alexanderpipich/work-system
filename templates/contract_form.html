@@ -51,7 +51,7 @@
                 <div class="field"><label>Юрлицо</label>
                     <select name="legal_entity_id" data-recheck="le">
                         <option value="0">— выберите —</option>
-                        {% for e in legal_entities %}<option value="{{ e.id }}" {% if entity and entity.id == e.id %}selected{% endif %}>{{ e.name }}</option>{% endfor %}
+                        {% for e in legal_entities %}<option value="{{ e.id }}" {% if entity and entity.id == e.id %}selected{% endif %}>{{ e.name }}{% if e.is_default %} — по умолчанию{% endif %}</option>{% endfor %}
                     </select>
                 </div>
                 {% if kind != 'recommendation' %}

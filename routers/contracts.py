@@ -14,8 +14,8 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
-from contract_data import (contract_document_type, contract_fields, default_legal_entity, needs_patent,
-                           petition_fields, recommendation_fields, regions, save_fixes, suggest_contract_number)
+from contract_data import (contract_document_type, contract_fields, default_legal_entity, document_legal_entities,
+                           needs_patent, petition_fields, recommendation_fields, regions, save_fixes, suggest_contract_number)
 from contract_generator import TemplateMismatch, generate_contract, generate_petition, generate_recommendation
 from dependencies import RedirectException, current_user, get_db
 from document_helpers import preview_kind
@@ -231,7 +231,7 @@ def _context(session, employee, kind, form):
         "missing": [f for f in fields if f["missing"]],
         "with_patent": with_patent,
         "form": form,
-        "legal_entities": session.query(LegalEntity).filter(LegalEntity.is_active == True).order_by(LegalEntity.name).all(),  # noqa: E712
+        "legal_entities": document_legal_entities(session),
         "regions": regions(session),
     }
 
