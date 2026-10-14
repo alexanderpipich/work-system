@@ -183,7 +183,21 @@
     },
     {
       "type": "navigate",
-      "url": "/admin/contracts"
+      "url": "/hr/documents?employee_name={demo_employee}&document_type_id=0&status=all",
+      "requires": "demo_employee"
+    },
+    {
+      "type": "element",
+      "anchor": "docs-table",
+      "placement": "top",
+      "title": "Документы сотрудника",
+      "body": "Вот документы одного сотрудника: паспорт, патент, регистрация — с номерами, датами и сканами. Часть он загрузил сам из личного кабинета, кадровик проверил. Из этих данных система и соберёт договор — сейчас покажем.",
+      "requires": "demo_employee"
+    },
+    {
+      "type": "navigate",
+      "url": "/admin/contracts",
+      "url_demo": "/admin/contracts?q={demo_employee}"
     },
     {
       "type": "element",

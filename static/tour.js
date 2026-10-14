@@ -19,11 +19,16 @@
     function read(key) { try { return JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (e) { return null; } }
     function write(key, value) { try { sessionStorage.setItem(key, JSON.stringify(value)); } catch (e) {} }
     function drop(key) { try { sessionStorage.removeItem(key); } catch (e) {} }
-    function samePath(a, b) {
-        var pa = new URL(a, location.href).pathname.replace(/\/+$/, '') || '/';
-        var pb = new URL(b, location.href).pathname.replace(/\/+$/, '') || '/';
-        return pa === pb;
+    /* Та же страница: путь и параметры запроса (кроме ?tour=1) совпадают — шаг может вести
+       на ту же страницу с фильтром (документы одного сотрудника). */
+    function pageKey(url) {
+        var u = new URL(url, location.href);
+        var params = [];
+        u.searchParams.forEach(function (value, key) { if (key !== 'tour') params.push([key, value]); });
+        params.sort(function (x, y) { return x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : (x[1] < y[1] ? -1 : x[1] > y[1] ? 1 : 0); });
+        return (u.pathname.replace(/\/+$/, '') || '/') + '?' + JSON.stringify(params);
     }
+    function samePath(a, b) { return pageKey(a) === pageKey(b); }
 
     var tour = null;
     var state = null;

@@ -22,9 +22,12 @@ from utils import get_password_hash
 from test_payouts import A, WEEK, _engine, _shift, seed as seed_payouts
 from test_predemo_p411 import _Client
 from time_helpers import business_today
-from tours import STEP_TYPES, TOUR_IDS, build_tour_context, load_tour
+from tours import STEP_TYPES, TOUR_IDS, build_tour_context, load_tour, tour_for_user
+from urllib.parse import quote
+from utils import normalize_person_name
 
-NO_REQ = "Деревянко Дмитрий"  # сотрудник со сменами, но без реквизитов — розовая строка
+NO_REQ = "Деревянко Дмитрий"
+HR_LEAD = SimpleNamespace(role="hr_lead", is_admin=False, tour_seen_at=None)  # сотрудник со сменами, но без реквизитов — розовая строка
 
 
 def seed(session):
@@ -92,12 +95,15 @@ class TourDataTests(unittest.TestCase):
         self.assertEqual((steps[0]["next_label"], steps[-1]["next_label"]), ("Начать", "Закрыть"))
 
     def test_hr_lead_tour_shape(self):
-        steps = load_tour("hr_lead")["steps"]
+        with patch.dict(os.environ, {"TOUR_DEMO_EMPLOYEE": ""}):
+            steps = tour_for_user(HR_LEAD)["steps"]
         shown = [s for s in steps if s["type"] != "navigate"]
-        self.assertEqual(len(shown), 26)  # 0a–0c + шаги 1–23
+        self.assertEqual(len(shown), 26)  # 0a–0c + шаги 1–23; без демо-сотрудника — как раньше
         self.assertEqual([s["url"] for s in steps if s["type"] == "navigate"], [
             "/admin/payouts/weekly", "/admin/payouts/advances", "/hr/documents", "/admin/contracts", "/hr/team",
-            "@start"])
+            "/hr"])
+        self.assertNotIn("Документы сотрудника", [s["title"] for s in shown])
+        self.assertFalse(any("requires" in s or "url_demo" in s for s in steps))
         self.assertEqual(len(shown[1]["tiles"]), 7)
         self.assertEqual(shown[1]["tiles"][0]["title"], "Руководитель")
         self.assertEqual([t["title"] for t in shown[-2]["tiles"]], ["Уведомления в МВД", "Связка с CRM найма."])
@@ -114,6 +120,26 @@ class TourDataTests(unittest.TestCase):
         self.assertIn("Готово. Тур можно открыть снова в любой момент — кнопка «?» в шапке.", employee)
         self.assertIn("Красным — смены, которые пришли без плана магазина.", hr_lead)
         self.assertIn("аванс и табель ушли в банк → документы под контролем.", hr_lead)
+
+
+class DemoEmployeeTests(unittest.TestCase):
+    """TOUR_DEMO_EMPLOYEE: документы одного сотрудника после акта 3, договоры — с фильтром по ФИО."""
+
+    def test_with_demo_employee(self):
+        with patch.dict(os.environ, {"TOUR_DEMO_EMPLOYEE": " Гаффуров  Мурод Мехмоналиевич "}):
+            steps = tour_for_user(HR_LEAD)["steps"]
+            ctx = build_tour_context(HR_LEAD, "/hr")
+        titles = [s.get("title") for s in steps]
+        i = titles.index("Документы сотрудника")
+        self.assertEqual(titles[i - 2], "Сроки патентов")
+        self.assertEqual(steps[i]["anchor"], "docs-table")
+        self.assertTrue(steps[i]["body"].startswith("Вот документы одного сотрудника: паспорт, патент, регистрация"))
+        name = quote("Гаффуров Мурод Мехмоналиевич")
+        self.assertEqual(steps[i - 1], {"type": "navigate", "url":
+                         f"/hr/documents?employee_name={name}&document_type_id=0&status=all"})
+        self.assertEqual(steps[i + 1], {"type": "navigate", "url": f"/admin/contracts?q={name}"})
+        self.assertEqual(len([s for s in steps if s["type"] != "navigate"]), 27)
+        self.assertEqual(ctx["demo_norm"], normalize_person_name("Гаффуров Мурод Мехмоналиевич"))
 
 
 class AutostartTests(unittest.TestCase):
@@ -179,11 +205,11 @@ class TourPagesTests(_Client):
 
     def _element_anchors(self, tour_id):
         """Якоря element-шагов по страницам: [(страница, якорь или список запасных)]."""
-        tour = load_tour(tour_id)
+        tour = tour_for_user(SimpleNamespace(role=tour_id, is_admin=False, tour_seen_at=None))
         page, result = tour["start_url"], []
         for step in tour["steps"]:
             if step["type"] == "navigate":
-                page = tour["start_url"] if step["url"] == "@start" else step["url"]
+                page = step["url"]
             elif step["type"] == "element":
                 result.append((page, step["anchor"]))
         return result
@@ -201,6 +227,25 @@ class TourPagesTests(_Client):
         self._as(30)
         week = f"?week={WEEK.isoformat()}"
         self._check_anchors("hr_lead", {"/admin/payouts/weekly": week, "/admin/payouts/advances": week})
+        with patch.dict(os.environ, {"TOUR_DEMO_EMPLOYEE": A}):
+            self._check_anchors("hr_lead", {"/admin/payouts/weekly": week, "/admin/payouts/advances": week})
+
+    def test_demo_employee_pages(self):
+        self._as(30)
+        with patch.dict(os.environ, {"TOUR_DEMO_EMPLOYEE": "Борисова Вера"}):
+            docs = self._page("/hr/documents?employee_name=" + quote("Борисова Вера") + "&document_type_id=0&status=all")
+            self.assertIn('data-tour="docs-table"', docs)
+            # кнопки шагов «Договор» / «Рекомендация» — в строке демо-сотрудника (id=2), даже без фильтра
+            html = self._page("/admin/contracts")
+            self.assertRegex(html, r'href="/admin/contracts/contract/2" data-tour="contracts-create"')
+            self.assertRegex(html, r'href="/admin/contracts/recommendation/2" data-tour="contracts-recommendation"')
+            self.assertEqual(html.count('data-tour="contracts-create"'), 1)
+            filtered = self._page("/admin/contracts?q=" + quote("Борисова Вера"))
+            self.assertEqual(re.findall(r'href="/admin/contracts/contract/(\d+)"', filtered), ["2"])
+        with patch.dict(os.environ, {"TOUR_DEMO_EMPLOYEE": "Нет Такого"}):
+            html = self._page("/admin/contracts")  # строки нет — первая, как раньше
+            self.assertEqual(html.count('data-tour="contracts-create"'), 1)
+            self.assertNotRegex(html, r'contract/2" data-tour')
 
     def test_hr_lead_weekly_anchor_cells(self):
         self._as(30)
