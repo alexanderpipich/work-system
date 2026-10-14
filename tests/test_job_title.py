@@ -10,7 +10,8 @@ from models import JOB_TITLES, User
 
 class JobTitleTests(unittest.TestCase):
     def test_fixed_list(self):
-        self.assertEqual(JOB_TITLES, ["ОПРР", "РТЗ", "ПЕКАРНЯ", "ГАСТРОНОМ", "ПУ"])
+        self.assertEqual(JOB_TITLES, ["ОПРР", "РТЗ", "ПЕКАРНЯ", "ГАСТРОНОМ", "ПУ",
+                                      "ПОВАР", "ПЕКАРЬ", "ПСЗ", "ОКС", "МОЙКА", "УБОРКА", "ПРЕСС"])
 
     def test_user_has_job_title_column(self):
         self.assertIn("job_title", User.__table__.columns.keys())

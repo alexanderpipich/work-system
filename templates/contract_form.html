@@ -37,6 +37,8 @@
     .fill-table tr.is-missing td { background: var(--error-bg); }
     .fill-table tr.is-missing .fill-label { color: var(--error-text); font-weight: 700; }
     .fill-table input, .fill-table select { min-width: 220px; }
+    input.is-missing { border-color: var(--error-text); background: var(--error-bg); }
+    .field-hint.is-missing { color: var(--error-text); font-weight: 700; }
 </style>
 {% endblock %}
 
@@ -71,8 +73,9 @@
                 <div class="field"><label>Начало работы</label><input type="date" name="start_date" value="{{ form.start_date.isoformat() if form.start_date else '' }}"></div>
                 {% set position_field = fields | selectattr('key', 'equalto', 'position') | first %}
                 {% set rate_field = fields | selectattr('key', 'equalto', 'rate') | first %}
-                <div class="field"><label>Должность</label><input type="text" name="position" value="{{ form.position or values.position }}" placeholder="{{ 'из патента' if with_patent else 'подсобный рабочий' }}">
-                    {% if not form.position and position_field %}<span class="field-hint">{{ {'документ': 'профессия по патенту', 'сотрудник': 'из карточки сотрудника', 'по умолчанию': 'в карточке должности нет — по умолчанию'}.get(position_field.source, '') }}</span>{% endif %}</div>
+                <div class="field"><label>Должность</label><input type="text" name="position" value="{{ form.position or values.position }}" placeholder="{{ 'из патента' if with_patent else 'работник торгового зала' }}"
+                    {% if position_field and position_field.missing %}class="is-missing"{% endif %}>
+                    {% if position_field and position_field.hint %}<span class="field-hint{% if position_field.missing %} is-missing{% endif %}">{{ position_field.hint }}</span>{% endif %}</div>
                 <div class="field"><label>Ставка за час, ₽</label><input type="text" name="rate" value="{{ form.rate }}" placeholder="232,18">
                     {% if rate_field and rate_field.hint %}<span class="field-hint">{{ rate_field.hint }}</span>{% elif not form.rate %}<span class="field-hint">Смен со ставкой за 14 дней нет — введите вручную</span>{% endif %}</div>
                 <div class="field"><label>Срок</label>

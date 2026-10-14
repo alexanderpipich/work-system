@@ -17,7 +17,7 @@ from inn_sync import set_employee_inn
 from rbac import (LINE_STAFF_ROLES, ROLE_BRIGADIER, ROLE_CHOICES, ROLE_LABELS, TM_ROLE_VALUES, can_manage_role,
                   can_manage_user, canonical_role, has_permission, require_permission, role_choices_for)
 from legal_entity_helpers import active_legal_entities
-from models import JOB_TITLES, Country, Requisite, Shift, TimebookEmployee, User
+from models import JOB_TITLES, Country, Requisite, Shift, TimebookEmployee, User, job_title_name
 from tm_assignment import set_employee_tm, tm_users
 from utils import (
     find_user_by_name,
@@ -32,6 +32,7 @@ from utils import (
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 # Подписи ролей — только из rbac.ROLE_LABELS (П2).
+templates.env.globals["job_title_name"] = job_title_name  # «РТЗ — работник торгового зала» в списке должностей
 templates.env.globals.update(ROLE_LABELS=ROLE_LABELS, ROLE_CHOICES=ROLE_CHOICES, canonical_role=canonical_role,
                              LINE_STAFF_ROLES=LINE_STAFF_ROLES)
 require_user_management = require_permission("users.manage", audit_denied=True)

@@ -101,7 +101,7 @@
                 <select id="job_title" name="job_title">
                     <option value="">— не выбрано —</option>
                     {% for jt in job_titles %}
-                    <option value="{{ jt }}">{{ jt }}</option>
+                    <option value="{{ jt }}">{{ jt }}{% if job_title_name is defined and job_title_name(jt) %} — {{ job_title_name(jt) }}{% endif %}</option>
                     {% endfor %}
                 </select>
             </div>

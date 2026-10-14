@@ -36,6 +36,7 @@ from document_helpers import (
 )
 from file_storage import storage_delete, storage_response
 from employee_profile import DOC_PATENT, format_patent_number, parse_patent_number
+from models import job_title_name
 from inn_sync import INN_DOCUMENT_SORT_ORDER, set_employee_inn
 from models import CitizenshipRegime, Country, DocumentType, DocumentTypeSample, EmployeeDocument, EmployeeStoreAssignment, RegimeDocumentRule, Store, User
 from store_helpers import extract_tk_number
@@ -49,6 +50,7 @@ from utils import normalize_text, safe_return_to
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 templates.env.globals["preview_kind"] = preview_kind  # П4: просмотр документа в модалке
+templates.env.globals["job_title_name"] = job_title_name  # подпись кода должности в карточке сотрудника
 
 
 SAFE_MEDIA_TYPES = {

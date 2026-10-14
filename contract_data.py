@@ -23,8 +23,6 @@ SOURCE_REGION = "регион"
 SOURCE_FORM = "ввод"
 SOURCE_STORE = "магазин"
 SOURCE_SHIFTS = "смены за 14 дней"
-SOURCE_DEFAULT = "по умолчанию"
-DEFAULT_POSITION = "подсобный рабочий"  # без патента и без должности в карточке
 RECENT_DAYS = 14
 
 LE_FIELDS = [
@@ -183,15 +181,22 @@ def recent_work(session, user, today, days=RECENT_DAYS):
 
 
 def contract_position(profile, with_patent, form):
-    """Должность договора: введённая → профессия по патенту (при патенте) → должность из карточки →
-    «подсобный рабочий». Возвращает (должность, источник)."""
+    """Должность договора: введённая → профессия по патенту (при патенте) → расшифровка кода должности
+    из карточки (`JOB_TITLE_NAMES`, им. падеж). Нет должности или расшифровки — пусто, поле в недостающих.
+    Возвращает (должность, источник, подсказка)."""
+    from models import job_title_name
+
     if form.get("position"):
-        return form["position"], SOURCE_FORM
+        return form["position"], SOURCE_FORM, ""
     if with_patent:
-        return profile["patent_profession"], SOURCE_DOC
-    if profile["job_title"]:
-        return profile["job_title"], SOURCE_USER
-    return DEFAULT_POSITION, SOURCE_DEFAULT
+        return profile["patent_profession"], SOURCE_DOC, "профессия по патенту"
+    code = profile["job_title"]
+    if not code:
+        return "", SOURCE_USER, "в карточке сотрудника должности нет — введите"
+    name = job_title_name(code)
+    if not name:
+        return "", SOURCE_USER, f"у должности «{code}» из карточки нет расшифровки — введите"
+    return name, SOURCE_USER, f"из карточки сотрудника: {code}"
 
 
 def citizen_word(gender):
@@ -277,13 +282,13 @@ def contract_fields(session, profile, entity, region, form, work=None):
         address["hint"] = work["address_hint"]
         fields.append(address)
 
-    position, position_source = contract_position(profile, with_patent, form)
+    position, position_source, position_hint = contract_position(profile, with_patent, form)
     rate_field = _field("rate", "Ставка за час, ₽", form.get("rate") or "", SOURCE_FORM, ("form", "rate"))
     if work and work["rate_hint"] and form.get("rate") == format_rate(work["rate"]):
         rate_field.update(source=SOURCE_SHIFTS, hint=work["rate_hint"])
     fields += [
         _field("contract_number", "Номер договора", form.get("contract_number"), SOURCE_FORM, ("form", "contract_number")),
-        _field("position", "Должность", position, position_source, ("form", "position")),
+        dict(_field("position", "Должность", position, position_source, ("form", "position")), hint=position_hint),
         rate_field,
         _field("city", "Город договора", form.get("city") or "", SOURCE_FORM, ("form", "city")),
     ]
@@ -373,9 +378,11 @@ def signer_title(director_title):
 
 
 def recommendation_position(session, profile, form):
-    """Должность в письме: введённая, иначе из патента, иначе из карточки."""
+    """Должность в письме: введённая, иначе из патента, иначе расшифровка кода из карточки (им. падеж)."""
+    from models import job_title_name
+
     patent = profile["patent_profession"] if needs_patent(session, profile) else ""
-    return form.get("position") or patent or profile["job_title"]
+    return form.get("position") or patent or job_title_name(profile["job_title"])
 
 
 def recommendation_fields(session, profile, entity, form):

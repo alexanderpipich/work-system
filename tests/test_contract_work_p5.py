@@ -117,22 +117,53 @@ class ContractWorkTests(_Client):
         self.assertIn("Ставка за час, ₽", html)
         self.assertNotIn("ЧТС по", html)
 
-    def test_position_without_patent(self):
-        self.assertIn('name="position" value="подсобный рабочий"', self._form())  # при патенте — профессия
+    def _russian(self, job_title):
         db = self.Session()
         user = db.get(User, 1)
         user.citizenship_country_id = db.query(Country).filter(Country.name == "Россия").one().id
-        user.job_title = "РТЗ"
+        user.job_title = job_title
         db.commit()
+
+    def test_position_with_patent_from_patent(self):
+        self.assertIn('name="position" value="подсобный рабочий"', self._form())  # профессия по патенту в посеве
+        self.assertIn("профессия по патенту", self._form())
+
+    def test_position_without_patent_decoded_from_card(self):
+        self._russian("РТЗ")
         html = self._form()
-        self.assertIn('name="position" value="РТЗ"', html)
-        self.assertIn("из карточки сотрудника", html)
-        db = self.Session()
-        db.get(User, 1).job_title = None
-        db.commit()
-        html = self._form()
-        self.assertIn('name="position" value="подсобный рабочий"', html)
-        self.assertIn("в карточке должности нет — по умолчанию", html)
+        self.assertIn('name="position" value="работник торгового зала"', html)
+        self.assertIn("из карточки сотрудника: РТЗ", html)
+        self._russian("ОКС")
+        self.assertIn('name="position" value="кассир"', self._form())
+
+    def test_position_empty_and_missing_without_title(self):
+        for job_title, hint in ((None, "в карточке сотрудника должности нет — введите"),
+                                ("ПЕКАРНЯ", "у должности «ПЕКАРНЯ» из карточки нет расшифровки — введите")):
+            with self.subTest(job_title=job_title):
+                self._russian(job_title)
+                html = self._form()
+                self.assertIn('name="position" value=""', html)
+                self.assertIn('class="is-missing"', html)
+                self.assertIn(hint, html)
+                self.assertNotIn("подсобный рабочий", html)
+                self.assertRegex(html, r'<tr class="is-missing">\s*<td class="fill-label">Должность</td>')
+
+    def test_job_title_names(self):
+        from models import JOB_TITLE_NAMES, JOB_TITLES, job_title_name
+        self.assertEqual(job_title_name("ПУ"), "продавец универсал")
+        self.assertEqual(job_title_name("пу", genitive=True), "продавца универсала")
+        self.assertEqual(job_title_name("ПРЕСС", genitive=True), "прессовщика")
+        self.assertEqual(job_title_name("ГАСТРОНОМ"), "")
+        self.assertTrue(set(JOB_TITLE_NAMES) <= set(JOB_TITLES))
+        # в списке должностей карточки — код с расшифровкой; значение — код
+        html = self.client.get("/hr/documents/employee/1").text
+        self.assertIn('<option value="РТЗ" >РТЗ — работник торгового зала</option>', html)
+        self.assertIn('<option value="ГАСТРОНОМ" >ГАСТРОНОМ</option>', html)
+
+    def test_recommendation_position_decoded(self):
+        self._russian("МОЙКА")
+        html = self.client.get("/admin/contracts/recommendation/1").text
+        self.assertIn('name="position" value="мойщик"', html)
 
     def test_generated_contract_uses_store_and_rate(self):
         response = self.client.post("/admin/contracts/contract/1", data={
