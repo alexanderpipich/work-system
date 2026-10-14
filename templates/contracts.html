@@ -58,7 +58,13 @@
                     <tr><th>Сотрудник</th><th>ТМ</th><th>Гражданство</th><th>Договор</th><th>Патент до</th><th>Последняя смена</th><th></th></tr>
                 </thead>
                 <tbody>
+                {# П5: кнопки шагов тура «Договор» / «Рекомендация» — в строке демо-сотрудника
+                   (TOUR_DEMO_EMPLOYEE), если её нет — в первой строке. #}
+                {% set tour_info = tour_context(request) if tour_context is defined else none %}
+                {% set tour_row = namespace(index=1) %}
+                {% if tour_info and tour_info.demo_norm %}{% for row in rows %}{% if row.user.employee_name_norm == tour_info.demo_norm and tour_row.index == 1 %}{% set tour_row.index = loop.index %}{% endif %}{% endfor %}{% endif %}
                 {% for row in rows %}
+                    {% set tour_anchor_row = loop.index == tour_row.index %}
                     <tr>
                         <td><b>{{ row.user.employee_name }}</b></td>
                         <td>{{ row.tm_name or '—' }}</td>
@@ -72,9 +78,9 @@
                         <td>
                             <div class="ct-actions">
                                 {% if can_manage %}
-                                <a class="btn btn-primary btn-sm" href="/admin/contracts/contract/{{ row.user.id }}"{% if loop.first %} data-tour="contracts-create"{% endif %}>Создать договор</a>
+                                <a class="btn btn-primary btn-sm" href="/admin/contracts/contract/{{ row.user.id }}"{% if tour_anchor_row %} data-tour="contracts-create"{% endif %}>Создать договор</a>
                                 {% if row.patent %}<a class="btn btn-secondary btn-sm" href="/admin/contracts/petition/{{ row.user.id }}">Создать ходатайство</a>{% endif %}
-                                <a class="btn btn-secondary btn-sm" href="/admin/contracts/recommendation/{{ row.user.id }}"{% if loop.first %} data-tour="contracts-recommendation"{% endif %}>Создать рекомендацию</a>
+                                <a class="btn btn-secondary btn-sm" href="/admin/contracts/recommendation/{{ row.user.id }}"{% if tour_anchor_row %} data-tour="contracts-recommendation"{% endif %}>Создать рекомендацию</a>
                                 {% endif %}
                                 {% if row.contract and row.contract.file_path %}
                                 {{ preview_link('/documents/preview/%s' % row.contract.id, '/documents/files/%s' % row.contract.id, preview_kind(row.contract.file_path), 'Договор — ' ~ row.user.employee_name, css_class='btn btn-secondary btn-sm') }}
