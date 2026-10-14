@@ -15,10 +15,13 @@ os.environ.setdefault("SECRET_KEY", "test-secret")
 from fastapi import Request
 from sqlalchemy.orm import sessionmaker
 
-from models import AuditLog, DocumentType, EmployeeDocument, EmployeeQr, Shift, User
+from document_alerts import run_document_expiry_alerts
+from models import AuditLog, DocumentExpiryAlert, DocumentType, EmployeeDocument, EmployeeQr, Shift, User
 from rbac import ROLE_LABELS
+from utils import get_password_hash
 from test_payouts import A, WEEK, _engine, _shift, seed as seed_payouts
 from test_predemo_p411 import _Client
+from time_helpers import business_today
 from tours import STEP_TYPES, TOUR_IDS, build_tour_context, load_tour
 
 NO_REQ = "Деревянко Дмитрий"  # сотрудник со сменами, но без реквизитов — розовая строка
@@ -293,7 +296,9 @@ class TourPagesTests(_Client):
         for question in ("Где смотреть", "смена без плана", "загрузить документ", "Когда выплаты",
                          "сменить пароль", "по реквизитам"):
             self.assertIn(question, html)
-        self.assertIn("1–15", html)
+        self.assertIn("Аванс — еженедельно, если менеджер подал вас на аванс по итогам проверки часов. "
+                      "Табель — дважды в месяц: за 1–15 число и за 16-е — конец месяца; "
+                      "из него вычитаются уже выданные авансы.", html)
 
     def test_support_without_manager(self):
         db = self.Session()
@@ -301,6 +306,34 @@ class TourPagesTests(_Client):
         db.commit()
         self._as(1)
         self.assertIn("Менеджер пока не назначен", self._page("/support"))
+
+    # Правки по отчёту П5: руководитель получает напоминания о сроках и видит счётчик в шапке.
+    def _expiring_patent(self):
+        db = self.Session()
+        db.get(DocumentType, 103).requires_expiry_date = True
+        db.get(EmployeeDocument, 203).expiry_date = business_today() + timedelta(days=20)
+        db.commit()
+        return run_document_expiry_alerts(db)
+
+    def test_hr_lead_receives_expiry_alerts(self):
+        self._expiring_patent()
+        recipients = {a.recipient_user_id for a in self.Session().query(DocumentExpiryAlert).all()}
+        self.assertIn(30, recipients)  # руководитель
+        self.assertIn(10, recipients)  # ТМ сотрудника
+        self.assertIn(1, recipients)  # сам сотрудник
+
+    def test_hr_lead_expiry_counter_is_tour_anchor(self):
+        self._expiring_patent()
+        db = self.Session()
+        db.get(User, 30).password_hash = get_password_hash("demo123")
+        db.commit()
+        self.client.post("/login", data={"phone": "70000000030", "password": "demo123"}, follow_redirects=False)
+        self._as(30)
+        with patch("main.SessionLocal", self.Session):  # счётчик в шапке считает middleware по своей сессии
+            html = self._page("/hr/documents")
+        self.assertRegex(html, r'data-tour="docs-expiry-banner"[^>]*>Сроки документов: 1<')
+        step = next(s for s in load_tour("hr_lead")["steps"] if s.get("title") == "Сроки патентов")
+        self.assertEqual(step["anchor"][0], "docs-expiry-banner")
 
     # D3
     def test_vacancies_placeholder(self):
