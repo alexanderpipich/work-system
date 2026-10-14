@@ -13,7 +13,11 @@
 
     var STATE_KEY = 'ws-tour';
     var DATA_KEY = 'ws-tour-data';
-    var CLOSED_KEY = 'ws-tour-closed:' + cfg.id;
+    // «Закрыт до следующего входа»: ключ привязан ко входу (login_id из серверной сессии), а не к
+    // вкладке — выход и новый вход в той же вкладке дают новый ключ, и тур в режиме always стартует снова.
+    var LOGIN_ID = cfg.login_id || '';
+    var CLOSED_PREFIX = 'ws-tour-closed:' + cfg.id + ':';
+    var CLOSED_KEY = CLOSED_PREFIX + LOGIN_ID;
     var PHONE = window.matchMedia ? window.matchMedia('(max-width: 720px)') : { matches: false };
 
     function read(key) { try { return JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (e) { return null; } }
@@ -327,14 +331,33 @@
 
     /* ── Старт ─────────────────────────────────────────────────────── */
     function begin() {
-        state = { tourId: cfg.id, step: 0, startedAt: new Date().toISOString(), hist: [], skipped: [] };
+        state = { tourId: cfg.id, loginId: LOGIN_ID, step: 0, startedAt: new Date().toISOString(), hist: [], skipped: [] };
         drop(CLOSED_KEY);
         drop(DATA_KEY);  // новый запуск — свежие шаги с сервера
         save();
     }
 
+    /* Флаги «закрыт» прошлых входов и старый ключ без login_id — больше не нужны. */
+    function dropOtherLogins() {
+        try {
+            var stale = [];
+            for (var i = 0; i < sessionStorage.length; i++) {
+                var key = sessionStorage.key(i);
+                if (key === 'ws-tour-closed:' + cfg.id || (key.indexOf(CLOSED_PREFIX) === 0 && key !== CLOSED_KEY)) {
+                    stale.push(key);
+                }
+            }
+            stale.forEach(function (key) { sessionStorage.removeItem(key); });
+        } catch (e) {}
+    }
+
     function start() {
+        dropOtherLogins();
         state = read(STATE_KEY);
+        if (state && state.loginId !== LOGIN_ID) {  // тур прошлого входа — не продолжаем
+            drop(STATE_KEY);
+            state = null;
+        }
         if (cfg.force) {
             begin();
             try {  // ?tour=1 убираем из адреса, чтобы перезагрузка не начинала тур заново

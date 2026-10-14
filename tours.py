@@ -85,7 +85,7 @@ def tour_for_user(user):
     return tour
 
 
-def build_tour_context(user, path, query_tour=False, mode=None):
+def build_tour_context(user, path, query_tour=False, mode=None, login_id=""):
     tour_id = tour_id_for(user)
     if tour_id is None:
         return None
@@ -105,6 +105,8 @@ def build_tour_context(user, path, query_tour=False, mode=None):
         "help_url": start + "?tour=1",
         "autostart": autostart,
         "force": on_start and query_tour,
+        # ключ флага «закрыт до следующего входа»: новый вход — новый ключ, тур снова стартует
+        "login_id": login_id or "",
         # строка демо-сотрудника на /admin/contracts — якоря шагов «Договор» и «Рекомендация»
         "demo_norm": normalize_person_name(demo_employee()) if tour_id == "hr_lead" and demo_employee() else "",
     }
@@ -114,7 +116,8 @@ def tour_context(request):
     if request is None:
         return None
     user = getattr(request.state, "user", None)
-    return build_tour_context(user, request.url.path, request.query_params.get("tour") == "1")
+    login_id = request.session.get("login_id", "") if "session" in request.scope else ""
+    return build_tour_context(user, request.url.path, request.query_params.get("tour") == "1", login_id=login_id)
 
 
 def install_tour_globals(modules):
