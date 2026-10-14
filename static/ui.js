@@ -448,7 +448,27 @@
         });
     }
 
-    function init() { initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); initRail(); initDrawer(); initRoleFields(); initRecheck(); }
+    // textarea[data-autogrow]: высота по тексту (от rows), длинный адрес виден целиком.
+    // Внутри свёрнутого <details> высоту не измерить — пересчёт при раскрытии.
+    function fitArea(area) {
+        if (!area.offsetParent) return;
+        area.style.height = 'auto';
+        area.style.height = area.scrollHeight + 2 + 'px';
+    }
+
+    function initAutogrow() {
+        var areas = document.querySelectorAll('textarea[data-autogrow]');
+        if (!areas.length) return;
+        Array.prototype.forEach.call(areas, function (area) {
+            area.addEventListener('input', function () { fitArea(area); });
+            fitArea(area);
+        });
+        document.addEventListener('toggle', function (event) {
+            if (event.target.open) Array.prototype.forEach.call(event.target.querySelectorAll('textarea[data-autogrow]'), fitArea);
+        }, true);
+    }
+
+    function init() { initAutogrow(); initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); initRail(); initDrawer(); initRoleFields(); initRecheck(); }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

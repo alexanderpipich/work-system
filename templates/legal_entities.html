@@ -13,14 +13,27 @@
 
 {% block head %}
 <style>
-    /* специфика страницы: ширины редактируемой строки юрлица и кнопка «Активировать» */
-
-    .entities-table table { min-width: 1100px; }
-    .inline-form { grid-template-columns: 2fr 1fr 1fr 2fr 120px auto 110px; align-items: center; }
-    .inline-form .check { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; font-weight: 700; color: var(--brand-blue); white-space: nowrap; cursor: pointer; }
-    .inline-form .check input { width: 16px; height: 16px; margin: 0; flex: none; }
-    @media (max-width: 1100px) {
-        .inline-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* карточка юрлица: заголовок-сводка, одна форма «основное + реквизиты» в две колонки */
+    .le-card { padding: 0; }
+    .le-card > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 18px 22px; }
+    .le-card > summary::-webkit-details-marker { display: none; }
+    .le-card > summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+    .le-card[open] > summary::before { transform: rotate(90deg); }
+    .le-card .le-name { font-size: 17px; font-weight: 800; color: var(--brand-blue); overflow-wrap: anywhere; }
+    .le-body { padding: 0 22px 20px; }
+    .le-body h3 { margin: 6px 0 12px; font-size: 15px; }
+    .le-body .form-grid + h3 { margin-top: 22px; }
+    .le-wide { grid-column: 1 / -1; }
+    .field textarea[data-autogrow] { min-height: 0; resize: none; overflow: hidden; line-height: 1.45; }
+    .le-check { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-weight: 700; color: var(--brand-blue); cursor: pointer; }
+    .le-check input { width: 16px; height: 16px; margin: 0; flex: none; }
+    .le-suggest:empty { display: none; }
+    .le-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+    .le-foot form { margin: 0; }
+    .le-foot .le-save { margin-right: auto; }
+    @media (max-width: 720px) {
+        .le-card > summary { padding: 14px 16px; }
+        .le-body { padding: 0 16px 16px; }
     }
 
     .btn-success { background: var(--success-bg); color: var(--success-text); border-color: var(--success-border); }
@@ -28,7 +41,22 @@
 </style>
 {% endblock %}
 
+{% macro text_field(entity, name, label, hint='', suggest=false, area=false, wide=false) -%}
+{% set field_id = 'le-' ~ entity.id ~ '-' ~ name %}
+<div class="field{% if wide %} le-wide{% endif %}">
+    <label for="{{ field_id }}">{{ label }}</label>
+    {% if area %}
+    <textarea id="{{ field_id }}" name="{{ name }}" rows="2" data-autogrow>{{ entity[name] or '' }}</textarea>
+    {% else %}
+    <input id="{{ field_id }}" type="text" name="{{ name }}" value="{{ entity[name] or '' }}"{% if suggest %} data-suggest-field autocomplete="off"{% endif %}>
+    {% endif %}
+    {% if suggest %}<div class="field-hint le-suggest" data-suggest-hint="{{ name }}"></div>{% endif %}
+    {% if hint %}<div class="field-hint">{{ hint }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
 {% block content %}
+{% set base = base_path or '/admin/legal-entities' %}
 <div class="page page-pad-top">
 
     {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
@@ -36,127 +64,116 @@
 
     <div class="card">
         <h2>Добавить юрлицо</h2>
-        <form method="post" action="{{ base_path or '/admin/legal-entities' }}/add">
-            <div class="form-grid">
+        <form method="post" action="{{ base }}/add">
+            <div class="form-grid cols-3">
                 <div class="field">
-                    <label>Название</label>
-                    <input type="text" name="name" required>
+                    <label for="le-new-name">Наименование в системе</label>
+                    <input id="le-new-name" type="text" name="name" required>
                 </div>
                 <div class="field">
-                    <label>Короткое имя</label>
-                    <input type="text" name="short_name">
+                    <label for="le-new-short">Краткое наименование</label>
+                    <input id="le-new-short" type="text" name="short_name">
                 </div>
                 <div class="field">
-                    <label>ИНН</label>
-                    <input type="text" name="inn">
-                </div>
-                <div class="field">
-                    <label>Комментарий</label>
-                    <input type="text" name="comment">
+                    <label for="le-new-inn">ИНН</label>
+                    <input id="le-new-inn" type="text" name="inn">
                 </div>
             </div>
+            <p class="field-hint">Реквизиты для документов заполняются в карточке юрлица после добавления.</p>
             <button type="submit" class="btn btn-primary mt-14">Добавить</button>
         </form>
     </div>
 
-    <div class="card">
-        <h2>Список юрлиц</h2>
-        <div class="table-wrap entities-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Данные</th>
-                        <th>Статус</th>
-                        <th>Действие</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entity in entities %}
-                    <tr>
-                        <td>{{ entity.id }}</td>
-                        <td>
-                            <form id="legal-entity-{{ entity.id }}" method="post" action="{{ base_path or '/admin/legal-entities' }}/update"></form>
-                            <input form="legal-entity-{{ entity.id }}" type="hidden" name="entity_id" value="{{ entity.id }}">
-                            <div class="inline-form">
-                                <input form="legal-entity-{{ entity.id }}" type="text" name="name" value="{{ entity.name }}" required>
-                                <input form="legal-entity-{{ entity.id }}" type="text" name="short_name" value="{{ entity.short_name or '' }}" placeholder="Короткое имя">
-                                <input form="legal-entity-{{ entity.id }}" type="text" name="inn" value="{{ entity.inn or '' }}" placeholder="ИНН">
-                                <input form="legal-entity-{{ entity.id }}" type="text" name="comment" value="{{ entity.comment or '' }}" placeholder="Комментарий">
-                                <select form="legal-entity-{{ entity.id }}" name="is_active">
-                                    <option value="1" {% if entity.is_active %}selected{% endif %}>Активно</option>
-                                    <option value="0" {% if not entity.is_active %}selected{% endif %}>Неактивно</option>
-                                </select>
-                                <label class="check" title="Подставляется в договор, ходатайство и рекомендацию, если у сотрудника своего юрлица нет. Только у одного юрлица."><input form="legal-entity-{{ entity.id }}" type="checkbox" name="is_default" value="1" {% if entity.is_default %}checked{% endif %}> По умолчанию для документов</label>
-                                <button form="legal-entity-{{ entity.id }}" type="submit" class="btn btn-primary btn-sm">Сохранить</button>
-                            </div>
-                            {# П4: реквизиты для договора и ходатайства — отдельная форма. #}
-                            <details class="mt-8">
-                                <summary>Реквизиты для договора и ходатайства{% if not entity.full_name or not entity.ogrn %} <span class="pill pill-warn">не заполнены</span>{% endif %}</summary>
-                                <form method="post" action="{{ base_path or '/admin/legal-entities' }}/{{ entity.id }}/details" class="form-grid mt-8">
-                                    <div class="field"><label>Полное наименование</label><input type="text" name="full_name" value="{{ entity.full_name or '' }}" placeholder="Общество с ограниченной ответственностью «…»"></div>
-                                    <div class="field"><label>ОГРН</label><input type="text" name="ogrn" value="{{ entity.ogrn or '' }}"></div>
-                                    <div class="field"><label>КПП</label><input type="text" name="kpp" value="{{ entity.kpp or '' }}"></div>
-                                    <div class="field"><label>Юридический адрес</label><input type="text" name="legal_address" value="{{ entity.legal_address or '' }}"></div>
-                                    <div class="field"><label>Фактический адрес (шапка ходатайства)</label><input type="text" name="actual_address" value="{{ entity.actual_address or '' }}"></div>
-                                    <div class="field"><label>Адрес места работы (п. 1.3 договора)</label><input type="text" name="work_address" value="{{ entity.work_address or '' }}"></div>
-                                    <div class="field"><label>Банк</label><input type="text" name="bank_name" value="{{ entity.bank_name or '' }}"></div>
-                                    <div class="field"><label>Расчётный счёт</label><input type="text" name="bank_account" value="{{ entity.bank_account or '' }}"></div>
-                                    <div class="field"><label>БИК</label><input type="text" name="bik" value="{{ entity.bik or '' }}"></div>
-                                    <div class="field"><label>Корр. счёт</label><input type="text" name="corr_account" value="{{ entity.corr_account or '' }}"></div>
-                                    <div class="field"><label>Должность руководителя (род. падеж)</label><input type="text" name="director_title" value="{{ entity.director_title or '' }}" placeholder="генерального директора"></div>
-                                    <div class="field"><label>Руководитель (им. падеж)</label><input type="text" name="director_name" value="{{ entity.director_name or '' }}" placeholder="Хацкевич Виталий Сергеевич"></div>
-                                    <div class="field"><label>Руководитель (род. падеж)</label><input type="text" name="director_name_genitive" value="{{ entity.director_name_genitive or '' }}" placeholder="Хацкевича Виталия Сергеевича"></div>
-                                    <div class="field"><label>Подпись руководителя</label><input type="text" name="director_short" value="{{ entity.director_short or '' }}" placeholder="В.С. Хацкевич"></div>
-                                    <div class="field"><button type="submit" class="btn btn-primary btn-sm">Сохранить реквизиты</button></div>
-                                </form>
-                            </details>
-                        </td>
-                        <td>
-                            {% if entity.is_active %}
-                                <span class="pill pill-success">Активно</span>
-                            {% else %}
-                                <span class="pill pill-neutral">Неактивно</span>
-                            {% endif %}
-                            {% if entity.is_default %}<span class="pill pill-info" title="{{ 'Юрлицо неактивно — для документов не подставляется' if not entity.is_active else 'Для договора, ходатайства и рекомендации' }}">по умолчанию</span>{% endif %}
-                        </td>
-                        <td>
-                            <div class="actions">
-                                {% if entity.is_active %}
-                                    <form method="post" action="{{ base_path or '/admin/legal-entities' }}/delete">
-                                        <input type="hidden" name="entity_id" value="{{ entity.id }}">
-                                        <button type="submit" class="btn btn-danger btn-sm">Деактивировать</button>
-                                    </form>
-                                {% else %}
-                                    <form method="post" action="{{ base_path or '/admin/legal-entities' }}/update">
-                                        <input type="hidden" name="entity_id" value="{{ entity.id }}">
-                                        <input type="hidden" name="name" value="{{ entity.name }}">
-                                        <input type="hidden" name="short_name" value="{{ entity.short_name or '' }}">
-                                        <input type="hidden" name="inn" value="{{ entity.inn or '' }}">
-                                        <input type="hidden" name="comment" value="{{ entity.comment or '' }}">
-                                        <input type="hidden" name="is_active" value="1">
-                                        <input type="hidden" name="is_default" value="{{ '1' if entity.is_default else '' }}">
-                                        <button type="submit" class="btn btn-success btn-sm">Активировать</button>
-                                    </form>
-                                {% endif %}
-                                {% if can_hard_delete %}
-                                <form method="post" action="{{ base_path or '/admin/legal-entities' }}/delete" onsubmit="return confirm('Удалить юрлицо окончательно?');">
-                                    <input type="hidden" name="entity_id" value="{{ entity.id }}">
-                                    <input type="hidden" name="hard_delete" value="1">
-                                    <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
-                                </form>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
+    <h2 class="mb-14">Список юрлиц</h2>
+    {% for entity in entities %}
+    {% set form_id = 'legal-entity-' ~ entity.id %}
+    <details class="card le-card" id="le-{{ entity.id }}" {% if open_entity == entity.id or entities|length == 1 %}open{% endif %}>
+        <summary>
+            <span class="le-name">{{ entity.name }}</span>
+            <span class="muted">ID {{ entity.id }}{% if entity.inn %} · ИНН {{ entity.inn }}{% endif %}</span>
+            {% if entity.is_active %}<span class="pill pill-success">Активно</span>{% else %}<span class="pill pill-neutral">Неактивно</span>{% endif %}
+            {% if entity.is_default %}<span class="pill pill-info" title="{{ 'Юрлицо неактивно — для документов не подставляется' if not entity.is_active else 'Для договора, ходатайства и рекомендации' }}">по умолчанию</span>{% endif %}
+            {% if not entity.full_name or not entity.ogrn %}<span class="pill pill-warn">реквизиты не заполнены</span>{% endif %}
+        </summary>
+        <div class="le-body">
+            <form id="{{ form_id }}" method="post" action="{{ base }}/update" data-le-suggest>
+                <input type="hidden" name="entity_id" value="{{ entity.id }}">
+                <h3>Основное</h3>
+                <div class="form-grid cols-2">
+                    <div class="field">
+                        <label for="le-{{ entity.id }}-name">Наименование в системе</label>
+                        <input id="le-{{ entity.id }}-name" type="text" name="name" value="{{ entity.name }}" required>
+                        <div class="field-hint">Как юрлицо называется в списках</div>
+                    </div>
+                    {{ text_field(entity, 'short_name', 'Краткое наименование') }}
+                    {{ text_field(entity, 'inn', 'ИНН') }}
+                    <div class="field">
+                        <label for="le-{{ entity.id }}-active">Статус</label>
+                        <select id="le-{{ entity.id }}-active" name="is_active">
+                            <option value="1" {% if entity.is_active %}selected{% endif %}>Активно</option>
+                            <option value="0" {% if not entity.is_active %}selected{% endif %}>Неактивно</option>
+                        </select>
+                    </div>
+                    <div class="field le-wide">
+                        <label class="le-check"><input type="checkbox" name="is_default" value="1" {% if entity.is_default %}checked{% endif %}> По умолчанию для документов</label>
+                        <div class="field-hint">Подставляется в договор, ходатайство и рекомендацию, если у сотрудника своего юрлица нет. Только у одного юрлица.</div>
+                    </div>
+                </div>
 
-                    {% if entities|length == 0 %}
-                    <tr><td colspan="4" class="muted">Юрлица пока не созданы</td></tr>
-                    {% endif %}
-                </tbody>
-            </table>
+                {# П4: реквизиты для договора, ходатайства и рекомендации. Адреса в бланках — магазина из смен
+                   за 14 дней (contract_data.work_address_field), поэтому фактического адреса и адреса работы здесь нет. #}
+                <h3>Реквизиты для документов</h3>
+                <div class="form-grid cols-2">
+                    {{ text_field(entity, 'full_name', 'Полное наименование', area=true, wide=true) }}
+                    {{ text_field(entity, 'ogrn', 'ОГРН') }}
+                    {{ text_field(entity, 'kpp', 'КПП') }}
+                    {{ text_field(entity, 'legal_address', 'Юридический адрес', area=true, wide=true) }}
+                    {{ text_field(entity, 'bank_name', 'Банк') }}
+                    {{ text_field(entity, 'bank_account', 'Расчётный счёт') }}
+                    {{ text_field(entity, 'bik', 'БИК') }}
+                    {{ text_field(entity, 'corr_account', 'Корр. счёт') }}
+                    {{ text_field(entity, 'director_title', 'Должность руководителя (род. падеж)', suggest=true) }}
+                    {{ text_field(entity, 'director_name', 'Руководитель (им. падеж)', suggest=true) }}
+                    {{ text_field(entity, 'director_name_genitive', 'Руководитель (род. падеж)', suggest=true) }}
+                    {{ text_field(entity, 'director_short', 'Подпись руководителя', suggest=true) }}
+                </div>
+                <p class="field-hint">Серая подсказка считается из уже заполненных полей: → или Tab в пустом поле (→ — и с курсором в конце) подставляет её. Адреса в договоре и ходатайстве — магазина, где сотрудник работал последние 14 дней.</p>
+            </form>
+            <div class="le-foot">
+                <button form="{{ form_id }}" type="submit" class="btn btn-primary le-save">Сохранить</button>
+                {% if entity.is_active %}
+                    <form method="post" action="{{ base }}/delete">
+                        <input type="hidden" name="entity_id" value="{{ entity.id }}">
+                        <button type="submit" class="btn btn-danger btn-sm">Деактивировать</button>
+                    </form>
+                {% else %}
+                    <form method="post" action="{{ base }}/update">
+                        <input type="hidden" name="entity_id" value="{{ entity.id }}">
+                        <input type="hidden" name="name" value="{{ entity.name }}">
+                        <input type="hidden" name="short_name" value="{{ entity.short_name or '' }}">
+                        <input type="hidden" name="inn" value="{{ entity.inn or '' }}">
+                        <input type="hidden" name="is_active" value="1">
+                        <input type="hidden" name="is_default" value="{{ '1' if entity.is_default else '' }}">
+                        <button type="submit" class="btn btn-success btn-sm">Активировать</button>
+                    </form>
+                {% endif %}
+                {% if can_hard_delete %}
+                <form method="post" action="{{ base }}/delete" onsubmit="return confirm('Удалить юрлицо окончательно?');">
+                    <input type="hidden" name="entity_id" value="{{ entity.id }}">
+                    <input type="hidden" name="hard_delete" value="1">
+                    <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                </form>
+                {% endif %}
+            </div>
         </div>
-    </div>
+    </details>
+    {% else %}
+    <div class="card"><p class="muted mb-0">Юрлица пока не созданы</p></div>
+    {% endfor %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/vendor/petrovich.min.js?v=1" defer></script>
+<script src="/static/le_suggest.js?v=1" defer></script>
 {% endblock %}

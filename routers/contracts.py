@@ -199,16 +199,17 @@ def _context(session, employee, kind, form):
     region = session.get(Region, form["region_id"]) if form["region_id"] else profile["region"]
     today = business_today()
     errors = []
-    work = None
+    # Магазин (адрес в бланке) и ЧТС — по сменам за 14 дней.
+    work = recent_work(session, employee, today)
     if kind != "petition" and not form["city"] and region and region.patent_territory:
         form["city"] = region.patent_territory
     if kind == "petition":
         form["petition_date"] = form["petition_date"] or today
-        fields, values = petition_fields(session, profile, entity, region, form)
+        fields, values = petition_fields(session, profile, entity, region, form, work)
         with_patent = True
     elif kind == "recommendation":
         form["recommendation_date"] = form["recommendation_date"] or today
-        fields, values = recommendation_fields(session, profile, entity, form)
+        fields, values = recommendation_fields(session, profile, entity, form, work)
         with_patent = needs_patent(session, profile)
     else:
         form["contract_date"] = form["contract_date"] or today
@@ -219,8 +220,7 @@ def _context(session, employee, kind, form):
             form["term_until"] = form["term_until"] or profile["patent_expiry"]
         elif not form["term_until"] and not form["term_indefinite"]:
             form["term_indefinite"] = True
-        # Магазин и ЧТС — по сменам за 14 дней; ставка подставляется, только если поле пустое.
-        work = recent_work(session, employee, today)
+        # Ставка подставляется, только если поле пустое.
         if not form["rate"] and work and work["rate"]:
             form["rate"] = format_rate(work["rate"])
         fields, values, errors, with_patent = contract_fields(session, profile, entity, region, form, work)

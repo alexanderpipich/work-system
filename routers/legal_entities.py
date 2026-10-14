@@ -27,7 +27,7 @@ def _redirect(base_path="/admin/legal-entities", **params):
     return RedirectResponse(url=url, status_code=302)
 
 
-def _render_page(request, session, user, base_path, back_url, message="", error=""):
+def _render_page(request, session, user, base_path, back_url, message="", error="", open_entity=0):
     entities = (
         session.query(LegalEntity)
         .order_by(LegalEntity.is_active.desc(), LegalEntity.name.asc())
@@ -45,6 +45,7 @@ def _render_page(request, session, user, base_path, back_url, message="", error=
             "message": message or None,
             "error": error or None,
             "can_hard_delete": has_permission(user, "legal_entities.hard_delete"),
+            "open_entity": open_entity,  # карточка, которую только что сохранили, — раскрыта
         },
     )
 
@@ -90,7 +91,10 @@ def _add_entity(session, request, user, base_path, name, short_name, inn, commen
 
 
 def _update_entity(session, request, user, base_path, entity_id, name, short_name, inn, comment, is_active,
-                   is_default=""):
+                   is_default="", details=None):
+    """Карточка юрлица: основное и реквизиты одной формой. comment=None (поля в форме нет) —
+    комментарий не трогаем; details — реквизиты из формы (сохраняются пришедшие поля).
+    В аудит — только изменённые поля."""
     entity = session.query(LegalEntity).filter(LegalEntity.id == entity_id).first()
     if not entity:
         return _redirect(base_path, error="Юрлицо не найдено")
@@ -99,11 +103,16 @@ def _update_entity(session, request, user, base_path, entity_id, name, short_nam
     if not name_clean:
         return _redirect(base_path, error="Название юрлица обязательно")
 
-    old_value = _entity_payload(entity)
+    tracked = list(_entity_payload(entity)) + list(DETAIL_FIELDS)
+    before = {field: getattr(entity, field) for field in tracked}
     entity.name = name_clean
     entity.short_name = normalize_text(short_name) or None
     entity.inn = normalize_text(inn) or None
-    entity.comment = normalize_text(comment) or None
+    if comment is not None:
+        entity.comment = normalize_text(comment) or None
+    for field in DETAIL_FIELDS:
+        if details is not None and field in details:
+            setattr(entity, field, normalize_text(details.get(field)) or None)
     entity.is_active = is_active == "1"
     # «По умолчанию для документов» — только у одного юрлица: ставим здесь, снимаем у остальных.
     entity.is_default = is_default == "1"
@@ -115,6 +124,13 @@ def _update_entity(session, request, user, base_path, entity_id, name, short_nam
                              comment=f"по умолчанию теперь {entity.name}")
             other.is_default = False
             other.updated_at = now_utc()
+    after = {field: getattr(entity, field) for field in tracked}
+    for flag in ("is_active", "is_default"):
+        before[flag], after[flag] = bool(before[flag]), bool(after[flag])
+    changed = [field for field in tracked if before[field] != after[field]]
+    if not changed:
+        session.commit()
+        return _redirect(base_path, message="Изменений нет", entity=entity.id)
     entity.updated_at = now_utc()
     create_audit_log(
         session,
@@ -124,11 +140,11 @@ def _update_entity(session, request, user, base_path, entity_id, name, short_nam
         "legal_entity",
         entity.id,
         entity.name,
-        old_value=old_value,
-        new_value=_entity_payload(entity),
+        old_value={field: before[field] for field in changed},
+        new_value={field: after[field] for field in changed},
     )
     session.commit()
-    return _redirect(base_path, message="Юрлицо обновлено")
+    return _redirect(base_path, message="Юрлицо обновлено", entity=entity.id)
 
 
 def _set_entity_active(session, request, user, base_path, entity_id, is_active):
@@ -185,6 +201,7 @@ def legal_entities_page(
     request: Request,
     message: str = "",
     error: str = "",
+    entity: int = 0,
     session: Session = Depends(get_db),
     admin=Depends(_le_manage),
 ):
@@ -196,6 +213,7 @@ def legal_entities_page(
         "/admin",
         message=message,
         error=error,
+        open_entity=entity,
     )
 
 
@@ -204,6 +222,7 @@ def economist_legal_entities_page(
     request: Request,
     message: str = "",
     error: str = "",
+    entity: int = 0,
     session: Session = Depends(get_db),
     user=Depends(_le_manage),
 ):
@@ -215,45 +234,18 @@ def economist_legal_entities_page(
         "/economist",
         message=message,
         error=error,
+        open_entity=entity,
     )
 
 
-# П4: реквизиты юрлица для договора и ходатайства (зелёные/голубые подстановки).
+# П4: реквизиты юрлица для договора и ходатайства (зелёные/голубые подстановки) — сохраняются одной формой
+# карточки с основным (_update_entity). Фактического адреса и адреса места работы в форме нет: бланки берут
+# адрес магазина из смен (contract_data.work_address_field); колонки остались в базе.
 DETAIL_FIELDS = (
-    "full_name", "ogrn", "kpp", "legal_address", "actual_address", "work_address",
+    "full_name", "ogrn", "kpp", "legal_address",
     "bank_name", "bank_account", "bik", "corr_account",
     "director_title", "director_name", "director_name_genitive", "director_short",
 )
-
-
-async def _save_details(request, session, user, base_path, entity_id):
-    entity = session.query(LegalEntity).filter(LegalEntity.id == entity_id).first()
-    if not entity:
-        return _redirect(base_path, error="Юрлицо не найдено")
-    form = await request.form()
-    old_value = {field: getattr(entity, field) for field in DETAIL_FIELDS}
-    for field in DETAIL_FIELDS:
-        if field in form:
-            setattr(entity, field, normalize_text(form.get(field)) or None)
-    entity.updated_at = now_utc()
-    new_value = {field: getattr(entity, field) for field in DETAIL_FIELDS}
-    if new_value != old_value:
-        create_audit_log(session, request, user, "legal_entity_details_updated", "legal_entity",
-                         entity.id, entity.name, old_value=old_value, new_value=new_value)
-    session.commit()
-    return _redirect(base_path, message="Реквизиты юрлица сохранены")
-
-
-@router.post("/admin/legal-entities/{entity_id}/details")
-async def legal_entity_details(request: Request, entity_id: int, session: Session = Depends(get_db),
-                               admin=Depends(_le_manage)):
-    return await _save_details(request, session, admin, "/admin/legal-entities", entity_id)
-
-
-@router.post("/economist/legal-entities/{entity_id}/details")
-async def economist_legal_entity_details(request: Request, entity_id: int, session: Session = Depends(get_db),
-                                         user=Depends(_le_manage)):
-    return await _save_details(request, session, user, "/economist/legal-entities", entity_id)
 
 
 @router.post("/admin/legal-entities/add")
@@ -311,18 +303,19 @@ def economist_add_legal_entity(
 
 
 @router.post("/admin/legal-entities/update")
-def update_legal_entity(
+async def update_legal_entity(
     request: Request,
     entity_id: int = Form(...),
     name: str = Form(...),
     short_name: str = Form(default=""),
     inn: str = Form(default=""),
-    comment: str = Form(default=""),
+    comment: str | None = Form(default=None),
     is_active: str = Form(default=""),
     is_default: str = Form(default=""),
     session: Session = Depends(get_db),
     admin=Depends(_le_manage),
 ):
+    details = await request.form()
     try:
         return _update_entity(
             session,
@@ -336,6 +329,7 @@ def update_legal_entity(
             comment,
             is_active,
             is_default,
+            details,
         )
 
     except Exception as exc:
@@ -344,18 +338,19 @@ def update_legal_entity(
 
 
 @router.post("/economist/legal-entities/update")
-def economist_update_legal_entity(
+async def economist_update_legal_entity(
     request: Request,
     entity_id: int = Form(...),
     name: str = Form(...),
     short_name: str = Form(default=""),
     inn: str = Form(default=""),
-    comment: str = Form(default=""),
+    comment: str | None = Form(default=None),
     is_active: str = Form(default=""),
     is_default: str = Form(default=""),
     session: Session = Depends(get_db),
     user=Depends(_le_manage),
 ):
+    details = await request.form()
     try:
         return _update_entity(
             session,
@@ -369,6 +364,7 @@ def economist_update_legal_entity(
             comment,
             is_active,
             is_default,
+            details,
         )
 
     except Exception as exc:

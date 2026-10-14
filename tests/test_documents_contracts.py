@@ -16,7 +16,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from contract_data import contract_fields, needs_patent, petition_fields, save_fixes
+from contract_data import contract_fields, needs_patent, petition_fields, recent_work, save_fixes
 from contract_generator import (CONTRACT_SUBS, NO_DATA, PETITION_SUBS, Sub, TemplateMismatch, generate_contract,
                                 generate_petition, render, rubles_phrase)
 from database import Base
@@ -24,12 +24,13 @@ from document_alerts import reached_level, run_document_expiry_alerts
 from document_helpers import alert_levels, classify_document, preview_kind
 from employee_profile import employee_profile, guess_gender, parse_patent_number, patent_expiry
 from models import (AuditLog, CitizenshipRegime, Country, DocumentExpiryAlert, DocumentType, EmployeeDocument,
-                    LegalEntity, Region, RegimeDocumentRule, Shift, User)
+                    LegalEntity, Region, RegimeDocumentRule, Shift, Store, User)
 from region_helpers import region_for_employee
 from time_helpers import business_today
 
 FIXTURE = Path(__file__).parent / "fixtures" / "mini_template.docx"
 EMP = "Отабоева Навбахор Исломбой Кизи"
+SHOP_ADDRESS = "СПб, пр. Лиговский, д. 30, ТК 1"
 
 
 def _session():
@@ -90,8 +91,11 @@ def seed(session):
                                  document_number="78 №2600131320 / ПР 8408114", issue_date=date(2026, 8, 18),
                                  extra_field_1_value="ГУ МВД России по г. Санкт-Петербургу и Ленинградской области",
                                  extra_field_2_value="подсобный рабочий", status="verified"))
+    # Адрес в бланках — магазина смен за 14 дней (не actual_address / work_address юрлица).
+    session.add(Store(tk_number=1, display_name="Лиговский", object_address=SHOP_ADDRESS))
     session.add(Shift(employee=EMP, store="ТК-1", format="ГМ", city="Санкт-Петербург",
-                      shift_date=date(2026, 10, 5), service="Выкладка", hours=11, request_type="Основные заказы"))
+                      shift_date=business_today() - timedelta(days=3), service="Выкладка", hours=11,
+                      request_type="Основные заказы"))
     session.commit()
     return types
 
@@ -168,7 +172,10 @@ class ContractDataTests(unittest.TestCase):
                 "city": "г. Санкт-Петербург", "position": "", "term_until": None, "term_indefinite": False}
         base.update(form)
         profile = employee_profile(self.session, self.user)
-        return contract_fields(self.session, profile, self.entity, self.region, base)
+        return contract_fields(self.session, profile, self.entity, self.region, base, self._work())
+
+    def _work(self):
+        return recent_work(self.session, self.user, business_today())
 
     def test_missing_snils_then_fix_saved_to_document(self):
         fields, values, errors, with_patent = self._fields(term_until=date(2027, 8, 17))
@@ -206,7 +213,8 @@ class ContractDataTests(unittest.TestCase):
 
     def test_petition_missing_region_person_then_no_data(self):
         profile = employee_profile(self.session, self.user)
-        fields, values = petition_fields(self.session, profile, self.entity, self.region, {"petition_date": date(2026, 10, 11)})
+        fields, values = petition_fields(self.session, profile, self.entity, self.region, {"petition_date": date(2026, 10, 11)},
+                                         self._work())
         self.assertEqual([f["key"] for f in fields if f["missing"]], ["uvm_person"])
         content, missing = generate_petition(values, allow_missing=True)
         self.assertEqual(missing, ["uvm_person"])
@@ -214,6 +222,38 @@ class ContractDataTests(unittest.TestCase):
         self.assertIn("Начальнику УВМ ГУ МВД России", texts)
         self.assertIn("по Санкт-Петербургу и Ленинградской области", texts)
         self.assertIn(NO_DATA, texts)
+
+
+    def test_addresses_from_store_not_legal_entity(self):
+        """П.1.3 договора и шапка ходатайства — адрес основного магазина за 14 дней;
+        actual_address / work_address юрлица в генерацию не попадают."""
+        _, values, _, _ = self._fields(term_until=date(2027, 8, 17))
+        self.assertEqual(values["work_address"], SHOP_ADDRESS)
+        profile = employee_profile(self.session, self.user)
+        fields, values = petition_fields(self.session, profile, self.entity, self.region,
+                                         {"petition_date": date(2026, 10, 11)}, self._work())
+        self.assertEqual(values["le_actual_address"], SHOP_ADDRESS)
+        address = next(f for f in fields if f["key"] == "le_actual_address")
+        self.assertEqual(address["target"][0], "store")  # «заполнить на месте» — в карточку магазина
+        self.assertNotIn("Лиговский 30", " ".join(values.values()))  # actual_address юрлица
+        self.assertNotIn("Бабушкина", " ".join(values.values()))  # work_address юрлица
+        content, _ = generate_petition(values, allow_missing=True)
+        self.assertIn(SHOP_ADDRESS, "\n".join(p.text for p in Document(io.BytesIO(content)).paragraphs))
+
+    def test_address_missing_without_store_address(self):
+        self.session.query(Store).one().object_address = None
+        self.session.commit()
+        fields, _, _, _ = self._fields(term_until=date(2027, 8, 17))
+        address = next(f for f in fields if f["key"] == "work_address")
+        self.assertTrue(address["missing"])
+        self.assertEqual(address["target"][0], "store")
+        self.session.query(Shift).delete()
+        self.session.commit()
+        profile = employee_profile(self.session, self.user)
+        fields, values = petition_fields(self.session, profile, self.entity, self.region, {}, self._work())
+        address = next(f for f in fields if f["key"] == "le_actual_address")
+        self.assertTrue(address["missing"])
+        self.assertIn("смен за 14 дней нет", address["hint"])
 
 
 class AlertsTests(unittest.TestCase):
