@@ -25,9 +25,9 @@
 
 {% macro sidebar(menu, user, role_label, mode='rail', quick=(), open_key=None, home='', dashboard='') -%}
 {% if mode == 'rail' %}
-<aside class="rail" aria-label="Разделы">
+<aside class="rail" aria-label="Разделы" data-tour="rail">
     <div class="rail-panel">
-        <div class="rail-inner">
+        <div class="rail-inner" data-tour-box>
             <a href="{{ dashboard or '#' }}" class="rail-brand"{% if not home %} data-rail-top{% endif %} title="Рабочий стол">
                 <img src="/static/logo-alex.jpg" alt="">
                 <span class="rail-label">work-system</span>

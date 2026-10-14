@@ -241,7 +241,7 @@
             <label class="bulk-check"><input type="checkbox" data-bulk-all="verify"> Выбрать всё на странице</label>
             <button type="submit" class="btn btn-primary btn-sm" data-bulk-submit="verify" disabled>Проверено (<span data-bulk-count="verify">0</span>)</button>
         </form>
-        <div class="table-wrap registry-table">
+        <div class="table-wrap registry-table" data-tour="docs-table">
             <table>
                 <thead>
                     <tr>
@@ -250,7 +250,7 @@
                         <th>Гражданство</th>
                         <th>Тип документа</th>
                         <th>Статус</th>
-                        <th>Номер / даты</th>
+                        <th data-tour="docs-expiry">Номер / даты</th>
                         <th>Файл</th>
                         <th>Комментарий</th>
                         <th>Действия</th>

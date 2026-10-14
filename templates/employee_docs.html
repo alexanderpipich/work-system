@@ -79,6 +79,22 @@
             <div class="muted">Для вашего гражданства пока не настроены обязательные документы.</div>
         {% endif %}
     </section>
+
+    {# П5 D1: договор, ходатайство, рекомендация, сформированные для этого сотрудника. #}
+    <section class="card" id="company-docs">
+        <h2>От компании</h2>
+        {% for item in company_docs %}
+        <div class="doc-card doc-head">
+            <div>
+                <h3>{{ item.type.name }}{% if item.document.document_number %} №{{ item.document.document_number }}{% endif %}</h3>
+                {% if item.date %}<div class="muted">от {{ item.date.strftime('%d.%m.%Y') }}</div>{% endif %}
+            </div>
+            <a class="btn btn-primary btn-sm" href="/documents/files/{{ item.document.id }}">Скачать</a>
+        </div>
+        {% else %}
+        <div class="muted">Документы от компании появятся здесь</div>
+        {% endfor %}
+    </section>
 </div>
 {{ preview_modal() }}
 {% endblock %}

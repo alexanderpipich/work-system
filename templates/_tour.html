@@ -1,0 +1,16 @@
+{# Демо-туры (П5). Контекст — tour_context(request) (tours.py): какой тур положен пользователю,
+   его стартовая страница и запускать ли сам. Движок — static/tour.js, шаги — /tour/data.
+   tour_help — кнопка «?» в шапке (всегда, при любом TOUR_AUTOSTART): стартовая страница с ?tour=1. #}
+{% macro tour_help(tour) -%}
+{% if tour %}<a href="{{ tour.help_url }}" class="tour-help no-print" title="Тур по {{ 'кабинету' if tour.id == 'employee' else 'системе' }}" aria-label="Показать тур">?</a>{% endif %}
+{%- endmacro %}
+
+{% macro tour_assets(tour, path) -%}
+{% if tour %}
+<script>window.WS_TOUR = {{ {"id": tour.id, "mode": tour.mode, "start_url": tour.start_url, "autostart": tour.autostart, "force": tour.force} | tojson }};</script>
+<script src="/static/tour.js?v=3" defer></script>
+{% elif path == '/login' %}
+{# Новый вход — режим always снова показывает тур: флаги «закрыт» прошлого входа сбрасываются. #}
+<script>try { Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf('ws-tour') === 0) sessionStorage.removeItem(k); }); } catch (e) {}</script>
+{% endif %}
+{%- endmacro %}

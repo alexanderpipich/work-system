@@ -16,7 +16,8 @@ from document_helpers import (
     preview_kind,
     user_citizenship,
 )
-from models import Requisite, Shift
+from employee_profile import company_documents
+from models import Requisite, Shift, User
 from shift_helpers import is_no_plan_shift
 from time_helpers import business_today
 from utils import format_card_number, get_password_hash, normalize_text, verify_password
@@ -307,6 +308,7 @@ def employee_docs(
             "user": user,
             "citizenship": citizenship,
             "document_rows": employee_document_rows(session, user),
+            "company_docs": company_documents(session, user),  # П5 D1: «От компании»
             "message": request.query_params.get("message"),
             "error": request.query_params.get("error"),
         }
@@ -315,20 +317,28 @@ def employee_docs(
 
 @router.get("/vacancies", response_class=HTMLResponse)
 def vacancies(request: Request, user=Depends(current_user)):
-    return employee_placeholder(request, user, "Вакансии")
+    return employee_placeholder(
+        request, user, "Вакансии",
+        text="Открытые вакансии рядом с вами — списком и точками на карте. Раздел запускаем следующим.",
+        icon="map",
+    )
 
 
 @router.get("/support", response_class=HTMLResponse)
-def support(request: Request, user=Depends(current_user)):
-    return employee_placeholder(request, user, "Поддержка и FAQ")
+def support(request: Request, session: Session = Depends(get_db), user=Depends(current_user)):
+    """П5 D2: «Ваш менеджер» (закреплённый ТМ) и частые вопросы; тексты — в шаблоне."""
+    manager = session.get(User, user.tm_id) if user.tm_id else None
+    return templates.TemplateResponse(request, "support.html", {"user": user, "manager": manager})
 
 
-def employee_placeholder(request: Request, user, title: str):
+def employee_placeholder(request: Request, user, title: str, text: str = "", icon: str = ""):
     return templates.TemplateResponse(
         request,
         "employee_placeholder.html",
         {
             "user": user,
-            "title": title
+            "title": title,
+            "text": text,
+            "icon": icon,
         }
     )

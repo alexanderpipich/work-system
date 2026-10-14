@@ -137,7 +137,8 @@ class ContractFormTests(_Client):
 
     # A3
     def test_recommendation_button_and_form(self):
-        self.assertIn('href="/admin/contracts/recommendation/1">Создать рекомендацию', self.client.get("/admin/contracts").text)
+        self.assertRegex(self.client.get("/admin/contracts").text,
+                         r'href="/admin/contracts/recommendation/1"( data-tour="contracts-recommendation")?>Создать рекомендацию')
         html = self.client.get("/admin/contracts/recommendation/1").text
         self.assertIn("Рекомендательное письмо", html)
         self.assertIn('name="recommendation_date"', html)

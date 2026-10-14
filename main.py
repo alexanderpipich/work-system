@@ -14,6 +14,7 @@ from citizenship_schema import ensure_citizenship_columns
 from database import Base, SessionLocal, engine
 from dependencies import RedirectException, redirect_exception_response
 from menu_context import install_menu_globals
+from tours import install_tour_globals
 from document_helpers import ensure_document_tables
 from legal_entity_helpers import ensure_legal_entities_table
 from payroll_run_helpers import ensure_payroll_run_closing_columns
@@ -51,6 +52,7 @@ from routers.email_reconciliation import router as email_reconciliation_router
 from routers.planning_bp import router as planning_bp_router
 from routers.qr import router as qr_router
 from routers.stores import router as stores_router
+from routers.tour import router as tour_router
 from routers.reports import router as reports_router
 from routers.schedules import router as schedules_router
 from routers.services import router as services_router
@@ -115,6 +117,7 @@ app.include_router(lmk_router)
 app.include_router(maintenance_router)
 app.include_router(planning_bp_router)
 app.include_router(qr_router)
+app.include_router(tour_router)
 app.include_router(payroll_router)
 app.include_router(payroll_runs_router)
 app.include_router(payouts_router)
@@ -139,6 +142,8 @@ app.include_router(users_router)
 
 # П4.10: боковое меню на всех страницах — глобал menu_context в окружении Jinja каждого роутера.
 install_menu_globals(module for name, module in list(sys.modules.items()) if name.startswith("routers."))
+# П5: демо-туры — глобал tour_context в тех же окружениях (templates/_tour.html).
+install_tour_globals(module for name, module in list(sys.modules.items()) if name.startswith("routers."))
 
 Base.metadata.create_all(bind=engine)
 # Догоняющие миграции старых баз — Postgres-специфичный SQL (ADD COLUMN IF NOT

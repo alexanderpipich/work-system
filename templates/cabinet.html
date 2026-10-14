@@ -33,19 +33,19 @@
 {% block before_content %}
 <nav class="quicknav quicknav-sticky" aria-label="Быстрая навигация">
     <div class="quicknav-inner">
-        <a class="nav-btn" href="/employee_docs">
+        <a class="nav-btn" href="/employee_docs" data-tour="nav-docs">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v5h5"></path><path d="M9 13h6"></path><path d="M9 17h6"></path></svg>
             Мои документы
         </a>
-        <a class="nav-btn" href="/vacancies">
+        <a class="nav-btn" href="/vacancies" data-tour="nav-vacancies">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V5h6v2"></path><path d="M5 7h14v12H5z"></path><path d="M5 12h14"></path></svg>
             Вакансии
         </a>
-        <a class="nav-btn" href="/support">
+        <a class="nav-btn" href="/support" data-tour="nav-support">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 16 0"></path><path d="M5 13h3v5H5z"></path><path d="M16 13h3v5h-3z"></path><path d="M12 20h4"></path></svg>
             Поддержка
         </a>
-        <a class="nav-btn" href="/stores">
+        <a class="nav-btn" href="/stores" data-tour="nav-stores">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9l1-4h14l1 4"></path><path d="M5 9v10h14V9"></path><path d="M9 19v-6h6v6"></path></svg>
             Магазины
         </a>
@@ -76,7 +76,7 @@
                 <a href="/cabinet/password" class="pwd-link">Сменить пароль</a>
             </div>
             {% if user.qr_codes or user.qr_image_path %}
-            <div class="qr-thumbs" id="qr-thumbs">
+            <div class="qr-thumbs" id="qr-thumbs" data-tour="qr">
                 {% if user.qr_codes %}
                     {% for qr in user.qr_codes %}
                     <button type="button" class="qr-thumb qr-thumb-item"
@@ -99,7 +99,7 @@
         </div>
     </section>
 
-    <section class="card card-tight">
+    <section class="card card-tight" data-tour="docs-panel">
         <div class="docs-hdr" id="docs-hdr">
             <span class="chip">Документы сотрудника</span>
             <div style="display:flex;align-items:center;gap:12px">
@@ -192,7 +192,7 @@
         </div>
     </section>
 
-    <section id="stats" class="card">
+    <section id="stats" class="card" data-tour="stats">
         <div class="table-title-row">
             <h3 class="table-title">Отработанные часы</h3>
             <div class="pill pill-peach">Итого за период: {{ total_hours }} ч</div>

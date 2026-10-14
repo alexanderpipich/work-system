@@ -10,7 +10,7 @@
 {# Действия по прогону аванса — вверху (рядом со статусом) и под таблицей (П4.11 B4).
    Один макрос — одни условия, копии не расходятся. #}
 {% macro run_actions(place, can_fix, can_send, can_export) -%}
-<div class="row{% if place == 'top' %} mt-14{% endif %}" data-run-actions="{{ place }}">
+<div class="row{% if place == 'top' %} mt-14{% endif %}" data-run-actions="{{ place }}"{% if place == 'top' %} data-tour="advances-actions"{% endif %}>
     {% if not frozen and can_fix %}
     <form method="post" action="/admin/payouts/advances/fix"
           onsubmit="return confirm('Зафиксировать аванс за неделю? Отметки будут заморожены.');">
@@ -37,7 +37,7 @@
     </form>
     {% endif %}
     {% if frozen and can_export %}
-    <a class="btn btn-secondary" href="/admin/payouts/runs/{{ run.id }}/registry">Реестр xlsx</a>
+    <a class="btn btn-secondary" href="/admin/payouts/runs/{{ run.id }}/registry"{% if place == 'top' %} data-tour="advances-registry"{% endif %}>Реестр xlsx</a>
     {% endif %}
     {% if frozen %}
     <a class="btn btn-secondary" href="/admin/payroll/runs/{{ run.id }}">Строки табеля №{{ run.id }}</a>
@@ -49,7 +49,8 @@
 {% block brand_title %}Еженедельные авансы{% endblock %}
 {% block brand_subtitle %}<p class="brand-subtitle">Неделя {{ week_start.strftime('%d.%m.%Y') }} — {{ week_end.strftime('%d.%m.%Y') }}</p>{% endblock %}
 
-{% block topbar_actions %}<a class="back-link" href="/admin/payouts">Выплаты</a>{% endblock %}
+{# П5: «Выплаты» в шапке ведёт к «Выплатному табелю» — якорь шага тура «Табель за период». #}
+{% block topbar_actions %}<a class="back-link" href="/admin/payouts" data-tour="advances-period">Выплаты</a>{% endblock %}
 
 {% block head %}
 <style>

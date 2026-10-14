@@ -99,6 +99,9 @@ class User(Base):
     email = Column(String, nullable=True)
     # Закреплённый ТМ (User с ролью tm); может быть пустым.
     tm_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    # П5: когда пользователь закрыл демо-тур («Готово»/«Пропустить», POST /tour/seen) —
+    # в режиме TOUR_AUTOSTART=first тур больше не стартует сам.
+    tour_seen_at = Column(DateTime, nullable=True)
     # Загруженные QR-пропуска (до 3, с подписью специальности). qr_image_path выше — legacy,
     # deprecated после переноса в employee_qr (см. scripts/migrate_qr_codes.py).
     qr_codes = relationship(
