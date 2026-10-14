@@ -123,6 +123,9 @@ class User(Base):
     # П5: когда пользователь закрыл демо-тур («Готово»/«Пропустить», POST /tour/seen) —
     # в режиме TOUR_AUTOSTART=first тур больше не стартует сам.
     tour_seen_at = Column(DateTime, nullable=True)
+    # Режим тура лично для пользователя (страница «Демо-тур»): NULL — как у всех (TourSettings),
+    # иначе always | first | off.
+    tour_mode = Column(String(10), nullable=True)
     # Загруженные QR-пропуска (до 3, с подписью специальности). qr_image_path выше — legacy,
     # deprecated после переноса в employee_qr (см. scripts/migrate_qr_codes.py).
     qr_codes = relationship(
@@ -711,6 +714,18 @@ class ReferralPromo(Base):
     cancelled_by = Column(Integer, nullable=True)
     cancelled_at = Column(DateTime, nullable=True)
     comment = Column(Text, nullable=True)
+
+
+class TourSettings(Base):
+    """Настройки демо-туров (П5, синглтон): режим автозапуска для всех и демо-сотрудник тура
+    руководителя. Пустое поле — берётся переменная окружения (TOUR_AUTOSTART / TOUR_DEMO_EMPLOYEE)."""
+    __tablename__ = "tour_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    autostart_mode = Column(String(10), nullable=True)
+    demo_employee = Column(String, nullable=True)
+    updated_by = Column(Integer, nullable=True)
+    updated_at = Column(DateTime, nullable=True)
 
 
 class ReferralSettings(Base):

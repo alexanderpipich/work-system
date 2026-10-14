@@ -60,6 +60,7 @@ ROLE_LABELS = {
 #   shifts.upload — загрузка timebook (POST /admin/upload); страницу открывает upload.view
 #   upload.auto — настройка автозагрузки смен из timebook (П2, вкладка на /admin/upload)
 #   admin.settings, system.* — настройки и служебные инструменты
+#   tour.manage — настройки демо-тура (/admin/tour-settings, П5)
 #   schedules.admin_view, payroll.delete,
 #   rates.hard_delete, legal_entities.hard_delete, documents.hard_delete (карточка документа)
 #   payroll.close, payroll.any_period (табель не за полмесяца) — суперадмин и HR-руководитель

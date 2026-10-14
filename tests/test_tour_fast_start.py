@@ -44,7 +44,8 @@ class TourPageTests(_Client):
         with patch.dict(os.environ, {"TOUR_AUTOSTART": "always", "TOUR_DEMO_EMPLOYEE": A}):
             settings = self.client.get("/tour/data").json()["settings"]
         self.assertEqual(settings, {"TOUR_AUTOSTART": "always", "autostart": "always",
-                                    "TOUR_DEMO_EMPLOYEE": A, "demo_employee_found": True})
+                                    "TOUR_DEMO_EMPLOYEE": A, "demo_employee_found": True,
+                                    "source": {"autostart": "переменная", "demo_employee": "переменная"}})
         with patch.dict(os.environ, {"TOUR_AUTOSTART": "", "TOUR_DEMO_EMPLOYEE": "Нет Такого"}):
             settings = self.client.get("/tour/data").json()["settings"]
         self.assertEqual((settings["autostart"], settings["demo_employee_found"]), ("first", False))

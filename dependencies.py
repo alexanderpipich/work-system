@@ -35,6 +35,11 @@ def current_user(request: Request, db: Session = Depends(get_db)):
 
     # П4.10: боковое меню в base.html строится от пользователя запроса (menu_context).
     request.state.user = user
+    # П5: настройки демо-тура (страница «Демо-тур») — только ролям с туром, одна строка.
+    from tours import load_settings, tour_id_for
+
+    if tour_id_for(user) is not None:
+        request.state.tour_settings = load_settings(db)
     # П5: вход до появления login_id (сессия старше деплоя) — выдать его сейчас, один раз.
     if not request.session.get("login_id"):
         from uuid import uuid4
