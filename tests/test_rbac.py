@@ -28,7 +28,7 @@ class RbacRoleTests(unittest.TestCase):
         from rbac import ROLE_LABELS, ROLES
         self.assertEqual(set(ROLE_LABELS), set(ROLES))
         self.assertTrue(all(ROLE_LABELS.values()))
-        self.assertEqual(ROLE_LABELS["hr_lead"], "HR-руководитель")
+        self.assertEqual(ROLE_LABELS["hr_lead"], "Руководитель")
         self.assertEqual(ROLE_LABELS["headhunter"], "Рекрутер")
 
     def test_hr_clerk_permissions(self):

@@ -65,7 +65,7 @@
         {% set selected_cities = city_scopes.get(manager.id, []) or [] %}
         {% set selected_stores = store_scopes.get(manager.id, []) or [] %}
         {% set employees_count, stores_count = counters.get(manager.id, (0, 0)) %}
-        <details class="tm-block" id="tm-{{ manager.id }}" {% if open_id == manager.id %}open{% endif %}>
+        <details class="tm-block" id="tm-{{ manager.id }}"{% if loop.first %} data-tour="team-first"{% endif %} {% if open_id == manager.id %}open{% endif %}>
             <summary class="tm-row">
                 <span class="tm-name">{{ manager.employee_name }}</span>
                 <span class="tm-meta">{{ manager.phone or 'без логина' }}</span>

@@ -47,7 +47,7 @@ LINE_STAFF_ROLES = (ROLE_EMPLOYEE, ROLE_BRIGADIER)
 # Подписи ролей в интерфейсе. Ключи — канонические роли.
 ROLE_LABELS = {
     ROLE_SUPERADMIN: "Суперадмин",
-    ROLE_HR_LEAD: "HR-руководитель",
+    ROLE_HR_LEAD: "Руководитель",  # П5: была «HR-руководитель» (П4.8)
     ROLE_TM: "ТМ (территориальный менеджер)",
     ROLE_HR_CLERK: "Кадровик",
     ROLE_ECONOMIST: "Экономист",

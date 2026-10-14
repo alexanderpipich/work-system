@@ -97,7 +97,7 @@ class PageTests(unittest.TestCase):
         # (её высота = высота контента, фон обрывался и список шёл белым по белому).
         self._as(_user("hr_lead"))
         html = self._get("/admin/payouts")
-        self.assertRegex(html, r'<aside class="rail"[^>]*>\s*<div class="rail-panel">\s*<div class="rail-inner">')
+        self.assertRegex(html, r'<aside class="rail"[^>]*>\s*<div class="rail-panel">\s*<div class="rail-inner"[^>]*>')
         with open(os.path.join(os.path.dirname(__file__), "..", "static", "app.css"), encoding="utf-8") as f:
             css = f.read()
 

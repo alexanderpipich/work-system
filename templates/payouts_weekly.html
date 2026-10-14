@@ -80,7 +80,7 @@
     {% endif %}
 
     <div class="card">
-        <div class="week-nav">
+        <div class="week-nav" data-tour="weekly-title">
             <a class="btn btn-secondary btn-sm" href="?week={{ prev_week.isoformat() }}">← Пред. неделя</a>
             <span class="week-title">{{ week_start.strftime('%d.%m.%Y') }} — {{ week_end.strftime('%d.%m.%Y') }}</span>
             {% if next_week %}
@@ -99,7 +99,7 @@
             {% endif %}
         </div>
 
-        <div class="wr-checks">
+        <div class="wr-checks" data-tour="weekly-checks">
             <span><b>ЧТС проверено:</b></span>
             {% for tm in tm_status %}
             <span class="{% if not tm.checked_at %}is-off{% endif %}">
@@ -112,7 +112,7 @@
             {% if can_edit_own %}
             <form method="post" action="/admin/payouts/weekly/check">
                 <input type="hidden" name="week" value="{{ week_start.isoformat() }}">
-                <button type="submit" class="btn {% if my_check and my_check.checked_at %}btn-secondary{% else %}btn-primary{% endif %}"
+                <button type="submit" data-tour="weekly-check" class="btn {% if my_check and my_check.checked_at %}btn-secondary{% else %}btn-primary{% endif %}"
                         {% if closed %}disabled title="{{ CLOSED_HINT }}"{% endif %}>
                     {% if my_check and my_check.checked_at %}Снять «ЧТС проверено»{% else %}ЧТС проверено{% endif %}
                 </button>
@@ -186,24 +186,30 @@
                         <th class="num">Ставка</th>
                         <th class="num">Акция</th>
                         <th class="num">ФОТ</th>
-                        <th>Аванс</th>
+                        <th data-tour="weekly-advance">Аванс</th>
                     </tr>
                 </thead>
                 <tbody>
+                {# П5: якоря тура — первая строка с реквизитами, первая розовая, первая красная ячейка. #}
+                {% set tour_ns = namespace(row=false, noreq=false, noplan=false) %}
                 {% for row in rows %}
                     {% set own = row.tm_id == user.id %}
+                    {% set tour_anchor = '' %}
+                    {% if row.has_requisites and not tour_ns.row %}{% set tour_anchor = 'weekly-row' %}{% set tour_ns.row = true %}
+                    {% elif not row.has_requisites and not tour_ns.noreq %}{% set tour_anchor = 'weekly-norequisites' %}{% set tour_ns.noreq = true %}{% endif %}
                     {% set rate_editable = can_manage or (can_edit_own and own and not closed) %}
-                    <tr class="{% if not row.has_requisites %}noreq{% endif %}" {% if not row.has_requisites %}title="{{ NO_REQUISITES_HINT }}"{% endif %}>
+                    <tr class="{% if not row.has_requisites %}noreq{% endif %}"{% if tour_anchor %} data-tour="{{ tour_anchor }}"{% endif %} {% if not row.has_requisites %}title="{{ NO_REQUISITES_HINT }}"{% endif %}>
                         <td class="name">{{ row.name }}</td>
                         <td>{{ row.tk }}</td>
                         <td>{{ row.city }}</td>
                         <td>{{ row.format }}</td>
                         <td class="service">{{ row.service }}</td>
                         {% for value in row.days %}
-                        <td class="day{% if row.no_plan_days[loop.index0] %} np{% endif %}" {% if row.no_plan_days[loop.index0] %}title="Смена без плана — не оплачивается"{% endif %}>{% if value is not none %}{{ '%g' % value }}{% endif %}</td>
+                        {% set np_first = row.no_plan_days[loop.index0] and not tour_ns.noplan %}{% if np_first %}{% set tour_ns.noplan = true %}{% endif %}
+                        <td class="day{% if row.no_plan_days[loop.index0] %} np{% endif %}"{% if np_first %} data-tour="weekly-noplan"{% endif %} {% if row.no_plan_days[loop.index0] %}title="Смена без плана — не оплачивается"{% endif %}>{% if value is not none %}{{ '%g' % value }}{% endif %}</td>
                         {% endfor %}
                         <td class="num">{{ '%g' % row.hours }}</td>
-                        <td>
+                        <td{% if loop.first %} data-tour="weekly-tm"{% endif %}>
                             {% if can_manage %}
                             <select class="tm-select" data-tm-set="{{ row.name }}">
                                 <option value="0" {% if not row.tm_id %}selected{% endif %}>{{ NO_TM }}</option>
@@ -221,7 +227,7 @@
                             <span class="{% if not row.tm_id %}tm-empty{% endif %}">{{ row.tm }}</span>
                             {% endif %}
                         </td>
-                        <td class="num">
+                        <td class="num"{% if loop.first %} data-tour="weekly-rate"{% endif %}>
                             {% set rate_text = ('%g' % row.rate) if row.rate else 'НЕТ' %}
                             {% if rate_editable %}
                             <button type="button" class="cell-btn {% if not row.rate %}no-rate{% endif %}" data-rate-employee="{{ row.name }}" data-rate-service="{{ row.service }}" data-rate-value="{{ ('%g' % row.rate) if row.rate else '' }}">{{ rate_text }}</button>

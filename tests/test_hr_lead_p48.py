@@ -32,7 +32,7 @@ SUPERADMIN_ONLY = {"shifts.upload", "upload.auto", "admin.settings", "system.tec
 
 class HrLeadPermissionTests(unittest.TestCase):
     def test_label(self):
-        self.assertEqual(ROLE_LABELS["hr_lead"], "HR-руководитель")
+        self.assertEqual(ROLE_LABELS["hr_lead"], "Руководитель")
 
     def test_has_every_role_permission_except_own_and_cabinets(self):
         everything = set().union(*(perms for role, perms in PERMISSIONS.items() if role != "hr_lead"))
@@ -277,7 +277,7 @@ class HrTeamPageTests(unittest.TestCase):
     def test_open_param_and_redirect_after_save(self):
         html = self.client.get("/hr/team?open=11").text
         self.assertRegex(html, r'<details class="tm-block" id="tm-11" open>')
-        self.assertRegex(html, r'<details class="tm-block" id="tm-10" >')
+        self.assertRegex(html, r'<details class="tm-block" id="tm-10"( data-tour="team-first")? >')  # П5: якорь тура
         response = self.client.post("/hr/team/scopes", data={"user_id": 11, "scope_cities": ["Москва"],
                                                              "scope_stores": ["ТК 9"]}, follow_redirects=False)
         self.assertEqual(response.status_code, 302)
