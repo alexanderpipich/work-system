@@ -14,7 +14,7 @@ from citizenship_schema import ensure_citizenship_columns
 from database import Base, SessionLocal, engine
 from dependencies import RedirectException, redirect_exception_response
 from menu_context import install_menu_globals
-from tours import install_tour_globals
+from tours import install_tour_globals, log_tour_settings
 from document_helpers import ensure_document_tables
 from legal_entity_helpers import ensure_legal_entities_table
 from payroll_run_helpers import ensure_payroll_run_closing_columns
@@ -144,6 +144,7 @@ app.include_router(users_router)
 install_menu_globals(module for name, module in list(sys.modules.items()) if name.startswith("routers."))
 # П5: демо-туры — глобал tour_context в тех же окружениях (templates/_tour.html).
 install_tour_globals(module for name, module in list(sys.modules.items()) if name.startswith("routers."))
+log_tour_settings()  # в логе Timeweb видно, дошли ли TOUR_AUTOSTART / TOUR_DEMO_EMPLOYEE
 
 Base.metadata.create_all(bind=engine)
 # Догоняющие миграции старых баз — Postgres-специфичный SQL (ADD COLUMN IF NOT

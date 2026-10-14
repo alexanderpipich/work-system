@@ -8,17 +8,20 @@ from audit_helpers import create_audit_log
 from dependencies import current_user, get_db
 from models import User
 from time_helpers import now_utc
-from tours import tour_for_user
+from tours import tour_for_user, tour_settings
 
 router = APIRouter()
 
 
 @router.get("/tour/data")
-def tour_data(user=Depends(current_user)):
-    """Шаги тура, положенного пользователю по роли; чужой тур не отдаётся."""
+def tour_data(session: Session = Depends(get_db), user=Depends(current_user)):
+    """Шаги тура, положенного пользователю по роли; чужой тур не отдаётся. Руководителю — ещё
+    `settings`: какие TOUR_* видит приложение и найден ли демо-сотрудник (проверка переменных на проде)."""
     tour = tour_for_user(user)
     if tour is None:
         return JSONResponse({"error": "Тура для вашей роли нет"}, status_code=404)
+    if tour["id"] == "hr_lead":
+        tour["settings"] = tour_settings(session)
     return tour
 
 

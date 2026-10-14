@@ -2,7 +2,8 @@
    якоря — атрибуты data-tour="…" в шаблонах. Конфиг страницы — window.WS_TOUR (templates/_tour.html).
 
    Шаги: screen — карточка по центру (плитки — сетка); element — подсветка [data-tour=anchor]
-   (anchor может быть списком — берётся первый видимый; нет ни одного — шаг пропускается);
+   (anchor может быть списком — берётся первый видимый; пока страница грузится — ждём его до 20 с,
+   нет ни одного — шаг пропускается);
    navigate — обычный переход, тур продолжается на новой странице.
    Состояние {tourId, step, startedAt, hist, skipped} — в sessionStorage; если страница не та,
    что ожидает текущий шаг, тур закрывается (пользователь ушёл сам). */
@@ -100,6 +101,37 @@
         return null;
     }
 
+    /* Якорь ещё не пришёл: tour.js стоит в начале body, а таблица тяжёлой страницы догружается по
+       сети. Ждём его появления (MutationObserver), пока документ грузится, но не дольше
+       ANCHOR_WAIT_MS; документ разобран, а якоря нет — шаг пропускается, как раньше. */
+    var ANCHOR_WAIT_MS = 20000;
+    function waitAnchor(anchor, found, missing) {
+        var node = findAnchor(anchor);
+        if (node) return found(node);
+        if (document.readyState !== 'loading' || typeof MutationObserver === 'undefined') return missing();
+        var done = false, frame = 0, observer = null, timer = 0;
+        function stop() {
+            done = true;
+            if (observer) observer.disconnect();
+            clearTimeout(timer);
+            if (frame) cancelAnimationFrame(frame);
+            document.removeEventListener('DOMContentLoaded', onParsed);
+        }
+        function check(final) {
+            frame = 0;
+            if (done) return;
+            var el = findAnchor(anchor);
+            if (el) { stop(); found(el); }
+            else if (final) { stop(); missing(); }
+        }
+        function onParsed() { check(true); }
+        observer = new MutationObserver(function () { if (!frame) frame = requestAnimationFrame(function () { check(false); }); });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+        document.addEventListener('DOMContentLoaded', onParsed);
+        timer = setTimeout(function () { check(true); }, ANCHOR_WAIT_MS);
+        cleanup.push(stop);
+    }
+
     /* ── Ход тура ──────────────────────────────────────────────────── */
     function save() { write(STATE_KEY, state); }
 
@@ -121,15 +153,16 @@
             return;
         }
         if (step.type === 'element') {
-            var el = findAnchor(step.anchor);
-            if (!el) {
+            save();
+            return waitAnchor(step.anchor, function (el) {
+                if (state.hist[state.hist.length - 1] !== index) state.hist.push(index);
+                save();
+                showElement(step, el, index);
+            }, function () {
                 console.warn('[tour] нет якоря data-tour="' + step.anchor + '" — шаг ' + index + ' пропущен');
                 if (state.skipped.indexOf(index) < 0) state.skipped.push(index);
-                return go(index + 1);
-            }
-            if (state.hist[state.hist.length - 1] !== index) state.hist.push(index);
-            save();
-            return showElement(step, el, index);
+                go(index + 1);
+            });
         }
         if (state.hist[state.hist.length - 1] !== index) state.hist.push(index);
         save();
@@ -320,9 +353,21 @@
         var onMove = function () { cancelAnimationFrame(frame); frame = requestAnimationFrame(place); };
         window.addEventListener('resize', onMove);
         window.addEventListener('scroll', onMove, true);
+        window.addEventListener('load', onMove);
+        // страница ещё догружается: строки таблицы растят подсвеченный блок — подсветка следует за ним
+        var growing = document.readyState === 'loading' && typeof MutationObserver !== 'undefined'
+            ? new MutationObserver(onMove) : null;
+        var parsed = function () { if (growing) growing.disconnect(); onMove(); };
+        if (growing) {
+            growing.observe(document.documentElement, { childList: true, subtree: true });
+            document.addEventListener('DOMContentLoaded', parsed);
+        }
         cleanup.push(function () {
             window.removeEventListener('resize', onMove);
             window.removeEventListener('scroll', onMove, true);
+            window.removeEventListener('load', onMove);
+            if (growing) growing.disconnect();
+            document.removeEventListener('DOMContentLoaded', parsed);
             cancelAnimationFrame(frame);
         });
         scrollTo();
@@ -385,6 +430,7 @@
         });
     }
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
-    else start();
+    // Сразу, не дожидаясь конца документа: скрипт стоит в начале body (templates/base.html),
+    // body уже есть; шаг screen показывается сразу, шаг element ждёт свой якорь (waitAnchor).
+    start();
 })();

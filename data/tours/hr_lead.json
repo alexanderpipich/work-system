@@ -162,7 +162,7 @@
     },
     {
       "type": "navigate",
-      "url": "/hr/documents"
+      "url": "/hr/documents?status=all&document_type_id=0"
     },
     {
       "type": "element",
