@@ -112,7 +112,7 @@
                             <td class="fill-label">{{ f.label }}</td>
                             <td>{{ f.value or '—' }}{% if f.hint %}<div class="field-hint">{{ f.hint }}</div>{% endif %}</td>
                             <td class="muted">{{ f.source }}</td>
-                            <td>{% if f.missing and f.target and f.target[0] != 'form' %}{{ fix_input(f) }}{% elif f.missing %}<span class="muted">в параметрах выше</span>{% endif %}</td>
+                            <td>{% if f.missing and f.target and f.target[0] != 'form' %}{{ fix_input(f) }}{% elif f.missing and f.target %}<span class="muted">в параметрах выше</span>{% endif %}</td>
                         </tr>
                         {% endif %}
                     {% endfor %}

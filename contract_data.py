@@ -33,8 +33,6 @@ LE_FIELDS = [
     ("le_director_name", "director_name", "Руководитель (им. падеж)"),
     ("le_director_short", "director_short", "Подпись руководителя"),
     ("le_legal_address", "legal_address", "Юридический адрес"),
-    ("le_actual_address", "actual_address", "Фактический адрес"),
-    ("work_address", "work_address", "Адрес места работы (п. 1.3)"),
     ("le_inn", "inn", "ИНН юрлица"),
     ("le_kpp", "kpp", "КПП"),
     ("le_ogrn", "ogrn", "ОГРН"),
@@ -44,12 +42,13 @@ LE_FIELDS = [
     ("le_corr_account", "corr_account", "Корр. счёт"),
 ]
 CONTRACT_LE_KEYS = {"le_full_name", "le_short_name", "le_director_title", "le_director_genitive",
-                    "le_director_short", "le_legal_address", "work_address", "le_inn", "le_kpp", "le_ogrn",
+                    "le_director_short", "le_legal_address", "le_inn", "le_kpp", "le_ogrn",
                     "le_bank_account", "le_bank_name", "le_bik", "le_corr_account"}
-PETITION_LE_KEYS = {"le_full_name", "le_ogrn", "le_kpp", "le_inn", "le_legal_address", "le_actual_address",
-                    "le_director_name"}
-RECOMMENDATION_LE_KEYS = {"le_full_name", "le_short_name", "le_ogrn", "le_kpp", "le_inn", "le_actual_address",
+PETITION_LE_KEYS = {"le_full_name", "le_ogrn", "le_kpp", "le_inn", "le_legal_address", "le_director_name"}
+RECOMMENDATION_LE_KEYS = {"le_full_name", "le_short_name", "le_ogrn", "le_kpp", "le_inn",
                           "le_director_title", "le_director_name"}
+# Адреса бланков — из смен, не из юрлица (колонки LegalEntity.actual_address / work_address
+# остались в базе, но в генерации не используются): адрес основного магазина за 14 дней.
 # Должность руководителя хранится в род. падеже («генерального директора», для договора);
 # в подписи письма нужен именительный — по словарю частых слов, без склонений.
 _TITLE_NOMINATIVE = {"генерального": "генеральный", "исполнительного": "исполнительный",
@@ -180,6 +179,23 @@ def recent_work(session, user, today, days=RECENT_DAYS):
             "address_hint": address_hint, "rate": rate, "rate_hint": rate_hint}
 
 
+def work_address_field(key, label, work):
+    """Адрес основного магазина сотрудника за 14 дней (recent_work): п. 1.3 договора, шапка
+    ходатайства и письма. Нет смен, магазина в справочнике или адреса у магазина — поле в
+    недостающих; «заполнить на месте» пишет адрес в карточку магазина (Store.object_address)."""
+    store = work["store"] if work else None
+    if store:
+        field = _field(key, label, work["address"], SOURCE_STORE, ("store", store.id, "object_address"))
+        field["hint"] = work["address_hint"]
+    elif work:
+        field = _field(key, label, "", SOURCE_STORE)
+        field["hint"] = f"{work['store_label']} нет в справочнике магазинов — заведите магазин с адресом"
+    else:
+        field = _field(key, label, "", SOURCE_SHIFTS)
+        field["hint"] = "смен за 14 дней нет — адрес берётся из магазина, где сотрудник работает"
+    return field
+
+
 def contract_position(profile, with_patent, form):
     """Должность договора: введённая → профессия по патенту (при патенте) → расшифровка кода должности
     из карточки (`JOB_TITLE_NAMES`, им. падеж). Нет должности или расшифровки — пусто, поле в недостающих.
@@ -254,7 +270,7 @@ def _patent_fields(profile, region):
 
 def contract_fields(session, profile, entity, region, form, work=None):
     """(поля проверки полноты, значения для генератора, ошибки формы). work — recent_work():
-    адрес места работы из магазина, где сотрудник чаще выходил за 14 дней (иначе — из юрлица)."""
+    адрес места работы из магазина, где сотрудник чаще выходил за 14 дней (work_address_field)."""
     contract_date = form.get("contract_date") or date.today()
     with_patent = needs_patent(session, profile)
     errors = []
@@ -273,14 +289,8 @@ def contract_fields(session, profile, entity, region, form, work=None):
     ]
     if with_patent:
         fields += _patent_fields(profile, region)
-    store = work["store"] if work else None
-    fields += _le_fields(entity, CONTRACT_LE_KEYS - {"work_address"} if store else CONTRACT_LE_KEYS)
-    if store:
-        # Адрес — магазина, где сотрудник чаще выходил; «заполнить на месте» — в карточку магазина.
-        address = _field("work_address", "Адрес места работы (п. 1.3)", work["address"], SOURCE_STORE,
-                         ("store", store.id, "object_address"))
-        address["hint"] = work["address_hint"]
-        fields.append(address)
+    fields += _le_fields(entity, CONTRACT_LE_KEYS)
+    fields.append(work_address_field("work_address", "Адрес места работы (п. 1.3)", work))
 
     position, position_source, position_hint = contract_position(profile, with_patent, form)
     rate_field = _field("rate", "Ставка за час, ₽", form.get("rate") or "", SOURCE_FORM, ("form", "rate"))
@@ -343,11 +353,12 @@ def contract_fields(session, profile, entity, region, form, work=None):
     return fields, values, errors, with_patent
 
 
-def petition_fields(session, profile, entity, region, form):
+def petition_fields(session, profile, entity, region, form, work=None):
     petition_date = form.get("petition_date") or date.today()
     fields = [_field("fio", "ФИО", profile["fio"], SOURCE_USER)]
     fields += _patent_fields(profile, region)
     fields += _le_fields(entity, PETITION_LE_KEYS)
+    fields.append(work_address_field("le_actual_address", "Фактический адрес (шапка ходатайства)", work))
     fields += [
         _field("uvm_addressee", "Адресат в УВМ (дат. падеж)", region.uvm_addressee if region else "", SOURCE_REGION, ("region", "uvm_addressee")),
         _field("uvm_rank", "Звание начальника (дат. падеж)", region.uvm_rank if region else "", SOURCE_REGION, ("region", "uvm_rank")),
@@ -385,12 +396,13 @@ def recommendation_position(session, profile, form):
     return form.get("position") or patent or job_title_name(profile["job_title"])
 
 
-def recommendation_fields(session, profile, entity, form):
+def recommendation_fields(session, profile, entity, form, work=None):
     """Рекомендательное письмо (П4.11): юрлицо, ФИО, город и должность; тело безличное."""
     issue_date = form.get("recommendation_date") or date.today()
     position = recommendation_position(session, profile, form)
     fields = [_field("fio", "ФИО", profile["fio"], SOURCE_USER)]
     fields += _le_fields(entity, RECOMMENDATION_LE_KEYS)
+    fields.append(work_address_field("le_actual_address", "Адрес в шапке письма", work))
     fields += [
         _field("city", "Город работы", form.get("city") or "", SOURCE_FORM, ("form", "city")),
         _field("position", "Должность", position, SOURCE_FORM if form.get("position") else SOURCE_DOC, ("form", "position")),

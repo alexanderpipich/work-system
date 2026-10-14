@@ -22,7 +22,7 @@ from sqlalchemy.orm import sessionmaker
 from contract_data import signer_title
 from contract_generator import RECOMMENDATION_SUBS, RECOMMENDATION_TEMPLATE
 from models import Country, DocumentType, EmployeeDocument, LegalEntity, PayrollRun, Rate, User
-from test_documents_contracts import EMP, _session, _yellow, seed as seed_contracts
+from test_documents_contracts import EMP, SHOP_ADDRESS, _session, _yellow, seed as seed_contracts
 from test_payouts import WEEK, A, _engine, seed as seed_payouts
 
 UI_JS = os.path.join(os.path.dirname(__file__), "..", "static", "ui.js")
@@ -156,7 +156,8 @@ class ContractFormTests(_Client):
         text = _text(response.content)
         self.assertIn("Общество с ограниченной ответственностью «Новая»", text)
         self.assertIn("ОГРН 1127847392243 КПП 780601001 ИНН 7805595716", text)
-        self.assertIn("СПб, Лиговский 30", text)
+        self.assertIn(SHOP_ADDRESS, text)  # шапка — адрес магазина смен, не actual_address юрлица
+        self.assertNotIn("СПб, Лиговский 30", text)
         self.assertIn(f"Настоящим подтверждаем, что сотрудник {EMP} работал в г. Санкт-Петербург "
                       f"в должности «работник торгового зала».", text)
         self.assertEqual(text.count(EMP), 1)

@@ -15,7 +15,7 @@ from test_predemo_p411 import _Client, _text
 from time_helpers import business_today
 
 ADDRESS = "г. Санкт-Петербург, пр. Энгельса, д. 154"
-LE_ADDRESS = "СПб, ул. Бабушкина 40"  # work_address юрлица в посеве
+LE_ADDRESS = "СПб, ул. Бабушкина 40"  # work_address юрлица в посеве — в бланки не попадает
 
 
 def _shift(day, store, service, hours=8.0, request_type="Основные заказы"):
@@ -111,7 +111,8 @@ class ContractWorkTests(_Client):
         db.query(Shift).delete()
         db.commit()
         html = self._form()
-        self.assertIn(LE_ADDRESS, html)  # адрес — из юрлица, как раньше
+        self.assertNotIn(LE_ADDRESS, html)  # адрес юрлица не используется — поле в недостающих
+        self.assertIn("смен за 14 дней нет", html)
         self.assertIn('name="rate" value=""', html)
         self.assertIn("Смен со ставкой за 14 дней нет", html)
         self.assertIn("Ставка за час, ₽", html)
