@@ -35,6 +35,11 @@ def current_user(request: Request, db: Session = Depends(get_db)):
 
     # П4.10: боковое меню в base.html строится от пользователя запроса (menu_context).
     request.state.user = user
+    # П5: вход до появления login_id (сессия старше деплоя) — выдать его сейчас, один раз.
+    if not request.session.get("login_id"):
+        from uuid import uuid4
+
+        request.session["login_id"] = uuid4().hex
     return user
 
 

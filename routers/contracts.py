@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
 from contract_data import (contract_document_type, contract_fields, default_legal_entity, document_legal_entities,
-                           needs_patent, petition_fields, recommendation_fields, regions, save_fixes, suggest_contract_number)
+                           format_rate, needs_patent, petition_fields, recent_work, recommendation_fields, regions, save_fixes, suggest_contract_number)
 from contract_generator import TemplateMismatch, generate_contract, generate_petition, generate_recommendation
 from dependencies import RedirectException, current_user, get_db
 from document_helpers import preview_kind
@@ -199,6 +199,7 @@ def _context(session, employee, kind, form):
     region = session.get(Region, form["region_id"]) if form["region_id"] else profile["region"]
     today = business_today()
     errors = []
+    work = None
     if kind != "petition" and not form["city"] and region and region.patent_territory:
         form["city"] = region.patent_territory
     if kind == "petition":
@@ -218,7 +219,11 @@ def _context(session, employee, kind, form):
             form["term_until"] = form["term_until"] or profile["patent_expiry"]
         elif not form["term_until"] and not form["term_indefinite"]:
             form["term_indefinite"] = True
-        fields, values, errors, with_patent = contract_fields(session, profile, entity, region, form)
+        # Магазин и ЧТС — по сменам за 14 дней; ставка подставляется, только если поле пустое.
+        work = recent_work(session, employee, today)
+        if not form["rate"] and work and work["rate"]:
+            form["rate"] = format_rate(work["rate"])
+        fields, values, errors, with_patent = contract_fields(session, profile, entity, region, form, work)
         if with_patent:
             form["term_indefinite"] = False
     return {
@@ -230,6 +235,7 @@ def _context(session, employee, kind, form):
         "errors": errors,
         "missing": [f for f in fields if f["missing"]],
         "with_patent": with_patent,
+        "work": work,
         "form": form,
         "legal_entities": document_legal_entities(session),
         "regions": regions(session),

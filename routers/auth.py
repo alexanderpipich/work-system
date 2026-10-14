@@ -1,4 +1,6 @@
-﻿from fastapi import APIRouter, Depends, Form, Request
+﻿from uuid import uuid4
+
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -47,6 +49,8 @@ def login_submit(
         )
 
     request.session["user_id"] = user.id
+    # П5: идентификатор входа — флаг «тур закрыт до следующего входа» привязан к нему, а не к вкладке.
+    request.session["login_id"] = uuid4().hex
 
     if is_superadmin(user):
         return RedirectResponse(url="/admin", status_code=302)

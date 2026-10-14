@@ -7,8 +7,8 @@
 
 {% macro tour_assets(tour, path) -%}
 {% if tour %}
-<script>window.WS_TOUR = {{ {"id": tour.id, "mode": tour.mode, "start_url": tour.start_url, "autostart": tour.autostart, "force": tour.force} | tojson }};</script>
-<script src="/static/tour.js?v=4" defer></script>
+<script>window.WS_TOUR = {{ {"id": tour.id, "mode": tour.mode, "start_url": tour.start_url, "autostart": tour.autostart, "force": tour.force, "login_id": tour.login_id} | tojson }};</script>
+<script src="/static/tour.js?v=5" defer></script>
 {% elif path == '/login' %}
 {# Новый вход — режим always снова показывает тур: флаги «закрыт» прошлого входа сбрасываются. #}
 <script>try { Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf('ws-tour') === 0) sessionStorage.removeItem(k); }); } catch (e) {}</script>

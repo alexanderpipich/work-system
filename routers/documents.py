@@ -35,6 +35,8 @@ from document_helpers import (
     save_upload_file,
 )
 from file_storage import storage_delete, storage_response
+from employee_profile import DOC_PATENT, format_patent_number, parse_patent_number
+from models import job_title_name
 from inn_sync import INN_DOCUMENT_SORT_ORDER, set_employee_inn
 from models import CitizenshipRegime, Country, DocumentType, DocumentTypeSample, EmployeeDocument, EmployeeStoreAssignment, RegimeDocumentRule, Store, User
 from store_helpers import extract_tk_number
@@ -48,6 +50,7 @@ from utils import normalize_text, safe_return_to
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 templates.env.globals["preview_kind"] = preview_kind  # П4: просмотр документа в модалке
+templates.env.globals["job_title_name"] = job_title_name  # подпись кода должности в карточке сотрудника
 
 
 SAFE_MEDIA_TYPES = {
@@ -1332,9 +1335,13 @@ def document_card(
     employee = session.get(User, document.user_id) if document.user_id else None
     people = {u.id: u.employee_name for u in session.query(User).filter(
         User.id.in_([i for i in (document.uploaded_by, document.verified_by) if i]))}
+    patent = None
+    if document_type is not None and document_type.name == DOC_PATENT:
+        patent = parse_patent_number(document.document_number)  # серия, номер, бланк — отдельными полями
     return templates.TemplateResponse(request, "document_card.html", {
         "document": document,
         "type": document_type,
+        "patent": patent,
         "status": status,
         "status_label": STATUS_LABELS.get(status, status),
         "employee": employee,
@@ -1358,6 +1365,11 @@ async def document_card_save(
     document_id: int,
     back: str = Form(default=""),
     document_number: str = Form(default=""),
+    patent_parts: str = Form(default=""),
+    patent_series: str = Form(default=""),
+    patent_number: str = Form(default=""),
+    patent_blank_series: str = Form(default=""),
+    patent_blank_number: str = Form(default=""),
     issue_date: str = Form(default=""),
     expiry_date: str = Form(default=""),
     is_permanent: str = Form(default=""),
@@ -1401,7 +1413,13 @@ async def document_card_save(
 
     old_value = _card_payload(document)
     old_number = document.document_number
-    document.document_number = normalize_text(document_number) or None
+    if patent_parts == "1":
+        # Патент: серия, номер, серия и номер бланка — в одну строку «78 №… / ПР …», как ждёт договор.
+        parts = [patent_series, patent_number, patent_blank_series, patent_blank_number]
+        number = format_patent_number(*parts) if any(normalize_text(p) for p in parts) else ""
+    else:
+        number = document_number
+    document.document_number = normalize_text(number) or None
     document.issue_date = parsed_issue
     document.expiry_date = parsed_expiry
     document.is_permanent = permanent

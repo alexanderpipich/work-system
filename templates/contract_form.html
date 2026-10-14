@@ -13,6 +13,7 @@
 {% elif t[0] == 'patent' %}{% set name = 'fix:patent:' ~ t[1] %}
 {% elif t[0] == 'le' %}{% set name = 'fix:le:' ~ t[1] %}
 {% elif t[0] == 'region' %}{% set name = 'fix:region:' ~ t[1] %}
+{% elif t[0] == 'store' %}{% set name = 'fix:store:' ~ t[1] ~ ':' ~ t[2] %}
 {% endif %}
 {% if t[0] == 'user' and t[1] == 'gender' %}
 <select name="{{ name }}"><option value="">—</option><option value="m">мужской</option><option value="f">женский</option></select>
@@ -36,6 +37,8 @@
     .fill-table tr.is-missing td { background: var(--error-bg); }
     .fill-table tr.is-missing .fill-label { color: var(--error-text); font-weight: 700; }
     .fill-table input, .fill-table select { min-width: 220px; }
+    input.is-missing { border-color: var(--error-text); background: var(--error-bg); }
+    .field-hint.is-missing { color: var(--error-text); font-weight: 700; }
 </style>
 {% endblock %}
 
@@ -68,8 +71,13 @@
                 <div class="field"><label>Город</label><input type="text" name="city" value="{{ form.city }}" placeholder="г. Санкт-Петербург"></div>
                 <div class="field"><label>Вступает в силу</label><input type="date" name="effective_date" value="{{ form.effective_date.isoformat() if form.effective_date else '' }}" placeholder="= дата договора"></div>
                 <div class="field"><label>Начало работы</label><input type="date" name="start_date" value="{{ form.start_date.isoformat() if form.start_date else '' }}"></div>
-                <div class="field"><label>Должность</label><input type="text" name="position" value="{{ form.position or values.position }}" placeholder="{{ 'из патента' if with_patent else 'подсобный рабочий' }}"></div>
-                <div class="field"><label>Ставка за час, ₽</label><input type="text" name="rate" value="{{ form.rate }}" placeholder="232,18"></div>
+                {% set position_field = fields | selectattr('key', 'equalto', 'position') | first %}
+                {% set rate_field = fields | selectattr('key', 'equalto', 'rate') | first %}
+                <div class="field"><label>Должность</label><input type="text" name="position" value="{{ form.position or values.position }}" placeholder="{{ 'из патента' if with_patent else 'работник торгового зала' }}"
+                    {% if position_field and position_field.missing %}class="is-missing"{% endif %}>
+                    {% if position_field and position_field.hint %}<span class="field-hint{% if position_field.missing %} is-missing{% endif %}">{{ position_field.hint }}</span>{% endif %}</div>
+                <div class="field"><label>Ставка за час, ₽</label><input type="text" name="rate" value="{{ form.rate }}" placeholder="232,18">
+                    {% if rate_field and rate_field.hint %}<span class="field-hint">{{ rate_field.hint }}</span>{% elif not form.rate %}<span class="field-hint">Смен со ставкой за 14 дней нет — введите вручную</span>{% endif %}</div>
                 <div class="field"><label>Срок</label>
                     {% if with_patent %}
                     {# При патенте договор только срочный — «бессрочный» не предлагается (П4.11 A1). #}
@@ -102,7 +110,7 @@
                         {% if f.target and f.target[0] != 'form' or f.missing %}
                         <tr class="{% if f.missing %}is-missing{% endif %}">
                             <td class="fill-label">{{ f.label }}</td>
-                            <td>{{ f.value or '—' }}</td>
+                            <td>{{ f.value or '—' }}{% if f.hint %}<div class="field-hint">{{ f.hint }}</div>{% endif %}</td>
                             <td class="muted">{{ f.source }}</td>
                             <td>{% if f.missing and f.target and f.target[0] != 'form' %}{{ fix_input(f) }}{% elif f.missing %}<span class="muted">в параметрах выше</span>{% endif %}</td>
                         </tr>
@@ -111,7 +119,7 @@
                     </tbody>
                 </table>
             </div>
-            <p class="field-hint">Введённое сохраняется туда, откуда поле берётся: в карточку сотрудника, его документ, юрлицо или регион.</p>
+            <p class="field-hint">Введённое сохраняется туда, откуда поле берётся: в карточку сотрудника, его документ, юрлицо, регион или магазин.</p>
         </div>
 
         <div class="card">
