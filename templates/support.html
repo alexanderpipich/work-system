@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{# П5 D2: «Поддержка» в кабинете сотрудника — закреплённый ТМ (User.tm_id) и частые вопросы.
+   Тексты вопросов — здесь, без базы. #}
+{% block title %}Поддержка{% endblock %}
+{% block brand_title %}Поддержка{% endblock %}
+
+{% block topbar_actions %}<a href="/cabinet" class="back-link">В кабинет</a>{% endblock %}
+
+{% block head %}
+<style>
+    .manager-card { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .manager-card .k { font-size: 13px; color: var(--muted); }
+    .manager-card .name { font-size: 18px; font-weight: 800; color: var(--brand-blue); }
+    .manager-card .phone { font-size: 16px; font-weight: 700; }
+    .faq details { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-muted); padding: 12px 16px; margin-bottom: 10px; }
+    .faq summary { cursor: pointer; font-weight: 700; color: var(--brand-blue); }
+    .faq details p { margin: 10px 0 0; line-height: 1.5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-narrow">
+    <section class="card mt-20 manager-card">
+        {% if manager %}
+        <div>
+            <div class="k">Ваш менеджер</div>
+            <div class="name">{{ manager.employee_name }}</div>
+            {% if manager.phone %}
+            {% set digits = manager.phone | string %}
+            <a class="phone" href="tel:+{{ digits }}">{% if digits | length == 11 %}+{{ digits[0] }} ({{ digits[1:4] }}) {{ digits[4:7] }}-{{ digits[7:9] }}-{{ digits[9:] }}{% else %}{{ digits }}{% endif %}</a>
+            {% endif %}
+        </div>
+        {% else %}
+        <div>
+            <div class="k">Ваш менеджер</div>
+            <div class="muted">Менеджер пока не назначен.</div>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="card faq">
+        <h2>Частые вопросы</h2>
+        <details>
+            <summary>Где смотреть отработанные часы?</summary>
+            <p>В личном кабинете, в блоке «Отработанные часы»: выберите период и нажмите «Показать». Там все ваши смены — дата, часы и услуга. По этим часам считаются выплаты.</p>
+        </details>
+        <details>
+            <summary>Что значит «смена без плана»?</summary>
+            <p>Смена пришла из системы учёта магазина, но её нет в плане магазина — такая смена не попадает в оплату. Если вы действительно работали, обратитесь к администрации ТК, чтобы смену внесли в план, и сообщите менеджеру.</p>
+        </details>
+        <details>
+            <summary>Как загрузить документ?</summary>
+            <p>Откройте «Мои документы», у нужного документа нажмите «Фото или скан», сфотографируйте документ телефоном или выберите файл и нажмите «Загрузить». Документ сразу уходит на проверку в отдел кадров.</p>
+        </details>
+        <details>
+            <summary>Когда выплаты?</summary>
+            <p>Аванс — каждую неделю, за прошлую неделю после проверки часов менеджером. Табель — дважды в месяц: за 1–15 число и за 16-е — конец месяца; из него вычитаются уже выданные авансы.</p>
+        </details>
+        <details>
+            <summary>Как сменить пароль?</summary>
+            <p>В кабинете под вашим именем — ссылка «<a href="/cabinet/password">Сменить пароль</a>». Введите текущий пароль и дважды новый — не короче 6 символов.</p>
+        </details>
+        <details>
+            <summary>К кому обращаться по реквизитам?</summary>
+            <p>К вашему менеджеру{% if manager %} — {{ manager.employee_name }}{% endif %}. Без реквизитов карты аванс не создать, поэтому сообщите об изменениях заранее.</p>
+        </details>
+    </section>
+</div>
+{% endblock %}

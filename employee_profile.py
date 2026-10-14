@@ -15,6 +15,8 @@
 import re
 from datetime import timedelta
 
+from sqlalchemy import or_
+
 from models import Country, DocumentType, EmployeeDocument, LegalEntity, User
 from region_helpers import region_for_employee
 from utils import normalize_person_name, normalize_text
@@ -26,6 +28,8 @@ DOC_CONTRACT = "ТРУДОВОЙ ДОГОВОР"
 DOC_PETITION = "ХОДАТАЙСТВО"
 DOC_RECOMMENDATION = "РЕКОМЕНДАТЕЛЬНОЕ ПИСЬМО"
 INACTIVE_DOC_STATUSES = {"archived", "rejected"}
+# П5: что компания выдаёт сотруднику — блок «От компании» в «Мои документы».
+COMPANY_DOC_TYPES = (DOC_CONTRACT, DOC_PETITION, DOC_RECOMMENDATION)
 
 MALE_ENDINGS = ("вич", "ич", "угли", "оглы", "ули", "уулу")
 FEMALE_ENDINGS = ("вна", "ична", "чна", "кизи", "кызы", "гызы")
@@ -114,6 +118,23 @@ def latest_document(session, user, type_name):
         return doc_type, by_user
     return doc_type, query.filter(EmployeeDocument.employee_name == user.employee_name).order_by(
         EmployeeDocument.uploaded_at.desc(), EmployeeDocument.id.desc()).first()
+
+
+def company_documents(session, user):
+    """Документы от компании этого сотрудника (договор, ходатайство, рекомендация) с файлом —
+    новые сверху. Скачивание — /documents/files/{id}, там же проверка «только своё»."""
+    types = {t.id: t for t in session.query(DocumentType).filter(DocumentType.name.in_(COMPANY_DOC_TYPES))}
+    if not types:
+        return []
+    docs = session.query(EmployeeDocument).filter(
+        EmployeeDocument.document_type_id.in_(types),
+        EmployeeDocument.file_path.isnot(None),
+        EmployeeDocument.file_path != "",
+        EmployeeDocument.status.notin_(INACTIVE_DOC_STATUSES),
+        or_(EmployeeDocument.user_id == user.id, EmployeeDocument.employee_name == user.employee_name),
+    ).order_by(EmployeeDocument.uploaded_at.desc(), EmployeeDocument.id.desc()).all()
+    return [{"document": doc, "type": types[doc.document_type_id],
+             "date": doc.issue_date or (doc.uploaded_at.date() if doc.uploaded_at else None)} for doc in docs]
 
 
 def is_russian(country):
