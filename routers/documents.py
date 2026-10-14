@@ -38,10 +38,11 @@ from file_storage import storage_delete, storage_response
 from inn_sync import INN_DOCUMENT_SORT_ORDER, set_employee_inn
 from models import CitizenshipRegime, Country, DocumentType, DocumentTypeSample, EmployeeDocument, EmployeeStoreAssignment, RegimeDocumentRule, Store, User
 from store_helpers import extract_tk_number
-from rbac import HR_CABINET_ROLES, ROLE_HR_CLERK, ROLE_TM, canonical_role, has_permission, is_superadmin, scopes_enabled
+from rbac import (HR_CABINET_ROLES, ROLE_HR_CLERK, ROLE_TM, canonical_role, has_permission, is_superadmin,
+                  record_denied_action, scopes_enabled)
 from sqlalchemy.orm import Session
 from time_helpers import now_utc
-from utils import normalize_text
+from utils import normalize_text, safe_return_to
 
 
 router = APIRouter()
@@ -411,7 +412,7 @@ def admin_documents_matrix_toggle(
     document = latest_employee_document(session, employee_name, document_type.id)
     if document is not None and document.file_path:
         return JSONResponse(
-            {"ok": False, "error": "У документа загружен файл — снимайте или меняйте его в карточке документа"},
+            {"ok": False, "error": "У документа загружен файл — меняйте его в карточке документа: реестр → «Открыть»"},
             status_code=400,
         )
 
@@ -1287,6 +1288,187 @@ def archive_document(
         status_filter=status,
         employee_name=employee_name,
     )
+
+
+# ── Карточка документа: просмотр, правка данных и файла, безвозвратное удаление ──
+# Правка — documents.manage (ТМ, кадровик, руководитель, суперадмин) в пределах доступа к сотруднику;
+# статус не меняется (проверенный остаётся проверенным — решение владельца 14.10.2026), всё — в аудит.
+# Удаление — только суперадмин (documents.hard_delete); остальным — «Архив» в реестре.
+CARD_FIELDS = ("document_number", "issue_date", "expiry_date", "is_permanent",
+               "extra_field_1_value", "extra_field_2_value", "comment", "file_path", "original_filename")
+
+
+def _card_payload(document):
+    return {field: (str(getattr(document, field)) if getattr(document, field) is not None else None)
+            for field in CARD_FIELDS}
+
+
+def _card_url(base_path, document_id, back=""):
+    return f"{base_path}/card/{document_id}" + (f"?{urlencode({'back': back})}" if back else "")
+
+
+def _card_back(base_path, back):
+    return safe_return_to(back, base_path)
+
+
+@router.get("/admin/documents/card/{document_id}", response_class=HTMLResponse)
+@router.get("/economist/documents/card/{document_id}", response_class=HTMLResponse)
+@router.get("/hr/documents/card/{document_id}", response_class=HTMLResponse)
+def document_card(
+    request: Request,
+    document_id: int,
+    back: str = "",
+    message: str = "",
+    error: str = "",
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _documents_base(request)
+    document = session.get(EmployeeDocument, document_id)
+    if not _document_allowed_for_user(session, document, user):
+        return _redirect(_card_back(base_path, back), error="Документ не найден или нет доступа")
+    document_type = session.get(DocumentType, document.document_type_id)
+    status = computed_document_status(document)
+    employee = session.get(User, document.user_id) if document.user_id else None
+    people = {u.id: u.employee_name for u in session.query(User).filter(
+        User.id.in_([i for i in (document.uploaded_by, document.verified_by) if i]))}
+    return templates.TemplateResponse(request, "document_card.html", {
+        "document": document,
+        "type": document_type,
+        "status": status,
+        "status_label": STATUS_LABELS.get(status, status),
+        "employee": employee,
+        "uploaded_by": people.get(document.uploaded_by),
+        "verified_by": people.get(document.verified_by),
+        "base_path": base_path,
+        "back": _card_back(base_path, back),
+        "back_param": back,
+        "can_edit": has_permission(user, "documents.manage"),
+        "can_delete": has_permission(user, "documents.hard_delete"),
+        "message": message or None,
+        "error": error or None,
+    })
+
+
+@router.post("/admin/documents/card/{document_id}")
+@router.post("/economist/documents/card/{document_id}")
+@router.post("/hr/documents/card/{document_id}")
+async def document_card_save(
+    request: Request,
+    document_id: int,
+    back: str = Form(default=""),
+    document_number: str = Form(default=""),
+    issue_date: str = Form(default=""),
+    expiry_date: str = Form(default=""),
+    is_permanent: str = Form(default=""),
+    extra_field_1_value: str = Form(default=""),
+    extra_field_2_value: str = Form(default=""),
+    comment: str = Form(default=""),
+    file: Optional[UploadFile] = File(default=None),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _documents_base(request)
+    document = session.get(EmployeeDocument, document_id)
+    if not _document_allowed_for_user(session, document, user):
+        return _redirect(_card_back(base_path, back), error="Документ не найден или нет доступа")
+    card_url = _card_url(base_path, document_id, back)
+    if not has_permission(user, "documents.manage"):
+        record_denied_action(session, request, user, "documents.manage")
+        return RedirectResponse(card_url + ("&" if "?" in card_url else "?") + urlencode(
+            {"error": "Нет права менять документы"}), status_code=302)
+
+    def fail(text):
+        return RedirectResponse(card_url + ("&" if "?" in card_url else "?") + urlencode({"error": text}),
+                                status_code=302)
+
+    document_type = session.get(DocumentType, document.document_type_id)
+    permanent = parse_bool(is_permanent)
+    try:
+        parsed_issue = parse_date(issue_date)
+        parsed_expiry = None if permanent else parse_date(expiry_date)
+    except DocumentDateParseError:
+        return fail(INVALID_DATE_MESSAGE)
+    # «Бессрочно» — только если тип разрешает (как в матрице), иначе его ловит диагностика ложно-зелёных.
+    if permanent and document_type is not None and not document_type.allow_permanent:
+        return fail(f"Тип «{document_type.name}» требует срок действия — «бессрочно» недоступно")
+
+    try:
+        folder = f"employee_documents/{document.user_id or normalize_employee_folder(document.employee_name)}"
+        new_path, new_name = await save_upload_file(file, folder, f"type_{document.document_type_id}")
+    except ValueError as exc:
+        return fail(str(exc))
+
+    old_value = _card_payload(document)
+    old_number = document.document_number
+    document.document_number = normalize_text(document_number) or None
+    document.issue_date = parsed_issue
+    document.expiry_date = parsed_expiry
+    document.is_permanent = permanent
+    document.extra_field_1_value = normalize_text(extra_field_1_value) or None
+    document.extra_field_2_value = normalize_text(extra_field_2_value) or None
+    document.comment = normalize_text(comment) or None
+    if new_path:
+        # Прежний файл не удаляется из хранилища: его ключ остаётся в аудите — замену можно откатить.
+        document.file_path, document.original_filename = new_path, new_name
+    new_value = _card_payload(document)
+    if new_value == old_value:
+        return RedirectResponse(card_url + ("&" if "?" in card_url else "?") + urlencode(
+            {"message": "Изменений нет"}), status_code=302)
+    document.updated_at = now_utc()
+    changed = [field for field in CARD_FIELDS if old_value[field] != new_value[field]]
+    create_audit_log(
+        session, request, user, "document_edited", "employee_document", document.id,
+        f"{document.employee_name} / {document_type.name if document_type else document.document_type_id}",
+        old_value={field: old_value[field] for field in changed},
+        new_value={field: new_value[field] for field in changed},
+        comment=f"карточка документа; статус «{document.status}» не менялся",
+    )
+    # ИНН — как при загрузке: номер документа типа ИНН переносится в карточку сотрудника.
+    if (document_type is not None and document_type.sort_order == INN_DOCUMENT_SORT_ORDER
+            and document.document_number and document.document_number != old_number and document.user_id):
+        employee = session.get(User, document.user_id)
+        if employee is not None:
+            set_employee_inn(session, employee, document.document_number, source="document", actor=user,
+                             request=request)
+    session.commit()
+    return RedirectResponse(card_url + ("&" if "?" in card_url else "?") + urlencode(
+        {"message": "Документ сохранён"}), status_code=302)
+
+
+@router.post("/admin/documents/card/{document_id}/delete")
+@router.post("/economist/documents/card/{document_id}/delete")
+@router.post("/hr/documents/card/{document_id}/delete")
+def document_card_delete(
+    request: Request,
+    document_id: int,
+    back: str = Form(default=""),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _documents_base(request)
+    target = _card_back(base_path, back)
+    document = session.get(EmployeeDocument, document_id)
+    if not _document_allowed_for_user(session, document, user):
+        return _redirect(target, error="Документ не найден или нет доступа")
+    if not has_permission(user, "documents.hard_delete"):
+        record_denied_action(session, request, user, "documents.hard_delete")
+        return RedirectResponse(_card_url(base_path, document_id, back) + ("&" if back else "?") + urlencode(
+            {"error": "Безвозвратное удаление доступно только суперадминистратору — используйте «Архив»"}),
+            status_code=302)
+    document_type = session.get(DocumentType, document.document_type_id)
+    old_value = _card_payload(document)
+    old_value.update({"status": document.status, "employee_name": document.employee_name,
+                      "document_type_id": document.document_type_id})
+    file_path = document.file_path
+    create_audit_log(session, request, user, "document_deleted", "employee_document", document.id,
+                     f"{document.employee_name} / {document_type.name if document_type else document.document_type_id}",
+                     old_value=old_value)
+    session.delete(document)
+    session.commit()
+    storage_delete(file_path)  # после commit: запись удалена — файл больше никому не нужен
+    separator = "&" if "?" in target else "?"
+    return RedirectResponse(f"{target}{separator}{urlencode({'message': 'Документ удалён'})}", status_code=302)
 
 
 @router.get("/documents/files/{document_id}")
