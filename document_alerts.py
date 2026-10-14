@@ -5,7 +5,8 @@
 до окончания). При проверке берётся самый «тесный» достигнутый уровень — если
 документ впервые увидели за 20 дней, уходит уровень 30, следующий — на 14.
 
-Адресаты: все кадровики (hr_clerk), ТМ сотрудника (User.tm_id), сам сотрудник.
+Адресаты: все кадровики (hr_clerk) и руководители (hr_lead, П5), ТМ сотрудника (User.tm_id),
+сам сотрудник.
 Каналы: в приложении (DocumentExpiryAlert — счётчик в шапке, баннер в
 кабинете) и email, если у адресата заполнен User.email (EmailLog
 scenario="document_expiry"). Telegram — П6.
@@ -21,7 +22,7 @@ from audit_helpers import create_audit_log
 from document_helpers import alert_levels
 from email_engine import send_email
 from models import AuditLog, DocumentExpiryAlert, DocumentType, EmailLog, EmployeeDocument, User
-from rbac import ROLE_HR_CLERK
+from rbac import ROLE_HR_CLERK, ROLE_HR_LEAD
 from time_helpers import business_today, now_utc
 from utils import normalize_person_name, normalize_text
 
@@ -79,8 +80,8 @@ def _employee_user(session, doc):
 
 
 def recipients(session, doc):
-    """Кадровики, ТМ сотрудника, сам сотрудник (без повторов)."""
-    people = {u.id: u for u in session.query(User).filter(User.role == ROLE_HR_CLERK).all()}
+    """Кадровики, руководители, ТМ сотрудника, сам сотрудник (без повторов)."""
+    people = {u.id: u for u in session.query(User).filter(User.role.in_((ROLE_HR_CLERK, ROLE_HR_LEAD))).all()}
     employee = _employee_user(session, doc)
     if employee:
         people[employee.id] = employee

@@ -69,7 +69,7 @@ if not SECRET_KEY:
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
 
-# П4: счётчик непрочитанных напоминаний о сроках документов в шапке (кадровик, ТМ).
+# П4: счётчик непрочитанных напоминаний о сроках документов в шапке (кадровик, ТМ; П5 — и руководитель).
 # Регистрируется ДО SessionMiddleware: middleware, добавленный позже, оборачивает
 # ранние — так сессия к этому моменту уже разобрана.
 @app.middleware("http")
@@ -79,12 +79,12 @@ async def document_expiry_counter(request: Request, call_next):
     if user_id and request.method == "GET":
         from document_alerts import unread_count
         from models import User
-        from rbac import ROLE_HR_CLERK, ROLE_TM, canonical_role
+        from rbac import ROLE_HR_CLERK, ROLE_HR_LEAD, ROLE_TM, canonical_role
 
         db = SessionLocal()
         try:
             user = db.get(User, user_id)
-            if user and canonical_role(user) in {ROLE_HR_CLERK, ROLE_TM}:
+            if user and canonical_role(user) in {ROLE_HR_CLERK, ROLE_HR_LEAD, ROLE_TM}:
                 request.state.expiry_alerts = unread_count(db, user.id)
         except Exception:  # счётчик не должен ронять страницу
             logging.getLogger(__name__).exception("document expiry counter failed")
