@@ -299,6 +299,8 @@
                         <td>
                             {% if row.document %}
                             <div class="actions">
+                                {# Карточка документа: данные, правка, замена файла; возврат — сюда же, с фильтрами. #}
+                                <a class="btn btn-secondary btn-sm" href="{{ base_path }}/card/{{ row.document.id }}?back={{ (request.url.path ~ ('?' ~ request.url.query if request.url.query else '')) | urlencode }}">Открыть</a>
                                 {% if row.status in ['uploaded', 'pending_verification'] %}
                                 <form method="post" action="{{ base_path }}/verify">
                                     <input type="hidden" name="document_id" value="{{ row.document.id }}">

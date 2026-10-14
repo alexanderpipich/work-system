@@ -61,7 +61,7 @@ ROLE_LABELS = {
 #   upload.auto — настройка автозагрузки смен из timebook (П2, вкладка на /admin/upload)
 #   admin.settings, system.* — настройки и служебные инструменты
 #   schedules.admin_view, payroll.delete,
-#   rates.hard_delete, legal_entities.hard_delete
+#   rates.hard_delete, legal_entities.hard_delete, documents.hard_delete (карточка документа)
 #   payroll.close, payroll.any_period (табель не за полмесяца) — суперадмин и HR-руководитель
 # Роли superadmin и hr_lead создаёт, назначает, удаляет и сбрасывает им пароль только
 # суперадмин — can_manage_role (П4.8).
