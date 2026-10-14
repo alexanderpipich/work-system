@@ -94,7 +94,7 @@ class BuildNavigationTests(unittest.TestCase):
     def test_permissions_and_icons_are_known(self):
         known = set().union(*PERMISSIONS.values()) | {"email.manage", "upload.auto", "admin.settings",
                                                       "shifts.upload", "audit.view", "stores.view",
-                                                      "schedules.admin_view", "users.manage"}
+                                                      "schedules.admin_view", "users.manage", "tour.manage"}
         for name, groups in ALL_GROUPS.items():
             for card in all_cards(groups):
                 with self.subTest(group=name, card=card["key"]):

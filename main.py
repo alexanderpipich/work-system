@@ -144,7 +144,6 @@ app.include_router(users_router)
 install_menu_globals(module for name, module in list(sys.modules.items()) if name.startswith("routers."))
 # П5: демо-туры — глобал tour_context в тех же окружениях (templates/_tour.html).
 install_tour_globals(module for name, module in list(sys.modules.items()) if name.startswith("routers."))
-log_tour_settings()  # в логе Timeweb видно, дошли ли TOUR_AUTOSTART / TOUR_DEMO_EMPLOYEE
 
 Base.metadata.create_all(bind=engine)
 # Догоняющие миграции старых баз — Postgres-специфичный SQL (ADD COLUMN IF NOT
@@ -175,5 +174,5 @@ if engine.dialect.name == "postgresql":
     finally:
         _startup_session.close()
 
-
-
+# П5: в логе запуска — режим тура и демо-сотрудник, которые действуют сейчас, и откуда они взяты.
+log_tour_settings()

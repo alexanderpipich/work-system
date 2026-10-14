@@ -27,7 +27,7 @@ SUPERADMIN = SimpleNamespace(id=1, role="superadmin", is_admin=True, employee_na
 CABINET_ONLY = {"profile.own", "documents.own", "schedules.own", "headhunter.dashboard"}
 SUPERADMIN_ONLY = {"shifts.upload", "upload.auto", "admin.settings", "system.technical", "system.maintenance",
                    "payroll.delete", "rates.hard_delete",
-                   "legal_entities.hard_delete"}
+                   "legal_entities.hard_delete", "tour.manage"}
 
 
 class HrLeadPermissionTests(unittest.TestCase):

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% from "_employee_input.html" import employee_input %}
+
+{# П5: настройки демо-туров (только суперадмин, tour.manage). Маршруты — routers/tour.py,
+   порядок выбора режима — tours.py: лично пользователю → для всех → TOUR_AUTOSTART → «только первый раз». #}
+{% block title %}Демо-тур{% endblock %}
+{% block brand_title %}Демо-тур{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Автозапуск тура руководителя и сотрудника, демо-сотрудник, режим отдельным пользователям</p>{% endblock %}
+
+{% block head %}
+<style>
+    .tour-modes { display: grid; gap: 8px; margin: 0 0 14px; }
+    .tour-modes label { display: flex; gap: 10px; align-items: flex-start; font-weight: 700; }
+    .tour-modes small { display: block; font-weight: 400; color: var(--muted); }
+    .tour-modes input { margin-top: 3px; }
+    .tour-users td form { display: inline-flex; gap: 6px; align-items: center; margin: 0; }
+    .tour-users select { min-width: 190px; }
+    .pill.ok { background: var(--success-bg); color: var(--success-text); }
+    .pill.bad { background: var(--error-bg); color: var(--error-text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page page-narrow page-pad-top">
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
+
+    <form method="post" action="/admin/tour-settings">
+    <section class="card">
+        <h2>Для всех</h2>
+        <p class="field-hint mt-0">Тур руководителя стартует на его рабочем столе, тур сотрудника — в кабинете. Кнопка «?» в шапке запускает тур при любом режиме.</p>
+        <div class="tour-modes">
+            <label><input type="radio" name="autostart_mode" value="always" {% if saved_mode == 'always' %}checked{% endif %}>
+                <span>При каждом входе<small>Режим демо: после «Пропустить» или «Готово» тур снова покажется при следующем входе.</small></span></label>
+            <label><input type="radio" name="autostart_mode" value="first" {% if saved_mode == 'first' %}checked{% endif %}>
+                <span>Только первый раз<small>Тур показывается, пока пользователь его не закрыл.</small></span></label>
+            <label><input type="radio" name="autostart_mode" value="off" {% if saved_mode == 'off' %}checked{% endif %}>
+                <span>Выключен<small>Сам не запускается, только по кнопке «?».</small></span></label>
+            <label><input type="radio" name="autostart_mode" value="" {% if not saved_mode %}checked{% endif %}>
+                <span>Не задано<small>Берётся переменная TOUR_AUTOSTART, без неё — «только первый раз». Сейчас: {{ mode_labels[env_mode] | lower }}.</small></span></label>
+        </div>
+
+        <h2>Демо-сотрудник</h2>
+        <p class="field-hint mt-0">В туре руководителя — шаг «Документы сотрудника» и договор этого сотрудника. Пусто — шага нет{% if report.TOUR_DEMO_EMPLOYEE and not saved_demo %} (сейчас берётся переменная TOUR_DEMO_EMPLOYEE){% endif %}.</p>
+        <div class="field">
+            <label>ФИО сотрудника</label>
+            {{ employee_input('demo_employee', employees, saved_demo, list_id='tour-employees') }}
+        </div>
+        {% if demo %}
+        <p class="mb-0">Сейчас: <b>{{ demo }}</b>
+            {% if demo_user %}<span class="pill ok">найден</span>{% else %}<span class="pill bad">нет в базе — шаг будет пустым</span>{% endif %}</p>
+        {% endif %}
+        <button class="btn btn-primary mt-14" type="submit">Сохранить</button>
+    </section>
+    </form>
+
+    <section class="card">
+        <h2>Отдельным пользователям</h2>
+        <p class="field-hint mt-0">Режим лично для пользователя главнее общего. Руководители в списке всегда; сотрудника добавьте по ФИО или телефону. «Показать снова» — тур снова запустится сам при следующем входе в режиме «только первый раз».</p>
+        <div class="table-wrap">
+            <table class="tour-users">
+                <thead><tr><th>Пользователь</th><th>Роль</th><th>Режим</th><th>Действует</th><th>Тур закрыт</th></tr></thead>
+                <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.user.employee_name }}{% if row.user.phone %}<div class="muted">{{ row.user.phone }}</div>{% endif %}</td>
+                    <td>{{ row.role }}</td>
+                    <td>
+                        <form method="post" action="/admin/tour-settings/user">
+                            <input type="hidden" name="user_id" value="{{ row.user.id }}">
+                            <select name="tour_mode" aria-label="Режим тура">
+                                <option value="" {% if not row.mode %}selected{% endif %}>Как у всех</option>
+                                {% for value, label in modes %}<option value="{{ value }}" {% if row.mode == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                            </select>
+                            <button class="btn btn-secondary btn-sm" type="submit">Сохранить</button>
+                        </form>
+                    </td>
+                    <td>{{ mode_labels[row.effective] }}</td>
+                    <td>
+                        {% if row.user.tour_seen_at %}{{ row.user.tour_seen_at.strftime('%d.%m.%Y %H:%M') }}
+                        <form method="post" action="/admin/tour-settings/user">
+                            <input type="hidden" name="user_id" value="{{ row.user.id }}">
+                            <input type="hidden" name="tour_mode" value="{{ row.mode }}">
+                            <input type="hidden" name="reset_seen" value="1">
+                            <button class="btn btn-secondary btn-sm" type="submit">Показать снова</button>
+                        </form>
+                        {% else %}<span class="muted">нет</span>{% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="muted">Руководителей и личных настроек нет</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <form method="post" action="/admin/tour-settings/user" class="form-grid mt-14">
+            <div class="field"><label>Сотрудник — ФИО или телефон</label>
+                {{ employee_input('target', employees, list_id='tour-employees', with_list=false) }}</div>
+            <div class="field"><label>Режим</label>
+                <select name="tour_mode">
+                    {% for value, label in modes %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                </select></div>
+            <div class="field"><label>&nbsp;</label><button class="btn btn-primary" type="submit">Добавить</button></div>
+        </form>
+    </section>
+</div>
+{% endblock %}

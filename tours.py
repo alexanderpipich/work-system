@@ -6,14 +6,18 @@
 
 - `employee` → тур `employee` на `/cabinet`; `hr_lead` → тур `hr_lead` на своём дашборде
   (`navigation.dashboard_url`); остальным ролям тура нет;
-- `TOUR_AUTOSTART` = `always` (каждый вход; «Пропустить» — до следующего входа, флаг в
-  sessionStorage) | `first` (пока пуст `User.tour_seen_at`) | `off`; по умолчанию `first`;
+- режим автозапуска: `always` (каждый вход; «Пропустить» — до следующего входа, флаг в
+  sessionStorage) | `first` (пока пуст `User.tour_seen_at`) | `off`. Откуда берётся — по порядку:
+  `User.tour_mode` (лично для пользователя) → `TourSettings.autostart_mode` (страница
+  «Демо-тур», `routers/tour.py`) → переменная `TOUR_AUTOSTART` → `first`;
 - `?tour=1` на стартовой странице запускает тур с первого шага при любом режиме;
-- `TOUR_DEMO_EMPLOYEE` — ФИО демо-сотрудника: подставляется в `{demo_employee}` адресов шагов;
-  шаги с `"requires": "demo_employee"` без переменной выбрасываются, `url_demo` заменяет `url`.
+- демо-сотрудник (`TourSettings.demo_employee`, иначе `TOUR_DEMO_EMPLOYEE`) — ФИО, подставляется
+  в `{demo_employee}` адресов шагов; шаги с `"requires": "demo_employee"` без него выбрасываются,
+  `url_demo` заменяет `url`.
 
 `tour_context(request)` — Jinja-глобал для `templates/_tour.html` (как `menu_context`);
-в базу не ходит: пользователь — из `request.state.user`.
+в базу не ходит: пользователь — из `request.state.user`, настройки — из
+`request.state.tour_settings` (их кладёт `dependencies.current_user`, см. `load_settings`).
 """
 
 import json
@@ -29,44 +33,99 @@ TOURS_DIR = Path(__file__).resolve().parent / "data" / "tours"
 TOUR_IDS = ("employee", "hr_lead")
 AUTOSTART_MODES = ("always", "first", "off")
 DEFAULT_AUTOSTART = "first"
+MODE_LABELS = {"always": "При каждом входе", "first": "Только первый раз", "off": "Выключен"}
 STEP_TYPES = ("screen", "element", "navigate")
 START = "@start"  # navigate на стартовую страницу тура (у руководителя она зависит от роли)
 
 
+def _mode(value):
+    value = (value or "").strip().lower()
+    return value if value in AUTOSTART_MODES else ""
+
+
+def _name(value):
+    return normalize_text(" ".join((value or "").split()))
+
+
 def autostart_mode():
-    mode = (os.getenv("TOUR_AUTOSTART") or "").strip().lower()
-    return mode if mode in AUTOSTART_MODES else DEFAULT_AUTOSTART
+    """Режим из переменной TOUR_AUTOSTART (запасной вариант, если в настройках пусто)."""
+    return _mode(os.getenv("TOUR_AUTOSTART")) or DEFAULT_AUTOSTART
 
 
-def demo_employee():
-    """ФИО демо-сотрудника тура руководителя (TOUR_DEMO_EMPLOYEE) или ''."""
-    return normalize_text(" ".join((os.getenv("TOUR_DEMO_EMPLOYEE") or "").split()))
+def load_settings(session):
+    """Настройки со страницы «Демо-тур» словарём (не ORM-объект: живут дольше сессии) или None."""
+    from models import TourSettings
+
+    row = session.query(TourSettings).order_by(TourSettings.id).first()
+    if row is None:
+        return None
+    return {"autostart_mode": _mode(row.autostart_mode), "demo_employee": _name(row.demo_employee)}
+
+
+def global_mode(settings=None):
+    """Режим для всех: настройка на странице, иначе переменная, иначе first."""
+    return (settings or {}).get("autostart_mode") or autostart_mode()
+
+
+def mode_for(user, settings=None):
+    """Режим пользователя: личный (User.tour_mode), иначе общий."""
+    return _mode(getattr(user, "tour_mode", None)) or global_mode(settings)
+
+
+def demo_employee(settings=None):
+    """ФИО демо-сотрудника тура руководителя: настройка на странице, иначе TOUR_DEMO_EMPLOYEE, иначе ''."""
+    return (settings or {}).get("demo_employee") or _name(os.getenv("TOUR_DEMO_EMPLOYEE"))
+
+
+def find_demo_user(session, name):
+    """Сотрудник с этим ФИО (сравнение без регистра и е/ё) или None."""
+    from models import User
+
+    needle = normalize_person_name(name)
+    if not needle:
+        return None
+    for user in session.query(User).filter(User.employee_name.isnot(None)).all():
+        if normalize_person_name(user.employee_name) == needle:
+            return user
+    return None
 
 
 def tour_settings(session=None):
-    """Что приложение видит в переменных тура — для проверки на проде (/tour/data, лог запуска).
-    Пустое `TOUR_AUTOSTART` даёт `first`, пустое `TOUR_DEMO_EMPLOYEE` выбрасывает шаг
-    «Документы сотрудника» (26 шагов вместо 27)."""
+    """Что действует сейчас и откуда — для проверки на проде (/tour/data, лог запуска)."""
+    settings = load_settings(session) if session is not None else None
     raw = os.getenv("TOUR_AUTOSTART")
-    demo = demo_employee()
+    demo = demo_employee(settings)
     result = {
         "TOUR_AUTOSTART": raw if raw is not None else None,
-        "autostart": autostart_mode(),
+        "autostart": global_mode(settings),
         "TOUR_DEMO_EMPLOYEE": demo or None,
     }
-    if session is not None and demo:
-        from models import User
-
-        needle = normalize_person_name(demo)
-        result["demo_employee_found"] = any(
-            normalize_person_name(name) == needle for (name,) in session.query(User.employee_name).all())
+    if session is not None:
+        result["source"] = {
+            "autostart": "настройки" if (settings or {}).get("autostart_mode") else
+                         ("переменная" if _mode(raw) else "по умолчанию"),
+            "demo_employee": "настройки" if (settings or {}).get("demo_employee") else
+                             ("переменная" if demo else "не задан"),
+        }
+        if demo:
+            result["demo_employee_found"] = find_demo_user(session, demo) is not None
     return result
 
 
 def log_tour_settings():
     import logging
 
-    logging.getLogger("uvicorn.error").info("tour settings: %s", json.dumps(tour_settings(), ensure_ascii=False))
+    try:
+        from database import SessionLocal
+
+        session = SessionLocal()
+        try:
+            report = tour_settings(session)
+        finally:
+            session.close()
+    except Exception:  # лог не должен ронять запуск
+        report = tour_settings()
+    logging.getLogger("uvicorn.error").info("tour settings: %s", json.dumps(report, ensure_ascii=False))
 
 
 def load_tour(tour_id):
@@ -88,7 +147,7 @@ def start_url_for(user, tour_id):
     return "/cabinet" if tour_id == "employee" else dashboard_url(user)
 
 
-def tour_for_user(user):
+def tour_for_user(user, settings=None):
     """Тур пользователя со стартовой страницей и разрешёнными `@start`, или None."""
     tour_id = tour_id_for(user)
     if tour_id is None:
@@ -96,7 +155,7 @@ def tour_for_user(user):
     tour = load_tour(tour_id)
     start = start_url_for(user, tour_id)
     tour["start_url"] = start
-    demo = demo_employee()
+    demo = demo_employee(settings)
     steps = []
     for step in tour["steps"]:
         if step.pop("requires", None) == "demo_employee" and not demo:
@@ -111,11 +170,11 @@ def tour_for_user(user):
     return tour
 
 
-def build_tour_context(user, path, query_tour=False, mode=None, login_id=""):
+def build_tour_context(user, path, query_tour=False, mode=None, login_id="", settings=None):
     tour_id = tour_id_for(user)
     if tour_id is None:
         return None
-    mode = mode or autostart_mode()
+    mode = mode or mode_for(user, settings)
     start = start_url_for(user, tour_id)
     on_start = path.rstrip("/") == start.rstrip("/")
     if mode == "always":
@@ -124,6 +183,7 @@ def build_tour_context(user, path, query_tour=False, mode=None, login_id=""):
         autostart = on_start and getattr(user, "tour_seen_at", None) is None
     else:
         autostart = False
+    demo = demo_employee(settings) if tour_id == "hr_lead" else ""
     return {
         "id": tour_id,
         "mode": mode,
@@ -134,7 +194,7 @@ def build_tour_context(user, path, query_tour=False, mode=None, login_id=""):
         # ключ флага «закрыт до следующего входа»: новый вход — новый ключ, тур снова стартует
         "login_id": login_id or "",
         # строка демо-сотрудника на /admin/contracts — якоря шагов «Договор» и «Рекомендация»
-        "demo_norm": normalize_person_name(demo_employee()) if tour_id == "hr_lead" and demo_employee() else "",
+        "demo_norm": normalize_person_name(demo) if demo else "",
     }
 
 
@@ -143,7 +203,8 @@ def tour_context(request):
         return None
     user = getattr(request.state, "user", None)
     login_id = request.session.get("login_id", "") if "session" in request.scope else ""
-    return build_tour_context(user, request.url.path, request.query_params.get("tour") == "1", login_id=login_id)
+    return build_tour_context(user, request.url.path, request.query_params.get("tour") == "1", login_id=login_id,
+                              settings=getattr(request.state, "tour_settings", None))
 
 
 def install_tour_globals(modules):

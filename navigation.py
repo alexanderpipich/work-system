@@ -86,6 +86,7 @@ ICONS.update({
     "employee_list": ("indigo", ICONS["users"][1]),
     "regions": ("teal", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'),
     "upload_auto": ("sky", ICONS["upload"][1]),
+    "tour": ("violet", '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.7"/><circle cx="12" cy="16.8" r=".6" fill="currentColor" stroke="none"/></svg>'),
 })
 
 
@@ -163,6 +164,11 @@ NAV_GROUPS = [
              "Безопасный сброс паролей сотрудников и бригадиров.",
              [("/hr/access", "password.reset_limited", HR_VIEW)],
              hidden_for={ROLE_SUPERADMIN}),
+        # П5: настройки демо-тура — только суперадмину; остальным карточка не показывается вовсе.
+        card("tour", "Демо-тур",
+             "Автозапуск тура руководителя и сотрудника, демо-сотрудник тура, режим отдельным пользователям.",
+             [("/admin/tour-settings", "tour.manage", None)],
+             hidden_for=set(ROLES) - SA),
     ]},
     {"key": "money", "title": "Время, ставки и выплаты", "icon": "payroll", "cards": [
         card("rates", "ЧТС",
