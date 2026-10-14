@@ -72,10 +72,20 @@ def patent_is_valid(profile, on_date):
 
 
 def default_legal_entity(session, profile):
+    """Юрлицо бланка: из профиля сотрудника → отмеченное «по умолчанию» (активное) →
+    единственное активное → None (выбрать в форме)."""
     if profile["legal_entity"]:
         return profile["legal_entity"]
-    active = session.query(LegalEntity).filter(LegalEntity.is_active == True).order_by(LegalEntity.name).all()  # noqa: E712
+    active = document_legal_entities(session)
+    if active and active[0].is_default:
+        return active[0]
     return active[0] if len(active) == 1 else None
+
+
+def document_legal_entities(session):
+    """Активные юрлица для выпадающего списка бланков: юрлицо по умолчанию — первым."""
+    return session.query(LegalEntity).filter(LegalEntity.is_active == True).order_by(  # noqa: E712
+        LegalEntity.is_default.desc(), LegalEntity.name).all()
 
 
 def citizen_word(gender):

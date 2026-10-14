@@ -56,6 +56,7 @@ def _entity_payload(entity):
         "inn": entity.inn,
         "comment": entity.comment,
         "is_active": entity.is_active,
+        "is_default": bool(entity.is_default),
     }
 
 
@@ -88,7 +89,8 @@ def _add_entity(session, request, user, base_path, name, short_name, inn, commen
     return _redirect(base_path, message="Юрлицо добавлено")
 
 
-def _update_entity(session, request, user, base_path, entity_id, name, short_name, inn, comment, is_active):
+def _update_entity(session, request, user, base_path, entity_id, name, short_name, inn, comment, is_active,
+                   is_default=""):
     entity = session.query(LegalEntity).filter(LegalEntity.id == entity_id).first()
     if not entity:
         return _redirect(base_path, error="Юрлицо не найдено")
@@ -103,6 +105,16 @@ def _update_entity(session, request, user, base_path, entity_id, name, short_nam
     entity.inn = normalize_text(inn) or None
     entity.comment = normalize_text(comment) or None
     entity.is_active = is_active == "1"
+    # «По умолчанию для документов» — только у одного юрлица: ставим здесь, снимаем у остальных.
+    entity.is_default = is_default == "1"
+    if entity.is_default:
+        for other in session.query(LegalEntity).filter(LegalEntity.id != entity.id,
+                                                       LegalEntity.is_default == True):  # noqa: E712
+            create_audit_log(session, request, user, "legal_entity_updated", "legal_entity", other.id, other.name,
+                             old_value={"is_default": True}, new_value={"is_default": False},
+                             comment=f"по умолчанию теперь {entity.name}")
+            other.is_default = False
+            other.updated_at = now_utc()
     entity.updated_at = now_utc()
     create_audit_log(
         session,
@@ -307,6 +319,7 @@ def update_legal_entity(
     inn: str = Form(default=""),
     comment: str = Form(default=""),
     is_active: str = Form(default=""),
+    is_default: str = Form(default=""),
     session: Session = Depends(get_db),
     admin=Depends(_le_manage),
 ):
@@ -322,6 +335,7 @@ def update_legal_entity(
             inn,
             comment,
             is_active,
+            is_default,
         )
 
     except Exception as exc:
@@ -338,6 +352,7 @@ def economist_update_legal_entity(
     inn: str = Form(default=""),
     comment: str = Form(default=""),
     is_active: str = Form(default=""),
+    is_default: str = Form(default=""),
     session: Session = Depends(get_db),
     user=Depends(_le_manage),
 ):
@@ -353,6 +368,7 @@ def economist_update_legal_entity(
             inn,
             comment,
             is_active,
+            is_default,
         )
 
     except Exception as exc:

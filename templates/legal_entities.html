@@ -16,7 +16,9 @@
     /* специфика страницы: ширины редактируемой строки юрлица и кнопка «Активировать» */
 
     .entities-table table { min-width: 1100px; }
-    .inline-form { grid-template-columns: 2fr 1fr 1fr 2fr 120px 110px; }
+    .inline-form { grid-template-columns: 2fr 1fr 1fr 2fr 120px auto 110px; align-items: center; }
+    .inline-form .check { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; font-weight: 700; color: var(--brand-blue); white-space: nowrap; cursor: pointer; }
+    .inline-form .check input { width: 16px; height: 16px; margin: 0; flex: none; }
     @media (max-width: 1100px) {
         .inline-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
@@ -85,6 +87,7 @@
                                     <option value="1" {% if entity.is_active %}selected{% endif %}>Активно</option>
                                     <option value="0" {% if not entity.is_active %}selected{% endif %}>Неактивно</option>
                                 </select>
+                                <label class="check" title="Подставляется в договор, ходатайство и рекомендацию, если у сотрудника своего юрлица нет. Только у одного юрлица."><input form="legal-entity-{{ entity.id }}" type="checkbox" name="is_default" value="1" {% if entity.is_default %}checked{% endif %}> По умолчанию для документов</label>
                                 <button form="legal-entity-{{ entity.id }}" type="submit" class="btn btn-primary btn-sm">Сохранить</button>
                             </div>
                             {# П4: реквизиты для договора и ходатайства — отдельная форма. #}
@@ -115,6 +118,7 @@
                             {% else %}
                                 <span class="pill pill-neutral">Неактивно</span>
                             {% endif %}
+                            {% if entity.is_default %}<span class="pill pill-info" title="{{ 'Юрлицо неактивно — для документов не подставляется' if not entity.is_active else 'Для договора, ходатайства и рекомендации' }}">по умолчанию</span>{% endif %}
                         </td>
                         <td>
                             <div class="actions">
@@ -131,6 +135,7 @@
                                         <input type="hidden" name="inn" value="{{ entity.inn or '' }}">
                                         <input type="hidden" name="comment" value="{{ entity.comment or '' }}">
                                         <input type="hidden" name="is_active" value="1">
+                                        <input type="hidden" name="is_default" value="{{ '1' if entity.is_default else '' }}">
                                         <button type="submit" class="btn btn-success btn-sm">Активировать</button>
                                     </form>
                                 {% endif %}

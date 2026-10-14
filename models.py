@@ -141,6 +141,9 @@ class LegalEntity(Base):
     inn = Column(String, nullable=True)
     comment = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
+    # Юрлицо по умолчанию для бланков (договор, ходатайство, рекомендация), если у сотрудника
+    # своего нет; флаг стоит не больше чем у одного юрлица (legal_entities._update_entity).
+    is_default = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=now_utc)
     updated_at = Column(DateTime, nullable=True)
     # П4: реквизиты для договора и ходатайства (зелёные/голубые подстановки шаблонов).
