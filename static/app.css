@@ -1412,3 +1412,7 @@ html.drawer-open, html.drawer-open body { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
     .drawer-backdrop, .drawer-panel { animation: none; }
 }
+
+/* Строка-ссылка (реестр документов: «Не загружен» → создать документ) */
+tr.row-link { cursor: pointer; }
+tr.row-link:hover td { background: var(--surface-muted); }

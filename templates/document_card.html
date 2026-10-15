@@ -2,10 +2,12 @@
 {% from "_doc_preview.html" import preview_link, preview_modal, document_preview_link %}
 
 {# Карточка документа сотрудника: данные, правка (documents.manage), замена файла, удаление
-   (только суперадмин). Статус при правке не меняется. Маршруты — routers/documents.py, document_card*. #}
+   (только суперадмин). Статус при правке не меняется. Маршруты — routers/documents.py, document_card*.
+   creating — режим создания из строки «Не загружен» реестра (document_new*): сотрудник и тип
+   выбраны, документа ещё нет. #}
 {% block title %}{{ type.name if type else 'Документ' }} — {{ document.employee_name }}{% endblock %}
 {% block brand_title %}{{ type.name if type else 'Документ' }}{% endblock %}
-{% block brand_subtitle %}<p class="brand-subtitle">{{ document.employee_name }} · карточка документа</p>{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">{{ document.employee_name }} · {{ 'новый документ' if creating else 'карточка документа' }}</p>{% endblock %}
 
 {% block topbar_actions %}<a href="{{ back }}" class="back-link">← К документам</a>{% endblock %}
 
@@ -40,6 +42,7 @@
             <div><dt>Сотрудник</dt><dd>{{ document.employee_name }}</dd></div>
             <div><dt>Тип документа</dt><dd>{{ type.name if type else '—' }}</dd></div>
             <div><dt>Статус</dt><dd><span class="pill {{ {'verified': 'ok', 'uploaded': 'warn', 'pending_verification': 'warn', 'expiring_soon': 'warn', 'rejected': 'bad', 'expired': 'bad'}.get(status, '') }}">{{ status_label }}</span></dd></div>
+            {% if not creating %}
             <div><dt>Загружен</dt><dd>{{ document.uploaded_at.strftime('%d.%m.%Y %H:%M') if document.uploaded_at else '—' }}{% if uploaded_by %} · {{ uploaded_by }}{% endif %}</dd></div>
             {% if document.verified_at %}<div><dt>Проверен</dt><dd>{{ document.verified_at.strftime('%d.%m.%Y %H:%M') }}{% if verified_by %} · {{ verified_by }}{% endif %}</dd></div>{% endif %}
             {% if document.updated_at %}<div><dt>Изменён</dt><dd>{{ document.updated_at.strftime('%d.%m.%Y %H:%M') }}</dd></div>{% endif %}
@@ -48,10 +51,11 @@
                 {{ document_preview_link(document, (type.name if type else 'Документ') ~ ' — ' ~ document.employee_name, label='Открыть скан') }}
                 {% else %}<span class="muted">Нет файла</span>{% endif %}
             </dd></div>
+            {% endif %}
         </dl>
     </section>
 
-    {% set pages = preview_pages(document) %}
+    {% set pages = [] if creating else preview_pages(document) %}
     {% if pages %}
     <section class="card">
         <h2>Страницы ({{ pages|length }})</h2>
@@ -75,11 +79,17 @@
 
     <section class="card">
         <h2>Данные документа</h2>
-        {% if can_edit %}
+        {% if creating %}
+        <p class="field-hint mt-0">Документ появится в реестре со статусом «Ожидает проверки». Запись — в журнале действий.</p>
+        {% elif can_edit %}
         <p class="field-hint mt-0">Статус после сохранения не меняется{% if status == 'verified' %} — документ остаётся проверенным{% endif %}. Все изменения записываются в журнал действий.</p>
         {% endif %}
-        <form method="post" action="{{ base_path }}/card/{{ document.id }}" enctype="multipart/form-data">
+        <form method="post" action="{{ base_path }}/{{ 'new' if creating else 'card/%s' % document.id }}" enctype="multipart/form-data">
             <input type="hidden" name="back" value="{{ back_param }}">
+            {% if creating %}
+            <input type="hidden" name="user_id" value="{{ document.user_id }}">
+            <input type="hidden" name="document_type_id" value="{{ document.document_type_id }}">
+            {% endif %}
             <fieldset {% if not can_edit %}disabled{% endif %} style="border:0;padding:0;margin:0">
             <div class="form-grid">
                 {% if patent is not none %}
@@ -95,7 +105,7 @@
                 {% endif %}
                 <div class="field"><label>Дата выдачи</label>
                     <input type="date" name="issue_date" value="{{ document.issue_date.isoformat() if document.issue_date else '' }}"></div>
-                <div class="field"><label>Срок действия</label>
+                <div class="field"><label>Срок действия{% if type and type.requires_expiry_date %} <span class="muted">(обязателен{% if type.allow_permanent %}, если не бессрочно{% endif %})</span>{% endif %}</label>
                     <input type="date" name="expiry_date" value="{{ document.expiry_date.isoformat() if document.expiry_date else '' }}"></div>
                 <div class="field"><label>{{ (type.extra_field_1_label if type and type.extra_field_1_label) or 'Доп. поле 1' }}</label>
                     <input name="extra_field_1_value" value="{{ document.extra_field_1_value or '' }}"></div>

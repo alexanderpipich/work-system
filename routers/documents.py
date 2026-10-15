@@ -268,6 +268,11 @@ def _render_documents(
             "document_type_id": document_type_id,
             "status": status,
             "base_path": base_path,
+            # «Добавить» в строке «Не загружен» и подписи полей по типу в «Добавить документ вручную»
+            "can_manage_documents": has_permission(user, "documents.manage"),
+            "type_fields": {t.id: {"extra1": t.extra_field_1_label or "", "extra2": t.extra_field_2_label or "",
+                                   "patent": t.name == DOC_PATENT, "permanent": bool(t.allow_permanent),
+                                   "expiry": bool(t.requires_expiry_date)} for t in document_types},
             "back_url": back_url,
             "back_label": back_label,
             "message": message or None,
@@ -1142,6 +1147,11 @@ async def upload_employee_document_by_manager(
     employee_name: str = Form(...),
     document_type_id: int = Form(...),
     document_number: str = Form(default=""),
+    patent_parts: str = Form(default=""),
+    patent_series: str = Form(default=""),
+    patent_number: str = Form(default=""),
+    patent_blank_series: str = Form(default=""),
+    patent_blank_number: str = Form(default=""),
     issue_date: str = Form(default=""),
     expiry_date: str = Form(default=""),
     is_permanent: str = Form(default=""),
@@ -1153,6 +1163,15 @@ async def upload_employee_document_by_manager(
     user=Depends(require_document_manager),
 ):
     base_path, _, _ = _documents_base(request)
+    if patent_parts == "1":  # патент: четыре поля номера (форма подстраивается под тип) — в одну строку
+        parts = [patent_series, patent_number, patent_blank_series, patent_blank_number]
+        document_number = format_patent_number(*parts) if any(normalize_text(p) for p in parts) else ""
+    # Срок — если тип требует (подпись «обязателен» в форме), как в карточке создания и матрице.
+    # Загрузку сотрудником из кабинета это не касается: там даты вносит кадровик при проверке.
+    required_type = session.get(DocumentType, document_type_id)
+    if (required_type is not None and required_type.requires_expiry_date and not normalize_text(expiry_date)
+            and not (parse_bool(is_permanent) and required_type.allow_permanent)):
+        return _redirect(base_path, error=f"Для документа «{required_type.name}» нужна дата окончания")
     try:
         allowed_names = None if request.url.path.startswith("/admin") else _employee_scope(session, user)
         return await _create_employee_document(
@@ -1393,6 +1412,164 @@ def _card_url(base_path, document_id, back=""):
 
 def _card_back(base_path, back):
     return safe_return_to(back, base_path)
+
+
+# Создание документа из строки «Не загружен» реестра: та же карточка в режиме создания (creating).
+# Документ, внесённый сотрудником отдела кадров, получает тот же статус, что из формы
+# «Добавить документ вручную» (_create_employee_document) — «ожидает проверки».
+CREATED_DOCUMENT_STATUS = "pending_verification"
+ACTIVE_EXISTING_STATUSES = ("archived", "rejected")  # такие не мешают создать новый документ
+
+
+def _new_document_target(session, request, user, user_id, document_type_id):
+    """(сотрудник, тип, уже существующий документ, ошибка) для режима создания."""
+    employee = session.get(User, user_id) if user_id else None
+    document_type = session.get(DocumentType, document_type_id) if document_type_id else None
+    if employee is None or document_type is None or not document_type.is_active:
+        return None, None, None, "Сотрудник или тип документа не найден"
+    allowed = None if request.url.path.startswith("/admin") else _employee_scope(session, user)
+    if not _is_employee_allowed(employee.employee_name, allowed):
+        return None, None, None, "Нет доступа к сотруднику"
+    existing = latest_employee_document(session, employee.employee_name, document_type.id)
+    if existing is not None and existing.status in ACTIVE_EXISTING_STATUSES:
+        existing = None
+    return employee, document_type, existing, None
+
+
+def _existing_redirect(base_path, existing, back):
+    card_url = _card_url(base_path, existing.id, back)
+    return RedirectResponse(card_url + ("&" if "?" in card_url else "?") + urlencode(
+        {"message": "Документ этого типа у сотрудника уже есть — открыта его карточка"}), status_code=302)
+
+
+def _deny_manage(session, request, user, base_path, back):
+    record_denied_action(session, request, user, "documents.manage")
+    return _redirect(_card_back(base_path, back), error="Нет права добавлять документы")
+
+
+@router.get("/admin/documents/new", response_class=HTMLResponse)
+@router.get("/economist/documents/new", response_class=HTMLResponse)
+@router.get("/hr/documents/new", response_class=HTMLResponse)
+def document_new(
+    request: Request,
+    user_id: int = 0,
+    document_type_id: int = 0,
+    back: str = "",
+    error: str = "",
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _documents_base(request)
+    if not has_permission(user, "documents.manage"):
+        return _deny_manage(session, request, user, base_path, back)
+    employee, document_type, existing, problem = _new_document_target(session, request, user, user_id,
+                                                                     document_type_id)
+    if problem:
+        return _redirect(_card_back(base_path, back), error=problem)
+    if existing is not None:
+        return _existing_redirect(base_path, existing, back)
+    draft = EmployeeDocument(user_id=employee.id, employee_name=employee.employee_name,
+                             document_type_id=document_type.id)
+    return templates.TemplateResponse(request, "document_card.html", {
+        "creating": True,
+        "document": draft,
+        "type": document_type,
+        "patent": parse_patent_number("") if document_type.name == DOC_PATENT else None,
+        "status": "missing",
+        "status_label": STATUS_LABELS["missing"],
+        "employee": employee,
+        "base_path": base_path,
+        "back": _card_back(base_path, back),
+        "back_param": back,
+        "can_edit": True,
+        "can_delete": False,
+        "message": None,
+        "error": error or None,
+    })
+
+
+@router.post("/admin/documents/new")
+@router.post("/economist/documents/new")
+@router.post("/hr/documents/new")
+async def document_new_save(
+    request: Request,
+    user_id: int = Form(0),
+    document_type_id: int = Form(0),
+    back: str = Form(default=""),
+    document_number: str = Form(default=""),
+    patent_parts: str = Form(default=""),
+    patent_series: str = Form(default=""),
+    patent_number: str = Form(default=""),
+    patent_blank_series: str = Form(default=""),
+    patent_blank_number: str = Form(default=""),
+    issue_date: str = Form(default=""),
+    expiry_date: str = Form(default=""),
+    is_permanent: str = Form(default=""),
+    extra_field_1_value: str = Form(default=""),
+    extra_field_2_value: str = Form(default=""),
+    comment: str = Form(default=""),
+    add_files: list[UploadFile] = File(default=[]),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    base_path, _, _ = _documents_base(request)
+    if not has_permission(user, "documents.manage"):
+        return _deny_manage(session, request, user, base_path, back)
+    employee, document_type, existing, problem = _new_document_target(session, request, user, user_id,
+                                                                     document_type_id)
+    if problem:
+        return _redirect(_card_back(base_path, back), error=problem)
+    if existing is not None:  # гонка / второй клик — дубль не создаём
+        return _existing_redirect(base_path, existing, back)
+
+    def fail(text):
+        query = {"user_id": user_id, "document_type_id": document_type_id, "error": text}
+        if back:
+            query["back"] = back
+        return RedirectResponse(f"{base_path}/new?{urlencode(query)}", status_code=302)
+
+    permanent = parse_bool(is_permanent) and bool(document_type.allow_permanent)
+    try:
+        parsed_issue = parse_date(issue_date)
+        parsed_expiry = None if permanent else parse_date(expiry_date)
+    except DocumentDateParseError:
+        return fail(INVALID_DATE_MESSAGE)
+    if document_type.requires_expiry_date and not permanent and not parsed_expiry:
+        return fail(f"Для документа «{document_type.name}» нужна дата окончания")
+    if patent_parts == "1":
+        parts = [patent_series, patent_number, patent_blank_series, patent_blank_number]
+        number = format_patent_number(*parts) if any(normalize_text(p) for p in parts) else ""
+    else:
+        number = document_number
+    try:
+        saved = await save_upload_files(add_files, f"employee_documents/{employee.id}", f"type_{document_type.id}")
+    except ValueError as exc:
+        return fail(str(exc))
+
+    document = EmployeeDocument(
+        user_id=employee.id, employee_name=employee.employee_name, document_type_id=document_type.id,
+        document_number=normalize_text(number) or None, issue_date=parsed_issue, expiry_date=parsed_expiry,
+        is_permanent=permanent, extra_field_1_value=normalize_text(extra_field_1_value) or None,
+        extra_field_2_value=normalize_text(extra_field_2_value) or None, comment=normalize_text(comment) or None,
+        status=CREATED_DOCUMENT_STATUS, uploaded_by=user.id, uploaded_at=now_utc(),
+    )
+    session.add(document)
+    add_document_pages(document, saved, user.id)
+    session.flush()
+    payload = _card_payload(document)
+    create_audit_log(
+        session, request, user, "document_created", "employee_document", document.id,
+        f"{document.employee_name} / {document_type.name}",
+        new_value={**{k: v for k, v in payload.items() if v is not None}, "status": document.status,
+                   "document_type_id": document_type.id, "pages": len(saved)},
+        comment="из строки «Не загружен» реестра",
+    )
+    if document.document_number and document_type.sort_order == INN_DOCUMENT_SORT_ORDER:
+        set_employee_inn(session, employee, document.document_number, source="document", actor=user, request=request)
+    session.commit()
+    target = _card_back(base_path, back)
+    return RedirectResponse(target + ("&" if "?" in target else "?") + urlencode(
+        {"message": f"Документ «{document_type.name}» добавлен"}), status_code=302)
 
 
 @router.get("/admin/documents/card/{document_id}", response_class=HTMLResponse)
