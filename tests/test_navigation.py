@@ -254,7 +254,12 @@ class DashboardRendersTests(unittest.TestCase):
             with self.subTest(role=role):
                 response = self.client.get("/admin/users", follow_redirects=False)
                 self.assertEqual(response.status_code, 200)
-                self.assertNotIn('action="/admin/update-user"', response.text)
+                # П5.2: кадровик правит личные поля сотрудника — tests/test_hr_clerk_p52.py.
+                if role == "hr_clerk":
+                    self.assertIn("data-personal-form", response.text)
+                    self.assertNotIn('name="role"', response.text.split("data-personal-form")[1])
+                else:
+                    self.assertNotIn('action="/admin/update-user"', response.text)
                 self.assertNotIn('action="/admin/change-password"', response.text)
                 self.assertNotIn('action="/admin/delete-user"', response.text)
                 self.assertNotIn('href="/admin/create-user"', response.text)

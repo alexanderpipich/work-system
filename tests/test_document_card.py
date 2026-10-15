@@ -68,7 +68,7 @@ class DocumentCardTests(_Client):
 
     def test_registry_has_open_button(self):
         html = self.client.get("/hr/documents?status=all&employee_name=" + EMP).text
-        link = re.search(r'href="(/hr/documents/card/%d\?back=[^"]+)">Открыть</a>' % self.patent.id, html)
+        link = re.search(r'href="(/hr/documents/card/%d\?back=[^"]+)"(?: data-tour="docs-open")?>Открыть</a>' % self.patent.id, html)
         self.assertIsNotNone(link)
         self.assertIn("back=/hr/documents%3Fstatus%3Dall%26employee_name%3D", link.group(1))
         # возврат из карточки — на реестр с теми же фильтрами

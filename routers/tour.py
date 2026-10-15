@@ -11,9 +11,9 @@ from sqlalchemy.orm import Session
 from audit_helpers import create_audit_log
 from dependencies import current_user, get_db
 from models import TourSettings, User
-from rbac import ROLE_EMPLOYEE, ROLE_HR_LEAD, require_permission, role_label
+from rbac import ROLE_EMPLOYEE, ROLE_HR_CLERK, ROLE_HR_LEAD, require_permission, role_label
 from time_helpers import now_utc
-from tours import (AUTOSTART_MODES, MODE_LABELS, autostart_mode, demo_employee, find_demo_user, global_mode,
+from tours import (AUTOSTART_MODES, DEMO_TOURS, MODE_LABELS, autostart_mode, demo_employee, find_demo_user, global_mode,
                    load_settings, mode_for, tour_for_user, tour_id_for, tour_settings)
 from utils import normalize_person_name, normalize_phone, normalize_text
 
@@ -21,16 +21,19 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 SETTINGS_URL = "/admin/tour-settings"
 _tour_manage = require_permission("tour.manage", audit_denied=True)
+TOUR_ROLES = (ROLE_EMPLOYEE, ROLE_HR_LEAD, ROLE_HR_CLERK)
+# В таблице «отдельным пользователям» руководители и кадровики — всегда (П5.2), сотрудники — с личным режимом.
+STAFF_ORDER = {ROLE_HR_LEAD: 0, ROLE_HR_CLERK: 1}
 
 
 @router.get("/tour/data")
 def tour_data(session: Session = Depends(get_db), user=Depends(current_user)):
-    """Шаги тура, положенного пользователю по роли; чужой тур не отдаётся. Руководителю — ещё
+    """Шаги тура, положенного пользователю по роли; чужой тур не отдаётся. Руководителю и кадровику — ещё
     `settings`: какой режим и демо-сотрудник действуют и откуда взяты (проверка на проде)."""
     tour = tour_for_user(user, load_settings(session))
     if tour is None:
         return JSONResponse({"error": "Тура для вашей роли нет"}, status_code=404)
-    if tour["id"] == "hr_lead":
+    if tour["id"] in DEMO_TOURS:
         tour["settings"] = tour_settings(session)
     return tour
 
@@ -70,7 +73,7 @@ def _find_user(session, value):
     if not value:
         return None, "Укажите ФИО или телефон"
     phone = normalize_phone(value)
-    candidates = session.query(User).filter(User.role.in_([ROLE_EMPLOYEE, ROLE_HR_LEAD])).all()
+    candidates = session.query(User).filter(User.role.in_(TOUR_ROLES)).all()
     if phone and len(phone) >= 10:
         found = [u for u in candidates if normalize_phone(u.phone or "") == phone]
     else:
@@ -78,7 +81,7 @@ def _find_user(session, value):
         found = [u for u in candidates if normalize_person_name(u.employee_name or "") == needle]
     found = [u for u in found if tour_id_for(u)]
     if not found:
-        return None, f"«{value}» не найден среди сотрудников и руководителей"
+        return None, f"«{value}» не найден среди сотрудников, руководителей и кадровиков"
     if len(found) > 1:
         return None, f"«{value}» — несколько пользователей, укажите телефон"
     return found[0], None
@@ -89,10 +92,10 @@ def tour_settings_page(request: Request, message: str = "", error: str = "",
                        session: Session = Depends(get_db), user=Depends(_tour_manage)):
     settings = load_settings(session) or {}
     demo = demo_employee(settings)
-    users = session.query(User).filter(User.role.in_([ROLE_EMPLOYEE, ROLE_HR_LEAD])).all()
+    users = session.query(User).filter(User.role.in_(TOUR_ROLES)).all()
     personal = sorted(
-        [u for u in users if u.role == ROLE_HR_LEAD or u.tour_mode],
-        key=lambda u: (u.role != ROLE_HR_LEAD, normalize_person_name(u.employee_name or "")))
+        [u for u in users if u.role in STAFF_ORDER or u.tour_mode],
+        key=lambda u: (STAFF_ORDER.get(u.role, 2), normalize_person_name(u.employee_name or "")))
     rows = [{
         "user": u,
         "role": role_label(u.role),

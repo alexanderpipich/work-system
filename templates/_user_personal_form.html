@@ -1,0 +1,79 @@
+{# П5.2: карточка сотрудника у кадровика (users.edit_personal) — только личные поля.
+   Роль, телефон-логин, пароль, закреплённый ТМ, юрлицо и выплаты — только просмотр; сервер
+   (routers/users._update_personal) прочие поля из запроса отбрасывает. ФИО не правится: по нему
+   к сотруднику привязаны смены и выплаты. #}
+<div class="form-block" data-personal-form>
+    <h4>Личные данные</h4>
+    <form method="post" action="/admin/update-user">
+        <input type="hidden" name="user_id" value="{{ user.id }}">
+        <input type="hidden" name="f_user_id" value="{{ f_user_id }}">
+        <input type="hidden" name="f_phone" value="{{ f_phone }}">
+        <input type="hidden" name="f_employee_name" value="{{ f_employee_name }}">
+        <input type="hidden" name="f_role" value="{{ f_role }}">
+
+        <div class="form-grid cols-2 align-end">
+            <div class="field field-full">
+                <label>ФИО</label>
+                <input type="text" value="{{ user.employee_name }}" readonly>
+                <span class="field-hint">По ФИО к сотруднику привязаны смены и выплаты — исправляет руководитель.</span>
+            </div>
+
+            <div class="field">
+                <label>Дата рождения</label>
+                <input type="date" name="birth_date" value="{{ user.birth_date.isoformat() if user.birth_date else '' }}">
+            </div>
+
+            <div class="field">
+                <label>Пол</label>
+                <select name="gender">
+                    <option value="">— не указан —</option>
+                    <option value="m" {% if user.gender == 'm' %}selected{% endif %}>мужской</option>
+                    <option value="f" {% if user.gender == 'f' %}selected{% endif %}>женский</option>
+                </select>
+            </div>
+
+            {% set ns = namespace(sel=user.citizenship_country_id or 0) %}
+            {% if not ns.sel and user.citizenship_country %}
+                {% for c in countries %}
+                    {% if c.name == user.citizenship_country %}{% set ns.sel = c.id %}{% endif %}
+                {% endfor %}
+            {% endif %}
+            <div class="field">
+                <label>Гражданство</label>
+                <select name="citizenship_country_id">
+                    <option value="0">— не выбрано —</option>
+                    {% for c in countries %}
+                    <option value="{{ c.id }}" {% if c.id == ns.sel %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Должность</label>
+                <select name="job_title">
+                    <option value="">— не выбрано —</option>
+                    {% for jt in job_titles %}
+                    <option value="{{ jt }}" {% if user.job_title == jt %}selected{% endif %}>{{ jt }}{% if job_title_name is defined and job_title_name(jt) %} — {{ job_title_name(jt) }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label>ИНН</label>
+                <input type="text" name="inn" value="{{ user.inn or '' }}" placeholder="ИНН"
+                       title="Синхронизируется с реквизитами и документом-ИНН">
+            </div>
+
+            <div class="check">
+                <input type="hidden" name="is_student" value="">
+                <input type="checkbox" name="is_student" value="1" {% if user.is_student %}checked{% endif %}> Студент
+            </div>
+        </div>
+
+        <div class="block-actions">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a class="btn btn-secondary" href="/hr/documents?employee_name={{ user.employee_name | urlencode }}&document_type_id=0&status=all">Документы сотрудника</a>
+        </div>
+    </form>
+    <p class="muted mt-8">Роль, телефон для входа, пароль, закреплённый ТМ и реквизиты выплат меняет руководитель.</p>
+</div>

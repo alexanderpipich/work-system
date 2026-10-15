@@ -5,7 +5,7 @@
    порядок выбора режима — tours.py: лично пользователю → для всех → TOUR_AUTOSTART → «только первый раз». #}
 {% block title %}Демо-тур{% endblock %}
 {% block brand_title %}Демо-тур{% endblock %}
-{% block brand_subtitle %}<p class="brand-subtitle">Автозапуск тура руководителя и сотрудника, демо-сотрудник, режим отдельным пользователям</p>{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Автозапуск туров руководителя, кадровика и сотрудника, демо-сотрудник, режим отдельным пользователям</p>{% endblock %}
 
 {% block head %}
 <style>
@@ -28,7 +28,7 @@
     <form method="post" action="/admin/tour-settings">
     <section class="card">
         <h2>Для всех</h2>
-        <p class="field-hint mt-0">Тур руководителя стартует на его рабочем столе, тур сотрудника — в кабинете. Кнопка «?» в шапке запускает тур при любом режиме.</p>
+        <p class="field-hint mt-0">Туры руководителя и кадровика стартуют на их рабочем столе, тур сотрудника — в кабинете. Кнопка «?» в шапке запускает тур при любом режиме.</p>
         <div class="tour-modes">
             <label><input type="radio" name="autostart_mode" value="always" {% if saved_mode == 'always' %}checked{% endif %}>
                 <span>При каждом входе<small>Режим демо: после «Пропустить» или «Готово» тур снова покажется при следующем входе.</small></span></label>
@@ -41,7 +41,7 @@
         </div>
 
         <h2>Демо-сотрудник</h2>
-        <p class="field-hint mt-0">В туре руководителя — шаг «Документы сотрудника» и договор этого сотрудника. Пусто — шага нет{% if report.TOUR_DEMO_EMPLOYEE and not saved_demo %} (сейчас берётся переменная TOUR_DEMO_EMPLOYEE){% endif %}.</p>
+        <p class="field-hint mt-0">В турах руководителя и кадровика — документы этого сотрудника, его договор, ходатайство и рекомендация. Пусто — этих шагов нет{% if report.TOUR_DEMO_EMPLOYEE and not saved_demo %} (сейчас берётся переменная TOUR_DEMO_EMPLOYEE){% endif %}.</p>
         <div class="field">
             <label>ФИО сотрудника</label>
             {{ employee_input('demo_employee', employees, saved_demo, list_id='tour-employees') }}
@@ -56,7 +56,7 @@
 
     <section class="card">
         <h2>Отдельным пользователям</h2>
-        <p class="field-hint mt-0">Режим лично для пользователя главнее общего. Руководители в списке всегда; сотрудника добавьте по ФИО или телефону. «Показать снова» — тур снова запустится сам при следующем входе в режиме «только первый раз».</p>
+        <p class="field-hint mt-0">Режим лично для пользователя главнее общего. Руководители и кадровики в списке всегда; сотрудника добавьте по ФИО или телефону. «Показать снова» — тур снова запустится сам при следующем входе в режиме «только первый раз».</p>
         <div class="table-wrap">
             <table class="tour-users">
                 <thead><tr><th>Пользователь</th><th>Роль</th><th>Режим</th><th>Действует</th><th>Тур закрыт</th></tr></thead>
@@ -88,7 +88,7 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" class="muted">Руководителей и личных настроек нет</td></tr>
+                <tr><td colspan="5" class="muted">Руководителей, кадровиков и личных настроек нет</td></tr>
                 {% endfor %}
                 </tbody>
             </table>

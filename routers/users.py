@@ -39,6 +39,13 @@ require_user_management = require_permission("users.manage", audit_denied=True)
 # Просмотр списка пользователей (П2): служебные роли видят карточки только для чтения.
 require_user_view = require_permission("users.view", audit_denied=True)
 require_user_hard_delete = require_permission("users.hard_delete", audit_denied=True)
+# П5.2: правка карточки — users.manage (всё) или users.edit_personal (кадровик: только личные поля
+# сотрудника с ролью employee, см. _update_personal). Оба права у руководителя и суперадмина.
+require_user_edit = require_permission("users.edit_personal", audit_denied=True)
+# Личные поля карточки, которые правит кадровик. ФИО — нет: по строке ФИО к сотруднику привязаны
+# смены timebook, ставки, реквизиты и выплаты (решение владельца 15.10.2026).
+PERSONAL_FIELDS = ("birth_date", "gender", "citizenship_country_id", "job_title", "inn", "is_student")
+PERSONAL_ERROR = "Кадровик правит только карточки сотрудников; остальные пользователи — только просмотр"
 # П4.8: роли «Суперадмин» и «HR-руководитель» — только суперадмину (rbac.can_manage_role).
 PROTECTED_HINT = "только суперадмин"
 PROTECTED_ERROR = ("Создавать, менять, удалять суперадмина и HR-руководителя и сбрасывать им пароль "
@@ -608,6 +615,8 @@ def admin_users(
     # Правка, пароль, удаление, QR — только с users.manage; их POST-обработчики
     # проверяют это право сами, шаблон лишь не показывает формы.
     can_manage = has_permission(admin, "users.manage")
+    # П5.2: кадровик правит личные поля сотрудников (роль employee) — форма _personal_form.
+    can_edit_personal = not can_manage and has_permission(admin, "users.edit_personal")
     query = session.query(User)
 
     if user_id.strip():
@@ -671,6 +680,7 @@ def admin_users(
             "tm_names": {tm.id: tm.employee_name for tm in tm_users(session)},
             "pending_count": len(pending_employees(session)) if can_manage else 0,
             "can_manage": can_manage,
+            "can_edit_personal": can_edit_personal,
             # П4.8: карточки суперадминов и HR-руководителей — только просмотр не для суперадмина.
             "manageable": {u.id for u in users if can_manage and can_manage_user(admin, u)},
             "role_choices": role_choices_for(admin),
@@ -684,8 +694,62 @@ def admin_users(
     )
 
 
+def _personal_payload(user):
+    payload = {field: getattr(user, field, None) for field in PERSONAL_FIELDS}
+    payload["birth_date"] = user.birth_date.isoformat() if user.birth_date else None
+    payload["is_student"] = bool(user.is_student)
+    return payload
+
+
+def _update_personal(session, request, admin, user, form, redirect_base):
+    """П5.2: правка без users.manage (кадровик) — только сотрудник (роль employee) и только
+    PERSONAL_FIELDS. Роль, телефон, ТМ, юрлицо, почта, города и прочее из запроса отбрасываются
+    без ошибки; поле, которого нет в запросе, не меняется. Аудит user_updated — изменённые поля."""
+    if canonical_role(user) != "employee":
+        create_audit_log(session, request, admin, "users.denied", "user", user.id, user.employee_name,
+                         new_value={"action": "update_personal", "role": user.role}, comment=PERSONAL_ERROR)
+        session.commit()
+        return HTMLResponse(PERSONAL_ERROR, status_code=403)
+    old_value = _personal_payload(user)
+    if "birth_date" in form:
+        value = normalize_text(form.get("birth_date"))
+        try:
+            user.birth_date = date.fromisoformat(value) if value else None
+        except ValueError:
+            pass  # кривая дата — не меняем, как в общей форме
+    if "gender" in form:
+        user.gender = form.get("gender") if form.get("gender") in {"m", "f"} else None
+    if "job_title" in form:
+        value = normalize_text(form.get("job_title"))
+        if not value or value in JOB_TITLES:
+            user.job_title = value or None
+    if "citizenship_country_id" in form:
+        try:
+            country_id = int(form.get("citizenship_country_id") or 0)
+        except ValueError:
+            country_id = -1
+        if country_id == 0 or session.get(Country, country_id) is not None:
+            user.citizenship_country_id = country_id or None
+    # «Студент» — чекбокс: форма шлёт скрытое пустое значение и «1», если отмечен.
+    student = form.getlist("is_student")
+    if student:
+        user.is_student = "1" in student
+    inn_clean = normalize_text(form.get("inn"))
+    if inn_clean:  # пустое поле ИНН не затирает, как в общей форме
+        set_employee_inn(session, user, inn_clean, source="profile", actor=admin, request=request)
+    new_value = _personal_payload(user)
+    changed = [field for field in PERSONAL_FIELDS if old_value[field] != new_value[field]]
+    if changed:
+        create_audit_log(session, request, admin, "user_updated", "user", user.id, user.employee_name,
+                         old_value={field: old_value[field] for field in changed},
+                         new_value={field: new_value[field] for field in changed},
+                         comment="личные данные (users.edit_personal)")
+    session.commit()
+    return RedirectResponse(url=f"{redirect_base}#user-{user.id}", status_code=302)
+
+
 @router.post("/admin/update-user", response_class=HTMLResponse)
-def update_user(
+async def update_user(
     request: Request,
     user_id: int = Form(...),
     phone: str = Form(default=""),
@@ -707,7 +771,7 @@ def update_user(
     f_employee_name: str = Form(default=""),
     f_role: str = Form(default=""),
     session: Session = Depends(get_db),
-    admin=Depends(require_user_management),
+    admin=Depends(require_user_edit),
 ):
     # Опциональные f_* — текущие фильтры списка; пробрасываются в редирект, чтобы после
     # сохранения не слетать в начало несортированного списка (контракт полей данных неизменен).
@@ -721,6 +785,9 @@ def update_user(
 
     if not user:
         return RedirectResponse(url=redirect_base, status_code=302)
+
+    if not has_permission(admin, "users.manage"):
+        return _update_personal(session, request, admin, user, await request.form(), redirect_base)
 
     # П4.8: защищённые роли (и своя роль HR-руководителя) — только суперадмин; и исходная, и целевая.
     if not can_manage_user(admin, user) or not can_manage_role(admin, normalize_role(role)):
