@@ -78,8 +78,10 @@ PERMISSIONS = {
     },
     # Кадровик: документы, гражданства, типы документов, мониторинг сотрудников,
     # справочники. Без выплат, ставок, реквизитов и рассылок.
+    # users.edit_personal (П5.2) — личные поля карточки сотрудника (роль employee) на /admin/users:
+    # дата рождения, пол, гражданство, должность, ИНН, «студент» (routers/users.PERSONAL_FIELDS).
     ROLE_HR_CLERK: {
-        "employees.view", "documents.view", "documents.manage",
+        "employees.view", "documents.view", "documents.manage", "users.edit_personal",
         "citizenship.manage", "services.view", "contracts.view", "users.view", "regions.manage",
         "contracts.manage",
         "stores.directory.view", "stores.contacts.view",
