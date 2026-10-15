@@ -211,21 +211,27 @@
                 </div>
                 <div class="field">
                     <label>Тип документа</label>
-                    <select name="document_type_id" required>
+                    <select name="document_type_id" required data-type-fields="{{ type_fields | tojson | forceescape }}">
                         {% for type in document_types %}
                             <option value="{{ type.id }}">{{ type.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="field"><label>Номер</label><input name="document_number"></div>
+                {# Поля подстраиваются под выбранный тип (как в карточке): у патента — четыре поля номера. #}
+                <input type="hidden" name="patent_parts" value="1" data-for="patent" disabled>
+                <div class="field" data-for="number"><label>Номер</label><input name="document_number"></div>
+                <div class="field" data-for="patent" hidden><label>Серия патента</label><input name="patent_series" placeholder="78" disabled></div>
+                <div class="field" data-for="patent" hidden><label>Номер патента</label><input name="patent_number" placeholder="2600131320" disabled></div>
+                <div class="field" data-for="patent" hidden><label>Серия бланка патента</label><input name="patent_blank_series" placeholder="ПР" disabled></div>
+                <div class="field" data-for="patent" hidden><label>Номер бланка патента</label><input name="patent_blank_number" placeholder="8408114" disabled></div>
                 <div class="field"><label>Дата выдачи</label><input type="date" name="issue_date"></div>
-                <div class="field"><label>Срок действия</label><input type="date" name="expiry_date"></div>
-                <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_value"></div>
-                <div class="field"><label>Доп. поле 2</label><input name="extra_field_2_value"></div>
+                <div class="field"><label>Срок действия <span class="muted" data-label="expiry" hidden>(обязателен)</span></label><input type="date" name="expiry_date"></div>
+                <div class="field"><label data-label="extra1">Доп. поле 1</label><input name="extra_field_1_value"></div>
+                <div class="field"><label data-label="extra2">Доп. поле 2</label><input name="extra_field_2_value"></div>
                 <div class="field"><label>Файлы <span class="muted">(необязательно; страницы — можно несколько, до {{ MAX_DOCUMENT_PAGES }})</span></label><input type="file" name="file" accept="image/*,.pdf,.heic" multiple></div>
                 <div class="field"><label>Комментарий</label><textarea name="comment"></textarea></div>
             </div>
-            <p><label><input type="checkbox" name="is_permanent" value="1"> Бессрочно</label></p>
+            <p data-for="permanent"><label><input type="checkbox" name="is_permanent" value="1"> Бессрочно</label></p>
             <button class="btn btn-primary" type="submit">Загрузить</button>
         </form>
     </section>
@@ -262,7 +268,9 @@
                     {% for row in rows %}
                     {% set pending_anchor = row.document and row.status in ['uploaded', 'pending_verification'] and not tour_rows.pending %}
                     {% if pending_anchor %}{% set tour_rows.pending = true %}{% endif %}
-                    <tr{% if pending_anchor %} data-tour="docs-pending"{% endif %}>
+                    {# «Не загружен» — документа нет: «Добавить» открывает карточку в режиме создания, строка кликабельна. #}
+                    {% set new_url = base_path ~ '/new?user_id=' ~ row.user_id ~ '&document_type_id=' ~ row.type.id ~ '&back=' ~ ((request.url.path ~ ('?' ~ request.url.query if request.url.query else '')) | urlencode) if (not row.document and row.user_id and can_manage_documents) else '' %}
+                    <tr{% if pending_anchor %} data-tour="docs-pending"{% endif %}{% if new_url %} class="row-link" data-row-href="{{ new_url }}"{% endif %}>
                         <td>
                             {% if row.document and row.status in ['uploaded', 'pending_verification', 'rejected', 'expired'] %}
                             <input type="checkbox" name="document_ids" value="{{ row.document.id }}"
@@ -299,7 +307,7 @@
                                 <span class="muted">Нет файла</span>
                             {% endif %}
                         </td>
-                        <td>{{ row.document.comment if row.document else '' }}</td>
+                        <td>{{ (row.document.comment or '') if row.document else '' }}</td>
                         <td>
                             {% if row.document %}
                             <div class="actions">
@@ -329,6 +337,8 @@
                                 </form>
                                 {% endif %}
                             </div>
+                            {% elif new_url %}
+                                <a class="btn btn-primary btn-sm" href="{{ new_url }}">Добавить</a>
                             {% else %}
                                 <span class="muted">-</span>
                             {% endif %}

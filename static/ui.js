@@ -493,7 +493,47 @@
         }, true);
     }
 
-    function init() { initAutogrow(); initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); initRail(); initDrawer(); initRoleFields(); initRecheck(); }
+    /* ── Кликабельная строка таблицы: tr[data-row-href] (реестр, «Не загружен» → создать) ──
+       Клик по ссылке, кнопке или полю внутри строки работает как обычно. */
+    function initRowLinks() {
+        document.addEventListener('click', function (e) {
+            var row = e.target.closest ? e.target.closest('tr[data-row-href]') : null;
+            if (!row || e.target.closest('a, button, input, select, textarea, label, form')) { return; }
+            window.location.href = row.getAttribute('data-row-href');
+        });
+    }
+
+    /* ── Поля документа по типу: select[data-type-fields] = JSON {id: {extra1, extra2, patent,
+       permanent, expiry}} — подписи доп. полей из типа, у патента четыре поля номера вместо одного,
+       «Бессрочно» — если тип разрешает. Скрытые поля отключаются и не уходят в запрос. */
+    function initTypeFields() {
+        Array.prototype.forEach.call(document.querySelectorAll('select[data-type-fields]'), function (select) {
+            var form = select.form, types;
+            try { types = JSON.parse(select.getAttribute('data-type-fields')) || {}; } catch (e) { return; }
+            function toggle(nodes, on) {
+                Array.prototype.forEach.call(nodes, function (node) {
+                    node.hidden = !on;
+                    var inputs = node.matches('input') ? [node] : node.querySelectorAll('input');
+                    Array.prototype.forEach.call(inputs, function (input) { input.disabled = !on; });
+                });
+            }
+            function apply() {
+                var t = types[select.value] || {};
+                toggle(form.querySelectorAll('[data-for="patent"]'), !!t.patent);
+                toggle(form.querySelectorAll('[data-for="number"]'), !t.patent);
+                toggle(form.querySelectorAll('[data-for="permanent"]'), !!t.permanent);
+                var e1 = form.querySelector('[data-label="extra1"]'), e2 = form.querySelector('[data-label="extra2"]');
+                var req = form.querySelector('[data-label="expiry"]');
+                if (e1) { e1.textContent = t.extra1 || 'Доп. поле 1'; }
+                if (e2) { e2.textContent = t.extra2 || 'Доп. поле 2'; }
+                if (req) { req.hidden = !t.expiry; }
+            }
+            select.addEventListener('change', apply);
+            apply();
+        });
+    }
+
+    function init() { initAutogrow(); initLogoSpin(); initRipple(); initRowToggle(); initNoPlanPopup(); initLockedNav(); initDocPreview(); initBulkSelect(); initRail(); initDrawer(); initRoleFields(); initRecheck(); initRowLinks(); initTypeFields(); }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

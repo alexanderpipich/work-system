@@ -664,6 +664,7 @@ def build_document_registry_rows(
                 continue
             rows.append({
                 "employee_name": name,
+                "user_id": user.id if user is not None else None,  # «Добавить» в строке «Не загружен»
                 "citizenship": citizenship,
                 "type": document_type,
                 "document": document,
