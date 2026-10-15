@@ -24,7 +24,8 @@ from document_alerts import reached_level, run_document_expiry_alerts
 from document_helpers import alert_levels, classify_document, preview_kind
 from employee_profile import employee_profile, guess_gender, parse_patent_number, patent_expiry
 from models import (AuditLog, CitizenshipRegime, Country, DocumentExpiryAlert, DocumentType, EmployeeDocument,
-                    LegalEntity, Region, RegimeDocumentRule, Shift, Store, User)
+                    LegalEntity, MvdAuthority, Region, RegimeDocumentRule, Shift, Store, User)
+from mvd_authorities import authority_for_work
 from region_helpers import region_for_employee
 from time_helpers import business_today
 
@@ -76,6 +77,11 @@ def seed(session):
                        uvm_rank="Полковнику полиции", uvm_person=None,
                        patent_authority="ГУ МВД России по г. Санкт-Петербургу и Ленинградской области",
                        patent_territory="г. Санкт-Петербург", is_active=True))
+    session.flush()
+    # Адресат ходатайства — подразделение МВД по умолчанию региона (ФИО начальника не заполнено).
+    session.add(MvdAuthority(name="УВМ ГУ МВД России по СПб и ЛО", region_id=session.query(Region).one().id,
+                             addressee_dative="Начальнику УВМ ГУ МВД России по Санкт-Петербургу и Ленинградской области",
+                             chief_rank_dative="Полковнику полиции", is_region_default=True, is_active=True))
     tm = User(id=10, employee_name="Пиунов Андрей", role="tm", phone="70000000010", password_hash="x")
     clerk = User(id=11, employee_name="Кадровик", role="hr_clerk", phone="70000000011", password_hash="x",
                  email="clerk@example.com")
@@ -92,7 +98,7 @@ def seed(session):
                                  extra_field_1_value="ГУ МВД России по г. Санкт-Петербургу и Ленинградской области",
                                  extra_field_2_value="подсобный рабочий", status="verified"))
     # Адрес в бланках — магазина смен за 14 дней (не actual_address / work_address юрлица).
-    session.add(Store(tk_number=1, display_name="Лиговский", object_address=SHOP_ADDRESS))
+    session.add(Store(tk_number=1, display_name="Лиговский", city="Санкт-Петербург", object_address=SHOP_ADDRESS))
     session.add(Shift(employee=EMP, store="ТК-1", format="ГМ", city="Санкт-Петербург",
                       shift_date=business_today() - timedelta(days=3), service="Выкладка", hours=11,
                       request_type="Основные заказы"))
@@ -213,8 +219,9 @@ class ContractDataTests(unittest.TestCase):
 
     def test_petition_missing_region_person_then_no_data(self):
         profile = employee_profile(self.session, self.user)
+        authority, _ = authority_for_work(self.session, self._work(), self.region)
         fields, values = petition_fields(self.session, profile, self.entity, self.region, {"petition_date": date(2026, 10, 11)},
-                                         self._work())
+                                         self._work(), authority)
         self.assertEqual([f["key"] for f in fields if f["missing"]], ["uvm_person"])
         content, missing = generate_petition(values, allow_missing=True)
         self.assertEqual(missing, ["uvm_person"])

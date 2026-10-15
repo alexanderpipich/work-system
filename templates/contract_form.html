@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {# Форма договора / ходатайства / рекомендательного письма (П4, П4.11) с проверкой полноты.
-   Недостающее вводится на месте и сохраняется в источник (сотрудник, документ, юрлицо, регион).
-   Смена юрлица или региона перерисовывает форму сервером (action=check, ui.js). #}
+   Недостающее вводится на месте и сохраняется в источник (сотрудник, документ, юрлицо, регион,
+   подразделение МВД, магазин). Смена юрлица, региона или адресата перерисовывает форму сервером (action=check, ui.js). #}
 {% set is_contract = kind == 'contract' %}
 {% set title = {'contract': 'Трудовой договор', 'petition': 'Ходатайство', 'recommendation': 'Рекомендательное письмо'}[kind] %}
 
@@ -13,6 +13,7 @@
 {% elif t[0] == 'patent' %}{% set name = 'fix:patent:' ~ t[1] %}
 {% elif t[0] == 'le' %}{% set name = 'fix:le:' ~ t[1] %}
 {% elif t[0] == 'region' %}{% set name = 'fix:region:' ~ t[1] %}
+{% elif t[0] == 'mvd' %}{% set name = 'fix:mvd:' ~ t[1] %}
 {% elif t[0] == 'store' %}{% set name = 'fix:store:' ~ t[1] ~ ':' ~ t[2] %}
 {% endif %}
 {% if t[0] == 'user' and t[1] == 'gender' %}
@@ -63,6 +64,17 @@
                         <option value="0">— выберите —</option>
                         {% for r in regions %}<option value="{{ r.id }}" {% if region and region.id == r.id %}selected{% endif %}>{{ r.name }}</option>{% endfor %}
                     </select>
+                </div>
+                {% endif %}
+                {% if kind == 'petition' %}
+                {# Адресат — подразделение МВД: по основному магазину за 14 дней (mvd_authorities.authority_for_work),
+                   ручной выбор перепроверяет форму, как смена юрлица. #}
+                <div class="field"><label>Адресат (подразделение МВД){% if authority and authority_auto and authority.id == authority_auto.id %} <span class="pill pill-info">по магазину</span>{% endif %}</label>
+                    <select name="mvd_authority_id" data-recheck="mvd">
+                        <option value="0">{{ '— как подобрано —' if authority_auto else '— выберите —' }}</option>
+                        {% for a in authorities %}<option value="{{ a.id }}" {% if authority and authority.id == a.id %}selected{% endif %}>{{ a.name }}{% if a.is_region_default %} — по умолчанию региона{% endif %}</option>{% endfor %}
+                    </select>
+                    {% if authority_hint %}<span class="field-hint">{{ authority_hint }}</span>{% endif %}
                 </div>
                 {% endif %}
                 {% if is_contract %}
@@ -119,7 +131,7 @@
                     </tbody>
                 </table>
             </div>
-            <p class="field-hint">Введённое сохраняется туда, откуда поле берётся: в карточку сотрудника, его документ, юрлицо, регион или магазин.</p>
+            <p class="field-hint">Введённое сохраняется туда, откуда поле берётся: в карточку сотрудника, его документ, юрлицо, регион, подразделение МВД или магазин.</p>
         </div>
 
         <div class="card">

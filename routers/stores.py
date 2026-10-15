@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
 from dependencies import get_db
-from models import STORE_CONTACT_ROLES, Shift, Store, StoreContact
+from models import STORE_CONTACT_ROLES, MvdAuthority, Shift, Store, StoreContact
+from mvd_authorities import active_authorities, authority_for_store
 from rbac import has_permission, require_permission
 from store_helpers import extract_tk_number, migrate_legacy_store_settings, populate_stores_from_shifts
 from time_helpers import now_utc
@@ -115,6 +116,9 @@ def admin_store_detail(
         "store": store,
         "contacts": contacts,
         "roles": STORE_CONTACT_ROLES,
+        # Адресат ходатайства сотрудников ТК: закреплённое вручную или подобранное по городу / региону.
+        "authorities": active_authorities(session),
+        "authority_auto": authority_for_store(session, Store(city=store.city, rate_region=store.rate_region)),
         "message": message,
         "error": error,
     })
@@ -175,13 +179,14 @@ def admin_store_update(
     object_address: str = Form(""),
     comment: str = Form(""),
     is_active: str = Form(""),
+    mvd_authority_id: str | None = Form(default=None),
 ):
     store = session.query(Store).filter(Store.id == store_id).first()
     if not store:
         return RedirectResponse("/admin/stores", status_code=302)
     old = {"display_name": store.display_name, "city": store.city, "rate_region": store.rate_region,
            "format": store.format, "object_address": store.object_address,
-           "is_active": store.is_active}
+           "is_active": store.is_active, "mvd_authority_id": store.mvd_authority_id}
     if display_name.strip():
         store.display_name = display_name.strip()
     if city.strip():
@@ -192,10 +197,13 @@ def admin_store_update(
     store.object_address = object_address.strip() or None
     store.comment = comment.strip() or None
     store.is_active = is_active == "1"
+    if mvd_authority_id is not None:  # поле есть в форме: 0 — подбирать по городу / региону
+        authority_id = int(mvd_authority_id or 0)
+        store.mvd_authority_id = authority_id if authority_id and session.get(MvdAuthority, authority_id) else None
     store.updated_at = now_utc()
     new = {"display_name": store.display_name, "city": store.city, "rate_region": store.rate_region,
            "format": store.format, "object_address": store.object_address,
-           "is_active": store.is_active}
+           "is_active": store.is_active, "mvd_authority_id": store.mvd_authority_id}
     create_audit_log(
         session, request, user, "update", "store",
         entity_id=str(store_id), entity_name=store.display_name,

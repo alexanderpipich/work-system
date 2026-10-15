@@ -1,4 +1,5 @@
-"""Справочник регионов (П4): CRUD для кадровика, HR-руководителя, суперадмина."""
+"""Справочник регионов (П4): CRUD для кадровика, HR-руководителя, суперадмина. Адресаты ходатайств —
+в справочнике «Подразделения МВД» (routers/mvd_authorities.py)."""
 
 from urllib.parse import urlencode
 
@@ -9,9 +10,9 @@ from sqlalchemy.orm import Session
 
 from audit_helpers import create_audit_log
 from dependencies import get_db
-from models import Region
+from models import MvdAuthority, Region
 from rbac import require_permission
-from region_helpers import REGION_FIELDS, missing_petition_fields
+from region_helpers import REGION_FIELDS
 from utils import normalize_text
 
 router = APIRouter()
@@ -30,7 +31,8 @@ def regions_page(request: Request, message: str = "", error: str = "",
     regions = session.query(Region).order_by(Region.is_active.desc(), Region.name.asc()).all()
     return templates.TemplateResponse(request, "regions.html", {
         "regions": regions,
-        "missing": {r.id: missing_petition_fields(r) for r in regions},
+        "authority_counts": {r.id: session.query(MvdAuthority).filter(MvdAuthority.region_id == r.id).count()
+                             for r in regions},
         "message": message or None,
         "error": error or None,
     })

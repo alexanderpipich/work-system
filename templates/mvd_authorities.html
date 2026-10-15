@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{# Справочник «Подразделения МВД» — адресаты ходатайств и уведомлений (routers/mvd_authorities.py).
+   Группы — по регионам; карточка подразделения — одна форма с подписями, как карточка юрлица.
+   Подбор адресата для сотрудника — mvd_authorities.authority_for_work. #}
+{% block title %}Подразделения МВД{% endblock %}
+{% block brand_title %}Подразделения МВД{% endblock %}
+{% block brand_subtitle %}<p class="brand-subtitle">Адресаты ходатайств и уведомлений: подбираются по магазину, где сотрудник работает</p>{% endblock %}
+
+{% block topbar_actions %}<a class="back-link" href="/admin/regions">Регионы</a>{% endblock %}
+
+{% block head %}
+<style>
+    /* карточка подразделения: заголовок-сводка, одна форма в две колонки (как карточка юрлица) */
+    .mvd-region { margin: 26px 0 12px; }
+    .mvd-card { padding: 0; }
+    .mvd-card > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 18px 22px; }
+    .mvd-card > summary::-webkit-details-marker { display: none; }
+    .mvd-card > summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+    .mvd-card[open] > summary::before { transform: rotate(90deg); }
+    .mvd-name { font-size: 16px; font-weight: 800; color: var(--brand-blue); overflow-wrap: anywhere; }
+    .mvd-body { padding: 0 22px 20px; }
+    .mvd-body h3 { margin: 6px 0 12px; font-size: 15px; }
+    .mvd-body .form-grid + h3 { margin-top: 22px; }
+    .mvd-wide { grid-column: 1 / -1; }
+    .field textarea[data-autogrow] { min-height: 0; resize: none; overflow: hidden; line-height: 1.45; }
+    .mvd-check { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-weight: 700; color: var(--brand-blue); cursor: pointer; }
+    .mvd-check input { width: 16px; height: 16px; margin: 0; flex: none; }
+    @media (max-width: 720px) {
+        .mvd-card > summary { padding: 14px 16px; }
+        .mvd-body { padding: 0 16px 16px; }
+    }
+</style>
+{% endblock %}
+
+{% macro text_field(a, name, label, hint='', area=false, wide=false) -%}
+{% set field_id = 'mvd-' ~ (a.id if a else 'new') ~ '-' ~ name %}
+<div class="field{% if wide %} mvd-wide{% endif %}">
+    <label for="{{ field_id }}">{{ label }}</label>
+    {% if area %}
+    <textarea id="{{ field_id }}" name="{{ name }}" rows="2" data-autogrow>{{ (a[name] or '') if a else '' }}</textarea>
+    {% else %}
+    <input id="{{ field_id }}" type="text" name="{{ name }}" value="{{ (a[name] or '') if a else '' }}"{% if name == 'name' %} required{% endif %}>
+    {% endif %}
+    {% if hint %}<div class="field-hint">{{ hint }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro authority_form(a, region_id) -%}
+{% set key = a.id if a else 'new' %}
+<form method="post" action="/admin/mvd-authorities/save">
+    <input type="hidden" name="authority_id" value="{{ a.id if a else '' }}">
+    <h3>Основное</h3>
+    <div class="form-grid cols-2">
+        {{ text_field(a, 'name', 'Краткое наименование', 'Для списков: «ОВМ МУ МВД России «Балашихинское»»') }}
+        <div class="field">
+            <label for="mvd-{{ key }}-region">Регион</label>
+            <select id="mvd-{{ key }}-region" name="region_id">
+                <option value="0">— без региона —</option>
+                {% for r in regions %}<option value="{{ r.id }}" {% if region_id == r.id %}selected{% endif %}>{{ r.name }}</option>{% endfor %}
+            </select>
+        </div>
+        {% if a %}
+        <div class="field">
+            <label for="mvd-{{ key }}-active">Статус</label>
+            <select id="mvd-{{ key }}-active" name="is_active">
+                <option value="1" {% if a.is_active %}selected{% endif %}>Активно</option>
+                <option value="0" {% if not a.is_active %}selected{% endif %}>Неактивно</option>
+            </select>
+        </div>
+        {% endif %}
+        <div class="field{% if not a %} mvd-wide{% endif %}">
+            <label class="mvd-check"><input type="checkbox" name="is_region_default" value="1" {% if a and a.is_region_default %}checked{% endif %}> По умолчанию для региона</label>
+            <div class="field-hint">Адресат, если магазин не закреплён и его город не указан ни у одного подразделения. Одно на регион.</div>
+        </div>
+    </div>
+
+    <h3>Шапка ходатайства «КОМУ»</h3>
+    <div class="form-grid cols-2">
+        {{ text_field(a, 'addressee_dative', 'Адресат (дат. падеж)', '«Начальнику ОВМ МУ МВД России «…»»', area=true, wide=true) }}
+        {{ text_field(a, 'chief_rank_dative', 'Звание начальника (дат. падеж)') }}
+        {{ text_field(a, 'chief_name_dative', 'ФИО начальника (дат. падеж)', '«Иванову И.В.»') }}
+        {{ text_field(a, 'chief_name', 'ФИО начальника (им. падеж)', 'Для справки, в документы не идёт') }}
+    </div>
+
+    <h3>Прочее</h3>
+    <div class="form-grid cols-2">
+        {{ text_field(a, 'cities', 'Обслуживаемые города и районы', 'Через запятую, как «Город» магазина: Балашиха, Железнодорожный', area=true, wide=true) }}
+        {{ text_field(a, 'address', 'Адрес подразделения', 'Для уведомлений', area=true, wide=true) }}
+        {{ text_field(a, 'comment', 'Комментарий', wide=true) }}
+    </div>
+    <button type="submit" class="btn btn-primary mt-14">{{ 'Сохранить' if a else 'Добавить подразделение' }}</button>
+</form>
+{%- endmacro %}
+
+{% block content %}
+<div class="page page-pad-top">
+    {% if message %}<div class="alert alert-success mt-0 mb-20">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-error mt-0 mb-20">{{ error }}</div>{% endif %}
+
+    <details class="card mvd-card" id="mvd-new">
+        <summary><span class="mvd-name">Добавить подразделение</span></summary>
+        <div class="mvd-body">{{ authority_form(none, 0) }}</div>
+    </details>
+    <p class="field-hint">Адресат ходатайства подбирается по основному магазину сотрудника за 14 дней: закреплённое в карточке магазина → подразделение, у которого указан город магазина → подразделение по умолчанию региона.</p>
+
+    {% for group in groups %}
+    <h2 class="mvd-region" id="region-{{ group.region.id if group.region else 'none' }}">{{ group.region.name if group.region else 'Без региона' }}
+        {% if group.region and not (group.authorities | selectattr('is_region_default') | list) %}<span class="pill pill-warn">нет подразделения по умолчанию</span>{% endif %}</h2>
+        {% for a in group.authorities %}
+        <details class="card mvd-card" id="mvd-{{ a.id }}" {% if open_entity == a.id %}open{% endif %}>
+            <summary>
+                <span class="mvd-name">{{ a.name }}</span>
+                {% if a.is_region_default %}<span class="pill pill-info">по умолчанию для региона</span>{% endif %}
+                {% if not a.is_active %}<span class="pill pill-neutral">неактивно</span>{% endif %}
+                {% if missing[a.id] %}<span class="pill pill-warn">шапка «КОМУ» заполнена не полностью</span>{% endif %}
+                {% if stores.get(a.id) %}<span class="muted">закреплены ТК {{ stores[a.id] | join(', ') }}</span>{% endif %}
+            </summary>
+            <div class="mvd-body">{{ authority_form(a, a.region_id) }}</div>
+        </details>
+        {% else %}
+        <div class="card"><p class="muted mb-0">Подразделений нет — ходатайства сотрудников этого региона уйдут без адресата.</p></div>
+        {% endfor %}
+    {% endfor %}
+</div>
+{% endblock %}
