@@ -24,6 +24,7 @@ from models import (
     Country,
     DocumentType,
     EmployeeMonitoringSettings,
+    MvdAuthority,
     Rate,
     ReferralSettings,
     RegimeDocumentRule,
@@ -70,6 +71,9 @@ class _Refs:
         stores = self.session.query(Store.id, Store.tk_number).all()
         self.store_tk = {store_id: tk for store_id, tk in stores}
         self.store_id = {tk: store_id for store_id, tk in stores}
+        regions = self.session.query(Region.id, Region.name).all()
+        self.region_name = {region_id: name for region_id, name in regions}
+        self.region_id = {name: region_id for region_id, name in regions}
 
 
 class Unresolved(Exception):
@@ -237,6 +241,28 @@ def _region_spec():
     )
 
 
+def _mvd_authority_spec():
+    fields = ["name", "addressee_dative", "chief_rank_dative", "chief_name_dative", "chief_name", "address",
+              "cities", "is_region_default", "is_active", "comment"]
+
+    def to_record(o, refs):
+        return {"region_name": refs.region_name.get(o.region_id), **_plain(o, fields)}
+
+    def to_values(r, refs):
+        region_id = refs.region_id.get(r["region_name"]) if r.get("region_name") else None
+        if r.get("region_name") and region_id is None:
+            raise Unresolved(f"нет региона {r['region_name']}")
+        return {"region_id": region_id, **{f: r.get(f) for f in fields},
+                "is_region_default": bool(r.get("is_region_default"))}
+
+    return dict(
+        model=MvdAuthority,
+        key=lambda r: r["name"],
+        to_record=to_record,
+        to_values=to_values,
+    )
+
+
 def _singleton_spec(model, fields):
     # Одна строка настроек на базу: ключ один и тот же у любой записи.
     return dict(
@@ -262,6 +288,7 @@ TABLES = [
         EmployeeMonitoringSettings, ["inactive_days", "minimum_shifts", "analysis_days"])),
     ("referral_settings", _singleton_spec(ReferralSettings, ["hours_threshold", "bonus_amount"])),
     ("regions", _region_spec()),
+    ("mvd_authorities", _mvd_authority_spec()),  # после regions: region_id по имени региона
 ]
 
 

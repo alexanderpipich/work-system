@@ -17,6 +17,7 @@ from menu_context import install_menu_globals
 from tours import install_tour_globals, log_tour_settings
 from document_helpers import ensure_document_tables
 from legal_entity_helpers import ensure_legal_entities_table
+from mvd_authorities import ensure_mvd_authority_columns, run_startup_migration as run_mvd_migration
 from payroll_run_helpers import ensure_payroll_run_closing_columns
 from requisite_schema import ensure_requisite_profile_columns
 from service_schema import ensure_service_columns
@@ -40,6 +41,7 @@ from routers.payroll_runs import router as payroll_runs_router
 from routers.payouts import router as payouts_router
 from routers.weekly import router as weekly_router
 from routers.regions import router as regions_router
+from routers.mvd_authorities import router as mvd_authorities_router
 from routers.contracts import router as contracts_router
 from routers.document_alerts import router as document_alerts_router
 from routers.rates import router as rates_router
@@ -123,6 +125,7 @@ app.include_router(payroll_runs_router)
 app.include_router(payouts_router)
 app.include_router(weekly_router)
 app.include_router(regions_router)
+app.include_router(mvd_authorities_router)
 app.include_router(contracts_router)
 app.include_router(document_alerts_router)
 app.include_router(rates_router)
@@ -159,8 +162,11 @@ if engine.dialect.name == "postgresql":
     ensure_payroll_run_closing_columns()
     ensure_audit_log_table()
     ensure_service_columns()
+    ensure_mvd_authority_columns(engine)
 from referral_helpers import ensure_referral_settings
 ensure_referral_settings()
+# Адресат ходатайства — подразделение МВД: перенос адресата УВМ из регионов (идемпотентно).
+run_mvd_migration(SessionLocal)
 
 # П4: проверка сроков документов раз в сутки при старте (планировщик — П6).
 if engine.dialect.name == "postgresql":

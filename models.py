@@ -814,6 +814,9 @@ class Store(Base):
     rate_region = Column(String, nullable=True)
     format = Column(String, nullable=True)
     object_address = Column(String, nullable=True)
+    # Подразделение МВД — адресат ходатайства сотрудников этого ТК (ручное закрепление;
+    # пусто → по городу ТК / по умолчанию региона, mvd_authorities.authority_for_work).
+    mvd_authority_id = Column(Integer, ForeignKey("mvd_authorities.id"), nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=now_utc)
     updated_at = Column(DateTime, nullable=True)
@@ -890,6 +893,31 @@ class Region(Base):
     patent_authority = Column(Text, nullable=True)  # «ГУ МВД России по г. Санкт-Петербургу и …»
     patent_territory = Column(String, nullable=True)  # «г. Санкт-Петербург»
     is_active = Column(Boolean, default=True)
+    # uvm_addressee / uvm_rank / uvm_person — с 15.10.2026 не используются: адресат ходатайства —
+    # подразделение МВД (MvdAuthority); колонки оставлены, данные перенесены миграцией.
+
+
+class MvdAuthority(Base):
+    """Подразделение МВД — адресат ходатайств и уведомлений (справочник /admin/mvd-authorities).
+
+    Адресат для сотрудника — по основному магазину за 14 дней: закреплённое в карточке ТК →
+    подразделение региона, обслуживающее город ТК (cities) → подразделение по умолчанию региона.
+    """
+    __tablename__ = "mvd_authorities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)  # краткое, для списков
+    region_id = Column(Integer, ForeignKey("regions.id"), nullable=True, index=True)
+    addressee_dative = Column(Text, nullable=True)  # «Начальнику ОВМ МУ МВД России «Балашихинское»»
+    chief_rank_dative = Column(String, nullable=True)  # «Полковнику полиции»
+    chief_name_dative = Column(String, nullable=True)  # «Иванову И.В.»
+    chief_name = Column(String, nullable=True)  # им. падеж, для справки
+    address = Column(Text, nullable=True)  # адрес подразделения (для уведомлений)
+    cities = Column(Text, nullable=True)  # обслуживаемые города/районы через запятую
+    is_region_default = Column(Boolean, nullable=False, default=False)  # одно на регион
+    is_active = Column(Boolean, default=True)
+    comment = Column(Text, nullable=True)
+    updated_at = Column(DateTime, nullable=True)
 
 
 class RegimeDocumentRule(Base):

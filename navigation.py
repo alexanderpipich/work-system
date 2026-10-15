@@ -86,6 +86,7 @@ ICONS.update({
     "employee_list": ("indigo", ICONS["users"][1]),
     "regions": ("teal", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'),
     "upload_auto": ("sky", ICONS["upload"][1]),
+    "mvd_authorities": ("indigo", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.5-3.2 8-7.5 9.5-4.3-1.5-7.5-5-7.5-9.5V6z"/><path d="M8.8 12l2.2 2.2 4.2-4.4"/></svg>'),
     "tour": ("violet", '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.7"/><circle cx="12" cy="16.8" r=".6" fill="currentColor" stroke="none"/></svg>'),
 })
 
@@ -240,8 +241,11 @@ NAV_GROUPS = [
              "Адреса и контакты магазинов.",
              [("/stores", "stores.directory.view", None)]),
         card("regions", "Регионы",
-             "Адресат ходатайства в УВМ, орган выдачи и территория патента по региону работы.",
+             "Орган выдачи и территория патента по региону работы.",
              [("/admin/regions", "regions.manage", None)]),
+        card("mvd_authorities", "Подразделения МВД",
+             "Адресаты ходатайств и уведомлений: подбираются по магазину, где сотрудник работает.",
+             [("/admin/mvd-authorities", "regions.manage", None)]),
         card("services", "Услуги",
              "Справочник услуг и уровней: матрица по городам и форматам.",
              [("/admin/services", "services.view", None)]),

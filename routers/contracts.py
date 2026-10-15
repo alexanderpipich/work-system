@@ -22,7 +22,8 @@ from document_helpers import preview_kind
 from employee_profile import (DOC_CONTRACT, DOC_PATENT, DOC_PETITION, DOC_RECOMMENDATION, employee_profile,
                               patent_expiry)
 from file_storage import storage_response, storage_save
-from models import Country, DocumentType, EmployeeDocument, LegalEntity, Region, Shift, User
+from models import Country, DocumentType, EmployeeDocument, LegalEntity, MvdAuthority, Region, Shift, User
+from mvd_authorities import active_authorities, authority_for_work
 from rbac import ROLE_EMPLOYEE, TM_ROLE_VALUES, has_permission
 from time_helpers import business_today, now_utc
 from utils import normalize_person_name, normalize_text
@@ -190,6 +191,7 @@ def _form_values(source):
         "recommendation_date": _date(get("recommendation_date")),
         "legal_entity_id": int(get("legal_entity_id") or 0),
         "region_id": int(get("region_id") or 0),
+        "mvd_authority_id": int(get("mvd_authority_id") or 0),
     }
 
 
@@ -203,9 +205,14 @@ def _context(session, employee, kind, form):
     work = recent_work(session, employee, today)
     if kind != "petition" and not form["city"] and region and region.patent_territory:
         form["city"] = region.patent_territory
+    authority = None
+    authority_auto = authority_hint = None
     if kind == "petition":
         form["petition_date"] = form["petition_date"] or today
-        fields, values = petition_fields(session, profile, entity, region, form, work)
+        # Адресат — подразделение МВД: по основному магазину за 14 дней, ручной выбор в форме главнее.
+        authority_auto, authority_hint = authority_for_work(session, work, region)
+        authority = session.get(MvdAuthority, form["mvd_authority_id"]) if form["mvd_authority_id"] else authority_auto
+        fields, values = petition_fields(session, profile, entity, region, form, work, authority, authority_hint)
         with_patent = True
     elif kind == "recommendation":
         form["recommendation_date"] = form["recommendation_date"] or today
@@ -236,6 +243,10 @@ def _context(session, employee, kind, form):
         "missing": [f for f in fields if f["missing"]],
         "with_patent": with_patent,
         "work": work,
+        "authority": authority,
+        "authority_auto": authority_auto,
+        "authority_hint": authority_hint,
+        "authorities": active_authorities(session) if kind == "petition" else [],
         "form": form,
         "legal_entities": document_legal_entities(session),
         "regions": regions(session),
@@ -289,7 +300,12 @@ async def contract_submit(request: Request, kind: str, user_id: int, session: Se
     profile = employee_profile(session, employee)
     entity = session.get(LegalEntity, form["legal_entity_id"]) if form["legal_entity_id"] else default_legal_entity(session, profile)
     region = session.get(Region, form["region_id"]) if form["region_id"] else profile["region"]
-    saved = save_fixes(session, request, user, employee, entity, region, fixes) if fixes else 0
+    authority = None
+    if any(key.startswith("mvd:") for key in fixes):
+        # Адресат ходатайства — в карточку выбранного (или подобранного) подразделения МВД.
+        authority = (session.get(MvdAuthority, form["mvd_authority_id"]) if form["mvd_authority_id"] else
+                     authority_for_work(session, recent_work(session, employee, business_today()), region)[0])
+    saved = save_fixes(session, request, user, employee, entity, region, fixes, authority) if fixes else 0
     session.commit()
 
     context = _context(session, employee, kind, form)

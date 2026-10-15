@@ -1,7 +1,8 @@
 """Данные для договора и ходатайства (П4): откуда берётся каждое поле.
 
 Источники: сотрудник (User), его документы (Паспорт, СНИЛС, ПАТЕНТ), юрлицо
-(LegalEntity), регион (Region), ввод в форме. Проверка полноты показывает поле,
+(LegalEntity), регион (Region), подразделение МВД (MvdAuthority — адресат
+ходатайства), ввод в форме. Проверка полноты показывает поле,
 значение и источник; недостающее можно ввести на месте — оно сохраняется в
 источник (save_fixes), а не только в документ.
 """
@@ -23,6 +24,7 @@ SOURCE_REGION = "регион"
 SOURCE_FORM = "ввод"
 SOURCE_STORE = "магазин"
 SOURCE_SHIFTS = "смены за 14 дней"
+SOURCE_MVD = "подразделение МВД"
 RECENT_DAYS = 14
 
 LE_FIELDS = [
@@ -221,7 +223,7 @@ def citizen_word(gender):
 
 def _field(key, label, value, source, target=None, required=True):
     """Строка проверки полноты. target — куда сохранить ввод: ("user", поле),
-    ("doc", тип, поле), ("le", поле), ("region", поле), ("form", поле)."""
+    ("doc", тип, поле), ("le", поле), ("region", поле), ("mvd", поле), ("store", id, поле), ("form", поле)."""
     text = value if isinstance(value, str) else (fmt_short(value) if isinstance(value, date) else str(value or ""))
     return {"key": key, "label": label, "value": text.strip(), "source": source, "target": target,
             "missing": required and not text.strip()}
@@ -353,16 +355,31 @@ def contract_fields(session, profile, entity, region, form, work=None):
     return fields, values, errors, with_patent
 
 
-def petition_fields(session, profile, entity, region, form, work=None):
+def _mvd_fields(authority, hint):
+    """Шапка «КОМУ» — из выбранного подразделения МВД; «заполнить на месте» — в его карточку.
+    Подразделения нет — поля в недостающих без ввода на месте (выбрать адресата выше)."""
+    rows = []
+    for key, attr, label in (("uvm_addressee", "addressee_dative", "Адресат (дат. падеж)"),
+                             ("uvm_rank", "chief_rank_dative", "Звание начальника (дат. падеж)"),
+                             ("uvm_person", "chief_name_dative", "ФИО начальника (дат. падеж)")):
+        value = getattr(authority, attr, None) if authority else ""
+        row = _field(key, label, value or "", SOURCE_MVD, ("mvd", attr) if authority else None)
+        if authority is None:
+            row["hint"] = hint or "выберите адресата (подразделение МВД) выше"
+        rows.append(row)
+    return rows
+
+
+def petition_fields(session, profile, entity, region, form, work=None, authority=None, authority_hint=""):
+    """Ходатайство: адресат — подразделение МВД (mvd_authorities.authority_for_work или выбор в форме);
+    поля адресата региона (Region.uvm_*) не используются."""
     petition_date = form.get("petition_date") or date.today()
     fields = [_field("fio", "ФИО", profile["fio"], SOURCE_USER)]
     fields += _patent_fields(profile, region)
     fields += _le_fields(entity, PETITION_LE_KEYS)
     fields.append(work_address_field("le_actual_address", "Фактический адрес (шапка ходатайства)", work))
+    fields += _mvd_fields(authority, authority_hint)
     fields += [
-        _field("uvm_addressee", "Адресат в УВМ (дат. падеж)", region.uvm_addressee if region else "", SOURCE_REGION, ("region", "uvm_addressee")),
-        _field("uvm_rank", "Звание начальника (дат. падеж)", region.uvm_rank if region else "", SOURCE_REGION, ("region", "uvm_rank")),
-        _field("uvm_person", "ФИО начальника (дат. падеж)", region.uvm_person if region else "", SOURCE_REGION, ("region", "uvm_person")),
         _field("patent_territory", "Территория действия патента", region.patent_territory if region else "", SOURCE_REGION,
                ("region", "patent_territory")),
     ]
@@ -434,7 +451,7 @@ def _document(session, user, type_name):
     return document
 
 
-def save_fixes(session, request, actor, user, entity, region, fixes):
+def save_fixes(session, request, actor, user, entity, region, fixes, authority=None):
     """Сохранить введённое на месте в источник. fixes: {"user:birth_date": "...", ...}.
     Возвращает число сохранённых полей."""
     from inn_sync import set_employee_inn
@@ -469,6 +486,12 @@ def save_fixes(session, request, actor, user, entity, region, fixes):
             saved += 1
         elif kind == "region" and region is not None:
             setattr(region, rest, value)
+            saved += 1
+        elif kind == "mvd" and authority is not None and rest in ("addressee_dative", "chief_rank_dative",
+                                                                   "chief_name_dative"):
+            # Адресат ходатайства — в карточку подразделения МВД, не в регион.
+            setattr(authority, rest, value)
+            authority.updated_at = now_utc()
             saved += 1
         elif kind == "store":
             # Адрес места работы — в карточку магазина (Store.object_address), не в юрлицо.

@@ -80,6 +80,15 @@
                     <label>Комментарий</label>
                     <input type="text" name="comment" value="{{ store.comment or '' }}">
                 </div>
+                {# Адресат ходатайств сотрудников этого ТК (mvd_authorities.authority_for_store). #}
+                <div class="field">
+                    <label>Подразделение МВД (адресат ходатайства)</label>
+                    <select name="mvd_authority_id">
+                        <option value="0">— по городу / региону{% if authority_auto[0] %}: {{ authority_auto[0].name }}{% endif %} —</option>
+                        {% for a in authorities %}<option value="{{ a.id }}" {% if store.mvd_authority_id == a.id %}selected{% endif %}>{{ a.name }}</option>{% endfor %}
+                    </select>
+                    <small class="muted">{% if store.mvd_authority_id %}Закреплено вручную — главнее города магазина{% elif authority_auto[0] %}Сейчас подбирается: {{ authority_auto[1] }}{% else %}Не подбирается: {{ authority_auto[1] }}{% endif %}. Справочник — <a href="/admin/mvd-authorities">Подразделения МВД</a></small>
+                </div>
             </div>
             <div class="row mt-14">
                 <label class="check">

@@ -426,9 +426,9 @@
     }
 
     /* ── Перепроверка формы договора (/admin/contracts/…) ────────────────
-       Смена <select data-recheck="le|region"> отправляет форму с action=check: сервер
+       Смена <select data-recheck="le|region|mvd"> отправляет форму с action=check: сервер
        перерисует её с реквизитами нового юрлица/региона, введённое уходит тем же POST.
-       Поля «ввести на месте» старого юрлица (fix:le:) / региона (fix:region:) не
+       Поля «ввести на месте» старого юрлица (fix:le:) / региона (fix:region:) / адресата (fix:mvd:) не
        отправляются — иначе записались бы в новое. */
     function recheckForm(select) {
         var form = select.form;

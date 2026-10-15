@@ -1,4 +1,5 @@
-"""Регионы работы (П4): адресат ходатайства в УВМ, орган выдачи и территория патента.
+"""Регионы работы (П4): орган выдачи и территория патента. Адресат ходатайства — подразделение
+МВД (mvd_authorities.py); поля Region.uvm_* остались в базе, но не используются.
 
 Регион сотрудника — по городу его последних смен (город, где смену поймали в
 выгрузке; это не закрепление за магазином). В форме документа его можно сменить.
@@ -7,10 +8,7 @@
 from models import Region, Shift
 from utils import normalize_person_name, normalize_text
 
-REGION_FIELDS = ("name", "cities", "uvm_addressee", "uvm_rank", "uvm_person",
-                 "patent_authority", "patent_territory")
-# Поля, без которых ходатайство уйдёт с «НЕТ ДАННЫХ» в адресате.
-PETITION_REGION_FIELDS = ("uvm_addressee", "uvm_rank", "uvm_person")
+REGION_FIELDS = ("name", "cities", "patent_authority", "patent_territory")
 
 
 def city_key(city):
@@ -50,6 +48,3 @@ def region_for_employee(session, employee_name):
     """Регион по городу последних смен; None — смен нет или город не привязан к региону."""
     return region_for_city(session, last_shift_city(session, employee_name))
 
-
-def missing_petition_fields(region):
-    return [field for field in PETITION_REGION_FIELDS if not normalize_text(getattr(region, field, None))]
