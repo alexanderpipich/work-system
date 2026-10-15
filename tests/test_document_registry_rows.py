@@ -165,7 +165,7 @@ class RegistryRowsTests(unittest.TestCase):
             large = counter["n"]
         finally:
             event.remove(self.engine, "before_cursor_execute", count)
-        self.assertLessEqual(small, 5)
+        self.assertLessEqual(small, 6)  # +1: страницы документов одним запросом (EmployeeDocument.pages, selectin)
         self.assertEqual(small, large)
 
 

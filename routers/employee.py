@@ -14,6 +14,7 @@ from document_helpers import (
     employee_document_rows,
     latest_employee_document,
     preview_kind,
+    preview_pages,
     user_citizenship,
 )
 from employee_profile import company_documents
@@ -26,6 +27,7 @@ from utils import format_card_number, get_password_hash, normalize_text, verify_
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 templates.env.globals["preview_kind"] = preview_kind  # П4: просмотр документа в модалке
+templates.env.globals["preview_pages"] = preview_pages  # многостраничный документ — листание в модалке
 templates.env.filters["card_format"] = format_card_number
 
 _STATUS_STYLES = {

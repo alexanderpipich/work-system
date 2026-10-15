@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_doc_preview.html" import preview_link, preview_modal %}
+{% from "_doc_preview.html" import preview_link, preview_modal, document_preview_link %}
 {% from "_employee_input.html" import employee_input %}
 
 {% block title %}Документы сотрудников{% endblock %}
@@ -222,7 +222,7 @@
                 <div class="field"><label>Срок действия</label><input type="date" name="expiry_date"></div>
                 <div class="field"><label>Доп. поле 1</label><input name="extra_field_1_value"></div>
                 <div class="field"><label>Доп. поле 2</label><input name="extra_field_2_value"></div>
-                <div class="field"><label>Файл <span class="muted">(необязательно)</span></label><input type="file" name="file" accept="image/*,.pdf,.heic"></div>
+                <div class="field"><label>Файлы <span class="muted">(необязательно; страницы — можно несколько, до {{ MAX_DOCUMENT_PAGES }})</span></label><input type="file" name="file" accept="image/*,.pdf,.heic" multiple></div>
                 <div class="field"><label>Комментарий</label><textarea name="comment"></textarea></div>
             </div>
             <p><label><input type="checkbox" name="is_permanent" value="1"> Бессрочно</label></p>
@@ -294,7 +294,7 @@
                         </td>
                         <td>
                             {% if row.document and row.document.file_path %}
-                                {{ preview_link('/documents/preview/%s' % row.document.id, '/documents/files/%s' % row.document.id, preview_kind(row.document.file_path), row.type.name ~ ' — ' ~ row.employee_name) }}
+                                {{ document_preview_link(row.document, row.type.name ~ ' — ' ~ row.employee_name) }}
                             {% else %}
                                 <span class="muted">Нет файла</span>
                             {% endif %}

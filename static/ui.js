@@ -181,40 +181,60 @@
 
     /* ── Просмотр документа во всплывающем окне (П4) ──────────────────────
        Ссылка с data-preview-url: PDF — iframe, изображение — img, прочее
-       (HEIC) — только «Скачать». Делегирование: ссылок в реестре сотни. */
+       (HEIC) — только «Скачать». Делегирование: ссылок в реестре сотни.
+       Многостраничный документ — data-preview-pages (JSON [{url, download, kind, name}]):
+       «‹ ›» и стрелки ←/→ листают, «Скачать» — текущую страницу. */
     function initDocPreview() {
         var modal = document.getElementById('doc-preview-modal');
         if (!modal) { return; }
         var body = document.getElementById('doc-preview-body');
         var title = document.getElementById('doc-preview-title');
         var download = document.getElementById('doc-preview-download');
+        var pager = document.getElementById('doc-preview-pager');
+        var counter = document.getElementById('doc-preview-page');
+        var pages = [], index = 0, baseTitle = 'Документ';
 
         function close() {
             modal.classList.remove('open');
             body.innerHTML = '';  /* выгрузить iframe — иначе PDF продолжает висеть в памяти */
         }
 
-        function open(link) {
-            var kind = link.getAttribute('data-preview-kind');
-            var url = link.getAttribute('data-preview-url');
+        function show(i) {
+            index = (i + pages.length) % pages.length;
+            var page = pages[index];
             body.innerHTML = '';
             var node;
-            if (kind === 'pdf') {
+            if (page.kind === 'pdf') {
                 node = document.createElement('iframe');
-                node.src = url;
-                node.title = link.getAttribute('data-preview-title') || 'Документ';
-            } else if (kind === 'image') {
+                node.src = page.url;
+                node.title = baseTitle;
+            } else if (page.kind === 'image') {
                 node = document.createElement('img');
-                node.src = url;
-                node.alt = link.getAttribute('data-preview-title') || 'Документ';
+                node.src = page.url;
+                node.alt = baseTitle;
             } else {
                 node = document.createElement('p');
                 node.className = 'preview-none';
                 node.textContent = 'Браузер не показывает этот формат — скачайте файл.';
             }
             body.appendChild(node);
-            title.textContent = link.getAttribute('data-preview-title') || 'Документ';
-            download.href = link.getAttribute('data-download-url') || url;
+            download.href = page.download || page.url;
+            if (pager) {
+                pager.hidden = pages.length < 2;
+                if (counter) { counter.textContent = 'стр. ' + (index + 1) + ' из ' + pages.length; }
+            }
+        }
+
+        function open(link) {
+            baseTitle = link.getAttribute('data-preview-title') || 'Документ';
+            pages = [];
+            try { pages = JSON.parse(link.getAttribute('data-preview-pages') || '[]') || []; } catch (e) { pages = []; }
+            if (!pages.length) {
+                pages = [{ url: link.getAttribute('data-preview-url'), kind: link.getAttribute('data-preview-kind'),
+                           download: link.getAttribute('data-download-url') }];
+            }
+            title.textContent = baseTitle;
+            show(0);
             modal.classList.add('open');
         }
 
@@ -226,13 +246,18 @@
         });
 
         modal.addEventListener('click', function (e) {
+            var step = e.target.closest ? e.target.closest('[data-preview-step]') : null;
+            if (step) { show(index + parseInt(step.getAttribute('data-preview-step'), 10)); return; }
             if (e.target === modal || (e.target.closest && e.target.closest('[data-preview-close]'))) {
                 close();
             }
         });
 
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && modal.classList.contains('open')) { close(); }
+            if (!modal.classList.contains('open')) { return; }
+            if (e.key === 'Escape') { close(); }
+            else if (pages.length > 1 && e.key === 'ArrowRight') { show(index + 1); }
+            else if (pages.length > 1 && e.key === 'ArrowLeft') { show(index - 1); }
         });
     }
 

@@ -556,6 +556,24 @@ class EmployeeDocument(Base):
     verified_at = Column(DateTime, nullable=True)
     updated_at = Column(DateTime, nullable=True)
 
+    # Многостраничный документ: страница 1 — file_path/original_filename выше (на них завязаны
+    # договоры, матрица, «есть файл»), страницы 2…N — здесь. document_helpers.document_pages.
+    pages = relationship("EmployeeDocumentPage", order_by="EmployeeDocumentPage.sort_order",
+                         cascade="all, delete-orphan", lazy="selectin")
+
+
+class EmployeeDocumentPage(Base):
+    """Страница 2…N документа сотрудника (отдельный файл: фото или PDF)."""
+    __tablename__ = "employee_document_pages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("employee_documents.id"), nullable=False, index=True)
+    file_path = Column(String, nullable=False)
+    original_filename = Column(String, nullable=True)
+    sort_order = Column(Integer, default=0)
+    uploaded_by = Column(Integer, nullable=True)
+    uploaded_at = Column(DateTime, default=now_utc)
+
 
 class UploadLog(Base):
     __tablename__ = "upload_logs"
