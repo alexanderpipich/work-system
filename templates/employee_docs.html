@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_doc_preview.html" import preview_link, preview_modal %}
+{% from "_doc_preview.html" import preview_link, preview_modal, document_preview_link %}
 
 {% block title %}Мои документы{% endblock %}
 {% block brand_title %}Мои документы{% endblock %}
@@ -53,10 +53,18 @@
                     {% endif %}
                 </div>
                 {% if row.document.file_path %}
-                    <p>{{ preview_link('/documents/preview/%s' % row.document.id, '/documents/files/%s' % row.document.id, preview_kind(row.document.file_path), row.type.name, label='Открыть файл') }}</p>
+                    <p>{{ document_preview_link(row.document, row.type.name, label='Открыть файл') }}</p>
                 {% endif %}
             {% elif row.status == 'pending_verification' %}
                 <p class="muted">Документ загружен и ожидает проверки.</p>
+            {% endif %}
+            {% if row.document and row.document.status in ['uploaded', 'pending_verification'] and row.status not in ['missing', 'rejected', 'expired', 'archived'] %}
+                {# Документ на нескольких листах: дослать страницы, пока его не проверили. #}
+                <form method="post" action="/cabinet/documents/{{ row.document.id }}/pages" enctype="multipart/form-data" class="mt-8">
+                    <div class="field"><label>Добавить страницы <span class="muted">(если документ на нескольких листах)</span></label>
+                        <input type="file" name="file" accept="image/*,.pdf,.heic" multiple required></div>
+                    <button type="submit" class="btn btn-secondary btn-sm mt-8">Добавить</button>
+                </form>
             {% endif %}
 
             {% if row.status in ['missing', 'rejected', 'expired', 'archived'] %}
@@ -67,7 +75,7 @@
                 <form method="post" action="/cabinet/documents/upload" enctype="multipart/form-data">
                     <input type="hidden" name="document_type_id" value="{{ row.type.id }}">
                     <div class="form-grid cols-3">
-                        <div class="field"><label>Фото или скан</label><input type="file" name="file" accept="image/*,.pdf,.heic" capture="environment" required></div>
+                        <div class="field"><label>Фото или скан <span class="muted">(можно несколько листов)</span></label><input type="file" name="file" accept="image/*,.pdf,.heic" multiple required></div>
                     </div>
                     <button type="submit" class="btn btn-primary mt-14">Загрузить</button>
                 </form>

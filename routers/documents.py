@@ -31,8 +31,14 @@ from document_helpers import (
     normalize_employee_folder,
     parse_bool,
     parse_date,
+    MAX_DOCUMENT_PAGES,
+    add_document_pages,
+    document_pages,
     preview_kind,
+    preview_pages,
+    remove_document_page,
     save_upload_file,
+    save_upload_files,
 )
 from file_storage import storage_delete, storage_response
 from employee_profile import DOC_PATENT, format_patent_number, parse_patent_number
@@ -50,6 +56,8 @@ from utils import normalize_text, safe_return_to
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 templates.env.globals["preview_kind"] = preview_kind  # П4: просмотр документа в модалке
+templates.env.globals["preview_pages"] = preview_pages  # многостраничный документ — листание в модалке
+templates.env.globals["MAX_DOCUMENT_PAGES"] = MAX_DOCUMENT_PAGES
 templates.env.globals["job_title_name"] = job_title_name  # подпись кода должности в карточке сотрудника
 
 
@@ -541,11 +549,9 @@ async def _create_employee_document(
 
     user_row = session.query(User).filter(User.employee_name == employee_name_clean).first()
     folder = f"employee_documents/{user_row.id if user_row else normalize_employee_folder(employee_name_clean)}"
-    file_path, original_filename = await save_upload_file(
-        file,
-        folder,
-        f"type_{document_type.id}",
-    )
+    # Несколько файлов — страницы одного документа (регистрация на 3 листа — 3 фото).
+    saved = await save_upload_files(file if isinstance(file, list) else [file], folder, f"type_{document_type.id}")
+    file_path, original_filename = saved[0] if saved else (None, None)
 
     document = EmployeeDocument(
         user_id=user_row.id if user_row else None,
@@ -565,6 +571,7 @@ async def _create_employee_document(
         uploaded_at=now_utc(),
     )
     session.add(document)
+    add_document_pages(document, saved[1:], user.id)
     session.flush()
     create_audit_log(
         session,
@@ -579,6 +586,7 @@ async def _create_employee_document(
             "document_type_id": document.document_type_id,
             "status": document.status,
             "original_filename": document.original_filename,
+            "pages": len(saved),
         },
         comment=document.comment,
     )
@@ -1140,7 +1148,7 @@ async def upload_employee_document_by_manager(
     extra_field_1_value: str = Form(default=""),
     extra_field_2_value: str = Form(default=""),
     comment: str = Form(default=""),
-    file: Optional[UploadFile] = File(default=None),
+    file: list[UploadFile] = File(default=[]),
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
 ):
@@ -1173,7 +1181,7 @@ async def upload_employee_document_by_manager(
 async def cabinet_upload_document(
     request: Request,
     document_type_id: int = Form(...),
-    file: UploadFile = File(...),
+    file: list[UploadFile] = File(...),
     session: Session = Depends(get_db),
     user=Depends(current_user),
 ):
@@ -1199,6 +1207,46 @@ async def cabinet_upload_document(
     except Exception as exc:
         session.rollback()
         return _redirect("/employee_docs", error=str(exc))
+
+
+# Сотрудник дописывает страницы к своему документу, пока его не проверили (загрузил 1-й лист, потом 2-й и 3-й).
+CABINET_ADD_PAGES_STATUSES = ("uploaded", "pending_verification")
+
+
+@router.post("/cabinet/documents/{document_id}/pages")
+async def cabinet_add_pages(
+    request: Request,
+    document_id: int,
+    file: list[UploadFile] = File(...),
+    session: Session = Depends(get_db),
+    user=Depends(current_user),
+):
+    document = session.get(EmployeeDocument, document_id)
+    own = document is not None and (document.user_id == user.id or (
+        document.user_id is None and normalize_text(document.employee_name) == normalize_text(user.employee_name)))
+    if not own:
+        return _redirect("/employee_docs", error="Документ не найден")
+    if document.status not in CABINET_ADD_PAGES_STATUSES:
+        return _redirect("/employee_docs", error="Документ уже проверен — загрузите новый, если нужно")
+    if len(document_pages(document)) + len([f for f in file if f.filename]) > MAX_DOCUMENT_PAGES:
+        return _redirect("/employee_docs", error=f"Не больше {MAX_DOCUMENT_PAGES} страниц в документе")
+    try:
+        saved = await save_upload_files(file, f"employee_documents/{user.id}", f"type_{document.document_type_id}")
+    except ValueError as exc:
+        return _redirect("/employee_docs", error=str(exc))
+    if not saved:
+        return _redirect("/employee_docs", error="Выберите файл")
+    before = len(document_pages(document))
+    add_document_pages(document, saved, user.id)
+    document.status = "pending_verification"
+    document.updated_at = now_utc()
+    create_audit_log(
+        session, request, user, "document_pages_added", "employee_document", document.id, document.employee_name,
+        old_value={"pages": before}, new_value={"pages": before + len(saved), "files": [k for k, _ in saved]},
+        comment="кабинет сотрудника",
+    )
+    session.commit()
+    return _redirect("/employee_docs", message=f"Добавлено страниц: {len(saved)}")
 
 
 BULK_SKIP_REASONS = {
@@ -1329,9 +1377,14 @@ CARD_FIELDS = ("document_number", "issue_date", "expiry_date", "is_permanent",
                "extra_field_1_value", "extra_field_2_value", "comment", "file_path", "original_filename")
 
 
+CARD_AUDIT_FIELDS = CARD_FIELDS + ("pages",)
+
+
 def _card_payload(document):
-    return {field: (str(getattr(document, field)) if getattr(document, field) is not None else None)
-            for field in CARD_FIELDS}
+    payload = {field: (str(getattr(document, field)) if getattr(document, field) is not None else None)
+               for field in CARD_FIELDS}
+    payload["pages"] = [p.file_path for p in document.pages] or None  # страницы 2…N (ключи хранилища)
+    return payload
 
 
 def _card_url(base_path, document_id, back=""):
@@ -1404,7 +1457,8 @@ async def document_card_save(
     extra_field_1_value: str = Form(default=""),
     extra_field_2_value: str = Form(default=""),
     comment: str = Form(default=""),
-    file: Optional[UploadFile] = File(default=None),
+    file: list[UploadFile] = File(default=[]),
+    add_files: list[UploadFile] = File(default=[]),
     session: Session = Depends(get_db),
     user=Depends(require_document_manager),
 ):
@@ -1433,9 +1487,15 @@ async def document_card_save(
     if permanent and document_type is not None and not document_type.allow_permanent:
         return fail(f"Тип «{document_type.name}» требует срок действия — «бессрочно» недоступно")
 
+    # «Заменить файлы» (file) — новые страницы вместо всех прежних; «Добавить страницы» (add_files) — в конец.
+    replace_count = len([f for f in file if f.filename])
+    total = (replace_count or len(document_pages(document))) + len([f for f in add_files if f.filename])
+    if total > MAX_DOCUMENT_PAGES:
+        return fail(f"Не больше {MAX_DOCUMENT_PAGES} страниц в документе")
     try:
         folder = f"employee_documents/{document.user_id or normalize_employee_folder(document.employee_name)}"
-        new_path, new_name = await save_upload_file(file, folder, f"type_{document.document_type_id}")
+        replaced = await save_upload_files(file, folder, f"type_{document.document_type_id}")
+        added = await save_upload_files(add_files, folder, f"type_{document.document_type_id}")
     except ValueError as exc:
         return fail(str(exc))
 
@@ -1454,15 +1514,18 @@ async def document_card_save(
     document.extra_field_1_value = normalize_text(extra_field_1_value) or None
     document.extra_field_2_value = normalize_text(extra_field_2_value) or None
     document.comment = normalize_text(comment) or None
-    if new_path:
-        # Прежний файл не удаляется из хранилища: его ключ остаётся в аудите — замену можно откатить.
-        document.file_path, document.original_filename = new_path, new_name
+    if replaced:
+        # Прежние файлы не удаляются из хранилища: их ключи остаются в аудите — замену можно откатить.
+        document.file_path, document.original_filename = replaced[0]
+        document.pages.clear()
+        add_document_pages(document, replaced[1:], user.id)
+    add_document_pages(document, added, user.id)
     new_value = _card_payload(document)
     if new_value == old_value:
         return RedirectResponse(card_url + ("&" if "?" in card_url else "?") + urlencode(
             {"message": "Изменений нет"}), status_code=302)
     document.updated_at = now_utc()
-    changed = [field for field in CARD_FIELDS if old_value[field] != new_value[field]]
+    changed = [field for field in CARD_AUDIT_FIELDS if old_value[field] != new_value[field]]
     create_audit_log(
         session, request, user, "document_edited", "employee_document", document.id,
         f"{document.employee_name} / {document_type.name if document_type else document.document_type_id}",
@@ -1480,6 +1543,46 @@ async def document_card_save(
     session.commit()
     return RedirectResponse(card_url + ("&" if "?" in card_url else "?") + urlencode(
         {"message": "Документ сохранён"}), status_code=302)
+
+
+@router.post("/admin/documents/card/{document_id}/pages/{page}/remove")
+@router.post("/economist/documents/card/{document_id}/pages/{page}/remove")
+@router.post("/hr/documents/card/{document_id}/pages/{page}/remove")
+def document_page_remove(
+    request: Request,
+    document_id: int,
+    page: int,
+    back: str = Form(default=""),
+    session: Session = Depends(get_db),
+    user=Depends(require_document_manager),
+):
+    """Убрать одну страницу (неудачное фото). Файл в хранилище остаётся — ключ в аудите, это обратимо,
+    поэтому право — documents.manage, а не суперадмин. Статус документа не меняется."""
+    base_path, _, _ = _documents_base(request)
+    document = session.get(EmployeeDocument, document_id)
+    if not _document_allowed_for_user(session, document, user):
+        return _redirect(_card_back(base_path, back), error="Документ не найден или нет доступа")
+    card_url = _card_url(base_path, document_id, back)
+    separator = "&" if "?" in card_url else "?"
+    if not has_permission(user, "documents.manage"):
+        record_denied_action(session, request, user, "documents.manage")
+        return RedirectResponse(card_url + separator + urlencode({"error": "Нет права менять документы"}),
+                                status_code=302)
+    total = len(document_pages(document))
+    removed = remove_document_page(document, page)
+    if removed is None:
+        return RedirectResponse(card_url + separator + urlencode({"error": "Страница не найдена"}), status_code=302)
+    document.updated_at = now_utc()
+    document_type = session.get(DocumentType, document.document_type_id)
+    create_audit_log(
+        session, request, user, "document_page_removed", "employee_document", document.id,
+        f"{document.employee_name} / {document_type.name if document_type else document.document_type_id}",
+        old_value={"page": page, "pages": total, "file_path": removed["key"], "original_filename": removed["name"]},
+        new_value={"pages": total - 1},
+        comment="файл остаётся в хранилище",
+    )
+    session.commit()
+    return RedirectResponse(card_url + separator + urlencode({"message": f"Страница {page} убрана"}), status_code=302)
 
 
 @router.post("/admin/documents/card/{document_id}/delete")
@@ -1506,31 +1609,44 @@ def document_card_delete(
     old_value = _card_payload(document)
     old_value.update({"status": document.status, "employee_name": document.employee_name,
                       "document_type_id": document.document_type_id})
-    file_path = document.file_path
+    file_keys = [page["key"] for page in document_pages(document)]
     create_audit_log(session, request, user, "document_deleted", "employee_document", document.id,
                      f"{document.employee_name} / {document_type.name if document_type else document.document_type_id}",
                      old_value=old_value)
     session.delete(document)
     session.commit()
-    storage_delete(file_path)  # после commit: запись удалена — файл больше никому не нужен
+    for key in file_keys:  # после commit: запись удалена — файлы больше никому не нужны
+        storage_delete(key)
     separator = "&" if "?" in target else "?"
     return RedirectResponse(f"{target}{separator}{urlencode({'message': 'Документ удалён'})}", status_code=302)
+
+
+def _page_file(document, page):
+    """(ключ, имя) страницы page (1…N) документа или (None, None)."""
+    pages = document_pages(document)
+    if not 1 <= page <= len(pages):
+        return None, None
+    return pages[page - 1]["key"], pages[page - 1]["name"]
 
 
 @router.get("/documents/files/{document_id}")
 def document_file(
     request: Request,
     document_id: int,
+    page: int = 1,
     session: Session = Depends(get_db),
     user=Depends(current_user),
 ):
     document = session.query(EmployeeDocument).filter(EmployeeDocument.id == document_id).first()
     if not _document_allowed_for_user(session, document, user):
         return RedirectResponse(url="/", status_code=302)
+    key, name = _page_file(document, page)
+    if key is None:
+        return RedirectResponse(url="/", status_code=302)
     return storage_response(
-        document.file_path,
-        filename=document.original_filename or Path(document.file_path or "").name,
-        media_type=_safe_media_type(document.file_path),
+        key,
+        filename=name or Path(key).name,
+        media_type=_safe_media_type(key),
         disposition="attachment",
     ) or RedirectResponse(url="/", status_code=302)
 
@@ -1539,6 +1655,7 @@ def document_file(
 def document_preview(
     request: Request,
     document_id: int,
+    page: int = 1,
     session: Session = Depends(get_db),
     user=Depends(current_user),
 ):
@@ -1546,13 +1663,14 @@ def document_preview(
     document = session.query(EmployeeDocument).filter(EmployeeDocument.id == document_id).first()
     if not _document_allowed_for_user(session, document, user):
         return RedirectResponse(url="/", status_code=302)
-    ext = Path(document.file_path or "").suffix.lower()
-    if ext not in SAFE_MEDIA_TYPES or ext == ".heic":
+    key, name = _page_file(document, page)
+    ext = Path(key or "").suffix.lower()
+    if key is None or ext not in SAFE_MEDIA_TYPES or ext == ".heic":
         return RedirectResponse(url="/", status_code=302)
     return storage_response(
-        document.file_path,
-        filename=document.original_filename or Path(document.file_path or "").name,
-        media_type=_safe_media_type(document.file_path),
+        key,
+        filename=name or Path(key).name,
+        media_type=_safe_media_type(key),
         disposition="inline",
     ) or RedirectResponse(url="/", status_code=302)
 

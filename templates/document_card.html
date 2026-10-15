@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_doc_preview.html" import preview_link, preview_modal %}
+{% from "_doc_preview.html" import preview_link, preview_modal, document_preview_link %}
 
 {# Карточка документа сотрудника: данные, правка (documents.manage), замена файла, удаление
    (только суперадмин). Статус при правке не меняется. Маршруты — routers/documents.py, document_card*. #}
@@ -21,6 +21,12 @@
     .permanent-check { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--brand-blue); }
     .permanent-check input { width: 16px; height: 16px; margin: 0; }
     .danger-zone { border-color: var(--error-border); }
+    .doc-pages { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .doc-pages li { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+                    padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .doc-pages li:last-child { border-bottom: 0; }
+    .doc-pages form { margin: 0; }
+    .doc-pages a { overflow-wrap: anywhere; }
 </style>
 {% endblock %}
 
@@ -39,11 +45,33 @@
             {% if document.updated_at %}<div><dt>Изменён</dt><dd>{{ document.updated_at.strftime('%d.%m.%Y %H:%M') }}</dd></div>{% endif %}
             <div><dt>Файл</dt><dd>
                 {% if document.file_path %}
-                {{ preview_link('/documents/preview/%s' % document.id, '/documents/files/%s' % document.id, preview_kind(document.file_path), (type.name if type else 'Документ') ~ ' — ' ~ document.employee_name, label=document.original_filename or 'Открыть скан') }}
+                {{ document_preview_link(document, (type.name if type else 'Документ') ~ ' — ' ~ document.employee_name, label='Открыть скан') }}
                 {% else %}<span class="muted">Нет файла</span>{% endif %}
             </dd></div>
         </dl>
     </section>
+
+    {% set pages = preview_pages(document) %}
+    {% if pages %}
+    <section class="card">
+        <h2>Страницы ({{ pages|length }})</h2>
+        <ol class="doc-pages">
+            {% for page in pages %}
+            <li>
+                {{ preview_link(page.url, page.download, page.kind, (type.name if type else 'Документ') ~ ' — ' ~ document.employee_name, label='Стр. %d' % loop.index ~ (' · ' ~ page.name if page.name else ''), pages=pages) }}
+                {% if can_edit %}
+                <form method="post" action="{{ base_path }}/card/{{ document.id }}/pages/{{ loop.index }}/remove"
+                      onsubmit="return confirm('Убрать страницу {{ loop.index }}?');">
+                    <input type="hidden" name="back" value="{{ back_param }}">
+                    <button class="btn btn-secondary btn-sm" type="submit">Убрать</button>
+                </form>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ol>
+        {% if can_edit %}<p class="field-hint mt-0">Убранная страница остаётся в хранилище и в журнале действий.</p>{% endif %}
+    </section>
+    {% endif %}
 
     <section class="card">
         <h2>Данные документа</h2>
@@ -73,8 +101,12 @@
                     <input name="extra_field_1_value" value="{{ document.extra_field_1_value or '' }}"></div>
                 <div class="field"><label>{{ (type.extra_field_2_label if type and type.extra_field_2_label) or 'Доп. поле 2' }}</label>
                     <input name="extra_field_2_value" value="{{ document.extra_field_2_value or '' }}"></div>
-                <div class="field"><label>{{ 'Заменить файл' if document.file_path else 'Загрузить файл' }} <span class="muted">(необязательно)</span></label>
-                    <input type="file" name="file" accept="image/*,.pdf,.heic"></div>
+                <div class="field"><label>{{ 'Добавить страницы' if document.file_path else 'Загрузить файлы' }} <span class="muted">(можно несколько, до {{ MAX_DOCUMENT_PAGES }} страниц)</span></label>
+                    <input type="file" name="add_files" accept="image/*,.pdf,.heic" multiple></div>
+                {% if document.file_path %}
+                <div class="field"><label>Заменить все страницы <span class="muted">(необязательно)</span></label>
+                    <input type="file" name="file" accept="image/*,.pdf,.heic" multiple></div>
+                {% endif %}
                 <div class="field"><label>Комментарий</label><textarea name="comment">{{ document.comment or '' }}</textarea></div>
             </div>
             {% if not type or type.allow_permanent %}

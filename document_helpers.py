@@ -8,7 +8,8 @@ from sqlalchemy import or_, text
 
 from database import engine
 from file_storage import storage_save
-from models import Country, DocumentType, EmployeeDocument, RegimeDocumentRule, Requisite, Shift, User
+from models import (Country, DocumentType, EmployeeDocument, EmployeeDocumentPage, RegimeDocumentRule, Requisite,
+                    Shift, User)
 from time_helpers import business_today, now_utc
 from utils import normalize_text
 
@@ -18,6 +19,8 @@ DOCUMENT_UPLOAD_ROOT = Path(os.getenv("DOCUMENT_UPLOAD_ROOT", "uploaded_document
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 EXPIRY_WARNING_DAYS = 30
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf", ".heic"}
+# Многостраничный документ (регистрация на 3 листа — 3 фото): не больше стольких файлов на документ.
+MAX_DOCUMENT_PAGES = 10
 INVALID_DATE_MESSAGE = "Некорректный формат даты (ожидается ГГГГ-ММ-ДД)"
 
 
@@ -679,26 +682,94 @@ def safe_filename(filename):
     return f"{stem or 'document'}{suffix}"
 
 
-async def save_upload_file(upload_file, folder, prefix):
-    if not upload_file or not upload_file.filename:
-        return None, None
-
+async def _read_upload(upload_file):
+    """(безопасное имя, содержимое) с проверкой формата и размера; ValueError — отказ."""
     original = safe_filename(upload_file.filename)
-    suffix = Path(original).suffix.lower()
-    if suffix not in ALLOWED_EXTENSIONS:
-        raise ValueError("Недопустимый формат файла")
-
+    if Path(original).suffix.lower() not in ALLOWED_EXTENSIONS:
+        raise ValueError(f"Недопустимый формат файла «{upload_file.filename}»: можно JPG, PNG, PDF, HEIC")
     content = await upload_file.read()
     if len(content) > MAX_UPLOAD_BYTES:
-        raise ValueError("Файл больше 15 MB")
+        raise ValueError(f"Файл «{upload_file.filename}» больше 15 MB")
+    return original, content
 
+
+def _store_upload(upload_file, original, content, folder, prefix):
     filename = f"{prefix}_{now_utc().strftime('%Y%m%d%H%M%S')}_{uuid4().hex[:8]}_{original}"
-    key = storage_save(
+    return storage_save(
         f"uploaded_documents/{folder}/{filename}",
         content,
         content_type=getattr(upload_file, "content_type", None),
     )
-    return key, upload_file.filename
+
+
+async def save_upload_file(upload_file, folder, prefix):
+    if not upload_file or not upload_file.filename:
+        return None, None
+    original, content = await _read_upload(upload_file)
+    return _store_upload(upload_file, original, content, folder, prefix), upload_file.filename
+
+
+async def save_upload_files(upload_files, folder, prefix, limit=MAX_DOCUMENT_PAGES):
+    """Несколько файлов одного документа: [(ключ, исходное имя)] в порядке выбора. Сначала
+    проверяются все (формат, размер, число), и только потом что-то сохраняется — плохой
+    файл в пачке не оставляет в хранилище половину страниц."""
+    files = [f for f in (upload_files or []) if f is not None and getattr(f, "filename", None)]
+    if len(files) > limit:
+        raise ValueError(f"Не больше {limit} файлов на документ")
+    read = [(f, *(await _read_upload(f))) for f in files]
+    return [(_store_upload(f, original, content, folder, prefix), f.filename) for f, original, content in read]
+
+
+def document_pages(document):
+    """Страницы документа: [{n, key, name, kind, page_id}] — 1-я из file_path, дальше EmployeeDocumentPage."""
+    if document is None:
+        return []
+    pages = []
+    if document.file_path:
+        pages.append({"key": document.file_path, "name": document.original_filename, "page_id": None})
+    for page in getattr(document, "pages", None) or []:
+        pages.append({"key": page.file_path, "name": page.original_filename, "page_id": page.id})
+    for n, page in enumerate(pages, 1):
+        page["n"] = n
+        page["kind"] = preview_kind(page["key"])
+    return pages
+
+
+def preview_pages(document):
+    """Страницы для окна просмотра (data-preview-pages): адреса просмотра и скачивания по номеру."""
+    return [{"url": f"/documents/preview/{document.id}?page={p['n']}",
+             "download": f"/documents/files/{document.id}?page={p['n']}",
+             "kind": p["kind"], "name": p["name"] or ""} for p in document_pages(document)]
+
+
+def add_document_pages(document, saved, user_id):
+    """Дописать сохранённые файлы [(ключ, имя)] в конец документа; первая — в file_path, если он пуст."""
+    saved = list(saved)
+    if saved and not document.file_path:
+        document.file_path, document.original_filename = saved.pop(0)
+    start = max([p.sort_order or 0 for p in document.pages] or [0])
+    for i, (key, name) in enumerate(saved, 1):
+        document.pages.append(EmployeeDocumentPage(file_path=key, original_filename=name, sort_order=start + i,
+                                                   uploaded_by=user_id, uploaded_at=now_utc()))
+
+
+def remove_document_page(document, n):
+    """Убрать страницу n (1…N) из документа; файл в хранилище остаётся (ключ — в аудите).
+    Убрали первую — её место занимает вторая. Возвращает убранную {key, name} или None."""
+    pages = document_pages(document)
+    if not 1 <= n <= len(pages):
+        return None
+    removed = pages[n - 1]
+    if removed["page_id"] is None:
+        if document.pages:
+            first = document.pages[0]
+            document.file_path, document.original_filename = first.file_path, first.original_filename
+            document.pages.remove(first)
+        else:
+            document.file_path = document.original_filename = None
+    else:
+        document.pages.remove(next(p for p in document.pages if p.id == removed["page_id"]))
+    return {"key": removed["key"], "name": removed["name"]}
 
 
 def normalize_employee_folder(employee_name):
