@@ -176,7 +176,9 @@ class AutostartTests(unittest.TestCase):
         employee = SimpleNamespace(role="employee", is_admin=False, tour_seen_at=None)
         self.assertEqual(self.ctx("/cabinet", user=employee)["id"], "employee")
         self.assertEqual(self.ctx(user=employee)["start_url"], "/cabinet")
-        for role in ("tm", "economist", "hr_clerk", "superadmin", "brigadier", "headhunter"):
+        clerk = SimpleNamespace(role="hr_clerk", is_admin=False, tour_seen_at=None)
+        self.assertEqual((self.ctx(user=clerk)["id"], self.ctx(user=clerk)["start_url"]), ("hr_clerk", "/hr"))
+        for role in ("tm", "economist", "superadmin", "brigadier", "headhunter"):
             with self.subTest(role=role):
                 self.assertIsNone(self.ctx(user=SimpleNamespace(role=role, is_admin=False, tour_seen_at=None)))
 
@@ -235,7 +237,7 @@ class TourPagesTests(_Client):
     DATA_ROWS = {
         "/admin/payouts/weekly": (r'<tr class="(noreq)?" data-tour="weekly-row"|<tr class="(noreq)?"\s', "Нет смен за неделю"),
         "/admin/payouts/advances": (r'name="employee_names"|<tr>\s*<td', "Нет сотрудников со сменами за неделю"),
-        "/hr/documents": (r'data-tour="docs-table"(?:(?!</tbody>).)*?<tr>\s*<td>', "Нет строк по выбранным фильтрам"),
+        "/hr/documents": (r'data-tour="docs-table"(?:(?!</tbody>).)*?<tr[^>]*>\s*<td>', "Нет строк по выбранным фильтрам"),
         "/admin/contracts": (r'href="/admin/contracts/contract/\d+"', "Нет сотрудников по фильтрам"),
         "/hr/team": (r'class="tm-block"', None),
     }

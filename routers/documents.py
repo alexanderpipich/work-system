@@ -603,6 +603,27 @@ def _document_allowed_for_user(session, document, user):
     return normalize_text(document.employee_name) == normalize_text(user.employee_name)
 
 
+# П5.2: из бланка и профессии патента собираются договор и ходатайство — без них патент не проверяется.
+PATENT_VERIFY_FIELDS = (("blank_series", "серия бланка"), ("blank_number", "номер бланка"))
+
+
+def patent_missing_fields(session, document):
+    """Пустые поля патента, без которых его нельзя отметить проверенным; [] — можно (или не патент)."""
+    document_type = session.get(DocumentType, document.document_type_id) if document else None
+    if document_type is None or document_type.name != DOC_PATENT:
+        return []
+    parts = parse_patent_number(document.document_number)
+    missing = [label for key, label in PATENT_VERIFY_FIELDS if not parts[key]]
+    if not normalize_text(document.extra_field_2_value):
+        missing.append((document_type.extra_field_2_label or "профессия по патенту").lower())
+    return missing
+
+
+def patent_missing_message(missing):
+    return "Патент нельзя отметить проверенным: не заполнено — " + ", ".join(missing) + \
+        ". Заполните в карточке документа («Открыть»)."
+
+
 def _set_document_status(document, user, new_status, comment=""):
     """Сменить статус документа (без аудита и commit). Возвращает (старый статус, старый комментарий)."""
     old_status = document.status
@@ -634,6 +655,10 @@ def _change_document_status(
     ).first()
     if not _document_allowed_for_user(session, document, user):
         return _redirect(base_path, status=status_filter, employee_name=employee_name, error="Нет доступа к документу")
+    missing = patent_missing_fields(session, document) if new_status == "verified" else []
+    if missing:
+        return _redirect(base_path, status=status_filter, employee_name=employee_name,
+                         error=patent_missing_message(missing))
 
     old_status, old_comment = _set_document_status(document, user, new_status, comment)
     action = {
@@ -1204,6 +1229,9 @@ def verify_documents_bulk(
             continue
         if document.status in BULK_SKIP_REASONS:
             skipped.append((document_id, BULK_SKIP_REASONS[document.status]))
+            continue
+        if patent_missing_fields(session, document):
+            skipped.append((document_id, "патент без бланка или профессии"))
             continue
         _set_document_status(document, user, "verified")
         verified.append(document_id)

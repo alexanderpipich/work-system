@@ -1,11 +1,11 @@
-"""Демо-туры (П5): кабинет сотрудника и рабочий стол руководителя.
+"""Демо-туры (П5): кабинет сотрудника, рабочий стол руководителя и кадровика (П5.2).
 
 Тур — слой поверх существующих страниц: шаги лежат в `data/tours/<id>.json`, движок —
 `static/tour.js`, якоря — атрибуты `data-tour="…"` в шаблонах. Сервер решает только,
 какой тур положен пользователю, с какой страницы он стартует и запускать ли его сам:
 
-- `employee` → тур `employee` на `/cabinet`; `hr_lead` → тур `hr_lead` на своём дашборде
-  (`navigation.dashboard_url`); остальным ролям тура нет;
+- `employee` → тур `employee` на `/cabinet`; `hr_lead` / `hr_clerk` → тур своей роли на своём
+  дашборде (`navigation.dashboard_url`); остальным ролям тура нет;
 - режим автозапуска: `always` (каждый вход; «Пропустить» — до следующего входа, флаг в
   sessionStorage) | `first` (пока пуст `User.tour_seen_at`) | `off`. Откуда берётся — по порядку:
   `User.tour_mode` (лично для пользователя) → `TourSettings.autostart_mode` (страница
@@ -26,11 +26,13 @@ from pathlib import Path
 from urllib.parse import quote
 
 from navigation import dashboard_url
-from rbac import ROLE_EMPLOYEE, ROLE_HR_LEAD, canonical_role
+from rbac import ROLE_EMPLOYEE, ROLE_HR_CLERK, ROLE_HR_LEAD, canonical_role
 from utils import normalize_person_name, normalize_text
 
 TOURS_DIR = Path(__file__).resolve().parent / "data" / "tours"
-TOUR_IDS = ("employee", "hr_lead")
+TOUR_IDS = ("employee", "hr_lead", "hr_clerk")
+# Туры с демо-сотрудником (шаги «requires»: «demo_employee», строка на /admin/contracts).
+DEMO_TOURS = ("hr_lead", "hr_clerk")
 AUTOSTART_MODES = ("always", "first", "off")
 DEFAULT_AUTOSTART = "first"
 MODE_LABELS = {"always": "При каждом входе", "first": "Только первый раз", "off": "Выключен"}
@@ -73,7 +75,7 @@ def mode_for(user, settings=None):
 
 
 def demo_employee(settings=None):
-    """ФИО демо-сотрудника тура руководителя: настройка на странице, иначе TOUR_DEMO_EMPLOYEE, иначе ''."""
+    """ФИО демо-сотрудника туров руководителя и кадровика: настройка на странице, иначе TOUR_DEMO_EMPLOYEE, иначе ''."""
     return (settings or {}).get("demo_employee") or _name(os.getenv("TOUR_DEMO_EMPLOYEE"))
 
 
@@ -140,6 +142,8 @@ def tour_id_for(user):
         return "employee"
     if role == ROLE_HR_LEAD:
         return "hr_lead"
+    if role == ROLE_HR_CLERK:
+        return "hr_clerk"
     return None
 
 
@@ -183,7 +187,7 @@ def build_tour_context(user, path, query_tour=False, mode=None, login_id="", set
         autostart = on_start and getattr(user, "tour_seen_at", None) is None
     else:
         autostart = False
-    demo = demo_employee(settings) if tour_id == "hr_lead" else ""
+    demo = demo_employee(settings) if tour_id in DEMO_TOURS else ""
     return {
         "id": tour_id,
         "mode": mode,
@@ -193,7 +197,7 @@ def build_tour_context(user, path, query_tour=False, mode=None, login_id="", set
         "force": on_start and query_tour,
         # ключ флага «закрыт до следующего входа»: новый вход — новый ключ, тур снова стартует
         "login_id": login_id or "",
-        # строка демо-сотрудника на /admin/contracts — якоря шагов «Договор» и «Рекомендация»
+        # строка демо-сотрудника на /admin/contracts — якоря шагов «Договор», «Ходатайство», «Рекомендация»
         "demo_norm": normalize_person_name(demo) if demo else "",
     }
 
