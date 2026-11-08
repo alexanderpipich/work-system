@@ -31,7 +31,7 @@ The backend is chosen by environment: `S3_BUCKET` + `S3_ACCESS_KEY` + `S3_SECRET
 
 Object keys mirror the old on-disk layout and are stored verbatim in the existing `file_path` / `image_path` / `sample_image_path` columns — no schema change: `uploaded_documents/<folder>/<file>` (QR included), `generated_files/planning_forms/...`, `generated_files/reconciliations/...`. Pre-migration absolute paths (`/data/...`, `/app/...`) are reported as missing in S3 mode; those files were lost in the move.
 
-Never write generated files to disk — build them in a `BytesIO` and hand the bytes to `storage_save()`. Do not reintroduce `FileResponse`, `Path(...).write_bytes()`, `.unlink()`, or `mkdir()` for user or generated files.
+Never write generated files to disk — build them in a `BytesIO` and hand the bytes to `storage_save()`. Do not reintroduce `FileResponse`, `Path(...).write_bytes()`, `.unlink()`, or `mkdir()` for user or generated files (exception: the timebook upload's temp file for the duration of its job, see «Timebook upload»).
 
 ## Role System
 
@@ -77,6 +77,8 @@ Weekly actions: a rate typed on the screen becomes an individual `Rate` (employe
 **One payroll run = one legal entity.** `PayrollRun.legal_entity` ties a run to a specific `LegalEntity`. Do not mix multiple legal entities within one run.
 
 **Never change numerical results** (rates, LMK deductions, adjustment amounts) during refactoring. Calculation logic in `payroll_run_helpers.py`, `lmk_charges.py`, `payroll_adjustments.py` must produce identical outputs before and after any structural change.
+
+**Timebook upload (`routers/upload.py`).** `POST /admin/upload` only spools the file to a temp file (the one allowed disk write: it lives until the job ends, S3 is not involved) and creates an `UploadLog` with status `processing`, then answers 303; prod's proxy cuts requests at ~60 s, so nothing heavy may run in the request. A single worker thread per process (`_upload_executor`, not `BackgroundTasks`) runs `_run_upload_job`: `_parse_timebook_file` reads the sheet row by row (openpyxl `read_only`) and keeps only per-key totals — rows with one key are summed wherever they are in the file, so writing starts after the whole file is read and a parse error leaves the DB untouched; `_store_parsed_shifts` writes `UPLOAD_BATCH_SIZE` shifts per commit with one lookup per batch, journal counters in the same transaction (a failure mid-way keeps the written batches; re-upload is idempotent); `_after_shifts_stored` then runs reconcile, monitoring and referral checks. `XLSX_NA_VALUES` keeps pandas' idea of an empty cell. The same file (sha256) cannot run twice — partial unique index `uq_upload_logs_processing_hash`, works across workers; a different file waits in the queue. Stuck rows: `fail_interrupted_uploads` at startup (a deploy kills the thread), `_fail_stale_uploads` after `UPLOAD_STALE_AFTER` without `heartbeat_at`. The page polls `GET /admin/upload/status` (`templates/_upload_status.html`) while anything is processing. `_process_shift_dataframe` / `_normalize_upload_dataframe` are DataFrame entry points to the same parser, used by tests.
 
 ## Store Assignments and Where a Shift Counts
 

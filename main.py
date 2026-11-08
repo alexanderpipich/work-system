@@ -22,6 +22,7 @@ from payroll_run_helpers import ensure_payroll_run_closing_columns
 from requisite_schema import ensure_requisite_profile_columns
 from service_schema import ensure_service_columns
 from shift_schema import ensure_shift_request_type_unique_key
+from upload_schema import ensure_upload_log_columns
 from user_schema import ensure_user_profile_columns
 from routers.citizenship import router as citizenship_router
 from routers.adjustments import router as adjustments_router
@@ -59,7 +60,7 @@ from routers.reports import router as reports_router
 from routers.schedules import router as schedules_router
 from routers.services import router as services_router
 from routers.system import router as system_router
-from routers.upload import router as upload_router
+from routers.upload import fail_interrupted_uploads, router as upload_router
 from routers.users import router as users_router
 
 
@@ -163,6 +164,7 @@ if engine.dialect.name == "postgresql":
     ensure_audit_log_table()
     ensure_service_columns()
     ensure_mvd_authority_columns(engine)
+    ensure_upload_log_columns()
 from referral_helpers import ensure_referral_settings
 ensure_referral_settings()
 # Адресат ходатайства — подразделение МВД: перенос адресата УВМ из регионов (идемпотентно).
@@ -179,6 +181,15 @@ if engine.dialect.name == "postgresql":
         logging.getLogger(__name__).exception("daily document expiry check failed")
     finally:
         _startup_session.close()
+
+# Фоновая обработка загрузки живёт в потоке процесса: после перезапуска её записи не завершатся сами.
+_startup_session = SessionLocal()
+try:
+    fail_interrupted_uploads(_startup_session)
+except Exception:
+    logging.getLogger(__name__).exception("interrupted uploads check failed")
+finally:
+    _startup_session.close()
 
 # П5: в логе запуска — режим тура и демо-сотрудник, которые действуют сейчас, и откуда они взяты.
 log_tour_settings()

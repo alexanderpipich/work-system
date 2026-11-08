@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, Boolean, UniqueConstraint, ForeignKey, DateTime, Text, event
+from sqlalchemy import Column, Integer, String, Float, Date, Boolean, UniqueConstraint, ForeignKey, DateTime, Text, Index, JSON, event, text
 from sqlalchemy.orm import relationship
 from database import Base
 from time_helpers import now_utc
@@ -589,10 +589,26 @@ class UploadLog(Base):
     skipped_locked_months = Column(Integer, default=0)
     adjustments_created = Column(Integer, default=0)
 
+    # processing → success | error (routers/upload.py, UPLOAD_STATUS_*).
     status = Column(String, default="success")
     error = Column(Text, nullable=True)
 
     created_at = Column(DateTime, default=now_utc)
+
+    file_hash = Column(String, nullable=True)  # sha256 содержимого: запрет повтора во время обработки
+    heartbeat_at = Column(DateTime, nullable=True)  # отметка живости фоновой обработки
+    finished_at = Column(DateTime, nullable=True)
+    summary = Column(JSON, nullable=True)  # полный итог: услуги без ЧТС, пустые города и т. п.
+
+    __table_args__ = (
+        Index(
+            "uq_upload_logs_processing_hash",
+            "file_hash",
+            unique=True,
+            postgresql_where=text("status = 'processing'"),
+            sqlite_where=text("status = 'processing'"),
+        ),
+    )
 
 
 class AuditLog(Base):
