@@ -1,0 +1,122 @@
+{# Обновляемая часть /admin/upload: GET /admin/upload/status отдаёт её же, пока идёт обработка. #}
+<div id="upload-status" data-processing="{{ '1' if processing else '0' }}">
+    {% for log in processing %}
+    <div class="alert alert-warn">
+        Обрабатывается «{{ log.filename or '—' }}» (загрузка #{{ log.id }}):
+        {% if log.added or log.updated %}добавлено {{ log.added or 0 }}, обновлено {{ log.updated or 0 }}{% else %}чтение файла{% endif %}.
+        Страницу можно закрыть — обработка продолжится.
+    </div>
+    {% endfor %}
+
+    {% if last_finished and last_finished.status == 'error' %}
+    <div class="alert alert-error">
+        Загрузка #{{ last_finished.id }} «{{ last_finished.filename or '—' }}» завершилась ошибкой: {{ last_finished.error or 'причина не записана' }}
+    </div>
+    {% endif %}
+
+    {% set result = last_finished.summary if last_finished else none %}
+    {% if result %}
+    <div class="card">
+        <h2>Результат загрузки #{{ last_finished.id }} «{{ last_finished.filename or '—' }}»</h2>
+
+        <div class="table-wrap">
+            <table>
+                <tr>
+                    <th>Добавлено</th>
+                    <th>Обновлено</th>
+                    <th>Дубликаты</th>
+                    <th>Заблокировано</th>
+                    <th>Корректировки</th>
+                </tr>
+                <tr>
+                    <td>{{ result.added }}</td>
+                    <td>{{ result.updated }}</td>
+                    <td>{{ result.skipped_duplicates }}</td>
+                    <td>{{ result.skipped_locked_months }}</td>
+                    <td>{{ result.adjustments_created }}</td>
+                </tr>
+            </table>
+        </div>
+
+        {% if result.city_from_reference %}
+        <div class="alert alert-success">
+            У {{ result.city_from_reference }} смен в выгрузке пустой «Город» — город взят из справочника ТК.
+        </div>
+        {% endif %}
+
+        {% if result.empty_city_shifts %}
+        <div class="alert alert-warn">
+            ⚠ У {{ result.empty_city_shifts }} смен в выгрузке пустой «Город», и в справочнике ТК города нет — город не записан,
+            ставки с привязкой к городу к ним не подберутся.
+        </div>
+        {% endif %}
+
+        {% if result.unmatched_services %}
+        <div class="alert alert-warn">
+            ⚠ {{ result.unmatched_services | length }} услуг из загруженных смен не найдены в справочнике услуг —
+            по ним не подтянется тариф (ЧТС 0). Разобрать: <a href="/admin/services">матрица услуг</a>.
+            <ul>
+                {% for item in result.unmatched_services %}
+                <li>«{{ item.name }}» — смен: {{ item.shifts_count }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% elif result.added or result.updated %}
+        <div class="alert alert-success">Все услуги из смен распознаны в справочнике.</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <h2>История загрузок</h2>
+
+        <div class="table-wrap uploads-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Дата</th>
+                        <th>Файл</th>
+                        <th>Статус</th>
+                        <th class="text-right">Добавлено</th>
+                        <th class="text-right">Обновлено</th>
+                        <th class="text-right">Дубликаты</th>
+                        <th class="text-right">Заблокировано</th>
+                        <th class="text-right">Без ЧТС</th>
+                        <th class="text-right">Корректировки</th>
+                        <th>Ошибка</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>#{{ log.id }}</td>
+                        <td>
+                            {% if log.created_at %}
+                                {{ log.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>{{ log.filename or '—' }}</td>
+                        <td>{{ status_labels.get(log.status, log.status) }}</td>
+                        <td class="text-right">{{ log.added }}</td>
+                        <td class="text-right">{{ log.updated }}</td>
+                        <td class="text-right">{{ log.skipped_duplicates }}</td>
+                        <td class="text-right">{{ log.skipped_locked_months }}</td>
+                        <td class="text-right">{{ log.summary.unmatched_services | sum(attribute='shifts_count') if log.summary else '—' }}</td>
+                        <td class="text-right">{{ log.adjustments_created }}</td>
+                        <td>{{ log.error or '' }}</td>
+                    </tr>
+                    {% endfor %}
+
+                    {% if logs|length == 0 %}
+                    <tr>
+                        <td colspan="11" class="muted">Загрузок пока нет</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
